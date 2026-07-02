@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canteen Gan En — Decision Lock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FDB833; --primary-hover:#F9A03F; --primary-light:#FFF1CC;
+    --bg:#FAF6EE; --surface:#FFFCF7; --surface-soft:#FFF8EE;
+    --text:#2F2A24; --text-2:#756B5D; --text-dis:#B7AEA0;
+    --success:#6FA76D; --success-bg:#EAF5E6; --error:#D95D5D; --error-bg:#FBEAEA;
+    --border:#E8E0D2; --divider:#F1EBE0;
+    --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:16px;-webkit-font-smoothing:antialiased;padding-bottom:60px}
+  .wrap{max-width:840px;margin:0 auto;padding:0 20px}
+
+  .top{position:sticky;top:0;z-index:10;background:rgba(250,246,238,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:16px 20px}
+  .top .in{max-width:840px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .top .dot{width:34px;height:34px;border-radius:10px;background:var(--primary);color:var(--text);display:grid;place-items:center;font-weight:800;flex:none}
+  .top h1{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .top .s{font-size:12px;color:var(--text-2);font-weight:500}
+
+  .hero{padding:40px 0 24px}
+  .hero .eb{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--primary-hover);margin-bottom:10px}
+  .hero h2{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-bottom:10px}
+  .hero p{font-size:16px;color:var(--text-2);max-width:60ch}
+
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px}
+  .t-lock{background:var(--success-bg);color:#3F6B43}
+  .t-park{background:var(--surface-soft);color:var(--text-2);border:1px solid var(--border)}
+  .t-new{background:var(--primary-light);color:var(--primary-hover)}
+
+  section{padding:24px 0;border-top:1px solid var(--divider)}
+  .sh{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+  .sn{font-size:13px;font-weight:800;color:var(--primary-hover);font-variant-numeric:tabular-nums;background:var(--primary-light);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+  .sh h3{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .sh .tag{margin-left:auto;flex:none}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(47,42,36,.04)}
+  ul{list-style:none}
+  li{position:relative;padding-left:24px;margin:9px 0;font-size:15px}
+  li::before{content:"";position:absolute;left:4px;top:9px;width:7px;height:7px;border-radius:2px;background:var(--primary)}
+  li.no::before{background:var(--error)}
+  li.q::before{background:var(--text-dis);border-radius:50%}
+  li b{font-weight:700}
+  .why{font-size:14px;color:var(--text-2);margin-top:12px;padding-top:12px;border-top:1px solid var(--divider)}
+  .why b{color:var(--text)}
+  .pin{display:inline-block;font-size:11px;font-weight:700;color:var(--primary-hover);background:var(--primary-light);padding:2px 8px;border-radius:6px;margin-right:6px}
+
+  /* nav strip */
+  .nav{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .navi{flex:1;min-width:120px;border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;background:var(--surface-soft)}
+  .navi .l{font-size:14px;font-weight:700}
+  .navi .d{font-size:11.5px;color:var(--text-2);margin-top:3px}
+  .gearnote{margin-top:10px;font-size:13.5px;color:var(--text-2)}
+
+  /* palette */
+  .pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .sw{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+  .sw .c{height:54px;border-bottom:1px solid var(--border)}
+  .sw .m{padding:8px 10px}
+  .sw .n{font-size:13px;font-weight:600}
+  .sw .h{font-size:11.5px;color:var(--text-2);font-variant-numeric:tabular-nums;margin-top:1px}
+  .use{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;margin-top:6px}
+  .u-on{background:var(--success-bg);color:#3F6B43}
+  .u-opt{background:var(--surface-soft);color:var(--text-2);border:1px solid var(--border)}
+
+  .grp-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-2);margin:16px 0 8px}
+  .grp-label:first-child{margin-top:0}
+
+  .clean li.ok::before{background:var(--success)}
+  footer{text-align:center;padding:36px 20px;color:var(--text-2);font-size:13px}
+  .mini{font-size:13px;color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="in">
+  <div class="dot">GE</div>
+  <div><h1>Canteen Gan En — Decision Lock</h1><div class="s">Dokumen final &amp; terkunci · acuan tunggal produk</div></div>
+</div></div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eb">Acuan Tunggal</div>
+    <h2>Satu sumber kebenaran.</h2>
+    <p>Sebelumnya ada tiga dokumen yang saling berbeda. Halaman ini mengunci keputusan final. Apa pun yang bertabrakan dengan halaman ini sudah kedaluwarsa.</p>
+    <div class="legend">
+      <span class="tag t-lock">● Terkunci</span>
+      <span class="tag t-new">● Baru / koreksi build</span>
+    </div>
+  </div>
+
+  <!-- 1 NAV -->
+  <section>
+    <div class="sh"><span class="sn">1</span><h3>Navigasi &amp; Struktur</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <div class="nav">
+        <div class="navi"><div class="l">Pre-order</div><div class="d">tag "PO"</div></div>
+        <div class="navi"><div class="l">Penjualan</div><div class="d">live di kantin</div></div>
+        <div class="navi"><div class="l">Tagihan</div><div class="d">belum bayar</div></div>
+        <div class="navi"><div class="l">Menu</div><div class="d">Master Menu</div></div>
+      </div>
+      <div class="gearnote"><span class="pin">Header</span><b>Pengaturan</b> = ikon gear di kanan atas, <b>bukan tab</b>. Jarang dipakai → tidak layak tab.</div>
+      <ul style="margin-top:12px">
+        <li><b>4 tab</b>, tidak lebih. Aplikasi dibuka <b>langsung ke Pre-order</b> — tanpa launcher/Beranda terpisah.</li>
+        <li>Ganti rugi orientasi: <b>bagian atas halaman Pre-order = ringkasan hari ini</b> (tanggal · jumlah order · belum bayar). Dapat konteks tanpa nambah langkah.</li>
+      </ul>
+      <div class="why"><b>Catatan:</b> ini membatalkan layar "Beranda" lo-fi sebelumnya — keputusan "buang launcher" di PRD 2 menang. Build saat ini hanya 3 tab + gear; <b>tambahkan tab Menu</b>.</div>
+    </div>
+  </section>
+
+  <!-- 2 NAMA -->
+  <section>
+    <div class="sh"><span class="sn">2</span><h3>Penamaan (kunci, jangan ganti lagi)</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li><b>Pre-order</b> (tag ringkas "PO"). Buang <b>"Pra-Pesan"</b> dari build — terlalu formal, tidak konsisten.</li>
+        <li><b>Penjualan</b> · <b>Tagihan</b> · <b>Menu</b> / Master Menu.</li>
+        <li>Status bayar: <b>Belum Bayar</b> (bukan "Belum Dibayar") &amp; <b>Lunas</b>.</li>
+        <li>Aksi cetak: <b>Print</b> (bukan "Cetak"). Istilah natural Indo-Inggris, sesuai keputusan sebelumnya.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 MASTER MENU -->
+  <section>
+    <div class="sh"><span class="sn">3</span><h3>Menu (Master Menu) — Source of Truth</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li><b>Tab utama</b>, bukan submenu Pengaturan. Pusat seluruh data makanan, dibuat <b>sekali</b>.</li>
+        <li><b>Channel toggle:</b> Pre-order ON/OFF &amp; Penjualan ON/OFF — satu ketukan ikon. Pakai <b>ikon Lucide</b> (utensils / shopping-cart), <b>bukan emoji</b> 🍱🛒.</li>
+        <li><b>Varian + harga per varian</b> (cth. S/M/L, Reguler/Jumbo). Menu tanpa varian = satu harga.</li>
+        <li><b>Kategori</b> hanya sebagai filter pencarian.</li>
+        <li><b>Auto-save</b>, tanpa tombol Simpan. Perubahan langsung berlaku di Pre-order &amp; Penjualan.</li>
+      </ul>
+      <div class="why"><b>Belum ada di build</b> — ini layar paling penting yang masih kosong. Prioritas bangun nomor satu.</div>
+    </div>
+  </section>
+
+  <!-- 4 PRE-ORDER ADMIN -->
+  <section>
+    <div class="sh"><span class="sn">4</span><h3>Pre-order — sisi Admin</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li>Atas halaman: <b>ringkasan hari ini</b> + status <b>Dibuka / Ditutup</b> + <b>Tanggal Layanan</b> (satu tanggal aktif).</li>
+        <li><b>Bagikan Link</b> (Salin · WhatsApp). Filter per kelas / per Waktu Ambil. Daftar pesanan.</li>
+        <li><b>Packing:</b> status <b>Sudah Dikemas / Belum Dikemas</b> (buang "Sudah Diambil"). Ringkasan: jumlah pesanan · sudah · belum.</li>
+        <li><b>Rekap Masak</b> (layar Mama): agregat <b>on-screen</b> "masak N porsi per menu", bisa difilter per Waktu Ambil — dan bisa di-Print.</li>
+        <li><b>Print</b> di sini (operasional): Rekap per Kelas · per Menu · Label.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 5 PRE-ORDER PARENT -->
+  <section>
+    <div class="sh"><span class="sn">5</span><h3>Pre-order — sisi Orang Tua</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li><b>Link-only, hanya orang tua.</b> Admin <b>TIDAK</b> mengisi atas nama orang tua.</li>
+        <li>Tanpa akun, tanpa dashboard, tanpa riwayat. Identitas: <b>Nama Murid · Kelas · WhatsApp</b> (tanpa ID Murid).</li>
+        <li>Layar akhir = <b>Konfirmasi Pesanan</b> (bukan "Receipt"), judul <b>"Pesanan Berhasil Dikirim"</b>, isi blok <b>Bukti Pesanan</b> (No. Pesanan · Nama · Kelas · Tanggal Layanan · Waktu Ambil · Rincian · Total) + "simpan / screenshot sebagai bukti" → tombol <b>Selesai</b>.</li>
+        <li>Tiap submit = transaksi baru. Transaksi <b>tidak dapat diubah</b>; setiap transaksi <b>menyimpan salinan nama + varian + harga</b> saat dibuat (harga Master Menu berubah → transaksi lama tetap).</li>
+        <li class="no">Pesanan via telepon/WA: kalau beli langsung → <b>Penjualan</b>; kalau untuk hari layanan → <b>arahkan ke link Pre-order</b>.</li>
+      </ul>
+      <div class="why"><b>Kenapa:</b> kalau admin boleh isi PO atas nama ortu, batas Pre-order vs Penjualan jadi kabur. Dipisah tegas: <b>Pre-order = ortu via link</b>, <b>Penjualan = admin di kantin</b>.</div>
+    </div>
+  </section>
+
+  <!-- 6 PENJUALAN -->
+  <section>
+    <div class="sh"><span class="sn">6</span><h3>Penjualan — sisi Admin (live)</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li>Hanya menu dengan channel <b>Penjualan</b> aktif. Alur: Pilih Menu → Ringkasan → <b>Dibayar</b> / <b>Masuk Tagihan</b>.</li>
+        <li>Popup Tagihan minta: <b>Nama Siswa*</b> · <b>Kelas*</b> · WhatsApp (opsional).</li>
+        <li>Auto catat <b>Tanggal + Waktu</b> transaksi. Tidak perlu pilih Tanggal Layanan (live).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7 TAGIHAN -->
+  <section>
+    <div class="sh"><span class="sn">7</span><h3>Tagihan</h3><span class="tag t-new">+ Batalkan</span></div>
+    <div class="card">
+      <ul>
+        <li><b>Dua sumber → satu Tagihan:</b> Pre-order yang belum dibayar + Penjualan "Masuk Tagihan". Semua transaksi belum bayar, <b>dikelompokkan per murid</b>. Rincian tampil langsung.</li>
+        <li>Cari: <b>Nama · Kelas · WhatsApp</b> (untuk kasus kakak-adik). Tandai <b>Lunas</b> (dengan Undo). Bagikan WhatsApp.</li>
+        <li class="no"><b>Batalkan Transaksi</b> — bukan edit. Karena transaksi tidak dapat diubah, ini satu-satunya cara koreksi salah pesan. <span class="mini">Riwayat pembatalan tetap disimpan sebagai implementasi di belakang layar.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8 PENGATURAN -->
+  <section>
+    <div class="sh"><span class="sn">8</span><h3>Pengaturan (gear di header)</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li>Hanya config jarang berubah: <b>Nama Kantin · Printer · Nomor WhatsApp · Backup · Tentang</b>.</li>
+        <li class="no">Status Pre-order &amp; Tanggal Layanan <b>TIDAK</b> di sini — itu operasional harian, tempatnya di halaman Pre-order. <span class="mini">(Build sekarang salah menaruhnya di Settings — perlu dipindah.)</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 9 TANGGAL & WAKTU AMBIL -->
+  <section>
+    <div class="sh"><span class="sn">9</span><h3>Tanggal Layanan &amp; Waktu Ambil</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <ul>
+        <li><b>Satu Tanggal Layanan aktif</b> pada satu waktu. Admin ganti via <b>date picker</b>; seluruh halaman Pre-order &amp; Parent otomatis ikut. <b>Parent tidak memilih tanggal.</b></li>
+        <li><b>Waktu Ambil dipilih orang tua</b> saat Pre-order, dari <b>preset</b> (cth. Sebelum masuk · Istirahat 1 · Istirahat 2 · Pulang Sekolah). Tanpa jam spesifik.</li>
+        <li>Preset Waktu Ambil <b>dikonfigurasi di halaman PO</b> (operasional harian), bukan di Pengaturan.</li>
+        <li>Satu transaksi = <b>satu Waktu Ambil</b>. Beda waktu → transaksi terpisah.</li>
+        <li><b>Rekap &amp; Packing bisa difilter per Waktu Ambil</b> — supaya dapur tahu "masak berapa untuk Istirahat 1".</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 10 PALETTE -->
+  <section>
+    <div class="sh"><span class="sn">10</span><h3>Palet Final</h3><span class="tag t-lock">Terkunci</span></div>
+    <div class="card">
+      <div class="grp-label">Brand</div>
+      <div class="pal">
+        <div class="sw"><div class="c" style="background:#FDB833"></div><div class="m"><div class="n">Primary</div><div class="h">#FDB833</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#F9A03F"></div><div class="m"><div class="n">Primary Hover</div><div class="h">#F9A03F</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#FFF1CC"></div><div class="m"><div class="n">Primary Light</div><div class="h">#FFF1CC</div><br><span class="use u-on">dipakai</span></div></div>
+      </div>
+      <div class="grp-label">Permukaan &amp; Teks</div>
+      <div class="pal">
+        <div class="sw"><div class="c" style="background:#FAF6EE"></div><div class="m"><div class="n">Background</div><div class="h">#FAF6EE</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#FFFCF7"></div><div class="m"><div class="n">Surface</div><div class="h">#FFFCF7</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#FFF8EE"></div><div class="m"><div class="n">Surface Soft</div><div class="h">#FFF8EE</div><br><span class="use u-opt">opsional</span></div></div>
+        <div class="sw"><div class="c" style="background:#2F2A24"></div><div class="m"><div class="n">Text Primary</div><div class="h">#2F2A24</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#756B5D"></div><div class="m"><div class="n">Text Secondary</div><div class="h">#756B5D</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#B7AEA0"></div><div class="m"><div class="n">Text Disabled</div><div class="h">#B7AEA0</div><br><span class="use u-on">dipakai</span></div></div>
+      </div>
+      <div class="grp-label">Status &amp; Garis</div>
+      <div class="pal">
+        <div class="sw"><div class="c" style="background:#6FA76D"></div><div class="m"><div class="n">Success</div><div class="h">#6FA76D</div><br><span class="use u-on">Lunas</span></div></div>
+        <div class="sw"><div class="c" style="background:#EAF5E6"></div><div class="m"><div class="n">Success BG</div><div class="h">#EAF5E6</div><br><span class="use u-on">Lunas</span></div></div>
+        <div class="sw"><div class="c" style="background:#D95D5D"></div><div class="m"><div class="n">Error</div><div class="h">#D95D5D</div><br><span class="use u-on">validasi &amp; batal</span></div></div>
+        <div class="sw"><div class="c" style="background:#FBEAEA"></div><div class="m"><div class="n">Error BG</div><div class="h">#FBEAEA</div><br><span class="use u-on">validasi &amp; batal</span></div></div>
+        <div class="sw"><div class="c" style="background:#E8E0D2"></div><div class="m"><div class="n">Border</div><div class="h">#E8E0D2</div><br><span class="use u-on">dipakai</span></div></div>
+        <div class="sw"><div class="c" style="background:#F1EBE0"></div><div class="m"><div class="n">Divider</div><div class="h">#F1EBE0</div><br><span class="use u-opt">opsional</span></div></div>
+      </div>
+      <div class="why">
+        <b>Keputusan "Belum Bayar":</b> referensi ini tak punya warna Warning. Maka — <b>Lunas</b> = Success hijau · <b>Belum Bayar</b> = Primary Light + teks amber gelap (amber = "perlu perhatian") · <b>Error merah</b> hanya untuk validasi &amp; pembatalan, <b>bukan</b> status bayar. <br><br>
+        <b>Aturan kontras tetap berlaku:</b> teks di tombol amber = <b>gelap</b>, bukan putih.
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER: CATATAN IMPLEMENTASI -->
+  <section>
+    <div style="background:var(--surface-soft);border:1px dashed var(--border);border-radius:12px;padding:14px 18px;text-align:center">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">Catatan Implementasi</div>
+      <div style="font-size:13.5px;color:var(--text-2);margin-top:4px">Di luar spec produk — panduan teknis untuk tahap eksekusi, bukan keputusan produk.</div>
+    </div>
+  </section>
+
+  <!-- 11 BUILD CLEANUP -->
+  <section class="clean">
+    <div class="sh"><span class="sn">A</span><h3>Penyelarasan Build dengan Decision Lock</h3><span class="tag t-new">Teknis</span></div>
+    <div class="card">
+      <ul>
+        <li class="ok">Tukar <b>theme.css</b> ke token palet final + sapu kelas hardcode (<code>amber-500</code>, <code>text-white</code> di tab aktif, <code>emerald/red-500</code>).</li>
+        <li class="ok">Teks/ikon di amber → <b>gelap</b> (build sekarang putih — masalah kontras 50–60).</li>
+        <li class="no">Buang <b>🔔 Bell / notifikasi</b> — scope creep, tak ada di PRD.</li>
+        <li class="no">Emoji 🍱/🛒 → <b>ikon Lucide</b>.</li>
+        <li class="no">Pindahkan Status Pre-order &amp; Tanggal Layanan <b>keluar dari Settings</b> → ke halaman Pre-order.</li>
+        <li class="ok">Tambah tab <b>Menu</b>; ganti label <b>"Pra-Pesan" → "Pre-order"</b>.</li>
+        <li class="ok">Bangun yang masih kosong: <b>Master Menu, varian, channel, Print/Rekap/Label, packing, sisi Parent + Receipt</b>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 12 CATATAN TEKNIS -->
+  <section class="clean">
+    <div class="sh"><span class="sn">B</span><h3>Catatan Teknis (untuk fase implementasi)</h3><span class="tag t-new">Teknis</span></div>
+    <div class="card">
+      <ul>
+        <li class="q"><b>Print ke printer thermal</b> (Bluetooth/USB) dari web tidak trivial — memengaruhi pilihan <b>PWA vs native Android</b>. Bukan penghalang sekarang; diputuskan saat mulai fase implementasi print.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Canteen Gan En — Decision Lock · <b>dokumen final &amp; terkunci</b></footer>
+</div>
+</body>
+</html>

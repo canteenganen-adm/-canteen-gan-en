@@ -1,0 +1,366 @@
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Routes, Route } from "react-router";
+import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
+import { t, NAV_HEIGHT } from "../lib/theme";
+import { nowLabel, orderNo, serviceDateLabel } from "../lib/format";
+import { isSupabaseConfigured } from "../lib/supabase";
+import {
+  fetchMenus, fetchTransactions, fetchAppState, subscribeToCanteenChanges,
+  upsertMenuItem, deleteMenuItem,
+  insertTransaction, updateTransaction, deleteTransaction, insertCancelledTransaction,
+  appStatePatch,
+} from "../lib/canteenApi";
+import type { MenuItem, Transaction, CanteenSettings } from "../types";
+
+import MasterMenu from "./screens/MasterMenu";
+import Penjualan from "./screens/Penjualan";
+import Tagihan from "./screens/Tagihan";
+import PreOrderAdmin from "./screens/PreOrderAdmin";
+import PreOrderParent, { type PreOrderReceipt } from "./screens/PreOrderParent";
+import Pengaturan from "./screens/Pengaturan";
+
+/* ============================================================
+   APP SHELL — Canteen Gan En
+   Decision Lock §1: bottom nav 4 tab (Pre-order · Penjualan ·
+   Tagihan · Menu), gear di header buka Pengaturan (bukan tab).
+   App dibuka LANGSUNG ke Pre-order. Rute "/pesan" = link orang
+   tua yang berdiri sendiri (tanpa nav/gear).
+   ------------------------------------------------------------
+   Satu sumber state (useCanteenStore) dibuat SEKALI di sini dan
+   dibagi ke shell utama maupun rute /pesan. State ini sinkron
+   dengan Supabase: fetch awal + realtime subscription, supaya
+   pesanan dari link orang tua (device/tab berbeda) langsung
+   terlihat di sisi admin tanpa refresh manual.
+   ============================================================ */
+
+export default function App() {
+  const store = useCanteenStore();
+
+  if (!isSupabaseConfigured) {
+    return <ConfigError message="Supabase belum dikonfigurasi. Isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di file .env (lihat .env.example), lalu restart server dev." />;
+  }
+  if (store.error) {
+    return <ConfigError message={store.error} />;
+  }
+  if (store.loading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/pesan" element={<ParentRoute store={store} />} />
+      <Route path="*" element={<MainShell store={store} />} />
+    </Routes>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div style={{ height: "100dvh", display: "grid", placeItems: "center", background: t.bg, color: t.text2, fontSize: 14 }}>
+      Memuat data…
+    </div>
+  );
+}
+
+function ConfigError({ message }: { message: string }) {
+  return (
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: t.bg, color: t.text, padding: 24, textAlign: "center", gap: 12 }}>
+      <AlertTriangle size={32} color={t.error} />
+      <div style={{ fontWeight: 700, fontSize: 16 }}>Tidak bisa memuat data</div>
+      <div style={{ fontSize: 13.5, color: t.text2, maxWidth: 340 }}>{message}</div>
+    </div>
+  );
+}
+
+/* ---------------- Shared state (satu sumber untuk semua layar, tersinkron ke Supabase) ---------------- */
+
+type CanteenStore = ReturnType<typeof useCanteenStore>;
+
+function useCanteenStore() {
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [preorderOpen, setPreorderOpenLocal] = useState(true);
+  const [serviceDate, setServiceDateLocal] = useState("");
+  const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
+  const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const loadedOnce = useRef(false);
+
+  const loadAll = useCallback(async () => {
+    try {
+      const [menusData, txData, appState] = await Promise.all([
+        fetchMenus(),
+        fetchTransactions(),
+        fetchAppState(),
+      ]);
+      setMenus(menusData);
+      setTransactions(txData);
+      setPreorderOpenLocal(appState.preorderOpen);
+      setServiceDateLocal(appState.serviceDate);
+      setPickupPresetsLocal(appState.pickupPresets);
+      setSettingsLocal(appState.settings);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal memuat data dari Supabase.");
+    } finally {
+      setLoading(false);
+      loadedOnce.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) { setLoading(false); return; }
+    loadAll();
+    // Realtime: perubahan dari device/tab lain (mis. pesanan baru dari /pesan)
+    // memicu reload penuh — data kecil (menu+transaksi harian), aman & sederhana.
+    const unsubscribe = subscribeToCanteenChanges(() => {
+      if (loadedOnce.current) loadAll();
+    });
+    return unsubscribe;
+  }, [loadAll]);
+
+  const reportError = (context: string, e: unknown) => {
+    // eslint-disable-next-line no-console
+    console.error(`[Supabase] ${context}:`, e);
+  };
+
+  /* ---- Menu ---- */
+  const addMenuItem = (item: MenuItem) => {
+    setMenus((prev) => [item, ...prev]);
+    upsertMenuItem(item).catch((e) => reportError("addMenuItem", e));
+  };
+  const patchMenuItem = (id: string, fields: Partial<MenuItem>) => {
+    setMenus((prev) => {
+      const next = prev.map((m) => (m.id === id ? { ...m, ...fields } : m));
+      const updated = next.find((m) => m.id === id);
+      if (updated) upsertMenuItem(updated).catch((e) => reportError("patchMenuItem", e));
+      return next;
+    });
+  };
+  const toggleMenuChannel = (id: string, key: keyof MenuItem["channels"]) => {
+    setMenus((prev) => {
+      const next = prev.map((m) =>
+        m.id === id ? { ...m, channels: { ...m.channels, [key]: !m.channels[key] } } : m
+      );
+      const updated = next.find((m) => m.id === id);
+      if (updated) upsertMenuItem(updated).catch((e) => reportError("toggleMenuChannel", e));
+      return next;
+    });
+  };
+  const removeMenuItem = (id: string) => {
+    setMenus((prev) => prev.filter((m) => m.id !== id));
+    deleteMenuItem(id).catch((e) => reportError("removeMenuItem", e));
+  };
+
+  /* ---- Transaksi ---- */
+  const addTransaction = (tx: Transaction) => {
+    setTransactions((prev) => [tx, ...prev]);
+    insertTransaction(tx).catch((e) => reportError("addTransaction", e));
+  };
+  const markPaid = (id: string) => {
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: true } : tx)));
+    updateTransaction(id, { paid: true }).catch((e) => reportError("markPaid", e));
+  };
+  const unmarkPaid = (id: string) => {
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false } : tx)));
+    updateTransaction(id, { paid: false }).catch((e) => reportError("unmarkPaid", e));
+  };
+  const cancelTransaction = (id: string) => {
+    setTransactions((prev) => {
+      const tx = prev.find((x) => x.id === id);
+      if (tx) {
+        deleteTransaction(id).catch((e) => reportError("cancelTransaction", e));
+        insertCancelledTransaction(tx).catch((e) => reportError("insertCancelledTransaction", e));
+      }
+      return prev.filter((x) => x.id !== id);
+    });
+  };
+  const restoreTransaction = (tx: Transaction) => {
+    setTransactions((prev) => [tx, ...prev]);
+    insertTransaction(tx).catch((e) => reportError("restoreTransaction", e));
+  };
+  const togglePacked = (id: string) => {
+    setTransactions((prev) => {
+      const next = prev.map((tx) => (tx.id === id ? { ...tx, packed: !tx.packed } : tx));
+      const updated = next.find((tx) => tx.id === id);
+      if (updated) updateTransaction(id, { packed: updated.packed }).catch((e) => reportError("togglePacked", e));
+      return next;
+    });
+  };
+
+  const submitPreOrder = (r: PreOrderReceipt) => {
+    const tx: Transaction = {
+      id: orderNo(),
+      source: "preorder",
+      paid: false,
+      customer: { nama: r.nama, kelas: r.kelas, wa: r.wa, tingkat: r.tingkat },
+      items: r.items,
+      total: r.total,
+      createdAt: new Date().toISOString(),
+      label: nowLabel(),
+      serviceDate,
+      waktuAmbil: r.ambil,
+      packed: false,
+      orderNo: r.no,
+    };
+    addTransaction(tx);
+  };
+
+  /* ---- Status operasional & Pengaturan (app_state) ---- */
+  const togglePreorderOpen = () => {
+    setPreorderOpenLocal((prev) => {
+      const next = !prev;
+      appStatePatch.preorderOpen(next).catch((e) => reportError("togglePreorderOpen", e));
+      return next;
+    });
+  };
+  const setServiceDate = (date: string) => {
+    setServiceDateLocal(date);
+    appStatePatch.serviceDate(date).catch((e) => reportError("setServiceDate", e));
+  };
+  const setPickupPresets = (presets: string[]) => {
+    setPickupPresetsLocal(presets);
+    appStatePatch.pickupPresets(presets).catch((e) => reportError("setPickupPresets", e));
+  };
+  const patchSettings = (patch: Partial<CanteenSettings>) => {
+    setSettingsLocal((s) => ({ ...s, ...patch }));
+    if (patch.namaKantin !== undefined) appStatePatch.namaKantin(patch.namaKantin).catch((e) => reportError("patchSettings.namaKantin", e));
+    if (patch.whatsapp !== undefined) appStatePatch.whatsapp(patch.whatsapp).catch((e) => reportError("patchSettings.whatsapp", e));
+    if (patch.printerConnected !== undefined) appStatePatch.printerConnected(patch.printerConnected).catch((e) => reportError("patchSettings.printerConnected", e));
+  };
+
+  return {
+    menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
+    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked,
+    preorderOpen, togglePreorderOpen,
+    serviceDate, setServiceDate,
+    pickupPresets, setPickupPresets,
+    settings, patchSettings,
+    submitPreOrder,
+    loading, error,
+  };
+}
+
+/* ---------------- Rute "/pesan" — link orang tua, berdiri sendiri ---------------- */
+
+function ParentRoute({ store }: { store: CanteenStore }) {
+  return (
+    <PreOrderParent
+      kantin={store.settings.namaKantin}
+      serviceDate={serviceDateLabel(store.serviceDate)}
+      open={store.preorderOpen}
+      menus={store.menus}
+      pickupOptions={store.pickupPresets}
+      onSubmit={store.submitPreOrder}
+    />
+  );
+}
+
+/* ---------------- Shell utama: 4 tab + gear ---------------- */
+
+type Tab = "preorder" | "penjualan" | "tagihan" | "menu";
+
+function MainShell({ store }: { store: CanteenStore }) {
+  const [tab, setTab] = useState<Tab>("preorder");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const poLink = `${window.location.origin}/pesan`;
+  const unpaidCount = store.transactions.filter((tx) => !tx.paid).length;
+
+  const tabs: { id: Tab; label: string; Icon: typeof ClipboardList; badge?: number }[] = [
+    { id: "preorder", label: "Pre-order", Icon: ClipboardList },
+    { id: "penjualan", label: "Penjualan", Icon: ShoppingBag },
+    { id: "tagihan", label: "Tagihan", Icon: CreditCard, badge: unpaidCount },
+    { id: "menu", label: "Menu", Icon: BookOpen },
+  ];
+
+  return (
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: t.bg }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", position: "relative" }}>
+        {tab === "preorder" && (
+          <PreOrderAdmin
+            serviceDate={store.serviceDate}
+            onServiceDateChange={store.setServiceDate}
+            open={store.preorderOpen}
+            onToggleOpen={store.togglePreorderOpen}
+            presets={store.pickupPresets}
+            onPresetsChange={store.setPickupPresets}
+            transactions={store.transactions}
+            onTogglePacked={store.togglePacked}
+            poLink={poLink}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+        {tab === "penjualan" && (
+          <Penjualan
+            menus={store.menus}
+            transactions={store.transactions}
+            onTransaction={store.addTransaction}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+        {tab === "tagihan" && (
+          <Tagihan
+            transactions={store.transactions}
+            onMarkPaid={store.markPaid}
+            onUnmarkPaid={store.unmarkPaid}
+            onCancel={store.cancelTransaction}
+            onRestore={store.restoreTransaction}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+        {tab === "menu" && (
+          <MasterMenu
+            menus={store.menus}
+            onAdd={store.addMenuItem}
+            onPatch={store.patchMenuItem}
+            onToggleChannel={store.toggleMenuChannel}
+            onRemove={store.removeMenuItem}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+      </div>
+
+      {/* Bottom nav — 4 tab, tanpa lebih. Teks/ikon gelap di atas amber. */}
+      <div data-testid="bottom-nav" style={{ flex: "none", borderTop: `1px solid ${t.border}`, background: t.surface, height: NAV_HEIGHT, display: "flex" }}>
+        {tabs.map(({ id, label, Icon, badge }) => {
+          const active = tab === id;
+          return (
+            <button
+              key={id}
+              data-testid={`tab-${id}`}
+              onClick={() => setTab(id)}
+              className="flex flex-col items-center justify-center gap-1"
+              style={{ flex: 1, background: "transparent", border: "none", cursor: "pointer", position: "relative" }}
+            >
+              <span style={{
+                width: 40, height: 32, borderRadius: 12, display: "grid", placeItems: "center",
+                background: active ? t.primary : "transparent",
+              }}>
+                <Icon size={19} color={active ? t.text : t.textDis} strokeWidth={active ? 2.25 : 1.75} />
+              </span>
+              {!!badge && (
+                <span style={{ position: "absolute", top: 2, right: "22%", minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 10, fontWeight: 800, display: "grid", placeItems: "center" }}>
+                  {badge}
+                </span>
+              )}
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: active ? t.amberText : t.text2 }}>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Pengaturan — overlay dari ikon gear, bukan tab */}
+      {settingsOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 70, background: t.bg, overflowY: "auto" }}>
+          <Pengaturan
+            settings={store.settings}
+            onChange={store.patchSettings}
+            onClose={() => setSettingsOpen(false)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

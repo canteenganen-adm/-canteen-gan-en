@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canteen Gan En — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ===== Palet inti (dari brief) ===== */
+    --bg:#FAF6EE;
+    --surface:#FFFCF7;
+    --primary:#FDB833;
+    --primary-hover:#F9A03F;
+    --primary-light:#FFF1CC;
+    --success:#6FA76D;
+    --success-bg:#EAF5E6;
+    --warning-bg:#FFF4DA;
+    --text:#2F2A24;
+    --muted:#756B5D;
+    --border:#E8E0D2;
+
+    /* ===== Token turunan (tambahan, diturunkan dari palet inti) ===== */
+    --on-primary:#2F2A24;      /* teks GELAP di atas amber, bukan putih (kontras) */
+    --success-text:#3F6B43;    /* teks hijau pekat untuk pill "Lunas" */
+    --warning-text:#936A12;    /* teks amber pekat untuk "Belum Bayar" */
+    --danger:#C2603F;          /* clay-red hangat, dipakai sangat hemat */
+    --danger-bg:#FAEDE7;
+    --primary-soft:#FEF6E2;    /* hover lembut/baris terpilih */
+
+    /* ===== Radius ===== */
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-full:999px;
+
+    /* ===== Bayangan (hangat, sangat halus) ===== */
+    --shadow-sm:0 1px 2px rgba(47,42,36,.05);
+    --shadow-md:0 4px 14px rgba(47,42,36,.06), 0 1px 3px rgba(47,42,36,.05);
+    --shadow-lg:0 14px 34px rgba(47,42,36,.10), 0 3px 10px rgba(47,42,36,.06);
+
+    /* ===== Spasi ===== */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px; --s9:48px; --s10:64px;
+
+    /* ===== Token semantik (v1.1 — untuk konsistensi implementasi) ===== */
+    --page-padding:20px;
+    --header-height:64px;
+    --bottom-nav-height:80px;
+    --container-max:430px;
+    --transition-fast:150ms;
+    --transition-normal:250ms;
+    --ease:cubic-bezier(.22,.61,.36,1);   /* ease-out lembut, tanpa bounce */
+    --shadow-card:0 1px 2px rgba(47,42,36,.05);
+    --shadow-popup:0 14px 34px rgba(47,42,36,.10), 0 3px 10px rgba(47,42,36,.06);
+
+    --font:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+    font-size:17px;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:var(--s10);
+  }
+  svg{display:block}
+  .ic{width:24px; height:24px; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .ic-20{width:20px; height:20px}
+  .ic-28{width:28px; height:28px}
+
+  /* ====== Shell ====== */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(250,246,238,.86); backdrop-filter:saturate(180%) blur(12px);
+    border-bottom:1px solid var(--border);
+    padding:var(--s4) var(--s5);
+    display:flex; align-items:center; gap:var(--s3);
+  }
+  .topbar .dot{width:34px; height:34px; border-radius:10px; background:var(--primary); display:grid; place-items:center; color:var(--on-primary); flex:none}
+  .topbar h1{font-size:18px; font-weight:700; letter-spacing:-.01em}
+  .topbar .sub{font-size:13px; color:var(--muted); font-weight:500}
+
+  .wrap{max-width:920px; margin:0 auto; padding:0 var(--s5)}
+
+  .hero{padding:var(--s9) 0 var(--s7)}
+  .hero .eyebrow{font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--primary-hover); margin-bottom:var(--s3)}
+  .hero h2{font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin-bottom:var(--s4)}
+  .hero p{font-size:18px; color:var(--muted); max-width:60ch}
+
+  /* ====== Section ====== */
+  section{padding:var(--s8) 0; border-top:1px solid var(--border)}
+  .sec-head{display:flex; align-items:baseline; gap:var(--s3); margin-bottom:var(--s6)}
+  .sec-num{font-size:13px; font-weight:700; color:var(--primary-hover); font-variant-numeric:tabular-nums; padding-top:4px}
+  .sec-head h3{font-size:24px; font-weight:700; letter-spacing:-.015em}
+  .sec-head p{font-size:15px; color:var(--muted); margin-top:4px}
+  .lead{font-size:16px; color:var(--muted); max-width:64ch; margin-bottom:var(--s6)}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-sm)}
+  .pad{padding:var(--s6)}
+
+  .grid{display:grid; gap:var(--s4)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:720px){ .g3,.g4{grid-template-columns:repeat(2,1fr)} .g2{grid-template-columns:1fr} }
+
+  .block-label{font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:var(--s6) 0 var(--s3)}
+  .block-label:first-child{margin-top:0}
+
+  /* ====== Color swatches ====== */
+  .sw{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface)}
+  .sw .chip{height:78px}
+  .sw .meta{padding:var(--s3) var(--s4)}
+  .sw .meta .nm{font-weight:600; font-size:15px; display:flex; align-items:center; gap:6px}
+  .sw .meta .hex{font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:500; margin-top:2px}
+  .sw .meta .use{font-size:12.5px; color:var(--muted); margin-top:6px; line-height:1.4}
+  .tag{display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 6px; border-radius:var(--r-full); background:var(--primary-light); color:var(--primary-hover)}
+
+  /* ====== Type specimens ====== */
+  .type-row{display:flex; align-items:baseline; gap:var(--s5); padding:var(--s4) 0; border-bottom:1px solid var(--border); flex-wrap:wrap}
+  .type-row:last-child{border-bottom:0}
+  .type-spec{flex:1; min-width:240px}
+  .type-info{font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:500}
+  .t-display{font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+  .t-title{font-size:24px; font-weight:700; letter-spacing:-.015em; line-height:1.2}
+  .t-heading{font-size:20px; font-weight:600; letter-spacing:-.01em; line-height:1.3}
+  .t-subhead{font-size:18px; font-weight:600; line-height:1.35}
+  .t-bodyl{font-size:17px; font-weight:400; line-height:1.55}
+  .t-body{font-size:16px; font-weight:400; line-height:1.5}
+  .t-label{font-size:14px; font-weight:600; line-height:1.3}
+  .t-price{font-size:19px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums}
+  .t-meta{font-size:13px; font-weight:500; color:var(--muted)}
+
+  /* ====== Spacing scale ====== */
+  .space-demo{display:flex; align-items:flex-end; gap:var(--s4); flex-wrap:wrap}
+  .space-item{text-align:center}
+  .space-box{background:var(--primary-light); border:1px solid var(--primary); border-radius:6px}
+  .space-item span{display:block; font-size:12px; color:var(--muted); margin-top:6px; font-variant-numeric:tabular-nums; font-weight:600}
+
+  /* ====== Radius / shadow demo ====== */
+  .demo-tile{height:90px; background:var(--surface); border:1px solid var(--border); display:grid; place-items:center; color:var(--muted); font-size:13px; font-weight:600}
+
+  /* ====== Buttons ====== */
+  .btn{
+    font-family:var(--font); font-size:17px; font-weight:600;
+    border:1px solid transparent; border-radius:var(--r-md);
+    height:56px; padding:0 var(--s6); display:inline-flex; align-items:center; justify-content:center; gap:var(--s2);
+    cursor:pointer; transition:transform .08s ease, background .15s ease, box-shadow .15s ease; white-space:nowrap;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--primary); color:var(--on-primary); box-shadow:var(--shadow-sm)}
+  .btn-primary:hover{background:var(--primary-hover)}
+  .btn-secondary{background:var(--surface); color:var(--text); border-color:var(--border)}
+  .btn-secondary:hover{background:var(--primary-soft); border-color:var(--primary)}
+  .btn-ghost{background:transparent; color:var(--text)}
+  .btn-ghost:hover{background:var(--primary-soft)}
+  .btn-danger{background:transparent; color:var(--danger); border-color:var(--danger)}
+  .btn-danger:hover{background:var(--danger-bg)}
+  .btn-md{height:48px; font-size:16px; padding:0 var(--s5)}
+  .btn[disabled]{opacity:.45; cursor:not-allowed; box-shadow:none}
+  .btn-block{width:100%}
+
+  /* ====== Input ====== */
+  .field{margin-bottom:var(--s4)}
+  .field label{display:block; font-size:14px; font-weight:600; margin-bottom:var(--s2); color:var(--text)}
+  .input{
+    width:100%; height:52px; font-family:var(--font); font-size:17px; color:var(--text);
+    background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-md);
+    padding:0 var(--s4); transition:border-color .15s, box-shadow .15s;
+  }
+  .input::placeholder{color:#A89E8E}
+  .input:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-light)}
+  .search{position:relative}
+  .search .ic{position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted)}
+  .search .input{padding-left:46px}
+  .hint{font-size:13px; color:var(--muted); margin-top:6px}
+
+  /* ====== Stepper ====== */
+  .stepper{display:inline-flex; align-items:center; gap:var(--s3); background:var(--surface); border:1px solid var(--border); border-radius:var(--r-full); padding:4px}
+  .step-btn{width:48px; height:48px; border-radius:var(--r-full); border:none; background:var(--primary-light); color:var(--on-primary); cursor:pointer; display:grid; place-items:center; transition:background .12s}
+  .step-btn:hover{background:var(--primary)}
+  .step-btn:active{transform:scale(.94)}
+  .step-val{min-width:34px; text-align:center; font-size:19px; font-weight:700; font-variant-numeric:tabular-nums}
+
+  /* ====== Pills / tags ====== */
+  .pill{display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px; border-radius:var(--r-full); font-size:13.5px; font-weight:700}
+  .pill .ic-20{width:15px; height:15px}
+  .pill-lunas{background:var(--success-bg); color:var(--success-text)}
+  .pill-belum{background:var(--warning-bg); color:var(--warning-text)}
+  .src{display:inline-flex; align-items:center; gap:5px; height:26px; padding:0 10px; border-radius:var(--r-full); font-size:12.5px; font-weight:700; border:1px solid var(--border); background:var(--surface); color:var(--muted)}
+  .src .ic-20{width:14px; height:14px}
+  .src-preorder{background:var(--primary-soft); border-color:#F1DFB0; color:var(--primary-hover)}
+  .src-penjualan{background:#EFF3EE; border-color:#D8E6D4; color:var(--success-text)}
+
+  /* ====== Segmented ====== */
+  .segmented{display:inline-flex; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-full); padding:4px; gap:4px}
+  .seg{height:44px; padding:0 var(--s5); border:none; background:transparent; border-radius:var(--r-full); font-family:var(--font); font-size:15px; font-weight:600; color:var(--muted); cursor:pointer; transition:.15s}
+  .seg.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow-sm)}
+
+  /* ====== List rows ====== */
+  .list{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden}
+  .row{display:flex; align-items:center; gap:var(--s4); padding:var(--s4) var(--s5); min-height:72px; border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:0}
+  .row .lead-ic{width:44px; height:44px; border-radius:12px; background:var(--primary-light); color:var(--primary-hover); display:grid; place-items:center; flex:none}
+  .row .body{flex:1; min-width:0}
+  .row .body .l1{font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px}
+  .row .body .l2{font-size:14px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .row .trail{text-align:right; flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:4px}
+  .chev{color:#C3B9A8; flex:none}
+
+  /* ====== Checklist row (packing) ====== */
+  .check-row{display:flex; align-items:center; gap:var(--s4); padding:var(--s4) var(--s5); min-height:72px; border-bottom:1px solid var(--border); cursor:pointer}
+  .check-row:last-child{border-bottom:0}
+  .checkbox{width:30px; height:30px; border-radius:9px; border:2px solid var(--border); flex:none; display:grid; place-items:center; color:transparent; transition:.12s; background:var(--surface)}
+  .check-row.done .checkbox{background:var(--success); border-color:var(--success); color:#fff}
+  .check-row.done .l1{text-decoration:line-through; color:var(--muted)}
+
+  /* ====== Stat card ====== */
+  .stat{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--s5); box-shadow:var(--shadow-sm)}
+  .stat .num{font-size:34px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1}
+  .stat .lab{font-size:14px; color:var(--muted); margin-top:6px; font-weight:500}
+
+  /* ====== Action card ====== */
+  .action{display:flex; align-items:center; gap:var(--s4); padding:var(--s5); background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); cursor:pointer; transition:.15s; box-shadow:var(--shadow-sm)}
+  .action:hover{border-color:var(--primary); background:var(--primary-soft)}
+  .action .ai{width:52px; height:52px; border-radius:14px; background:var(--primary-light); color:var(--primary-hover); display:grid; place-items:center; flex:none}
+  .action .at{flex:1}
+  .action .at .t{font-size:17px; font-weight:600}
+  .action .at .d{font-size:14px; color:var(--muted); margin-top:2px}
+
+  /* ====== Menu quick-add tile ====== */
+  .tile{background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:var(--s4); cursor:pointer; transition:.12s; text-align:left; position:relative}
+  .tile:hover{border-color:var(--primary)}
+  .tile.sel{border-color:var(--primary); background:var(--primary-soft)}
+  .tile .nm{font-size:16px; font-weight:600}
+  .tile .pr{font-size:14px; color:var(--muted); margin-top:4px; font-variant-numeric:tabular-nums}
+  .tile .qty{position:absolute; top:-10px; right:-10px; min-width:30px; height:30px; padding:0 8px; border-radius:var(--r-full); background:var(--primary); color:var(--on-primary); font-size:15px; font-weight:700; display:grid; place-items:center; box-shadow:var(--shadow-sm)}
+
+  /* ====== Date selector ====== */
+  .datebar{display:flex; align-items:center; gap:var(--s2); background:var(--surface); border:1px solid var(--border); border-radius:var(--r-full); padding:6px}
+  .date-nav{width:44px; height:44px; border-radius:var(--r-full); border:none; background:transparent; color:var(--text); cursor:pointer; display:grid; place-items:center}
+  .date-nav:hover{background:var(--primary-soft)}
+  .date-main{flex:1; text-align:center; padding:0 var(--s3)}
+  .date-main .dl{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .date-main .dv{font-size:16px; font-weight:700; margin-top:2px}
+
+  /* ====== Timestamp ====== */
+  .ts{font-size:13px; color:var(--muted); font-weight:500; line-height:1.5}
+  .ts .serve{display:inline-flex; align-items:center; gap:6px; color:var(--text); font-weight:600; background:var(--primary-light); padding:2px 8px; border-radius:var(--r-full)}
+
+  /* ====== Phone frame demos ====== */
+  .phone{width:340px; max-width:100%; background:var(--bg); border:1px solid var(--border); border-radius:26px; box-shadow:var(--shadow-md); overflow:hidden; position:relative; padding:var(--s4)}
+  .phone .ph-label{font-size:12px; color:var(--muted); font-weight:600; margin-bottom:var(--s3)}
+
+  /* ====== Bottom nav ====== */
+  .bottomnav{display:flex; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); padding:8px; box-shadow:var(--shadow-md)}
+  .nav-item{flex:1; height:60px; border:none; background:transparent; border-radius:var(--r-md); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--muted); cursor:pointer; font-family:var(--font); font-size:12px; font-weight:600; transition:.12s}
+  .nav-item.active{color:var(--on-primary); background:var(--primary-light)}
+  .nav-item.active .ic{color:var(--primary-hover)}
+
+  /* ====== Total bar ====== */
+  .totalbar{display:flex; align-items:center; gap:var(--s4); background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); padding:var(--s3) var(--s3) var(--s3) var(--s5); box-shadow:var(--shadow-md)}
+  .totalbar .tt{flex:1}
+  .totalbar .tt .tl{font-size:12px; color:var(--muted); font-weight:600}
+  .totalbar .tt .tv{font-size:22px; font-weight:800; letter-spacing:-.01em; font-variant-numeric:tabular-nums}
+
+  /* ====== Snackbar ====== */
+  .snackbar{display:flex; align-items:center; gap:var(--s4); background:var(--text); color:#FBF7EF; border-radius:var(--r-md); padding:var(--s3) var(--s3) var(--s3) var(--s5); box-shadow:var(--shadow-lg)}
+  .snackbar .sm{flex:1; font-size:15px; font-weight:500}
+  .snack-undo{background:transparent; border:none; color:var(--primary); font-family:var(--font); font-size:15px; font-weight:700; cursor:pointer; padding:10px 14px; border-radius:10px; display:inline-flex; align-items:center; gap:6px}
+  .snack-undo:hover{background:rgba(253,184,51,.14)}
+
+  /* ====== Empty state ====== */
+  .empty{text-align:center; padding:var(--s8) var(--s5)}
+  .empty .ei{width:64px; height:64px; border-radius:18px; background:var(--primary-light); color:var(--primary-hover); display:grid; place-items:center; margin:0 auto var(--s4)}
+  .empty .et{font-size:18px; font-weight:600}
+  .empty .ed{font-size:15px; color:var(--muted); margin-top:6px; max-width:36ch; margin-inline:auto}
+
+  /* ====== Sheet ====== */
+  .sheet{background:var(--surface); border:1px solid var(--border); border-top-left-radius:var(--r-xl); border-top-right-radius:var(--r-xl); box-shadow:var(--shadow-lg); padding:var(--s5)}
+  .sheet .handle{width:44px; height:5px; border-radius:var(--r-full); background:var(--border); margin:0 auto var(--s5)}
+
+  /* ====== Step indicator (parent flow) ====== */
+  .steps{display:flex; align-items:center; gap:8px}
+  .steps .dot{height:6px; border-radius:var(--r-full); background:var(--border); flex:1; transition:.2s}
+  .steps .dot.done{background:var(--primary)}
+  .steps .dot.now{background:var(--primary-hover)}
+
+  /* ====== Principles list ====== */
+  .principle{display:flex; gap:var(--s4); padding:var(--s4) 0; border-bottom:1px solid var(--border)}
+  .principle:last-child{border-bottom:0}
+  .principle .pi{width:40px; height:40px; border-radius:11px; background:var(--success-bg); color:var(--success-text); display:grid; place-items:center; flex:none}
+  .principle .pt{font-size:16px; font-weight:600}
+  .principle .pd{font-size:14.5px; color:var(--muted); margin-top:2px; line-height:1.5}
+
+  .note{background:var(--warning-bg); border:1px solid #F2E2BC; border-radius:var(--r-md); padding:var(--s4) var(--s5); font-size:14.5px; color:var(--text); display:flex; gap:var(--s3)}
+  .note .ic{color:var(--warning-text); flex:none}
+  .note b{font-weight:700}
+
+  .term{display:flex; justify-content:space-between; gap:var(--s4); padding:var(--s3) 0; border-bottom:1px solid var(--border); font-size:15px}
+  .term:last-child{border-bottom:0}
+  .term .k{font-weight:600}
+  .term .v{color:var(--muted); text-align:right}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.86em; background:var(--primary-soft); padding:1px 6px; border-radius:6px; color:var(--primary-hover)}
+  .tok{width:100%; border-collapse:collapse}
+  .tok td{padding:12px 14px; border-bottom:1px solid var(--border); font-size:14.5px; vertical-align:middle}
+  .tok tr:last-child td{border-bottom:0}
+  .tok .name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px; font-weight:600; color:var(--primary-hover); white-space:nowrap}
+  .tok .val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; white-space:nowrap}
+  .tok .use2{color:var(--muted)}
+  .icon-rule{display:flex; align-items:flex-end; gap:var(--s7); flex-wrap:wrap}
+  .icon-demo{display:flex; flex-direction:column; align-items:center; gap:8px}
+  .icon-demo span{font-size:12px; color:var(--muted); font-weight:600}
+  .bad{color:var(--danger); font-weight:700}
+  .ok2{color:var(--success-text); font-weight:700}
+  .device{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface); padding:var(--s4); text-align:center}
+  .device .dn{font-size:16px; font-weight:700; font-variant-numeric:tabular-nums}
+  .device .dd{font-size:13px; color:var(--muted); margin-top:4px}
+  .govlist{display:grid; gap:10px; font-size:15px; line-height:1.55}
+  :focus-visible{outline:3px solid var(--primary-hover); outline-offset:2px; border-radius:6px}
+  @media (prefers-reduced-motion: reduce){ *{transition-duration:.001ms !important; animation-duration:.001ms !important} }
+
+  footer{text-align:center; padding:var(--s8) var(--s5); color:var(--muted); font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- Inline Lucide-style icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></symbol>
+  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-cl" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-cr" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-cd" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-pot" viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M7 16h10"/></symbol>
+  <symbol id="i-party" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></symbol>
+  <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="dot"><svg class="ic ic-20"><use href="#i-utensils"/></svg></div>
+  <div>
+    <h1>Canteen Gan En</h1>
+    <div class="sub">Design System · v1.1 · fondasi sebelum wireframe</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Fase 3 — Design System</div>
+    <h2>Tenang, jelas, dan mudah disentuh.</h2>
+    <p>Sistem visual ini dirancang untuk Mama & Papa (±50–60 tahun) yang bukan pengguna teknis. Setiap keputusan tunduk pada satu hal: <b>obvious tanpa baca manual</b>. Warna hanya muncul saat punya arti, target sentuh besar, dan kontras dijaga tinggi.</p>
+  </div>
+
+  <!-- ============ FOUNDATIONS: COLOR ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><div><h3>Warna</h3><p>Krem hangat sebagai dasar; amber hanya untuk aksi; hijau/amber-status hanya untuk pembayaran.</p></div></div>
+    <p class="lead">Aturan emas: <b>jangan pakai warna untuk dekorasi.</b> Latar dan permukaan tetap netral. Amber = "ini yang harus disentuh". Hijau = "lunas/selesai". Setiap status selalu dipasangkan dengan teks + ikon, tidak pernah hanya warna.</p>
+
+    <div class="block-label">Permukaan</div>
+    <div class="grid g4">
+      <div class="sw"><div class="chip" style="background:#FAF6EE"></div><div class="meta"><div class="nm">Background</div><div class="hex">#FAF6EE</div><div class="use">Latar utama seluruh aplikasi</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFCF7; border-bottom:1px solid var(--border)"></div><div class="meta"><div class="nm">Surface</div><div class="hex">#FFFCF7</div><div class="use">Kartu, baris daftar, input</div></div></div>
+      <div class="sw"><div class="chip" style="background:#E8E0D2"></div><div class="meta"><div class="nm">Border</div><div class="hex">#E8E0D2</div><div class="use">Garis pemisah 1px (pemisah utama)</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FEF6E2"></div><div class="meta"><div class="nm">Primary Soft <span class="tag">tambahan</span></div><div class="hex">#FEF6E2</div><div class="use">Hover lembut & baris terpilih</div></div></div>
+    </div>
+
+    <div class="block-label">Brand / Aksi</div>
+    <div class="grid g3">
+      <div class="sw"><div class="chip" style="background:#FDB833"></div><div class="meta"><div class="nm">Primary</div><div class="hex">#FDB833</div><div class="use">Tombol & elemen aksi utama. <b>Teks gelap</b>, bukan putih.</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F9A03F"></div><div class="meta"><div class="nm">Primary Hover</div><div class="hex">#F9A03F</div><div class="use">Hover/tekan tombol utama</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFF1CC"></div><div class="meta"><div class="nm">Primary Light</div><div class="hex">#FFF1CC</div><div class="use">Latar ikon, badge, area terpilih</div></div></div>
+    </div>
+
+    <div class="block-label">Status pembayaran</div>
+    <div class="grid g4">
+      <div class="sw"><div class="chip" style="background:#6FA76D"></div><div class="meta"><div class="nm">Success</div><div class="hex">#6FA76D</div><div class="use">Centang "selesai", aksen lunas</div></div></div>
+      <div class="sw"><div class="chip" style="background:#EAF5E6"></div><div class="meta"><div class="nm">Success Bg</div><div class="hex">#EAF5E6</div><div class="use">Latar pill "Lunas"</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFF4DA"></div><div class="meta"><div class="nm">Warning Bg</div><div class="hex">#FFF4DA</div><div class="use">Latar pill "Belum Bayar"</div></div></div>
+      <div class="sw"><div class="chip" style="background:#C2603F"></div><div class="meta"><div class="nm">Danger <span class="tag">tambahan</span></div><div class="hex">#C2603F</div><div class="use">Hapus permanen saja — dipakai sangat hemat</div></div></div>
+    </div>
+
+    <div class="block-label">Teks</div>
+    <div class="grid g3">
+      <div class="sw"><div class="chip" style="background:#2F2A24"></div><div class="meta"><div class="nm">Text</div><div class="hex">#2F2A24</div><div class="use">Teks utama. Kontras tinggi di atas Background.</div></div></div>
+      <div class="sw"><div class="chip" style="background:#756B5D"></div><div class="meta"><div class="nm">Muted Text</div><div class="hex">#756B5D</div><div class="use">Teks sekunder, label, metadata</div></div></div>
+      <div class="sw"><div class="chip" style="background:#3F6B43"></div><div class="meta"><div class="nm">Success/Warning Text <span class="tag">tambahan</span></div><div class="hex">#3F6B43 / #936A12</div><div class="use">Teks pekat agar pill tetap terbaca</div></div></div>
+    </div>
+
+    <div style="margin-top:var(--s5)" class="note">
+      <svg class="ic ic-20"><use href="#i-info"/></svg>
+      <div><b>Keputusan kontras:</b> teks di tombol amber dibuat gelap (#2F2A24), bukan putih — putih di atas amber gagal uji keterbacaan dan menyilaukan mata yang lebih tua. Tidak ada teks di bawah 13px untuk informasi penting.</div>
+    </div>
+  </section>
+
+  <!-- ============ TYPOGRAPHY ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><div><h3>Tipografi</h3><p>Plus Jakarta Sans untuk semua. Skala besar & lega untuk keterbacaan.</p></div></div>
+    <p class="lead">Ukuran dasar <b>17px</b> — lebih besar dari web biasa, sengaja, untuk mata 50–60 tahun. Bobot dijaga di 400/600/700/800; bobot tipis (200/300) dilarang karena sulit dibaca.</p>
+    <div class="card pad">
+      <div class="type-row"><div class="type-spec t-display">Tagihan hari ini</div><div class="type-info">Display · 30 / 800 / 1.15</div></div>
+      <div class="type-row"><div class="type-spec t-title">Kamis, 27 Juni 2026</div><div class="type-info">Title layar · 24 / 700</div></div>
+      <div class="type-row"><div class="type-spec t-heading">Rekap Masak</div><div class="type-info">Heading · 20 / 600</div></div>
+      <div class="type-row"><div class="type-spec t-subhead">Belum Bayar</div><div class="type-info">Subhead · 18 / 600</div></div>
+      <div class="type-row"><div class="type-spec t-bodyl">Nasi Ayam, Air Mineral — diambil saat Istirahat 1.</div><div class="type-info">Body L · 17 / 400</div></div>
+      <div class="type-row"><div class="type-spec t-body">Teks pendukung & deskripsi sekunder.</div><div class="type-info">Body · 16 / 400</div></div>
+      <div class="type-row"><div class="type-spec t-label">Nomor WhatsApp</div><div class="type-info">Label · 14 / 600</div></div>
+      <div class="type-row"><div class="type-spec t-price">Rp 75.000</div><div class="type-info">Harga · 19 / 700 · tabular</div></div>
+      <div class="type-row"><div class="type-spec t-meta">26 Juni 2026 · 08:37 WIB</div><div class="type-info">Meta · 13 / 500 · muted</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SPACING / RADIUS / SHADOW ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><div><h3>Spasi, sudut & bayangan</h3><p>Grid 4px, condong lega. Sudut lembut. Bayangan hangat & nyaris tak terlihat.</p></div></div>
+
+    <div class="block-label">Skala spasi (grid 4px)</div>
+    <div class="card pad">
+      <div class="space-demo">
+        <div class="space-item"><div class="space-box" style="width:4px;height:4px"></div><span>4</span></div>
+        <div class="space-item"><div class="space-box" style="width:8px;height:8px"></div><span>8</span></div>
+        <div class="space-item"><div class="space-box" style="width:12px;height:12px"></div><span>12</span></div>
+        <div class="space-item"><div class="space-box" style="width:16px;height:16px"></div><span>16</span></div>
+        <div class="space-item"><div class="space-box" style="width:20px;height:20px"></div><span>20</span></div>
+        <div class="space-item"><div class="space-box" style="width:24px;height:24px"></div><span>24</span></div>
+        <div class="space-item"><div class="space-box" style="width:32px;height:32px"></div><span>32</span></div>
+        <div class="space-item"><div class="space-box" style="width:40px;height:40px"></div><span>40</span></div>
+        <div class="space-item"><div class="space-box" style="width:48px;height:48px"></div><span>48</span></div>
+        <div class="space-item"><div class="space-box" style="width:64px;height:64px"></div><span>64</span></div>
+      </div>
+      <p class="hint" style="margin-top:var(--s5)">Padding kartu standar <b>24</b>. Padding layar <b>20</b>. Jarak antar kartu <b>12–16</b>.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--s5)">
+      <div>
+        <div class="block-label">Sudut (radius)</div>
+        <div class="grid g3">
+          <div class="demo-tile" style="border-radius:8px">8 · pill/badge</div>
+          <div class="demo-tile" style="border-radius:12px">12 · tombol/input</div>
+          <div class="demo-tile" style="border-radius:16px">16 · kartu</div>
+        </div>
+      </div>
+      <div>
+        <div class="block-label">Bayangan (hangat, halus)</div>
+        <div class="grid g3">
+          <div class="demo-tile" style="box-shadow:var(--shadow-sm); border-color:transparent">sm · kartu</div>
+          <div class="demo-tile" style="box-shadow:var(--shadow-md); border-color:transparent">md · sheet</div>
+          <div class="demo-tile" style="box-shadow:var(--shadow-lg); border-color:transparent">lg · undo</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TOUCH TARGETS ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><div><h3>Target sentuh</h3><p>Minimum 48px. Aksi utama lebih besar lagi.</p></div></div>
+    <div class="card pad">
+      <div class="grid g3">
+        <div><div class="block-label" style="margin-top:0">Tombol utama</div><div style="height:56px; background:var(--primary-light); border:1px dashed var(--primary); border-radius:12px; display:grid; place-items:center; font-weight:600; font-size:14px">56 px</div></div>
+        <div><div class="block-label" style="margin-top:0">Input / tombol kedua</div><div style="height:52px; background:var(--primary-light); border:1px dashed var(--primary); border-radius:12px; display:grid; place-items:center; font-weight:600; font-size:14px">52 px</div></div>
+        <div><div class="block-label" style="margin-top:0">Baris daftar</div><div style="height:72px; background:var(--primary-light); border:1px dashed var(--primary); border-radius:12px; display:grid; place-items:center; font-weight:600; font-size:14px">72 px</div></div>
+      </div>
+      <p class="hint" style="margin-top:var(--s4)">Ikon-tombol, langkah +/−, dan item nav minimal <b>48×48</b>. Tidak ada elemen ketuk di bawah 48px di seluruh aplikasi.</p>
+    </div>
+  </section>
+
+  <!-- ============ BUTTONS ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><div><h3>Tombol</h3><p>Satu aksi utama (amber) per layar. Sisanya tenang.</p></div></div>
+    <div class="card pad">
+      <div style="display:flex; gap:var(--s3); flex-wrap:wrap; align-items:center">
+        <button class="btn btn-primary"><svg class="ic ic-20"><use href="#i-check"/></svg>Simpan Pesanan</button>
+        <button class="btn btn-secondary">Batal</button>
+        <button class="btn btn-ghost"><svg class="ic ic-20"><use href="#i-printer"/></svg>Print</button>
+        <button class="btn btn-danger">Hapus</button>
+        <button class="btn btn-primary" disabled>Nonaktif</button>
+      </div>
+      <div style="display:flex; gap:var(--s3); flex-wrap:wrap; align-items:center; margin-top:var(--s4)">
+        <button class="btn btn-primary btn-md">Sedang (48px)</button>
+        <button class="btn btn-secondary btn-md">Sedang</button>
+      </div>
+      <div style="margin-top:var(--s4)"><button class="btn btn-primary btn-block">Tombol penuh — CTA utama di mobile</button></div>
+    </div>
+  </section>
+
+  <!-- ============ INPUTS & SEARCH ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><div><h3>Input & Pencarian</h3><p>Label di atas, area besar, fokus jelas. Cari: nama murid, kelas, atau WhatsApp.</p></div></div>
+    <div class="grid g2">
+      <div class="card pad">
+        <div class="field"><label>Nama Murid</label><input class="input" placeholder="Ketik nama anak…" value="Aisyah Putri"></div>
+        <div class="field" style="margin-bottom:0"><label>Nomor WhatsApp</label><input class="input" placeholder="08…"></div>
+      </div>
+      <div class="card pad">
+        <label class="t-label" style="display:block; margin-bottom:8px">Pencarian Tagihan</label>
+        <div class="search"><svg class="ic"><use href="#i-search"/></svg><input class="input" placeholder="Nama, kelas, atau WhatsApp…"></div>
+        <p class="hint">Satu kotak cari menangani kasus kakak-adik: ketik nama keluarga atau nomor WA yang sama untuk melihat semua.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEPPER, PILLS, SOURCE, SEGMENTED ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><div><h3>Jumlah, status & sumber</h3><p>Komponen kecil yang muncul di mana-mana.</p></div></div>
+    <div class="grid g2">
+      <div class="card pad">
+        <div class="block-label" style="margin-top:0">Penambah jumlah</div>
+        <div class="stepper" data-stepper>
+          <button class="step-btn" data-dec><svg class="ic ic-20"><use href="#i-minus"/></svg></button>
+          <span class="step-val" data-val>1</span>
+          <button class="step-btn" data-inc><svg class="ic ic-20"><use href="#i-plus"/></svg></button>
+        </div>
+
+        <div class="block-label">Status pembayaran (warna + teks + ikon)</div>
+        <div style="display:flex; gap:var(--s3); flex-wrap:wrap">
+          <span class="pill pill-lunas"><svg class="ic ic-20"><use href="#i-check"/></svg>Lunas</span>
+          <span class="pill pill-belum"><svg class="ic ic-20"><use href="#i-clock"/></svg>Belum Bayar</span>
+        </div>
+      </div>
+
+      <div class="card pad">
+        <div class="block-label" style="margin-top:0">Sumber transaksi</div>
+        <div style="display:flex; gap:var(--s3); flex-wrap:wrap">
+          <span class="src src-preorder"><svg class="ic ic-20"><use href="#i-bag"/></svg>PO</span>
+          <span class="src src-penjualan"><svg class="ic ic-20"><use href="#i-zap"/></svg>Penjualan Kantin</span>
+        </div>
+        <p class="hint">Dua sumber, satu buku kas, satu jenis Tagihan. Tag ini hanya penanda asal — tidak mengubah alur uang.</p>
+
+        <div class="block-label">Segmented (filter)</div>
+        <div class="segmented" data-seg>
+          <button class="seg active">Belum Bayar</button>
+          <button class="seg">Lunas</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CARDS & ROWS ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">08</span><div><h3>Kartu & baris daftar</h3><p>Tata letak berbasis kartu — pola utama seluruh aplikasi.</p></div></div>
+
+    <div class="block-label">Kartu angka & kartu aksi</div>
+    <div class="grid g2">
+      <div class="grid g2" style="gap:var(--s3)">
+        <div class="stat"><div class="num">28</div><div class="lab">Pesanan</div></div>
+        <div class="stat"><div class="num">96</div><div class="lab">Porsi</div></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:var(--s3)">
+        <div class="action"><div class="ai"><svg class="ic"><use href="#i-pot"/></svg></div><div class="at"><div class="t">Rekap Masak</div><div class="d">Jumlah masakan hari ini</div></div><svg class="ic chev"><use href="#i-cr"/></svg></div>
+        <div class="action"><div class="ai"><svg class="ic"><use href="#i-box"/></svg></div><div class="at"><div class="t">Packing</div><div class="d">12 dari 28 selesai</div></div><svg class="ic chev"><use href="#i-cr"/></svg></div>
+      </div>
+    </div>
+
+    <div class="block-label">Baris pesanan / tagihan</div>
+    <div class="list">
+      <div class="row">
+        <div class="lead-ic"><svg class="ic ic-20"><use href="#i-bag"/></svg></div>
+        <div class="body">
+          <div class="l1">Aisyah <span class="src src-preorder" style="height:22px; font-size:11px"><svg class="ic ic-20"><use href="#i-bag"/></svg>PO</span></div>
+          <div class="l2">3B · Nasi Ayam ×1, Air ×1 · ambil Istirahat 1</div>
+        </div>
+        <div class="trail"><span class="t-price">Rp 16.000</span><span class="pill pill-belum">Belum Bayar</span></div>
+      </div>
+      <div class="row">
+        <div class="lead-ic"><svg class="ic ic-20"><use href="#i-zap"/></svg></div>
+        <div class="body">
+          <div class="l1">Bima <span class="src src-penjualan" style="height:22px; font-size:11px"><svg class="ic ic-20"><use href="#i-zap"/></svg>Penjualan</span></div>
+          <div class="l2">5A · Nasi Goreng ×2</div>
+        </div>
+        <div class="trail"><span class="t-price">Rp 26.000</span><span class="pill pill-lunas">Lunas</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MENU TILES & TOTAL BAR ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">09</span><div><h3>Penjualan cepat</h3><p>Ketuk menu untuk membangun penjualan kantin, dengan bar total melayang.</p></div></div>
+    <div class="card pad">
+      <div class="grid g3">
+        <button class="tile sel"><span class="qty">2</span><div class="nm">Nasi Ayam</div><div class="pr">Rp 15.000</div></button>
+        <button class="tile"><div class="nm">Nasi Goreng</div><div class="pr">Rp 13.000</div></button>
+        <button class="tile sel"><span class="qty">1</span><div class="nm">Mie Goreng</div><div class="pr">Rp 12.000</div></button>
+        <button class="tile"><div class="nm">Air Mineral</div><div class="pr">Rp 4.000</div></button>
+        <button class="tile sel"><span class="qty">3</span><div class="nm">Es Teh</div><div class="pr">Rp 5.000</div></button>
+        <button class="tile"><div class="nm">Risol</div><div class="pr">Rp 6.000</div></button>
+      </div>
+      <div style="margin-top:var(--s5)">
+        <div class="totalbar">
+          <div class="tt"><div class="tl">3 item · Total</div><div class="tv">Rp 57.000</div></div>
+          <button class="btn btn-primary">Catat Penjualan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DATE SELECTOR & TIMESTAMP ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">10</span><div><h3>Tanggal Layanan & Timestamp</h3><p>Tanggal Layanan = sumbu utama. Tanggal Pesan = audit, dibuat kecil.</p></div></div>
+    <div class="grid g2">
+      <div class="card pad">
+        <div class="block-label" style="margin-top:0">Pemilih Tanggal Layanan (persisten di header)</div>
+        <div class="datebar">
+          <button class="date-nav"><svg class="ic"><use href="#i-cl"/></svg></button>
+          <div class="date-main"><div class="dl">Tanggal Layanan</div><div class="dv">Kamis, 27 Jun 2026</div></div>
+          <button class="date-nav"><svg class="ic"><use href="#i-cr"/></svg></button>
+        </div>
+        <p class="hint">Selalu terlihat di setiap layar operasional supaya Papa tak pernah packing untuk hari yang salah.</p>
+      </div>
+      <div class="card pad">
+        <div class="block-label" style="margin-top:0">Timestamp transaksi</div>
+        <div class="ts">
+          <span class="serve"><svg class="ic ic-20"><use href="#i-cal"/></svg>Layanan · Jum, 28 Jun 2026</span>
+          <div style="margin-top:10px">Dipesan: 26 Juni 2026 · 08:37 WIB</div>
+        </div>
+        <p class="hint">Tanggal Layanan menonjol (badge). Tanggal Pesan + jam WIB muncul kecil, hanya untuk riwayat/audit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PACKING CHECKLIST ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">11</span><div><h3>Checklist packing</h3><p>Sederhana saja — centang besar, tanpa kerumitan.</p></div></div>
+    <div class="list">
+      <div class="check-row done"><div class="checkbox"><svg class="ic ic-20"><use href="#i-check"/></svg></div><div class="body"><div class="l1">Citra · 2A</div><div class="l2">Mie Goreng ×1, Air ×1</div></div></div>
+      <div class="check-row"><div class="checkbox"></div><div class="body"><div class="l1">Aisyah · 3B</div><div class="l2">Nasi Ayam ×1, Air ×1</div></div></div>
+      <div class="check-row"><div class="checkbox"></div><div class="body"><div class="l1">Bima · 5A</div><div class="l2">Nasi Goreng ×2</div></div></div>
+    </div>
+    <p class="hint">Ketuk baris untuk menandai paket sudah dikemas. Bisa diurungkan.</p>
+  </section>
+
+  <!-- ============ UNDO / SHEET / EMPTY ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">12</span><div><h3>Undo, Sheet & keadaan kosong</h3><p>Undo menggantikan dialog "Apakah Anda yakin?".</p></div></div>
+
+    <div class="block-label">Snackbar Undo (muncul 5 detik)</div>
+    <div class="snackbar" style="max-width:480px">
+      <span class="sm">Ditandai Lunas — Ibu Sari</span>
+      <button class="snack-undo"><svg class="ic ic-20"><use href="#i-undo"/></svg>Urungkan</button>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--s6)">
+      <div>
+        <div class="block-label">Bottom sheet (untuk Print / detail)</div>
+        <div class="sheet">
+          <div class="handle"></div>
+          <div style="font-size:18px; font-weight:700; margin-bottom:var(--s4)">Print Struk</div>
+          <div style="display:flex; flex-direction:column; gap:var(--s3)">
+            <button class="btn btn-primary btn-block"><svg class="ic ic-20"><use href="#i-printer"/></svg>Print Sekarang</button>
+            <button class="btn btn-secondary btn-block">Tutup</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="block-label">Keadaan kosong (selalu ramah, tak pernah "No Data")</div>
+        <div style="display:flex; flex-direction:column; gap:var(--s3)">
+          <div class="card">
+            <div class="empty">
+              <div class="ei"><svg class="ic ic-28"><use href="#i-inbox"/></svg></div>
+              <div class="et">Belum ada pesanan</div>
+              <div class="ed">Pesanan untuk tanggal ini akan muncul di sini. Buat dari tombol Order.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="empty">
+              <div class="ei" style="background:var(--success-bg); color:var(--success-text)"><svg class="ic ic-28"><use href="#i-party"/></svg></div>
+              <div class="et">Semua tagihan lunas</div>
+              <div class="ed">Tidak ada yang belum bayar hari ini. Kerja bagus.</div>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Filosofi: layar kosong adalah ajakan bertindak atau kabar baik — bukan jalan buntu. Pakai ikon Lucide (bukan emoji) + satu kalimat hangat.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NAVIGATION ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">13</span><div><h3>Navigasi</h3><p>Admin: 4 tab selalu terlihat. Parent: tanpa tab, hanya alur ber-langkah.</p></div></div>
+
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <div class="block-label" style="margin-top:0">Admin — Bottom Navigation (4 tab)</div>
+        <div class="bottomnav">
+          <button class="nav-item active"><svg class="ic"><use href="#i-bag"/></svg>Order</button>
+          <button class="nav-item"><svg class="ic"><use href="#i-zap"/></svg>Penjualan</button>
+          <button class="nav-item"><svg class="ic"><use href="#i-receipt"/></svg>Tagihan</button>
+          <button class="nav-item"><svg class="ic"><use href="#i-book"/></svg>Menu</button>
+        </div>
+        <p class="hint">Packing, Rekap Masak & Print = halaman turunan, bukan tab. Selalu terlihat → tidak perlu mengingat menu tersembunyi.</p>
+      </div>
+      <div>
+        <div class="block-label" style="margin-top:0">Parent — Indikator langkah</div>
+        <div class="card pad">
+          <div class="steps">
+            <span class="dot done"></span><span class="dot done"></span><span class="dot now"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <div style="margin-top:14px; font-size:14px; color:var(--muted)">Langkah 3 dari 5 · Nomor WhatsApp</div>
+        </div>
+        <p class="hint">Parent hanya membuka link Pre-order: alur lurus → "Pesanan Berhasil". Tanpa dashboard, tanpa tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRINCIPLES ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">14</span><div><h3>Prinsip pemakaian</h3><p>Aturan yang mengikat seluruh komponen di atas.</p></div></div>
+    <div class="card pad">
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-eye"/></svg></div><div><div class="pt">Satu layar = satu tugas utama</div><div class="pd">Setiap layar punya satu aksi amber. Tugas lain dibuat sekunder atau dipindah ke halaman turunan.</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-hand"/></svg></div><div><div class="pt">Undo, bukan konfirmasi</div><div class="pd">Tandai Lunas, hapus, selesai packing → langsung jalan + snackbar "Urungkan" 5 detik. Tanpa dialog "yakin?".</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-layers"/></svg></div><div><div class="pt">Warna tak pernah sendirian</div><div class="pd">Status selalu warna + teks + ikon. Pengguna tidak perlu menghafal arti warna.</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-cal"/></svg></div><div><div class="pt">Tanggal Layanan adalah jangkar</div><div class="pd">Selalu di header. Tanggal Pesan disembunyikan ke ukuran kecil, hanya untuk audit.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ============ MICROCOPY ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">15</span><div><h3>Bahasa & istilah</h3><p>Indonesia sederhana. Konsisten di seluruh aplikasi.</p></div></div>
+    <div class="grid g2">
+      <div class="card pad">
+        <div class="term"><span class="k">Order</span><span class="v">menu/aksi pesanan</span></div>
+        <div class="term"><span class="k">Pre-order (PO)</span><span class="v">pesan dulu untuk Tanggal Layanan</span></div>
+        <div class="term"><span class="k">Penjualan</span><span class="v">penjualan kantin langsung</span></div>
+        <div class="term"><span class="k">Tagihan</span><span class="v">daftar yang harus dibayar</span></div>
+        <div class="term"><span class="k">Belum Bayar / Lunas</span><span class="v">status pembayaran</span></div>
+      </div>
+      <div class="card pad">
+        <div class="term"><span class="k">Print</span><span class="v">struk / label</span></div>
+        <div class="term"><span class="k">Packing</span><span class="v">checklist pengemasan</span></div>
+        <div class="term"><span class="k">Tanggal Pesan</span><span class="v">kapan dipesan (audit)</span></div>
+        <div class="term"><span class="k">Tanggal Layanan</span><span class="v">kapan disiapkan/diambil</span></div>
+        <div class="term"><span class="k">Waktu Ambil</span><span class="v">jendela pengambilan</span></div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:var(--s5)">
+      <svg class="ic ic-20"><use href="#i-info"/></svg>
+      <div>Tombol memakai kata kerja aktif yang konsisten dari awal sampai akhir: tombol <b>"Simpan Pesanan"</b> → notifikasi <b>"Pesanan disimpan"</b>. Tidak ada "Submit" atau istilah teknis.</div>
+    </div>
+  </section>
+
+  <!-- ============ DESIGN TOKENS ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">16</span><div><h3>Design Tokens</h3><p>Nilai bernama agar implementasi (React / Flutter) konsisten tanpa menebak.</p></div></div>
+    <div class="card pad">
+      <table class="tok">
+        <tr><td class="name">--page-padding</td><td class="val">20px</td><td class="use2">Padding kiri–kanan setiap layar</td></tr>
+        <tr><td class="name">--header-height</td><td class="val">64px</td><td class="use2">Tinggi header / app bar</td></tr>
+        <tr><td class="name">--bottom-nav-height</td><td class="val">80px</td><td class="use2">Tinggi bottom navigation</td></tr>
+        <tr><td class="name">--container-max</td><td class="val">430px</td><td class="use2">Lebar konten maksimum (kolom HP)</td></tr>
+        <tr><td class="name">--r-sm / md / lg</td><td class="val">8 / 12 / 16px</td><td class="use2">Pill · tombol & input · kartu</td></tr>
+        <tr><td class="name">--shadow-card</td><td class="val">0 1px 2px · .05</td><td class="use2">Kartu & baris daftar</td></tr>
+        <tr><td class="name">--shadow-popup</td><td class="val">0 14px 34px · .10</td><td class="use2">Sheet, snackbar, popover</td></tr>
+        <tr><td class="name">--transition-fast</td><td class="val">150ms</td><td class="use2">Hover, tekan, toggle</td></tr>
+        <tr><td class="name">--transition-normal</td><td class="val">250ms</td><td class="use2">Sheet & perpindahan halaman</td></tr>
+        <tr><td class="name">--ease</td><td class="val">ease-out</td><td class="use2">Satu kurva untuk semua (tanpa bounce)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ ICON RULES ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">17</span><div><h3>Aturan Ikon</h3><p>Satu library, ukuran terbatas, garis konsisten.</p></div></div>
+    <div class="card pad">
+      <div class="icon-rule">
+        <div class="icon-demo"><svg class="ic ic-20"><use href="#i-bag"/></svg><span>20px</span></div>
+        <div class="icon-demo"><svg class="ic"><use href="#i-bag"/></svg><span>24px</span></div>
+        <div class="icon-demo"><svg class="ic ic-28"><use href="#i-bag"/></svg><span>28px</span></div>
+      </div>
+      <div class="govlist" style="margin-top:var(--s6)">
+        <div>Library: <b>Lucide saja</b> — tidak mencampur set ikon lain.</div>
+        <div>Ukuran: <span class="ok2">20 · 24 · 28</span> saja. <span class="bad">Dilarang 17 / 19 / 21</span> atau ukuran ganjil lain.</div>
+        <div>Stroke: <b>2px</b>, ujung &amp; sudut membulat, tanpa fill (garis saja).</div>
+        <div>Warna: ikut teks (<code>currentColor</code>) — <code>--text</code> atau <code>--muted</code>; amber hanya untuk ikon di area aksi.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MOTION ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">18</span><div><h3>Motion</h3><p>Halus, cepat, nyaris tak terlihat. Gerak membantu — bukan menghibur.</p></div></div>
+    <div class="card pad">
+      <div class="govlist">
+        <div>Durasi: <b>150ms</b> untuk interaksi kecil, <b>250ms</b> untuk sheet &amp; halaman.</div>
+        <div>Kurva: <b>ease-out</b> saja — satu kurva untuk semua.</div>
+        <div><span class="bad">Tanpa</span> bounce · <span class="bad">tanpa</span> elastic · <span class="bad">tanpa</span> zoom · <span class="bad">tanpa</span> animasi lucu.</div>
+        <div>Hormati <code>prefers-reduced-motion</code>: jika pengguna mematikan animasi, semua transisi nyaris hilang.</div>
+      </div>
+      <p class="hint" style="margin-top:var(--s4)">Tekan tombol, toggle, atau langkah +/− di atas untuk merasakan transisi 150ms ini.</p>
+    </div>
+  </section>
+
+  <!-- ============ RESPONSIVE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">19</span><div><h3>Responsive</h3><p>HP dulu. Papa &amp; Mama hampir selalu pakai ponsel.</p></div></div>
+    <div class="grid g4">
+      <div class="device"><svg class="ic ic-28" style="margin:0 auto 8px; color:var(--primary-hover)"><use href="#i-phone"/></svg><div class="dn">390px</div><div class="dd">iPhone kecil</div></div>
+      <div class="device"><svg class="ic ic-28" style="margin:0 auto 8px; color:var(--primary-hover)"><use href="#i-phone"/></svg><div class="dn">393px</div><div class="dd">Android umum</div></div>
+      <div class="device"><svg class="ic ic-28" style="margin:0 auto 8px; color:var(--primary-hover)"><use href="#i-phone"/></svg><div class="dn">430px</div><div class="dd">iPhone besar</div></div>
+      <div class="device"><svg class="ic ic-28" style="margin:0 auto 8px; color:var(--muted)"><use href="#i-monitor"/></svg><div class="dn">Desktop</div><div class="dd">bonus · dipusatkan</div></div>
+    </div>
+    <p class="hint" style="margin-top:var(--s4)">Target utama 390–430px. Di desktop, konten <b>dipusatkan</b> selebar <code>--container-max</code> (430px); ruang sisa jadi latar krem — bukan dashboard lebar.</p>
+  </section>
+
+  <!-- ============ ACCESSIBILITY ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">20</span><div><h3>Aksesibilitas</h3><p>Dirancang untuk mata &amp; jari 50–60 tahun sejak awal, bukan tambalan.</p></div></div>
+    <div class="card pad">
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-hand"/></svg></div><div><div class="pt">Target sentuh ≥ 48px</div><div class="pd">Tidak ada elemen ketuk lebih kecil. Aksi utama 52–56px.</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-eye"/></svg></div><div><div class="pt">Kontras WCAG AA</div><div class="pd">Teks gelap di atas krem &amp; di atas amber. Tidak ada teks penting di bawah 13px.</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-keyboard"/></svg></div><div><div class="pt">Fokus &amp; keyboard</div><div class="pd">Setiap elemen interaktif punya focus ring amber yang jelas, bisa dijangkau Tab / Enter.</div></div></div>
+      <div class="principle"><div class="pi"><svg class="ic ic-20"><use href="#i-type"/></svg></div><div><div class="pt">Skala teks dinamis</div><div class="pd">Ukuran mengikuti pengaturan teks OS; tata letak tidak pecah saat huruf diperbesar.</div></div></div>
+    </div>
+  </section>
+
+  <footer>Canteen Gan En — Design System v1.1 · fondasi untuk wireframe &amp; UI berikutnya</footer>
+</div>
+
+<script>
+  // Stepper
+  document.querySelectorAll('[data-stepper]').forEach(s=>{
+    const v=s.querySelector('[data-val]');
+    s.querySelector('[data-inc]').onclick=()=>v.textContent=+v.textContent+1;
+    s.querySelector('[data-dec]').onclick=()=>v.textContent=Math.max(0,+v.textContent-1);
+  });
+  // Segmented
+  document.querySelectorAll('[data-seg]').forEach(g=>{
+    g.querySelectorAll('.seg').forEach(b=>b.onclick=()=>{
+      g.querySelectorAll('.seg').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+  // Checklist
+  document.querySelectorAll('.check-row').forEach(r=>r.onclick=()=>r.classList.toggle('done'));
+  // Quick-add tiles
+  document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>t.classList.toggle('sel'));
+</script>
+</body>
+</html>
