@@ -100,7 +100,9 @@ export default function PreOrderAdmin({
   };
   const handleShareWA = () => {
     const text = encodeURIComponent(
-      `Pre-order Kantin Gan En untuk ${dateLabel} sudah ${open ? "DIBUKA" : "DITUTUP"}!\n\n${open ? `Pesan di sini:\n${poLink}` : "Pre-order untuk tanggal ini sudah ditutup."}`
+      open
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${dateLabel} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\n🪷Gan En🙏🏻✨`
+        : "Pre-order untuk tanggal ini sudah ditutup."
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
