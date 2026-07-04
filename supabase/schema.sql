@@ -47,14 +47,15 @@ create table if not exists cancelled_transaksi (
 );
 
 -- ============================================================
--- app_state — satu baris tunggal untuk status operasional harian
--- (Status Pre-order, Tanggal Layanan, preset Waktu Ambil) +
--- Pengaturan kantin (Nama Kantin, WhatsApp, Printer)
+-- app_state — satu baris tunggal = SATU SESI PO AKTIF (tanggal +
+-- status jadi satu) + preset Waktu Ambil + Pengaturan kantin.
+-- Constraint id=1 sekaligus menegakkan "hanya satu sesi aktif".
 -- ============================================================
 create table if not exists app_state (
   id smallint primary key default 1 check (id = 1),   -- kunci: cuma boleh 1 baris
   preorder_open boolean not null default true,
   service_date date not null default current_date,
+  auto_close_time time not null default '08:00:00',   -- jam tutup otomatis pada hari layanan
   pickup_presets jsonb not null default '["Istirahat 1","Istirahat 2","Istirahat 3","Pulang Sekolah"]'::jsonb,
   nama_kantin text not null default 'Kantin Gan En',
   whatsapp text not null default '',
@@ -62,6 +63,19 @@ create table if not exists app_state (
 );
 
 insert into app_state (id) values (1) on conflict (id) do nothing;
+
+-- ============================================================
+-- kelas — daftar kelas per Tingkat, dikelola admin (Pengaturan).
+-- Sumber picker Kelas di form orang tua — orang tua tidak bisa
+-- mengetik/menambah kelas sendiri.
+-- ============================================================
+create table if not exists kelas (
+  id text primary key,
+  tingkat text not null,
+  nama text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_kelas_tingkat on kelas (tingkat);
 
 -- ============================================================
 -- Row Level Security
@@ -77,11 +91,13 @@ alter table menu enable row level security;
 alter table transaksi enable row level security;
 alter table cancelled_transaksi enable row level security;
 alter table app_state enable row level security;
+alter table kelas enable row level security;
 
 create policy "anon full access" on menu for all using (true) with check (true);
 create policy "anon full access" on transaksi for all using (true) with check (true);
 create policy "anon full access" on cancelled_transaksi for all using (true) with check (true);
 create policy "anon full access" on app_state for all using (true) with check (true);
+create policy "anon full access" on kelas for all using (true) with check (true);
 
 -- ============================================================
 -- Realtime — supaya perubahan (pesanan baru dari /pesan, status
@@ -91,3 +107,51 @@ create policy "anon full access" on app_state for all using (true) with check (t
 alter publication supabase_realtime add table menu;
 alter publication supabase_realtime add table transaksi;
 alter publication supabase_realtime add table app_state;
+alter publication supabase_realtime add table kelas;
+
+-- ============================================================
+-- Penegakan sesi PO di SERVER (bukan sekadar di layar). Lihat
+-- supabase/migration_2_session_rules.sql untuk penjelasan lengkap.
+-- BEFORE INSERT trigger di level database — berlaku untuk SEMUA
+-- jalur insert ke transaksi (lewat app maupun REST langsung),
+-- tidak bisa dilewati dari sisi klien.
+-- ============================================================
+create or replace function enforce_preorder_session()
+returns trigger
+language plpgsql
+as $$
+declare
+  st app_state%rowtype;
+  wib_now timestamp;
+  wib_today date;
+  wib_time time;
+begin
+  if new.source <> 'preorder' then
+    return new;
+  end if;
+
+  select * into st from app_state where id = 1;
+
+  if st.preorder_open is not true then
+    raise exception 'Pre-order sedang ditutup.' using errcode = 'P0001';
+  end if;
+
+  wib_now := now() at time zone 'Asia/Jakarta';
+  wib_today := wib_now::date;
+  wib_time := wib_now::time;
+
+  if wib_today = st.service_date and wib_time >= st.auto_close_time then
+    raise exception 'Pre-order untuk tanggal ini sudah ditutup otomatis (lewat jam %).', to_char(st.auto_close_time, 'HH24:MI') using errcode = 'P0001';
+  end if;
+
+  new.service_date := st.service_date;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_enforce_preorder_session on transaksi;
+create trigger trg_enforce_preorder_session
+before insert on transaksi
+for each row
+execute function enforce_preorder_session();

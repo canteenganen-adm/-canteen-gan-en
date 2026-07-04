@@ -1,17 +1,23 @@
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Calendar, Link2, Copy, Share2, Clock, CookingPot, Printer,
-  Box, Check, X, ChevronRight, Search, Plus, Trash2, Power, AlertCircle, Settings,
+  Box, Check, X, Search, Plus, Trash2, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel } from "../../lib/format";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm } from "../../lib/format";
+import { openPicker } from "../../lib/picker";
 import type { Transaction } from "../../types";
 
 /* ============================================================
    PRE-ORDER (ADMIN) — versi SEDERHANA (untuk mama, gaptek-friendly)
-   TANPA filter/dropdown. Cuma kotak Cari. Daftar utama = preset
-   pertama (mis. "Istirahat 1"), TANPA label. Bagian "Ambil beda
-   waktu" untuk preset lainnya. Ketuk kartu = toggle Sudah Dikemas.
+   Satu SESI PO aktif = tanggal + status jadi satu kartu (bukan dua
+   saklar terpisah). TANPA filter/dropdown pada daftar. Cuma kotak
+   Cari. Daftar utama = preset pertama (mis. "Istirahat 1"), TANPA
+   label. Bagian "Ambil beda waktu" untuk preset lainnya. Ketuk
+   kartu pesanan = toggle Sudah Dikemas.
+   Aturan sebenarnya (buka/tutup/jam tutup/tanggal) ditegakkan di
+   SERVER (trigger DB) — lihat supabase/migration_2_session_rules.sql.
+   Widget di sini hanya kontrol; kebenaran datanya di server.
    ============================================================ */
 
 type AdminOrder = {
@@ -30,6 +36,8 @@ export default function PreOrderAdmin({
   onServiceDateChange,
   open,
   onToggleOpen,
+  autoCloseTime,
+  onAutoCloseTimeChange,
   presets,
   onPresetsChange,
   transactions,
@@ -41,6 +49,8 @@ export default function PreOrderAdmin({
   onServiceDateChange: (d: string) => void;
   open: boolean;
   onToggleOpen: () => void;
+  autoCloseTime: string;
+  onAutoCloseTimeChange: (t: string) => void;
   presets: string[];
   onPresetsChange: (presets: string[]) => void;
   transactions: Transaction[];
@@ -49,9 +59,10 @@ export default function PreOrderAdmin({
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
-  const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "print">(null);
+  const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   const [copied, setCopied] = useState(false);
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const gantiTanggalRef = useRef<HTMLInputElement>(null);
+  const jamTutupRef = useRef<HTMLInputElement>(null);
 
   const defaultAmbil = presets[0] || "Istirahat 1";
 
@@ -94,6 +105,11 @@ export default function PreOrderAdmin({
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
+  const pickNextSchoolDay = () => {
+    onServiceDateChange(nextSchoolDayISO());
+    setSheet(null);
+  };
+
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
@@ -101,52 +117,52 @@ export default function PreOrderAdmin({
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
-            <div className="flex items-center gap-2">
-              <button onClick={onToggleOpen} className="flex items-center gap-2"
-                style={{ height: 38, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 700, fontSize: 13.5, border: "none",
-                  background: open ? t.successBg : t.errorBg, color: open ? t.successText : t.error }}>
-                <Power size={15} /> {open ? "Dibuka" : "Ditutup"}
-              </button>
-              <button
-                onClick={onOpenSettings}
-                aria-label="Pengaturan"
-                style={{ width: 38, height: 38, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
-              >
-                <Settings size={17} />
-              </button>
-            </div>
+            <button
+              onClick={onOpenSettings}
+              aria-label="Pengaturan"
+              style={{ width: 38, height: 38, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
+            >
+              <Settings size={17} />
+            </button>
           </div>
 
-          {/* Tanggal Layanan — seluruh kartu adalah tombol; klik di mana saja
-              membuka date picker secara eksplisit lewat showPicker()/click(),
-              bukan mengandalkan hit-testing input tersembunyi. Diprioritaskan
-              untuk admin yang kurang terbiasa teknologi — tidak ada area kecil
-              yang harus dicari. */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => openDatePicker(dateInputRef)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDatePicker(dateInputRef); }
-            }}
-            className="flex items-center gap-3"
-            style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: "12px 14px", cursor: "pointer", position: "relative" }}
-          >
-            <span style={{ width: 42, height: 42, borderRadius: 11, background: t.primaryLight, color: t.amberText, display: "grid", placeItems: "center", flex: "none" }}><Calendar size={22} /></span>
-            <span style={{ flex: 1 }}>
-              <span style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Tanggal Layanan</span>
-              <span style={{ display: "block", fontSize: 16, fontWeight: 700, marginTop: 2 }}>{dateLabel}</span>
-            </span>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={serviceDate}
-              onChange={(e) => onServiceDateChange(e.target.value)}
-              aria-label="Pilih Tanggal Layanan"
-              tabIndex={-1}
-              style={{ position: "absolute", opacity: 0, width: 1, height: 1, pointerEvents: "none" }}
-            />
-            <ChevronRight size={18} color={t.textDis} />
+          {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
+          <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
+            <div className="flex items-center justify-between">
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Sesi Pre-order</span>
+              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
+                style={{ height: 32, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 700, fontSize: 12.5, border: "none",
+                  background: open ? t.successBg : t.errorBg, color: open ? t.successText : t.error }}>
+                <Power size={13} /> {open ? "Dibuka" : "Ditutup"}
+              </button>
+            </div>
+
+            {/* Tanggal (besar) — juga bisa diketuk untuk ganti tanggal, sesuai
+                bagian 0 (seluruh area, bukan cuma tombol Ganti Tanggal di bawah) */}
+            <button
+              onClick={() => setSheet("gantiTanggal")}
+              className="flex items-center gap-2"
+              style={{ width: "100%", marginTop: 8, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+            >
+              <Calendar size={20} color={t.amberText} />
+              <span style={{ fontSize: 21, fontWeight: 800 }}>{dateLabel}</span>
+            </button>
+
+            {/* Otomatis tutup jam — "Ubah" buka widget jam besar, seluruhnya bisa diketuk */}
+            <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+              <span style={{ fontSize: 13.5, color: t.text2 }}>
+                Otomatis tutup jam <b style={{ color: t.text }}>{hhmm(autoCloseTime)}</b>
+              </span>
+              <button onClick={() => setSheet("jamTutup")} style={{ background: "transparent", border: "none", color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", padding: "6px 4px" }}>
+                Ubah
+              </button>
+            </div>
+
+            {/* Ganti Tanggal */}
+            <button onClick={() => setSheet("gantiTanggal")} className="flex items-center justify-center gap-2"
+              style={{ width: "100%", height: 46, marginTop: 12, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              <Calendar size={16} /> Ganti Tanggal
+            </button>
           </div>
 
           {/* Ringkasan hari ini */}
@@ -161,7 +177,7 @@ export default function PreOrderAdmin({
             <Action icon={<Link2 size={20} />} label="Bagikan Link" onClick={() => setSheet("link")} />
             <Action icon={<Clock size={20} />} label="Waktu Ambil" onClick={() => setSheet("waktu")} />
             <Action icon={<CookingPot size={20} />} label="Rekap Masak" onClick={() => setSheet("rekap")} />
-            <Action icon={<Printer size={20} />} label="Print" onClick={() => setSheet("print")} />
+            <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
           </div>
 
           {/* Cari (satu-satunya kontrol daftar) */}
@@ -195,6 +211,59 @@ export default function PreOrderAdmin({
       </div>
 
       {/* Sheets */}
+      {sheet === "gantiTanggal" && (
+        <Sheet title="Ganti Tanggal" onClose={() => setSheet(null)}>
+          <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
+          <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
+            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+            <Calendar size={18} /> Hari Sekolah Berikutnya
+          </button>
+          <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, margin: "12px 0" }}>atau</div>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openPicker(gantiTanggalRef)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(gantiTanggalRef); } }}
+            className="flex items-center gap-3"
+            style={{ position: "relative", height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}
+          >
+            <Calendar size={18} color={t.amberText} />
+            <span style={{ fontWeight: 700, fontSize: 15 }}>Pilih tanggal lain</span>
+            <input
+              ref={gantiTanggalRef}
+              type="date"
+              value={serviceDate}
+              onChange={(e) => { onServiceDateChange(e.target.value); setSheet(null); }}
+              aria-label="Pilih tanggal lain"
+              tabIndex={-1}
+              style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }}
+            />
+          </div>
+        </Sheet>
+      )}
+      {sheet === "jamTutup" && (
+        <Sheet title="Jam Tutup Otomatis" onClose={() => setSheet(null)}>
+          <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pre-order otomatis ditutup pada jam ini di hari layanan. Ditegakkan di server — bukan cuma tampilan.</div>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openPicker(jamTutupRef)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(jamTutupRef); } }}
+            style={{ position: "relative", height: 84, borderRadius: 16, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, cursor: "pointer", display: "grid", placeItems: "center" }}
+          >
+            <span style={{ fontSize: 34, fontWeight: 800, color: t.amberText, fontVariantNumeric: "tabular-nums" }}>{hhmm(autoCloseTime)}</span>
+            <input
+              ref={jamTutupRef}
+              type="time"
+              value={hhmm(autoCloseTime)}
+              onChange={(e) => onAutoCloseTimeChange(e.target.value + ":00")}
+              aria-label="Jam Tutup Otomatis"
+              tabIndex={-1}
+              style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }}
+            />
+          </div>
+        </Sheet>
+      )}
       {sheet === "link" && (
         <Sheet title="Bagikan Link Pre-order" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>Link untuk {dateLabel}. {open ? "Pre-order sedang dibuka." : "Saat ini ditutup."}</div>
@@ -235,14 +304,14 @@ export default function PreOrderAdmin({
           <div style={{ fontSize: 12.5, color: t.text2, marginTop: 14 }}>Cukup angka untuk dapur — tanpa nama murid.</div>
         </Sheet>
       )}
-      {sheet === "print" && (
-        <Sheet title="Print" onClose={() => setSheet(null)}>
+      {sheet === "cetak" && (
+        <Sheet title="Cetak" onClose={() => setSheet(null)}>
           {([["Rekap per Kelas", Box], ["Rekap per Menu", CookingPot], ["Label Pesanan", Box]] as const).map(([label, Ic]) => (
             <button key={label} className="flex items-center gap-3" style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", padding: "0 16px", color: t.text }}>
               <Ic size={20} color={t.amberText} /><span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 700 }}>{label}</span><Printer size={18} color={t.textDis} />
             </button>
           ))}
-          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 6 }}>Print thermal — segera hadir.</div>
+          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 6 }}>Cetak thermal — segera hadir.</div>
         </Sheet>
       )}
     </div>
@@ -250,20 +319,6 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-/** Buka date picker native secara eksplisit — tidak bergantung pada di mana
- * tepatnya pengguna klik di dalam input, supaya seluruh kartu bisa jadi
- * pemicu (showPicker() bila didukung, fallback ke click()/focus()). */
-function openDatePicker(ref: RefObject<HTMLInputElement | null>) {
-  const el = ref.current;
-  if (!el) return;
-  const withPicker = el as HTMLInputElement & { showPicker?: () => void };
-  if (typeof withPicker.showPicker === "function") {
-    try { withPicker.showPicker(); return; } catch { /* fall through to click() */ }
-  }
-  el.focus();
-  el.click();
-}
-
 function kelasLabel(o: AdminOrder) {
   return o.kelas ? `${o.tingkat} · ${o.kelas}` : o.tingkat;
 }

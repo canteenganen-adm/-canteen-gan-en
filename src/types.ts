@@ -74,3 +74,11 @@ export interface CanteenSettings {
   whatsapp: string;
   printerConnected: boolean;
 }
+
+/** Kelas per Tingkat — dikelola admin (Pengaturan), jadi sumber picker
+ * Kelas di form orang tua (orang tua tidak bisa mengetik/menambah sendiri). */
+export interface Kelas {
+  id: string;
+  tingkat: string;
+  nama: string;
+}

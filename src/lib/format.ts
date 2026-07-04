@@ -14,9 +14,10 @@ const BULAN_PANJANG = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
-/** cth. "Sen, 30 Jun 2025 · 09:12 WIB" — dipakai sebagai label transaksi. */
+/** cth. "Sen, 30 Jun 2025 · 09:12:05 WIB" — dipakai sebagai label transaksi
+ * (Order Timestamp). Detik disertakan untuk keperluan audit. */
 export function nowLabel(d = new Date()) {
-  const jam = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  const jam = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":");
   return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()} · ${jam} WIB`;
 }
 
@@ -26,11 +27,31 @@ export function serviceDateLabel(isoDate: string) {
   return `${HARI_PANJANG[d.getDay()]}, ${d.getDate()} ${BULAN_PANJANG[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+function toISO(d: Date) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
 /** YYYY-MM-DD untuk hari ini (dipakai sebagai default Tanggal Layanan). */
 export function todayISO() {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return toISO(new Date());
+}
+
+/** Hari sekolah berikutnya (besok, tapi lompati Sabtu/Minggu) — default
+ * saat admin membuka sesi PO baru, supaya tidak kejebak jatuh di weekend. */
+export function nextSchoolDayISO(from = new Date()) {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  d.setDate(d.getDate() + 1);
+  while (d.getDay() === 0 || d.getDay() === 6) {
+    d.setDate(d.getDate() + 1);
+  }
+  return toISO(d);
+}
+
+/** cth. "08:00" dari "08:00:00" (kolom time Postgres). */
+export function hhmm(time: string) {
+  return time.slice(0, 5);
 }
 
 export function priceLabel(m: MenuItem) {

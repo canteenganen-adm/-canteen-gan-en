@@ -94,7 +94,7 @@ export default function Tagihan({
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Tagihan</div>
             <div className="flex items-center gap-3">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>Total belum bayar</div>
+                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>Total Belum Dibayar</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: t.amberText }}>{rupiah(grandTotal)}</div>
               </div>
               <button
@@ -217,7 +217,7 @@ function Empty({ q }: { q: string }) {
         <Check size={28} />
       </div>
       <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : "Semua tagihan lunas"}</div>
-      <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Tidak ada yang belum bayar. Kerja bagus."}</div>
+      <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Tidak ada yang belum dibayar. Kerja bagus."}</div>
     </div>
   );
 }

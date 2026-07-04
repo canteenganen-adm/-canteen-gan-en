@@ -1,22 +1,30 @@
 import { useState } from "react";
 import {
-  Plus, Minus, ChevronRight, ArrowLeft, Check, Clock, Layers,
-  Store, Calendar, StickyNote, ShoppingBag,
+  Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Layers, Trash2,
+  Store, Calendar, StickyNote, ShoppingBag, AlertCircle, X,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, orderNo } from "../../lib/format";
-import type { MenuItem, Variant } from "../../types";
+import { rupiah, orderNo, serviceDateLabel } from "../../lib/format";
+import { fetchAppState } from "../../lib/canteenApi";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
+import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
 
 /* ============================================================
    PRE-ORDER (PARENT) — Canteen Gan En  ·  halaman link orang tua
-   Decision Lock §5: link-only, tanpa akun/dashboard/riwayat.
-   Identitas: Nama Murid · Tingkat · Kelas(opsional) · WhatsApp(wajib).
-   Layar akhir = Konfirmasi Pesanan ("Pesanan Berhasil Dikirim") + Bukti Pesanan.
+   Link-only, tanpa akun/dashboard/riwayat. Orang tua TIDAK PERNAH
+   memilih tanggal — cuma lihat Tanggal Layanan (read-only) dari
+   sesi aktif. Satu halaman "Periksa Pesanan" gabung: daftar item
+   (+/-, minus jadi ikon hapus saat qty 1) + Data Pemesan, ala
+   GrabFood/Shopee. Form juga dipakai Guru/Karyawan (tanpa kelas).
+   Kelas = picker (bottom sheet) dari daftar yang dikelola admin —
+   orang tua tidak bisa mengetik/menambah kelas sendiri.
+   Server (trigger DB) yang menentukan boleh/tidak & tanggal
+   sebenarnya — di sini cuma dicek ulang sesaat sebelum kirim supaya
+   pesan error jelas kalau link sudah basah (sesi berubah/ditutup).
    ============================================================ */
 
-const TINGKAT = ["TK A", "TK B", "SD", "SMP", "SMA", "Guru/Karyawan"];
-const NO_KELAS = "Guru/Karyawan";
 const DEFAULT_PICKUP_FALLBACK = "Istirahat 1";
+const MIN_WA_DIGITS = 10;
 
 export interface PreOrderReceipt {
   no: string;
@@ -44,6 +52,7 @@ export default function PreOrderParent({
   serviceDate,
   open,
   menus,
+  kelasList,
   pickupOptions,
   onSubmit,
 }: {
@@ -52,24 +61,32 @@ export default function PreOrderParent({
   serviceDate: string;
   open: boolean;
   menus: MenuItem[];
+  kelasList: Kelas[];
   pickupOptions: string[];
-  onSubmit: (r: PreOrderReceipt) => void;
+  onSubmit: (r: PreOrderReceipt) => Promise<Transaction>;
 }) {
   const defaultPickup = pickupOptions[0] || DEFAULT_PICKUP_FALLBACK;
-  const [step, setStep] = useState<"landing" | "menu" | "form" | "done">("landing");
+  const [step, setStep] = useState<"landing" | "menu" | "checkout" | "done">("landing");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [variantFor, setVariantFor] = useState<MenuItem | null>(null);
   const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [showKelasSheet, setShowKelasSheet] = useState(false);
   const [form, setForm] = useState({ nama: "", tingkat: "", kelas: "", wa: "", ambil: defaultPickup });
   const [tried, setTried] = useState(false);
   const [receipt, setReceipt] = useState<PreOrderReceipt | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sessionClosed, setSessionClosed] = useState(false);
 
-  const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS;
+  const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS_TINGKAT;
+  const availableKelas = kelasList.filter((k) => k.tingkat === form.tingkat);
   const pre = menus.filter((m) => m.channels.preorder);
   const lines = Object.values(cart);
   const total = lines.reduce((s, l) => s + (l.variant ? l.variant.price : l.menu.price ?? 0) * l.qty, 0);
   const count = lines.reduce((s, l) => s + l.qty, 0);
+  const waDigits = form.wa.replace(/\D/g, "");
 
+  const keyOf = (l: CartLine) => l.menu.id + (l.variant ? ":" + l.variant.id : "");
   const add = (menu: MenuItem, variant?: Variant) => {
     const key = menu.id + (variant ? ":" + variant.id : "");
     setCart((c) => ({ ...c, [key]: { menu, variant: variant || null, qty: (c[key]?.qty || 0) + 1, note: c[key]?.note || "" } }));
@@ -83,32 +100,61 @@ export default function PreOrderParent({
   const tap = (m: MenuItem) => (m.variants.length ? setVariantFor(m) : add(m));
   const qtyOf = (id: string) => Object.values(cart).filter((l) => l.menu.id === id).reduce((s, l) => s + l.qty, 0);
 
-  const invalid = () => !form.nama.trim() || !form.tingkat || !form.wa.trim() || (kelasNeeded && !form.kelas.trim());
+  const pickTingkat = (tg: string) => setForm({ ...form, tingkat: tg, kelas: "" });
 
-  const submit = () => {
+  const invalid = () =>
+    !form.nama.trim() || !form.tingkat || waDigits.length < MIN_WA_DIGITS || (kelasNeeded && !form.kelas) || count === 0;
+
+  const submit = async () => {
     if (invalid()) { setTried(true); return; }
-    const kelasLbl = kelasNeeded ? `${form.tingkat} · ${form.kelas}` : form.tingkat;
-    const r: PreOrderReceipt = {
-      no: orderNo(), nama: form.nama, tingkat: form.tingkat, kelas: kelasNeeded ? form.kelas : "",
-      kelasLabel: kelasLbl, wa: form.wa, ambil: form.ambil, serviceDate, submittedAt: new Date().toLocaleString("id-ID"),
-      items: lines.map((l) => ({ name: l.menu.name, variant: l.variant?.name || null, price: l.variant ? l.variant.price : l.menu.price ?? 0, qty: l.qty, note: l.note || "" })),
-      total,
-    };
-    onSubmit(r); setReceipt(r); setStep("done");
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      // Cegah "link basah": cek ulang sesi langsung dari server sesaat
+      // sebelum kirim, bukan cuma pakai data yang mungkin sudah lama.
+      const fresh = await fetchAppState();
+      if (!fresh.preorderOpen) {
+        setSessionClosed(true);
+        setSubmitError("Pre-order sudah ditutup. Silakan hubungi kantin.");
+        setSubmitting(false);
+        return;
+      }
+
+      const kelasLbl = kelasNeeded ? `${form.tingkat} · ${form.kelas}` : form.tingkat;
+      const r: PreOrderReceipt = {
+        no: orderNo(), nama: form.nama, tingkat: form.tingkat, kelas: kelasNeeded ? form.kelas : "",
+        kelasLabel: kelasLbl, wa: waDigits, ambil: form.ambil, serviceDate, submittedAt: new Date().toLocaleString("id-ID"),
+        items: lines.map((l) => ({ name: l.menu.name, variant: l.variant?.name || null, price: l.variant ? l.variant.price : l.menu.price ?? 0, qty: l.qty, note: l.note || "" })),
+        total,
+      };
+      const confirmed = await onSubmit(r);
+      setReceipt({ ...r, serviceDate: confirmed.serviceDate ? serviceDateLabel(confirmed.serviceDate) : serviceDate });
+      setStep("done");
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Gagal mengirim pesanan. Coba lagi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetAll = () => {
+    setCart({}); setForm({ nama: "", tingkat: "", kelas: "", wa: "", ambil: defaultPickup });
+    setTried(false); setSubmitError(null); setStep("landing");
   };
 
   if (step === "landing") {
+    const closed = !open || sessionClosed;
     return (
       <Screen>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
           <div style={{ width: 76, height: 76, borderRadius: 22, background: t.primary, color: t.text, display: "grid", placeItems: "center", margin: "0 auto 18px" }}><Store size={38} /></div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{kantin}</div>
           <div className="flex items-center justify-center gap-2" style={{ marginTop: 10, color: t.text2, fontSize: 14.5 }}><Calendar size={16} /> {serviceDate}</div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: open ? t.successBg : t.errorBg, color: open ? t.successText : t.error }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: open ? t.success : t.error }} /> Pre-order {open ? "Dibuka" : "Ditutup"}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: closed ? t.errorBg : t.successBg, color: closed ? t.error : t.successText }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: closed ? t.error : t.success }} /> Pre-order {closed ? "Ditutup" : "Dibuka"}
           </div>
           <div style={{ marginTop: 36 }}>
-            {open ? (
+            {!closed ? (
               <button onClick={() => setStep("menu")} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
                 <ShoppingBag size={22} /> Mulai Memesan
               </button>
@@ -134,7 +180,7 @@ export default function PreOrderParent({
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: t.amberText, marginBottom: 12 }}>Bukti Pesanan</div>
             <Row k="No. Pesanan" v={receipt.no} />
-            <Row k="Nama Murid" v={receipt.nama} />
+            <Row k="Nama" v={receipt.nama} />
             <Row k="Tingkat / Kelas" v={receipt.kelasLabel} />
             <Row k="Tanggal Layanan" v={receipt.serviceDate} />
             <Row k="Waktu Ambil" v={receipt.ambil} />
@@ -160,8 +206,7 @@ export default function PreOrderParent({
             Mohon menyiapkan kotak bekal makan Ananda dan meletakkannya di kantin sebelum jam masuk sekolah.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
           </div>
-          <button onClick={() => { setCart({}); setForm({ nama: "", tingkat: "", kelas: "", wa: "", ambil: defaultPickup }); setTried(false); setStep("landing"); }}
-            style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+          <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
             Selesai
           </button>
         </div>
@@ -169,21 +214,52 @@ export default function PreOrderParent({
     );
   }
 
-  if (step === "form") {
+  if (step === "checkout") {
     return (
       <Screen>
-        <Top title="Data Pemesan" onBack={() => setStep("menu")} />
-        <div style={{ padding: 20 }}>
-          <Field label="Nama Murid" req err={tried && !form.nama.trim()}>
-            <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="cth. Aisyah Putri" style={inp(tried && !form.nama.trim())} />
+        <Top title="Periksa Pesanan" onBack={() => setStep("menu")} />
+        <div style={{ padding: "4px 20px 20px" }}>
+          {/* Daftar pesanan — bisa +/-, minus jadi ikon hapus saat qty 1 */}
+          <SectionLabel>Pesanan</SectionLabel>
+          {count === 0 ? (
+            <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: 20, textAlign: "center", color: t.text2, marginBottom: 18 }}>
+              Belum ada item. <button onClick={() => setStep("menu")} style={{ border: "none", background: "transparent", color: t.amberText, fontWeight: 700, cursor: "pointer" }}>Tambah menu</button>
+            </div>
+          ) : (
+            <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: "4px 14px", marginBottom: 18 }}>
+              {lines.map((l) => (
+                <div key={keyOf(l)} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{l.menu.name}{l.variant ? ` (${l.variant.name})` : ""}</div>
+                    <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah((l.variant ? l.variant.price : l.menu.price ?? 0) * l.qty)}</div>
+                  </div>
+                  <div className="flex items-center gap-2" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3 }}>
+                    <button onClick={() => dec(keyOf(l))} style={stepBtn} aria-label={l.qty <= 1 ? "Hapus" : "Kurangi"}>
+                      {l.qty <= 1 ? <Trash2 size={16} color={t.error} /> : <Minus size={18} />}
+                    </button>
+                    <span style={{ minWidth: 20, textAlign: "center", fontWeight: 800, fontSize: 15 }}>{l.qty}</span>
+                    <button onClick={() => add(l.menu, l.variant || undefined)} style={stepBtn} aria-label="Tambah"><Plus size={18} /></button>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => setStep("menu")} className="flex items-center gap-1" style={{ padding: "12px 0", background: "transparent", border: "none", color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+                <Plus size={16} /> Tambah menu lain
+              </button>
+            </div>
+          )}
+
+          {/* Data pemesan */}
+          <SectionLabel>Data Pemesan</SectionLabel>
+          <Field label="Nama" req err={tried && !form.nama.trim()}>
+            <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Nama lengkap" style={inp(tried && !form.nama.trim())} />
           </Field>
 
           <Field label="Tingkat" req err={tried && !form.tingkat}>
             <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
-              {TINGKAT.map((tg) => {
+              {TINGKAT_LIST.map((tg) => {
                 const on = tg === form.tingkat;
                 return (
-                  <button key={tg} onClick={() => setForm({ ...form, tingkat: tg, kelas: tg === NO_KELAS ? "" : form.kelas })}
+                  <button key={tg} onClick={() => pickTingkat(tg)}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
                       border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     {tg}
@@ -193,17 +269,20 @@ export default function PreOrderParent({
             </div>
           </Field>
 
+          {/* Kelas — picker (bottom sheet) dari daftar yang dikelola admin */}
           {kelasNeeded && (
-            <Field label="Kelas" req err={tried && !form.kelas.trim()}>
-              <input value={form.kelas}
-                onChange={(e) => setForm({ ...form, kelas: e.target.value })}
-                placeholder="cth. 3B"
-                style={inp(tried && !form.kelas.trim())} />
+            <Field label="Kelas" req err={tried && !form.kelas}>
+              <button onClick={() => setShowKelasSheet(true)} className="flex items-center justify-between"
+                style={{ ...inp(tried && !form.kelas), cursor: "pointer", textAlign: "left" }}>
+                <span style={{ color: form.kelas ? t.text : t.textDis }}>{form.kelas || "Pilih kelas"}</span>
+                <ChevronDown size={18} color={t.text2} />
+              </button>
+              <div style={{ fontSize: 12, color: t.text2, marginTop: 6 }}>Kelas tidak ada? Hubungi kantin untuk menambahkannya.</div>
             </Field>
           )}
 
-          <Field label="Nomor WhatsApp" req err={tried && !form.wa.trim()}>
-            <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value })} placeholder="08…" inputMode="numeric" style={inp(tried && !form.wa.trim())} />
+          <Field label="Nomor WhatsApp" req err={tried && waDigits.length < MIN_WA_DIGITS} errMsg={waDigits.length > 0 && waDigits.length < MIN_WA_DIGITS ? "Nomor WhatsApp minimal 10 angka." : undefined}>
+            <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inp(tried && waDigits.length < MIN_WA_DIGITS)} />
           </Field>
 
           <Field label="Waktu Ambil">
@@ -221,13 +300,39 @@ export default function PreOrderParent({
             </div>
           </Field>
 
-          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 14, margin: "8px 0 16px" }}>
-            <div className="flex items-center justify-between"><span style={{ color: t.text2, fontSize: 14 }}>{count} item</span><span style={{ fontWeight: 800, fontSize: 18 }}>{rupiah(total)}</span></div>
+          <div className="flex items-center justify-between" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: "14px 16px", margin: "8px 0 16px" }}>
+            <span style={{ color: t.text2, fontSize: 14 }}>{count} item</span>
+            <span style={{ fontWeight: 800, fontSize: 20 }}>{rupiah(total)}</span>
           </div>
-          <button onClick={submit} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
-            <Check size={20} /> Kirim Pesanan
+
+          {submitError && (
+            <div className="flex items-center gap-2" style={{ background: t.errorBg, border: `1.5px solid #F3C9C9`, borderRadius: 12, padding: "12px 14px", color: t.error, fontSize: 13.5, marginBottom: 14 }}>
+              <AlertCircle size={16} style={{ flex: "none" }} /> {submitError}
+            </div>
+          )}
+
+          <button onClick={submit} disabled={submitting} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.6 : 1 }}>
+            <Check size={20} /> {submitting ? "Mengirim…" : "Kirim Pesanan"}
           </button>
         </div>
+
+        {/* Sheet pilih kelas */}
+        {showKelasSheet && (
+          <BottomSheet title={`Pilih Kelas · ${form.tingkat}`} onClose={() => setShowKelasSheet(false)}>
+            {availableKelas.length === 0 ? (
+              <div style={{ color: t.text2, fontSize: 14, padding: "8px 0" }}>Belum ada kelas untuk tingkat ini. Hubungi kantin.</div>
+            ) : availableKelas.map((k) => {
+              const on = k.nama === form.kelas;
+              return (
+                <button key={k.id} onClick={() => { setForm({ ...form, kelas: k.nama }); setShowKelasSheet(false); }} className="flex items-center justify-between"
+                  style={{ width: "100%", height: 54, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: on ? t.amberText : t.text }}>{k.nama}</span>
+                  {on && <Check size={18} color={t.amberText} />}
+                </button>
+              );
+            })}
+          </BottomSheet>
+        )}
       </Screen>
     );
   }
@@ -281,25 +386,21 @@ export default function PreOrderParent({
       </div>
 
       {variantFor && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setVariantFor(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 14 }}>{variantFor.name}</div>
-            {variantFor.variants.map((v) => (
-              <button key={v.id} onClick={() => { add(variantFor, v); setVariantFor(null); }} className="flex items-center justify-between"
-                style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
-                <span style={{ fontSize: 16, fontWeight: 700 }}>{v.name}</span>
-                <span className="flex items-center gap-2" style={{ fontWeight: 700 }}>{rupiah(v.price)} <Plus size={18} color={t.amberText} /></span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <BottomSheet title={variantFor.name} onClose={() => setVariantFor(null)}>
+          {variantFor.variants.map((v) => (
+            <button key={v.id} onClick={() => { add(variantFor, v); setVariantFor(null); }} className="flex items-center justify-between"
+              style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
+              <span style={{ fontSize: 16, fontWeight: 700 }}>{v.name}</span>
+              <span className="flex items-center gap-2" style={{ fontWeight: 700 }}>{rupiah(v.price)} <Plus size={18} color={t.amberText} /></span>
+            </button>
+          ))}
+        </BottomSheet>
       )}
 
       {count > 0 && !variantFor && (
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, padding: "12px 20px 18px", background: "linear-gradient(transparent," + t.bg + " 22%)" }}>
           <div style={{ maxWidth: 460, margin: "0 auto" }}>
-            <button onClick={() => setStep("form")} className="flex items-center justify-between" style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.text, padding: "0 18px", cursor: "pointer", boxShadow: "0 6px 20px rgba(253,184,51,.4)" }}>
+            <button onClick={() => setStep("checkout")} className="flex items-center justify-between" style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.text, padding: "0 18px", cursor: "pointer", boxShadow: "0 6px 20px rgba(253,184,51,.4)" }}>
               <span style={{ fontWeight: 700 }}>{count} item · {rupiah(total)}</span>
               <span className="flex items-center gap-1" style={{ fontWeight: 800 }}>Lanjut <ChevronRight size={20} /></span>
             </button>
@@ -325,6 +426,9 @@ function Top({ title, subtitle, onBack }: { title: string; subtitle?: string; on
     </div>
   );
 }
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "4px 2px 10px" }}>{children}</div>;
+}
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-center justify-between" style={{ padding: "5px 0", fontSize: 14 }}>
@@ -333,21 +437,35 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 function Stepper({ val, onMinus, onPlus }: { val: number; onMinus: () => void; onPlus: () => void }) {
-  const b: React.CSSProperties = { width: 40, height: 40, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
   return (
     <div className="flex items-center gap-2" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3 }}>
-      <button onClick={onMinus} style={b}><Minus size={18} /></button>
+      <button onClick={onMinus} style={stepBtn}><Minus size={18} /></button>
       <span style={{ minWidth: 22, textAlign: "center", fontWeight: 800, fontSize: 16 }}>{val}</span>
-      <button onClick={onPlus} style={b}><Plus size={18} /></button>
+      <button onClick={onPlus} style={stepBtn}><Plus size={18} /></button>
     </div>
   );
 }
+function BottomSheet({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+      <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "80vh", overflowY: "auto", padding: 20 }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div>
+          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+const stepBtn: React.CSSProperties = { width: 40, height: 40, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
 const inp = (err: boolean): React.CSSProperties => ({ width: "100%", height: 52, fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${err ? t.error : t.border}`, borderRadius: 12, padding: "0 14px", outline: "none", fontFamily: "inherit" });
-function Field({ label, children, req, err }: { label: string; children: React.ReactNode; req?: boolean; err?: boolean }) {
+function Field({ label, children, req, err, errMsg }: { label: string; children: React.ReactNode; req?: boolean; err?: boolean; errMsg?: string }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}{req && <span style={{ color: t.error }}> *</span>}</div>
-      {children}{err && <div style={{ fontSize: 12.5, color: t.error, marginTop: 6 }}>Wajib diisi.</div>}
+      {children}{err && <div style={{ fontSize: 12.5, color: t.error, marginTop: 6 }}>{errMsg || "Wajib diisi."}</div>}
     </div>
   );
 }

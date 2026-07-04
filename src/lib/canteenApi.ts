@@ -5,6 +5,7 @@ import type {
   CanteenSettings,
   TransactionCustomer,
   TransactionItemSnapshot,
+  Kelas,
 } from "../types";
 
 /* ============================================================
@@ -41,10 +42,17 @@ interface AppStateRow {
   id: number;
   preorder_open: boolean;
   service_date: string;
+  auto_close_time: string;
   pickup_presets: string[];
   nama_kantin: string;
   whatsapp: string;
   printer_connected: boolean;
+}
+
+interface KelasRow {
+  id: string;
+  tingkat: string;
+  nama: string;
 }
 
 const menuRowToItem = (r: MenuRow): MenuItem => ({
@@ -98,6 +106,7 @@ const transactionToRow = (tx: Transaction): TransaksiRow => ({
 export interface AppStateData {
   preorderOpen: boolean;
   serviceDate: string;
+  autoCloseTime: string;
   pickupPresets: string[];
   settings: CanteenSettings;
 }
@@ -105,6 +114,7 @@ export interface AppStateData {
 const appStateRowToData = (r: AppStateRow): AppStateData => ({
   preorderOpen: r.preorder_open,
   serviceDate: r.service_date,
+  autoCloseTime: r.auto_close_time,
   pickupPresets: r.pickup_presets,
   settings: {
     namaKantin: r.nama_kantin,
@@ -112,6 +122,8 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
     printerConnected: r.printer_connected,
   },
 });
+
+const kelasRowToItem = (r: KelasRow): Kelas => ({ id: r.id, tingkat: r.tingkat, nama: r.nama });
 
 /* ---------------- Menu ---------------- */
 
@@ -145,6 +157,21 @@ export async function fetchTransactions(): Promise<Transaction[]> {
 export async function insertTransaction(tx: Transaction): Promise<void> {
   const { error } = await supabase.from("transaksi").upsert(transactionToRow(tx));
   if (error) throw error;
+}
+
+/** Khusus submit Pre-order dari link orang tua. Server (trigger DB) yang
+ * menentukan boleh/tidaknya (sesi dibuka + belum lewat jam tutup) dan
+ * menetapkan service_date — nilai dari klien tidak pernah dipercaya.
+ * Melempar Error dengan pesan yang sudah ramah ditampilkan ke orang tua
+ * kalau server menolak (sesi ditutup / sudah lewat jam tutup otomatis). */
+export async function submitPreOrderTransaction(tx: Transaction): Promise<Transaction> {
+  const { data, error } = await supabase
+    .from("transaksi")
+    .insert(transactionToRow(tx))
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return txRowToTransaction(data as TransaksiRow);
 }
 
 export async function updateTransaction(id: string, patch: Partial<Transaction>): Promise<void> {
@@ -181,11 +208,30 @@ export async function updateAppState(patch: Partial<AppStateRow>): Promise<void>
 export const appStatePatch = {
   preorderOpen: (v: boolean) => updateAppState({ preorder_open: v }),
   serviceDate: (v: string) => updateAppState({ service_date: v }),
+  autoCloseTime: (v: string) => updateAppState({ auto_close_time: v }),
   pickupPresets: (v: string[]) => updateAppState({ pickup_presets: v }),
   namaKantin: (v: string) => updateAppState({ nama_kantin: v }),
   whatsapp: (v: string) => updateAppState({ whatsapp: v }),
   printerConnected: (v: boolean) => updateAppState({ printer_connected: v }),
 };
+
+/* ---------------- Kelas (per Tingkat, dikelola admin) ---------------- */
+
+export async function fetchKelas(): Promise<Kelas[]> {
+  const { data, error } = await supabase.from("kelas").select("*").order("tingkat").order("nama");
+  if (error) throw error;
+  return (data as KelasRow[]).map(kelasRowToItem);
+}
+
+export async function upsertKelas(k: Kelas): Promise<void> {
+  const { error } = await supabase.from("kelas").upsert(k);
+  if (error) throw error;
+}
+
+export async function deleteKelas(id: string): Promise<void> {
+  const { error } = await supabase.from("kelas").delete().eq("id", id);
+  if (error) throw error;
+}
 
 /* ---------------- Realtime ---------------- */
 
@@ -198,6 +244,7 @@ export function subscribeToCanteenChanges(onChange: () => void): () => void {
     .on("postgres_changes", { event: "*", schema: "public", table: "menu" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "transaksi" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "app_state" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "kelas" }, onChange)
     .subscribe();
 
   return () => {

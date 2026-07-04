@@ -5,12 +5,14 @@ import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
-  fetchMenus, fetchTransactions, fetchAppState, subscribeToCanteenChanges,
+  fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
   upsertMenuItem, deleteMenuItem,
   insertTransaction, updateTransaction, deleteTransaction, insertCancelledTransaction,
+  submitPreOrderTransaction,
+  upsertKelas, deleteKelas,
   appStatePatch,
 } from "../lib/canteenApi";
-import type { MenuItem, Transaction, CanteenSettings } from "../types";
+import type { MenuItem, Transaction, CanteenSettings, Kelas } from "../types";
 
 import MasterMenu from "./screens/MasterMenu";
 import Penjualan from "./screens/Penjualan";
@@ -79,8 +81,10 @@ type CanteenStore = ReturnType<typeof useCanteenStore>;
 function useCanteenStore() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [preorderOpen, setPreorderOpenLocal] = useState(true);
   const [serviceDate, setServiceDateLocal] = useState("");
+  const [autoCloseTime, setAutoCloseTimeLocal] = useState("08:00:00");
   const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
   const [loading, setLoading] = useState(true);
@@ -89,15 +93,18 @@ function useCanteenStore() {
 
   const loadAll = useCallback(async () => {
     try {
-      const [menusData, txData, appState] = await Promise.all([
+      const [menusData, txData, appState, kelasData] = await Promise.all([
         fetchMenus(),
         fetchTransactions(),
         fetchAppState(),
+        fetchKelas(),
       ]);
       setMenus(menusData);
       setTransactions(txData);
+      setKelasList(kelasData);
       setPreorderOpenLocal(appState.preorderOpen);
       setServiceDateLocal(appState.serviceDate);
+      setAutoCloseTimeLocal(appState.autoCloseTime);
       setPickupPresetsLocal(appState.pickupPresets);
       setSettingsLocal(appState.settings);
       setError(null);
@@ -189,7 +196,12 @@ function useCanteenStore() {
     });
   };
 
-  const submitPreOrder = (r: PreOrderReceipt) => {
+  /** Submit Pre-order dari link orang tua. TIDAK optimistic — kalau sesi
+   * sudah ditutup/lewat jam tutup, server (trigger DB) menolak dan ini
+   * melempar Error dengan pesan yang siap ditampilkan ke orang tua.
+   * service_date pada baris yang tersimpan SELALU dari server, bukan
+   * dari `serviceDate` lokal ini (nilai lokal cuma dugaan awal). */
+  const submitPreOrder = async (r: PreOrderReceipt): Promise<Transaction> => {
     const tx: Transaction = {
       id: orderNo(),
       source: "preorder",
@@ -204,7 +216,27 @@ function useCanteenStore() {
       packed: false,
       orderNo: r.no,
     };
-    addTransaction(tx);
+    const confirmed = await submitPreOrderTransaction(tx);
+    setTransactions((prev) => [confirmed, ...prev]);
+    return confirmed;
+  };
+
+  /* ---- Kelas (per Tingkat, dikelola admin) ---- */
+  const addKelas = (k: Kelas) => {
+    setKelasList((prev) => [...prev, k]);
+    upsertKelas(k).catch((e) => reportError("addKelas", e));
+  };
+  const patchKelas = (id: string, fields: Partial<Kelas>) => {
+    setKelasList((prev) => {
+      const next = prev.map((k) => (k.id === id ? { ...k, ...fields } : k));
+      const updated = next.find((k) => k.id === id);
+      if (updated) upsertKelas(updated).catch((e) => reportError("patchKelas", e));
+      return next;
+    });
+  };
+  const removeKelas = (id: string) => {
+    setKelasList((prev) => prev.filter((k) => k.id !== id));
+    deleteKelas(id).catch((e) => reportError("removeKelas", e));
   };
 
   /* ---- Status operasional & Pengaturan (app_state) ---- */
@@ -218,6 +250,10 @@ function useCanteenStore() {
   const setServiceDate = (date: string) => {
     setServiceDateLocal(date);
     appStatePatch.serviceDate(date).catch((e) => reportError("setServiceDate", e));
+  };
+  const setAutoCloseTime = (time: string) => {
+    setAutoCloseTimeLocal(time);
+    appStatePatch.autoCloseTime(time).catch((e) => reportError("setAutoCloseTime", e));
   };
   const setPickupPresets = (presets: string[]) => {
     setPickupPresetsLocal(presets);
@@ -233,8 +269,10 @@ function useCanteenStore() {
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked,
+    kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
     serviceDate, setServiceDate,
+    autoCloseTime, setAutoCloseTime,
     pickupPresets, setPickupPresets,
     settings, patchSettings,
     submitPreOrder,
@@ -251,6 +289,7 @@ function ParentRoute({ store }: { store: CanteenStore }) {
       serviceDate={serviceDateLabel(store.serviceDate)}
       open={store.preorderOpen}
       menus={store.menus}
+      kelasList={store.kelasList}
       pickupOptions={store.pickupPresets}
       onSubmit={store.submitPreOrder}
     />
@@ -284,6 +323,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onServiceDateChange={store.setServiceDate}
             open={store.preorderOpen}
             onToggleOpen={store.togglePreorderOpen}
+            autoCloseTime={store.autoCloseTime}
+            onAutoCloseTimeChange={store.setAutoCloseTime}
             presets={store.pickupPresets}
             onPresetsChange={store.setPickupPresets}
             transactions={store.transactions}
@@ -357,6 +398,10 @@ function MainShell({ store }: { store: CanteenStore }) {
           <Pengaturan
             settings={store.settings}
             onChange={store.patchSettings}
+            kelasList={store.kelasList}
+            onAddKelas={store.addKelas}
+            onPatchKelas={store.patchKelas}
+            onRemoveKelas={store.removeKelas}
             onClose={() => setSettingsOpen(false)}
           />
         </div>

@@ -244,7 +244,7 @@ export default function Penjualan({
             <input value={form.kelas} onChange={(e) => setForm({ ...form, kelas: e.target.value })} placeholder="cth. 3B" style={inputStyle(tried && !form.kelas.trim())} />
           </Field>
           <Field label="WhatsApp (opsional)">
-            <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value })} placeholder="08…" style={inputStyle(false)} />
+            <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inputStyle(false)} />
           </Field>
           <button onClick={submitTagihan} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
             <Check size={20} /> Simpan ke Tagihan · {rupiah(total)}
