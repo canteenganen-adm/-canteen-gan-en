@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/panduan", "destination": "/panduan-pemesanan.html" },
+    { "source": "/panduan-pemesanan.html", "destination": "/panduan-pemesanan.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
