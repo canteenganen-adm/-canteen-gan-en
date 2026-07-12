@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   Calendar, Link2, Copy, Share2, Clock, CookingPot, Printer,
-  Box, Check, X, Search, Plus, Trash2, Power, AlertCircle, Settings,
+  Box, Check, X, Search, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm } from "../../lib/format";
@@ -39,6 +39,35 @@ type AdminOrder = {
   total: number;
 };
 
+type MergedGroup = {
+  key: string;
+  ids: string[];
+  nama: string;
+  tingkat: string;
+  kelas: string;
+  ambil: string;
+  allPacked: boolean;
+  somePacked: boolean;
+  flatItems: Transaction["items"];
+  total: number;
+};
+
+function mergeOrders(list: AdminOrder[]): MergedGroup[] {
+  const map = new Map<string, MergedGroup & { _orders: AdminOrder[] }>();
+  for (const o of list) {
+    const key = `${o.nama.toLowerCase()}|${o.kelas.toLowerCase()}`;
+    if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, flatItems: [], total: 0, _orders: [] });
+    const g = map.get(key)!;
+    g.ids.push(o.id);
+    g.allPacked = g.allPacked && o.packed;
+    g.somePacked = g.somePacked || o.packed;
+    g.flatItems = [...g.flatItems, ...o.items];
+    g.total += o.total;
+    g._orders.push(o);
+  }
+  return Array.from(map.values());
+}
+
 export default function PreOrderAdmin({
   serviceDate,
   onServiceDateChange,
@@ -47,7 +76,6 @@ export default function PreOrderAdmin({
   autoCloseTime,
   onAutoCloseTimeChange,
   presets,
-  onPresetsChange,
   transactions,
   onTogglePacked,
   poLink,
@@ -60,7 +88,6 @@ export default function PreOrderAdmin({
   autoCloseTime: string;
   onAutoCloseTimeChange: (t: string) => void;
   presets: string[];
-  onPresetsChange: (presets: string[]) => void;
   transactions: Transaction[];
   onTogglePacked: (id: string) => void;
   poLink: string;
@@ -101,8 +128,17 @@ export default function PreOrderAdmin({
   const match = (o: AdminOrder) =>
     `${o.nama} ${o.tingkat} ${o.kelas}`.toLowerCase().includes(ql) &&
     (tingkatFilter === "Semua" || o.tingkat === tingkatFilter);
-  const utama = orders.filter((o) => o.ambil === defaultAmbil && match(o));
-  const beda = orders.filter((o) => o.ambil !== defaultAmbil && match(o));
+  const utama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
+  const beda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
+
+  const handleGroupTap = (g: MergedGroup) => {
+    const shouldBePacked = !g.allPacked;
+    orders.forEach((o) => {
+      if (g.ids.includes(o.id) && o.packed !== shouldBePacked) {
+        onTogglePacked(o.id);
+      }
+    });
+  };
 
   const dateLabel = useMemo(() => serviceDateLabel(serviceDate), [serviceDate]);
 
@@ -190,7 +226,6 @@ export default function PreOrderAdmin({
           {/* Actions */}
           <div className="flex gap-2" style={{ marginTop: 12 }}>
             <Action icon={<Link2 size={20} />} label="Bagikan Link" onClick={() => setSheet("link")} />
-            <Action icon={<Clock size={20} />} label="Waktu Ambil" onClick={() => setSheet("waktu")} />
             <Action icon={<CookingPot size={20} />} label="Rekap Masak" onClick={() => setSheet("rekap")} />
             <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
           </div>
@@ -226,7 +261,7 @@ export default function PreOrderAdmin({
           <div style={{ fontSize: 13, fontWeight: 800, color: t.text, margin: "8px 2px 10px" }}>Pesanan Hari Ini</div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
-          ) : utama.map((o) => <OrderCard key={o.id} o={o} onTap={() => onTogglePacked(o.id)} />)}
+          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} />)}
 
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
@@ -236,7 +271,7 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
-              {beda.map((o) => <OrderCard key={o.id} o={o} onTap={() => onTogglePacked(o.id)} showAmbil />)}
+              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil />)}
             </>
           )}
         </div>
@@ -306,18 +341,6 @@ export default function PreOrderAdmin({
           </div>
         </Sheet>
       )}
-      {sheet === "waktu" && (
-        <Sheet title="Preset Waktu Ambil" onClose={() => setSheet(null)}>
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>Pilihan yang muncul di form orang tua. Preset pertama tampil tanpa label di daftar utama. Tanpa jam spesifik.</div>
-          {presets.map((p, i) => (
-            <div key={i} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-              <input value={p} onChange={(e) => onPresetsChange(presets.map((x, j) => (j === i ? e.target.value : x)))} style={{ ...inputStyle, flex: 1 }} />
-              <button onClick={() => onPresetsChange(presets.filter((_, j) => j !== i))} style={{ width: 48, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}><Trash2 size={18} /></button>
-            </div>
-          ))}
-          <button onClick={() => onPresetsChange([...presets, "Waktu baru"])} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 48, borderRadius: 12, border: `1.5px dashed ${t.primary}`, background: t.surfaceSoft, color: t.amberText, fontWeight: 700, cursor: "pointer" }}><Plus size={18} /> Tambah Waktu</button>
-        </Sheet>
-      )}
       {sheet === "rekap" && (
         <Sheet title="Rekap Masak" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>{dateLabel} · semua pesanan</div>
@@ -351,30 +374,34 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-function kelasLabel(o: AdminOrder) {
-  return o.kelas ? `${o.tingkat} · ${o.kelas}` : o.tingkat;
-}
-function OrderCard({ o, onTap, showAmbil }: { o: AdminOrder; onTap: () => void; showAmbil?: boolean }) {
+function MergedOrderCard({ g, onTap, showAmbil }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean }) {
+  const partial = g.somePacked && !g.allPacked;
+  const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
+  const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   return (
     <div onClick={onTap}
-      style={{ background: t.surface, border: `1px solid ${o.packed ? "#D8E6D4" : t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
+      style={{ background: t.surface, border: `1px solid ${g.allPacked ? "#D8E6D4" : t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
       <div className="flex items-center gap-3">
         <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-          background: o.packed ? t.success : t.surface, border: `2px solid ${o.packed ? t.success : t.border}`, color: "#fff" }}>
-          {o.packed && <Check size={18} />}
+          background: checkBg, border: `2px solid ${checkBorder}`, color: "#fff" }}>
+          {g.allPacked && <Check size={18} />}
+          {partial && <span style={{ width: 12, height: 2, background: t.text, borderRadius: 2, display: "block" }} />}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
-            <span style={{ fontSize: 18, fontWeight: 800, textDecoration: o.packed ? "line-through" : "none", color: o.packed ? t.text2 : t.text }}>{o.nama}</span>
-            <span style={{ background: tingkatColor(o.tingkat), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
-              {o.kelas || o.tingkat}
+            <span style={{ fontSize: 18, fontWeight: 800, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</span>
+            <span style={{ background: tingkatColor(g.tingkat), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
+              {g.kelas || g.tingkat}
             </span>
-            {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />{o.ambil}</span>}
+            {g.ids.length > 1 && (
+              <span style={{ fontSize: 11, fontWeight: 800, color: t.amberText, background: t.primaryLight, border: `1px solid #F1DFB0`, padding: "2px 8px", borderRadius: 999 }}>{g.ids.length} pesanan</span>
+            )}
+            {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />{g.ambil}</span>}
           </div>
         </div>
       </div>
       <div style={{ marginTop: 10, paddingLeft: 42 }}>
-        {o.items.map((it, i) => (
+        {g.flatItems.map((it, i) => (
           <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
             {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
           </div>

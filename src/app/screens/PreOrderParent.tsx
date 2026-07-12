@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Layers, Trash2,
-  Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search,
+  Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search, HelpCircle,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, orderNo, serviceDateLabel } from "../../lib/format";
@@ -95,6 +95,7 @@ export default function PreOrderParent({
   const [menuQ, setMenuQ] = useState("");
   const [menuCat, setMenuCat] = useState("Semua");
   const [copied, setCopied] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS_TINGKAT;
   const availableKelas = kelasList.filter((k) => k.tingkat === form.tingkat);
@@ -177,7 +178,7 @@ export default function PreOrderParent({
   if (step === "landing") {
     const closed = !open || sessionClosed;
     return (
-      <Screen>
+      <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
           <div style={{ width: 84, height: 84, borderRadius: 24, background: t.primaryLight, display: "grid", placeItems: "center", margin: "0 auto 18px", fontSize: 46 }}>🪷</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{kantin}</div>
@@ -265,7 +266,7 @@ export default function PreOrderParent({
   /* ---------- KONFIRMASI PESANAN (checkout) ---------- */
   if (step === "checkout") {
     return (
-      <Screen>
+      <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
         <Top title="Konfirmasi Pesanan" onBack={() => setStep("menu")} />
         <div style={{ padding: "4px 20px 20px" }}>
           <SectionLabel>Pesanan</SectionLabel>
@@ -396,7 +397,7 @@ export default function PreOrderParent({
   });
 
   return (
-    <Screen>
+    <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
       {/* Sticky header: judul + cari + chip kelompok */}
       <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "18px 20px 10px", borderBottom: `1px solid ${t.divider}` }}>
         <div className="flex items-center gap-3">
@@ -519,10 +520,99 @@ export default function PreOrderParent({
 }
 
 /* ---- shared sub-components ---- */
-function Screen({ children }: { children: React.ReactNode }) {
+function Screen({ children, onHelp, showHelp, onCloseHelp }: {
+  children: React.ReactNode;
+  onHelp?: () => void;
+  showHelp?: boolean;
+  onCloseHelp?: () => void;
+}) {
   return (
-    <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", paddingBottom: 96, position: "relative" }}>{children}</div>
+    <>
+      <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", paddingBottom: 96, position: "relative" }}>{children}</div>
+      </div>
+      {onHelp && (
+        <button onClick={onHelp} aria-label="Panduan pemesanan"
+          style={{ position: "fixed", right: 16, top: 16, zIndex: 10, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(47,42,36,.16)", flexShrink: 0 }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#F9A03F")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = t.primary)}>
+          <HelpCircle size={24} strokeWidth={2.2} />
+        </button>
+      )}
+      {showHelp && onCloseHelp && <HelpModal onClose={onCloseHelp} />}
+    </>
+  );
+}
+function HelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+      <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "88vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 20 }}>🪷</span>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>Panduan Pemesanan</div>
+          </div>
+          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ padding: "20px 20px 32px" }}>
+          <div style={{ fontSize: 13.5, color: t.text2, marginBottom: 20 }}>Cara memesan makanan untuk Ananda sangat mudah dan hanya membutuhkan waktu sekitar 2 menit.</div>
+
+          {/* 5 Langkah */}
+          {[
+            ["Buka halaman pemesanan", "Masuk ke tautan canteen-gan-en.vercel.app/pesan, lalu tekan Mulai Memesan. Tanggal pemesanan sudah disiapkan secara otomatis."],
+            ["Pilih menu yang diinginkan", "Jelajahi menu berdasarkan kategori (Makanan Berat, Buah, Snack, Paket, Puding) atau gunakan kolom Cari. Tekan + Tambah pada setiap menu yang ingin dipesan."],
+            ["Lanjut ke konfirmasi", "Setelah selesai memilih menu, tekan tombol kuning di bagian bawah layar, kemudian pilih Lanjut."],
+            ["Lengkapi data Ananda", "Isi nama, tingkat, kelas, nomor WhatsApp, dan waktu pengambilan. Papa/Mama masih dapat mengubah jumlah pesanan di halaman ini."],
+            ["Kirim pesanan", "Setelah semua data benar, tekan Kirim Pesanan. Jika muncul halaman hijau \"Pesanan Berhasil Dikirim\", pesanan telah kami terima. Tekan Salin Bukti Pesanan untuk menyimpan arsip."],
+          ].map(([judul, isi], i) => (
+            <div key={i} className="flex gap-3" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, color: t.text, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 16, flex: "none" }}>{i + 1}</div>
+              <div>
+                <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 4 }}>{judul}</div>
+                <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.55 }}>{isi}</div>
+              </div>
+            </div>
+          ))}
+
+          {/* Hal yang Perlu Diketahui */}
+          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16, marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📌 Hal yang Perlu Diketahui</div>
+            {[
+              ["Pemesanan ditutup otomatis pukul 08.00 pada hari makan.", "Agar tidak terlewat, kami menyarankan melakukan pemesanan pada malam sebelumnya."],
+              ["Pesanan yang sudah dikirim tidak dapat diubah melalui aplikasi.", "Mohon pastikan kembali menu dan jumlah pesanan sebelum menekan Kirim Pesanan."],
+              ["Mohon menyiapkan kotak bekal Ananda sebelum jam masuk sekolah.", "Kantin tidak menyediakan wadah maupun alat makan."],
+              ["Pembayaran tunai atau transfer:", "BCA 7347028990 a.n. Roswinarti"],
+            ].map(([bold, rest], i) => (
+              <div key={i} style={{ fontSize: 14.5, lineHeight: 1.55, marginBottom: 10, paddingLeft: 14, borderLeft: `3px solid ${t.border}` }}>
+                <span style={{ fontWeight: 700, color: t.text }}>{bold}</span>{" "}
+                <span style={{ color: t.text2 }}>{rest}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* FAQ */}
+          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16, marginTop: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>❓ Pertanyaan Umum</div>
+            {[
+              ["Apakah link pemesanan berbeda setiap hari?", "Tidak. Link selalu sama. Tanggal makan ditentukan otomatis oleh kantin."],
+              ["Memesan untuk 2 anak atau 2 waktu istirahat?", "Buat pesanan terpisah. Setelah pesanan pertama terkirim, tekan Buat Pesanan Lagi — data tidak perlu diisi ulang."],
+              ["Bolehkah memesan lebih dari satu menu?", "Boleh. Papa/Mama dapat memilih beberapa menu sekaligus dalam satu pesanan."],
+              ["Bagaimana jika ingin membatalkan pesanan?", "Silakan hubungi kantin melalui WhatsApp sesegera mungkin."],
+              ["Tombol \"Salin Bukti Pesanan\" menyalin apa?", "Menyalin teks bukti pesanan — bisa langsung ditempel ke WhatsApp atau catatan."],
+            ].map(([q, a], i) => (
+              <div key={i} style={{ marginBottom: i < 4 ? 12 : 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 700, color: t.text, marginBottom: 3 }}>{q}</div>
+                <div style={{ fontSize: 14, color: t.text2, lineHeight: 1.55 }}>{a}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: "center", color: t.text2, fontSize: 13, marginTop: 22 }}>🪷 感恩 Gan En 🙏🏻✨</div>
+        </div>
+      </div>
     </div>
   );
 }

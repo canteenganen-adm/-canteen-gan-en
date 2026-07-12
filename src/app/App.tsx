@@ -345,7 +345,6 @@ function MainShell({ store }: { store: CanteenStore }) {
             autoCloseTime={store.autoCloseTime}
             onAutoCloseTimeChange={store.setAutoCloseTime}
             presets={store.pickupPresets}
-            onPresetsChange={store.setPickupPresets}
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             poLink={poLink}
