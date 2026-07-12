@@ -8,6 +8,13 @@ import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm } from "../
 import { openPicker } from "../../lib/picker";
 import type { Transaction } from "../../types";
 
+const TINGKAT_WARNA: Record<string, string> = {
+  "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
+  "SD": "#C94F4F", "SMP": "#4A7BA6", "SMA": "#6E6E6E",
+  "Guru/Karyawan": "#2F2A24",
+};
+const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
+
 /* ============================================================
    PRE-ORDER (ADMIN) — versi SEDERHANA (untuk mama, gaptek-friendly)
    Satu SESI PO aktif = tanggal + status jadi satu kartu (bukan dua
@@ -69,7 +76,7 @@ export default function PreOrderAdmin({
   const orders: AdminOrder[] = useMemo(
     () =>
       transactions
-        .filter((tx) => tx.source === "preorder" && tx.serviceDate === serviceDate)
+        .filter((tx) => tx.source === "preorder" && tx.serviceDate === serviceDate && !tx.cancelledAt)
         .map((tx) => ({
           id: tx.id,
           nama: tx.customer.nama,
@@ -201,10 +208,10 @@ export default function PreOrderAdmin({
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
             <>
-              <div className="flex items-center gap-2" style={{ margin: "20px 2px 10px", color: t.amberText }}>
+              <div className="flex items-center gap-2" style={{ margin: "20px 2px 10px", color: "#A32E2E" }}>
                 <AlertCircle size={16} />
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: t.text2, background: t.primaryLight, padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
               {beda.map((o) => <OrderCard key={o.id} o={o} onTap={() => onTogglePacked(o.id)} showAmbil />)}
             </>
@@ -326,26 +333,35 @@ function kelasLabel(o: AdminOrder) {
 }
 function OrderCard({ o, onTap, showAmbil }: { o: AdminOrder; onTap: () => void; showAmbil?: boolean }) {
   return (
-    <div className="flex items-center gap-3" onClick={onTap}
+    <div onClick={onTap}
       style={{ background: t.surface, border: `1px solid ${o.packed ? "#D8E6D4" : t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
-      <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-        background: o.packed ? t.success : t.surface, border: `2px solid ${o.packed ? t.success : t.border}`, color: "#fff" }}>
-        {o.packed && <Check size={18} />}
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="flex items-center gap-2">
-          <span style={{ fontSize: 15, fontWeight: 700, textDecoration: o.packed ? "line-through" : "none", color: o.packed ? t.text2 : t.text }}>{o.nama}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: t.text2, background: t.surfaceSoft, border: `1px solid ${t.border}`, padding: "1px 7px", borderRadius: 999 }}>{kelasLabel(o)}</span>
-          {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.amberText, background: t.primaryLight, padding: "1px 7px", borderRadius: 999 }}><Clock size={11} />{o.ambil}</span>}
+      <div className="flex items-center gap-3">
+        <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
+          background: o.packed ? t.success : t.surface, border: `2px solid ${o.packed ? t.success : t.border}`, color: "#fff" }}>
+          {o.packed && <Check size={18} />}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, textDecoration: o.packed ? "line-through" : "none", color: o.packed ? t.text2 : t.text }}>{o.nama}</span>
+            <span style={{ background: tingkatColor(o.tingkat), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
+              {o.kelas || o.tingkat}
+            </span>
+            {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />{o.ambil}</span>}
+          </div>
         </div>
-        <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{itemsText(o.items)}</div>
       </div>
-      <div style={{ fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>{rupiah(o.total)}</div>
+      <div style={{ marginTop: 10, paddingLeft: 42 }}>
+        {o.items.map((it, i) => (
+          <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
+            {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 function Stat({ n, label, tone }: { n: number; label: string; tone?: "ok" | "warn" }) {
-  const col = tone === "ok" ? t.successText : tone === "warn" ? t.amberText : t.text;
+  const col = tone === "ok" ? t.successText : tone === "warn" ? t.error : t.text;
   return (
     <div style={{ flex: 1, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "12px 8px", textAlign: "center" }}>
       <div style={{ fontSize: 24, fontWeight: 800, color: col, lineHeight: 1 }}>{n}</div>

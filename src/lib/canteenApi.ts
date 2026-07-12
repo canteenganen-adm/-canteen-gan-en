@@ -36,6 +36,7 @@ interface TransaksiRow {
   waktu_ambil: string | null;
   packed: boolean | null;
   order_no: string | null;
+  cancelled_at: string | null;
 }
 
 interface AppStateRow {
@@ -86,6 +87,7 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   waktuAmbil: r.waktu_ambil ?? undefined,
   packed: r.packed ?? undefined,
   orderNo: r.order_no ?? undefined,
+  cancelledAt: r.cancelled_at ?? undefined,
 });
 
 const transactionToRow = (tx: Transaction): TransaksiRow => ({
@@ -101,6 +103,7 @@ const transactionToRow = (tx: Transaction): TransaksiRow => ({
   waktu_ambil: tx.waktuAmbil ?? null,
   packed: tx.packed ?? null,
   order_no: tx.orderNo ?? null,
+  cancelled_at: tx.cancelledAt ?? null,
 });
 
 export interface AppStateData {
@@ -178,17 +181,8 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   const row: Record<string, unknown> = {};
   if (patch.paid !== undefined) row.paid = patch.paid;
   if (patch.packed !== undefined) row.packed = patch.packed;
+  if (patch.cancelledAt !== undefined) row.cancelled_at = patch.cancelledAt;
   const { error } = await supabase.from("transaksi").update(row).eq("id", id);
-  if (error) throw error;
-}
-
-export async function deleteTransaction(id: string): Promise<void> {
-  const { error } = await supabase.from("transaksi").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function insertCancelledTransaction(tx: Transaction): Promise<void> {
-  const { error } = await supabase.from("cancelled_transaksi").insert({ tx: transactionToRow(tx) });
   if (error) throw error;
 }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import {
   Search, X, Plus, Minus, ShoppingCart, Check, Receipt,
-  Layers, ChevronRight, ArrowLeft, Wallet, Settings,
+  Layers, ChevronRight, ArrowLeft, Wallet, Settings, Trash2, Undo2,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel } from "../../lib/format";
@@ -53,12 +53,18 @@ export default function Penjualan({
   const [form, setForm] = useState({ nama: "", kelas: "", wa: "" });
   const [tried, setTried] = useState(false);
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [cartUndo, setCartUndo] = useState<{ type: "line"; line: CartLine } | { type: "all"; cart: CartLine[] } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(id);
   }, [toast]);
+  useEffect(() => {
+    if (!cartUndo) return;
+    const id = setTimeout(() => setCartUndo(null), 5000);
+    return () => clearTimeout(id);
+  }, [cartUndo]);
 
   const { todayCount, todaySum } = useMemo(() => {
     const today = transactions.filter((tx) => tx.source === "penjualan" && isToday(tx.createdAt));
@@ -86,6 +92,24 @@ export default function Penjualan({
   const tapMenu = (menu: MenuItem) => (menu.variants.length ? setVariantFor(menu) : addLine(menu));
   const changeQty = (key: string, d: number) =>
     setCart((c) => c.map((l) => (l.key === key ? { ...l, qty: l.qty + d } : l)).filter((l) => l.qty > 0));
+
+  const removeCartLine = (key: string) => {
+    const line = cart.find((l) => l.key === key);
+    if (!line) return;
+    setCart((c) => c.filter((l) => l.key !== key));
+    setCartUndo({ type: "line", line });
+  };
+  const clearCart = () => {
+    if (cart.length === 0) return;
+    setCartUndo({ type: "all", cart });
+    setCart([]);
+  };
+  const undoCart = () => {
+    if (!cartUndo) return;
+    if (cartUndo.type === "line") setCart((c) => [...c, cartUndo.line]);
+    else setCart(cartUndo.cart);
+    setCartUndo(null);
+  };
 
   const commit = (paid: boolean, customer?: { nama: string; kelas: string; wa: string }) => {
     const tx: Transaction = {
@@ -213,9 +237,18 @@ export default function Penjualan({
               <div className="flex items-center gap-2">
                 <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
               </div>
-              <div style={{ width: 78, textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+              <div style={{ width: 72, textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+              <button onClick={() => removeCartLine(l.key)} aria-label="Hapus" style={{ width: 36, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                <Trash2 size={15} />
+              </button>
             </div>
           ))}
+
+          {cart.length > 0 && (
+            <button onClick={clearCart} className="flex items-center gap-1" style={{ marginTop: 10, background: "transparent", border: "none", color: t.error, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <Trash2 size={14} /> Kosongkan Semua
+            </button>
+          )}
 
           <div className="flex items-center justify-between" style={{ padding: "16px 0 4px" }}>
             <span style={{ fontSize: 15, color: t.text2, fontWeight: 600 }}>Total</span>
@@ -252,8 +285,22 @@ export default function Penjualan({
         </Sheet>
       )}
 
+      {/* Undo keranjang (hapus item / kosongkan semua) */}
+      {cartUndo && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+            <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
+              {cartUndo.type === "line" ? `${cartUndo.line.name} dihapus` : "Keranjang dikosongkan"}
+            </span>
+            <button onClick={undoCart} className="flex items-center gap-1" style={{ background: "transparent", border: "none", color: t.primary, fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
+              <Undo2 size={16} /> Urungkan
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
-      {toast && (
+      {toast && !cartUndo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ width: 26, height: 26, borderRadius: "50%", background: toast.ok ? t.success : t.primary, display: "grid", placeItems: "center", flex: "none", color: toast.ok ? "#fff" : t.text }}>

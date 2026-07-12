@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from "../lib/supabase";
 import {
   fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
   upsertMenuItem, deleteMenuItem,
-  insertTransaction, updateTransaction, deleteTransaction, insertCancelledTransaction,
+  insertTransaction, updateTransaction,
   submitPreOrderTransaction,
   upsertKelas, deleteKelas,
   appStatePatch,
@@ -89,6 +89,7 @@ function useCanteenStore() {
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const loadedOnce = useRef(false);
 
   const loadAll = useCallback(async () => {
@@ -127,10 +128,15 @@ function useCanteenStore() {
     return unsubscribe;
   }, [loadAll]);
 
+  /** Setiap kegagalan simpan (bukan cuma fetch awal) sekarang juga tampil
+   * ke pengguna — sebelumnya cuma di-console.error, jadi kelihatan "tidak
+   * merespon" tanpa penjelasan saat sebuah aksi gagal tersimpan. */
   const reportError = (context: string, e: unknown) => {
     // eslint-disable-next-line no-console
     console.error(`[Supabase] ${context}:`, e);
+    setSaveError("Gagal menyimpan perubahan. Periksa koneksi internet, lalu coba lagi.");
   };
+  const clearSaveError = () => setSaveError(null);
 
   /* ---- Menu ---- */
   const addMenuItem = (item: MenuItem) => {
@@ -173,19 +179,18 @@ function useCanteenStore() {
     setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false } : tx)));
     updateTransaction(id, { paid: false }).catch((e) => reportError("unmarkPaid", e));
   };
+  /** Batalkan Transaksi = soft-delete (set cancelled_at), BUKAN hapus permanen —
+   * transaksi tetap ada untuk Riwayat/audit, hanya hilang dari daftar Belum Dibayar. */
   const cancelTransaction = (id: string) => {
-    setTransactions((prev) => {
-      const tx = prev.find((x) => x.id === id);
-      if (tx) {
-        deleteTransaction(id).catch((e) => reportError("cancelTransaction", e));
-        insertCancelledTransaction(tx).catch((e) => reportError("insertCancelledTransaction", e));
-      }
-      return prev.filter((x) => x.id !== id);
-    });
+    const cancelledAt = new Date().toISOString();
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, cancelledAt } : tx)));
+    updateTransaction(id, { cancelledAt }).catch((e) => reportError("cancelTransaction", e));
   };
+  /** Undo pembatalan — cukup UPDATE (bukan insert ulang), jadi tidak lewat
+   * trigger BEFORE INSERT sama sekali (service_date lama tetap aman). */
   const restoreTransaction = (tx: Transaction) => {
-    setTransactions((prev) => [tx, ...prev]);
-    insertTransaction(tx).catch((e) => reportError("restoreTransaction", e));
+    setTransactions((prev) => prev.map((x) => (x.id === tx.id ? { ...x, cancelledAt: undefined } : x)));
+    updateTransaction(tx.id, { cancelledAt: null }).catch((e) => reportError("restoreTransaction", e));
   };
   const togglePacked = (id: string) => {
     setTransactions((prev) => {
@@ -277,6 +282,7 @@ function useCanteenStore() {
     settings, patchSettings,
     submitPreOrder,
     loading, error,
+    saveError, clearSaveError,
   };
 }
 
@@ -305,12 +311,18 @@ function MainShell({ store }: { store: CanteenStore }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const poLink = `${window.location.origin}/pesan`;
-  const unpaidCount = store.transactions.filter((tx) => !tx.paid).length;
+  const unpaidCount = store.transactions.filter((tx) => !tx.paid && !tx.cancelledAt).length;
+
+  useEffect(() => {
+    if (!store.saveError) return;
+    const id = setTimeout(store.clearSaveError, 4000);
+    return () => clearTimeout(id);
+  }, [store.saveError, store.clearSaveError]);
 
   const tabs: { id: Tab; label: string; Icon: typeof ClipboardList; badge?: number }[] = [
     { id: "preorder", label: "Pre-order", Icon: ClipboardList },
     { id: "penjualan", label: "Penjualan", Icon: ShoppingBag },
-    { id: "tagihan", label: "Tagihan", Icon: CreditCard, badge: unpaidCount },
+    { id: "tagihan", label: "Transaksi", Icon: CreditCard, badge: unpaidCount },
     { id: "menu", label: "Menu", Icon: BookOpen },
   ];
 
@@ -404,6 +416,16 @@ function MainShell({ store }: { store: CanteenStore }) {
             onRemoveKelas={store.removeKelas}
             onClose={() => setSettingsOpen(false)}
           />
+        </div>
+      )}
+
+      {/* Kegagalan simpan — supaya aksi yang gagal tidak terlihat "diam saja" */}
+      {store.saveError && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 80, display: "flex", justifyContent: "center" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.error, color: "#fff", borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(217,93,93,.35)" }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{store.saveError}</span>
+            <button onClick={store.clearSaveError} style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontWeight: 800, fontSize: 13 }}>Tutup</button>
+          </div>
         </div>
       )}
     </div>

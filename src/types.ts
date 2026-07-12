@@ -61,12 +61,9 @@ export interface Transaction {
   packed?: boolean;
   /** No. Pesanan tampil di Bukti Pesanan (PO-XXXXXX). Hanya source:'preorder'. */
   orderNo?: string;
-}
-
-/** Riwayat pembatalan — implementasi di belakang layar, tidak tampil di UI utama. */
-export interface CancelledTransaction {
-  tx: Transaction;
-  cancelledAt: string;
+  /** Diisi saat "Batalkan Transaksi" — soft-delete, transaksi TETAP ada untuk
+   * Riwayat (audit), bukan dihapus permanen. null/undefined = aktif normal. */
+  cancelledAt?: string | null;
 }
 
 export interface CanteenSettings {

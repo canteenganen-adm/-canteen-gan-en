@@ -30,21 +30,12 @@ create table if not exists transaksi (
   service_date date,                                -- hanya untuk source='preorder'
   waktu_ambil text,                                 -- hanya untuk source='preorder'
   packed boolean default false,                     -- hanya untuk source='preorder'
-  order_no text                                     -- PO-XXXXXX, hanya untuk source='preorder'
+  order_no text,                                    -- PO-XXXXXX, hanya untuk source='preorder'
+  cancelled_at timestamptz                          -- diisi saat "Batalkan Transaksi" (soft-delete, untuk Riwayat/audit)
 );
 
 create index if not exists idx_transaksi_paid on transaksi (paid);
 create index if not exists idx_transaksi_source_date on transaksi (source, service_date);
-
--- ============================================================
--- cancelled_transaksi — riwayat pembatalan, implementasi di
--- belakang layar (Decision Lock §7), tidak tampil di UI utama
--- ============================================================
-create table if not exists cancelled_transaksi (
-  id bigint generated always as identity primary key,
-  tx jsonb not null,             -- salinan penuh transaksi yang dibatalkan
-  cancelled_at timestamptz not null default now()
-);
 
 -- ============================================================
 -- app_state — satu baris tunggal = SATU SESI PO AKTIF (tanggal +
@@ -89,13 +80,11 @@ create index if not exists idx_kelas_tingkat on kelas (tingkat);
 -- ============================================================
 alter table menu enable row level security;
 alter table transaksi enable row level security;
-alter table cancelled_transaksi enable row level security;
 alter table app_state enable row level security;
 alter table kelas enable row level security;
 
 create policy "anon full access" on menu for all using (true) with check (true);
 create policy "anon full access" on transaksi for all using (true) with check (true);
-create policy "anon full access" on cancelled_transaksi for all using (true) with check (true);
 create policy "anon full access" on app_state for all using (true) with check (true);
 create policy "anon full access" on kelas for all using (true) with check (true);
 
