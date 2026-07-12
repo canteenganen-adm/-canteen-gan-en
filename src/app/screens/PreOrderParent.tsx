@@ -11,7 +11,7 @@ import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
 
 /* ============================================================
    PRE-ORDER (PARENT) — Canteen Gan En  ·  halaman link orang tua
-   Landing: ikon teratai 🪷, slogan "Sehangat masakan Ibu".
+   Landing: ikon teratai 🪷, slogan "Sehangat pelukan Ibu".
    Menu: kotak cari + chip 5 kelompok besar (sticky), tile emoji
    per kategori. Orang tua TIDAK PERNAH memilih tanggal.
    Checkout ("Konfirmasi Pesanan"): daftar item +/-, data pemesan.
@@ -181,7 +181,7 @@ export default function PreOrderParent({
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
           <div style={{ width: 84, height: 84, borderRadius: 24, background: t.primaryLight, display: "grid", placeItems: "center", margin: "0 auto 18px", fontSize: 46 }}>🪷</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{kantin}</div>
-          <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, fontStyle: "italic" }}>Sehangat masakan Ibu</div>
+          <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, fontStyle: "italic" }}>Sehangat pelukan Ibu</div>
           <div className="flex items-center justify-center gap-2" style={{ marginTop: 12, color: t.text2, fontSize: 14.5 }}><Calendar size={16} /> {serviceDate}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: closed ? t.errorBg : t.successBg, color: closed ? t.error : t.successText }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: closed ? t.error : t.success }} /> Pre-order {closed ? "Ditutup" : "Dibuka"}
