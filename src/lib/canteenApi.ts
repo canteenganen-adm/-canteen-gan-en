@@ -90,21 +90,24 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   cancelledAt: r.cancelled_at ?? undefined,
 });
 
-const transactionToRow = (tx: Transaction): TransaksiRow => ({
-  id: tx.id,
-  source: tx.source,
-  paid: tx.paid,
-  customer: tx.customer,
-  items: tx.items,
-  total: tx.total,
-  created_at: tx.createdAt,
-  label: tx.label,
-  service_date: tx.serviceDate ?? null,
-  waktu_ambil: tx.waktuAmbil ?? null,
-  packed: tx.packed ?? null,
-  order_no: tx.orderNo ?? null,
-  cancelled_at: tx.cancelledAt ?? null,
-});
+const transactionToRow = (tx: Transaction): Record<string, unknown> => {
+  const row: Record<string, unknown> = {
+    id: tx.id,
+    source: tx.source,
+    paid: tx.paid,
+    customer: tx.customer,
+    items: tx.items,
+    total: tx.total,
+    created_at: tx.createdAt,
+    label: tx.label,
+    service_date: tx.serviceDate ?? null,
+    waktu_ambil: tx.waktuAmbil ?? null,
+    packed: tx.packed ?? null,
+    order_no: tx.orderNo ?? null,
+  };
+  if (tx.cancelledAt != null) row.cancelled_at = tx.cancelledAt;
+  return row;
+};
 
 export interface AppStateData {
   preorderOpen: boolean;
