@@ -6,6 +6,7 @@ import {
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
+import { TINGKAT_LIST } from "../../lib/constants";
 import type { Transaction } from "../../types";
 
 const TINGKAT_WARNA: Record<string, string> = {
@@ -94,11 +95,7 @@ export default function PreOrderAdmin({
   const packed = orders.filter((o) => o.packed).length;
   const belum = orders.length - packed;
 
-  const TINGKAT_ORDER = ["KB", "TK A", "TK B", "SD", "SMP", "SMA", "Guru/Karyawan"];
-  const tingkats = useMemo(() => {
-    const found = Array.from(new Set(orders.map((o) => o.tingkat).filter(Boolean)));
-    return ["Semua", ...TINGKAT_ORDER.filter((tg) => found.includes(tg))];
-  }, [orders]);
+  const tingkats = ["Semua", ...TINGKAT_LIST];
 
   const ql = q.toLowerCase().trim();
   const match = (o: AdminOrder) =>
@@ -207,8 +204,7 @@ export default function PreOrderAdmin({
           </div>
 
           {/* Filter Tingkat */}
-          {tingkats.length > 2 && (
-            <div className="flex gap-2" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+          <div className="flex gap-2" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
               {tingkats.map((tg) => {
                 const on = tg === tingkatFilter;
                 const bgColor = on && tg !== "Semua" ? tingkatColor(tg) : undefined;
@@ -223,7 +219,6 @@ export default function PreOrderAdmin({
                 );
               })}
             </div>
-          )}
         </div>
 
         {/* Daftar utama — preset pertama, TANPA label */}
