@@ -424,6 +424,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onClose={() => setSettingsOpen(false)}
             transactions={store.transactions}
             pickupPresets={store.pickupPresets}
+            onSetPickupPresets={store.setPickupPresets}
             onEditCustomer={store.editTransactionCustomer}
           />
         </div>

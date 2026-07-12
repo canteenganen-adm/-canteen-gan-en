@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Code — Canteen Gan En</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#FAF6EE;--sf:#FFFCF7;--tx:#2F2A24;--t2:#756B5D;--pr:#FDB833;--bd:#E8E0D2}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--tx);font-size:16px;padding:20px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:24px;font-weight:800;text-align:center;margin-bottom:8px}
+  .sub{text-align:center;color:var(--t2);margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:24px;margin-bottom:24px}
+  .card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;text-align:center}
+  .card h2{font-size:16px;font-weight:800;margin-bottom:4px}
+  .card p{font-size:13px;color:var(--t2);margin-bottom:16px}
+  #qr1, #qr2{display:inline-block;background:#fff;padding:12px;border-radius:12px;margin:12px auto;border:1px solid var(--bd)}
+  .link{font-size:12px;color:var(--t2);background:#FFF8EE;border:1px solid var(--bd);border-radius:8px;padding:8px;margin:12px 0;word-break:break-all}
+  button{height:44px;border-radius:11px;border:none;background:var(--pr);color:var(--tx);font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;width:100%;margin-top:10px}
+  button:hover{background:#F9A03F}
+  .info{background:#FFF8EE;border-left:4px solid var(--pr);border-radius:8px;padding:14px;margin-top:24px;font-size:14px}
+  .info strong{color:var(--tx)}
+</style></head>
+<body>
+<div class="wrap">
+  <h1>🪷 QR Code Canteen Gan En</h1>
+  <div class="sub">Scan untuk akses panduan atau mulai pesan online</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>📖 Panduan Pemesanan</h2>
+      <p>Orang tua scan untuk membaca panduan cara pesan</p>
+      <div id="qr1"></div>
+      <div class="link">canteen-gan-en.vercel.app/panduan</div>
+      <button onclick="downloadQR(1, 'QR-Panduan-Gan-En.png')">⬇️ Download QR Panduan</button>
+    </div>
+
+    <div class="card">
+      <h2>🛒 Pesan Online</h2>
+      <p>Orang tua scan untuk langsung mulai pesan</p>
+      <div id="qr2"></div>
+      <div class="link">canteen-gan-en.vercel.app/pesan</div>
+      <button onclick="downloadQR(2, 'QR-Pesan-Gan-En.png')">⬇️ Download QR Pesan</button>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>💡 Cara Pakai:</strong><br>
+    • Cetak kedua QR code di kertas (atau di poster besar kalau mau ditempel di kantin).<br>
+    • QR Panduan: untuk ortu baru yang perlu baca panduan dulu.<br>
+    • QR Pesan: untuk langsung mulai pesan (link /pesan).<br>
+    • Bisa juga dibagikan di grup WA — screenshot QR code, share langsung.
+  </div>
+</div>
+
+<script>
+  // Generate QR Code 1: Panduan
+  new QRCode(document.getElementById('qr1'), {
+    text: 'https://canteen-gan-en.vercel.app/panduan',
+    width: 300,
+    height: 300,
+    colorDark: '#2F2A24',
+    colorLight: '#FFFCF7',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // Generate QR Code 2: Pesan
+  new QRCode(document.getElementById('qr2'), {
+    text: 'https://canteen-gan-en.vercel.app/pesan',
+    width: 300,
+    height: 300,
+    colorDark: '#2F2A24',
+    colorLight: '#FFFCF7',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  function downloadQR(num, filename) {
+    const canvas = document.querySelector(`#qr${num} canvas`);
+    if (!canvas) { alert('QR code belum selesai dirender, coba lagi dalam 1 detik'); return; }
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = filename;
+    link.click();
+  }
+</script>
+</body></html>

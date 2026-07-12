@@ -2,6 +2,8 @@
   "rewrites": [
     { "source": "/panduan", "destination": "/panduan-pemesanan.html" },
     { "source": "/panduan-pemesanan.html", "destination": "/panduan-pemesanan.html" },
+    { "source": "/qr", "destination": "/qr-generator-gan-en.html" },
+    { "source": "/qr-generator-gan-en.html", "destination": "/qr-generator-gan-en.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

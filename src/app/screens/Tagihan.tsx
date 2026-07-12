@@ -1,16 +1,16 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, serviceDateLabel } from "../../lib/format";
+import { rupiah } from "../../lib/format";
 import type { Transaction } from "../../types";
 
 /* ============================================================
    TRANSAKSI — Canteen Gan En
-   Belum Dibayar: dikelompokkan per murid (Nama+Kelas).
-   Lunas: per Tanggal Layanan, total pemasukan harian.
+   Belum Dibayar: dikelompokkan per Nama + WA (auto-merge).
+   Lunas: dikelompokkan per Nama + WA (terbaru di atas).
    ============================================================ */
 
 const TINGKAT_WARNA: Record<string, string> = {
@@ -19,15 +19,12 @@ const TINGKAT_WARNA: Record<string, string> = {
   "Guru/Karyawan": "#2F2A24",
 };
 const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
+const groupKey = (c: Transaction["customer"]) =>
+  `${c.nama.toLowerCase()}|${(c.wa || "").toLowerCase()}`;
 
 type Tab = "unpaid" | "riwayat";
 type SourceFilter = "semua" | "preorder" | "penjualan";
 type UndoAction = { type: "paid"; tx: Transaction } | { type: "cancel"; tx: Transaction };
-
-function effectiveDate(tx: Transaction): string {
-  if (tx.source === "preorder" && tx.serviceDate) return tx.serviceDate;
-  return tx.createdAt.slice(0, 10);
-}
 
 export default function Tagihan({
   transactions,
@@ -50,12 +47,48 @@ export default function Tagihan({
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [waDraft, setWaDraft] = useState<{ wa: string; text: string } | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
+  const prevTxIdsRef = useRef<Set<string>>(new Set());
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const WA_OPENING = "Selamat siang Ayah/Bunda. Berikut rincian transaksi di Canteen Gan En:";
   const WA_CLOSING = "Pembayaran dapat dititipkan melalui Ananda. Terima kasih.";
 
   useEffect(() => { if (!undo) return; const id = setTimeout(() => setUndo(null), 5000); return () => clearTimeout(id); }, [undo]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 2200); return () => clearTimeout(id); }, [toast]);
+
+  /* Deteksi pesanan baru masuk ke grup yang sudah ada → expand + highlight */
+  useEffect(() => {
+    const currentIds = new Set(transactions.map((tx) => tx.id));
+    const prevIds = prevTxIdsRef.current;
+
+    if (prevIds.size > 0) {
+      for (const id of currentIds) {
+        if (prevIds.has(id)) continue;
+        const newTx = transactions.find((tx) => tx.id === id);
+        if (!newTx || newTx.paid || newTx.cancelledAt) continue;
+        const key = groupKey(newTx.customer);
+        const hasExisting = transactions.some(
+          (tx) => tx.id !== id && !tx.paid && !tx.cancelledAt && groupKey(tx.customer) === key
+        );
+        if (hasExisting) {
+          if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+          setHighlightedTxId(id);
+          setExpandedGroups((prev) => new Set([...prev, key]));
+          highlightTimerRef.current = setTimeout(() => setHighlightedTxId(null), 2000);
+        }
+      }
+    }
+    prevTxIdsRef.current = currentIds;
+  }, [transactions]);
+
+  const toggleGroup = (key: string) =>
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
 
   const bySource = (tx: Transaction) => sourceFilter === "semua" || tx.source === sourceFilter;
   const matchQuery = (nama: string, kelas: string, wa?: string) => {
@@ -69,32 +102,40 @@ export default function Tagihan({
     [transactions, sourceFilter]
   );
 
+  /* Grupkan Belum Dibayar per Nama + WA, urutkan grup: terbaru di atas */
   const groups = useMemo(() => {
-    const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; total: number }>();
+    const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; total: number; newestAt: string }>();
     for (const tx of unpaid) {
       const c = tx.customer;
       if (!matchQuery(c.nama, c.kelas, c.wa)) continue;
-      const key = `${c.nama.toLowerCase()}|${c.kelas.toLowerCase()}`;
-      if (!map.has(key)) map.set(key, { customer: c, txs: [], total: 0 });
-      const g = map.get(key)!; g.txs.push(tx); g.total += tx.total;
+      const key = groupKey(c);
+      if (!map.has(key)) map.set(key, { customer: c, txs: [], total: 0, newestAt: tx.createdAt });
+      const g = map.get(key)!;
+      g.txs.push(tx);
+      g.total += tx.total;
+      if (tx.createdAt > g.newestAt) { g.newestAt = tx.createdAt; g.customer = c; }
     }
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
   }, [unpaid, q]);
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
 
+  /* Grupkan Lunas per Nama + WA */
   const riwayatGroups = useMemo(() => {
-    const done = transactions.filter((x) => (x.paid || x.cancelledAt) && bySource(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa));
-    const map = new Map<string, { date: string; txs: Transaction[]; totalMasuk: number }>();
+    const done = transactions.filter(
+      (x) => (x.paid || x.cancelledAt) && bySource(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
+    );
+    const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; totalMasuk: number; newestAt: string }>();
     for (const tx of done) {
-      const d = effectiveDate(tx);
-      if (!map.has(d)) map.set(d, { date: d, txs: [], totalMasuk: 0 });
-      const g = map.get(d)!;
+      const key = groupKey(tx.customer);
+      if (!map.has(key)) map.set(key, { customer: tx.customer, txs: [], totalMasuk: 0, newestAt: tx.createdAt });
+      const g = map.get(key)!;
       g.txs.push(tx);
       if (tx.paid && !tx.cancelledAt) g.totalMasuk += tx.total;
+      if (tx.createdAt > g.newestAt) g.newestAt = tx.createdAt;
     }
     for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+    return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
   }, [transactions, sourceFilter, q]);
 
   const historyMasuk = riwayatGroups.reduce((s, g) => s + g.totalMasuk, 0);
@@ -131,7 +172,7 @@ export default function Tagihan({
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
 
-        {/* Header */}
+        {/* Header sticky */}
         <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <div className="flex items-end justify-between">
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
@@ -149,7 +190,6 @@ export default function Tagihan({
             </div>
           </div>
 
-          {/* Tab toggle */}
           <div className="flex" style={{ marginTop: 14, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 12, padding: 3 }}>
             <button onClick={() => setTab("unpaid")} className="flex items-center justify-center gap-1.5"
               style={{ flex: 1, height: 38, borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
@@ -163,7 +203,6 @@ export default function Tagihan({
             </button>
           </div>
 
-          {/* Search */}
           <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
             <Search size={20} color={t.text2} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kelas, atau WhatsApp…"
@@ -171,7 +210,6 @@ export default function Tagihan({
             {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
           </div>
 
-          {/* Source chips */}
           <div className="flex gap-2" style={{ marginTop: 10 }}>
             {([["semua", "Semua"], ["preorder", "Pre-order"], ["penjualan", "Penjualan"]] as const).map(([val, label]) => {
               const on = sourceFilter === val;
@@ -190,40 +228,50 @@ export default function Tagihan({
         {tab === "unpaid" && (
           <div style={{ padding: "4px 20px" }}>
             {groups.length === 0 ? <Empty q={q} /> : groups.map((g) => {
-              const key = `${g.customer.nama}|${g.customer.kelas}`;
+              const key = groupKey(g.customer);
+              const expanded = expandedGroups.has(key);
               return (
                 <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
 
-                  {/* Murid header */}
-                  <div style={{ padding: "14px 16px 10px" }}>
+                  {/* Header grup — klik untuk expand/collapse */}
+                  <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                     <div className="flex items-center justify-between" style={{ gap: 10 }}>
-                      <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap" }}>
+                      <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
                         <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
                         <span style={{ background: tingkatColor(g.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
                           {g.customer.kelas || g.customer.tingkat}
                         </span>
                       </div>
-                      <span style={{ fontSize: 20, fontWeight: 800, flex: "none" }}>{rupiah(g.total)}</span>
+                      <div className="flex items-center gap-2" style={{ flex: "none" }}>
+                        <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(g.total)}</span>
+                        {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
+                      </div>
                     </div>
-                    {g.customer.wa && (
-                      <div style={{ fontSize: 13, color: t.text2, marginTop: 4 }}>{g.customer.wa}</div>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
+                      {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
+                      <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
+                    </div>
+                  </button>
 
-                  {/* Tiap transaksi */}
-                  {g.txs.map((tx) => (
-                    <div key={tx.id} style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft }}>
+                  {/* Daftar transaksi (hanya kalau expanded) */}
+                  {expanded && g.txs.map((tx) => (
+                    <div key={tx.id}
+                      style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`,
+                        background: tx.id === highlightedTxId ? "#FFF4DA" : t.surfaceSoft,
+                        transition: "background 0.4s ease" }}>
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <SourceTag source={tx.source} label={tx.label} />
                         <span style={{ fontSize: 14, fontWeight: 700, color: t.text2 }}>{rupiah(tx.total)}</span>
                       </div>
-                      {/* Item per baris, besar */}
                       <div style={{ marginBottom: 12 }}>
                         {tx.items.map((it, i) => (
                           <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.65 }}>
                             {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                           </div>
                         ))}
+                        {tx.waktuAmbil && (
+                          <div style={{ fontSize: 13, color: t.text2, marginTop: 4 }}>{tx.waktuAmbil}</div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => markPaid(tx)} className="flex items-center justify-center gap-1.5"
@@ -239,7 +287,7 @@ export default function Tagihan({
                     </div>
                   ))}
 
-                  {/* Aksi bawah */}
+                  {/* Footer aksi */}
                   <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
                     <button onClick={() => shareWA(g)} className="flex items-center justify-center gap-2"
                       style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -268,35 +316,34 @@ export default function Tagihan({
                 <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Transaksi Lunas & Dibatalkan akan muncul di sini."}</div>
               </div>
             ) : riwayatGroups.map((g) => (
-              <div key={g.date} style={{ marginBottom: 8 }}>
-                <div className="flex items-center justify-between" style={{ margin: "16px 2px 10px" }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 800 }}>{serviceDateLabel(g.date)}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: t.successText }}>Masuk {rupiah(g.totalMasuk)}</span>
+              <div key={groupKey(g.customer)} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
+                {/* Header nama */}
+                <div style={{ padding: "14px 16px 10px" }}>
+                  <div className="flex items-center justify-between" style={{ gap: 10 }}>
+                    <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
+                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama}</span>
+                      <span style={{ background: tingkatColor(g.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
+                        {g.customer.kelas || g.customer.tingkat}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: t.successText, flex: "none" }}>{rupiah(g.totalMasuk)}</span>
+                  </div>
+                  {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
                 </div>
+                {/* Per transaksi */}
                 {g.txs.map((tx) => {
                   const cancelled = !!tx.cancelledAt;
                   return (
-                    <div key={tx.id} style={{ background: t.surface, border: `1.5px solid ${cancelled ? t.border : "#D8E6D4"}`, borderRadius: 15, padding: 15, marginBottom: 10, opacity: cancelled ? 0.68 : 1 }}>
-                      {/* Badge baris */}
-                      <div className="flex items-center gap-2" style={{ marginBottom: 10, flexWrap: "wrap" }}>
+                    <div key={tx.id} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.68 : 1 }}>
+                      <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} label={tx.label} />
-                      </div>
-                      {/* Nama + kelas pill */}
-                      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                        <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 17, fontWeight: 800 }}>{tx.customer.nama}</span>
-                          <span style={{ background: tingkatColor(tx.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
-                            {tx.customer.kelas || tx.customer.tingkat}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: 16, fontWeight: 800, flex: "none", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>
                           {rupiah(tx.total)}
                         </span>
                       </div>
-                      {/* Item per baris */}
                       {tx.items.map((it, i) => (
-                        <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.65, color: cancelled ? t.text2 : t.text }}>
+                        <div key={i} style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.65, color: cancelled ? t.text2 : t.text }}>
                           {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}

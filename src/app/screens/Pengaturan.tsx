@@ -27,6 +27,7 @@ export default function Pengaturan({
   onClose,
   transactions,
   pickupPresets,
+  onSetPickupPresets,
   onEditCustomer,
 }: {
   settings: CanteenSettings;
@@ -38,6 +39,7 @@ export default function Pengaturan({
   onClose: () => void;
   transactions: Transaction[];
   pickupPresets: string[];
+  onSetPickupPresets: (presets: string[]) => void;
   onEditCustomer: (id: string, customer: TransactionCustomer, waktuAmbil?: string) => void;
 }) {
   const [toast, setToast] = useState<string | null>(null);
@@ -47,6 +49,36 @@ export default function Pengaturan({
   const [newNama, setNewNama] = useState("");
   const [editingKelasId, setEditingKelasId] = useState<string | null>(null);
   const [editKelasNama, setEditKelasNama] = useState("");
+
+  // --- Waktu Ambil state ---
+  const [waktuAmbilOpen, setWaktuAmbilOpen] = useState(false);
+  const [newPreset, setNewPreset] = useState("");
+  const [editingPresetIdx, setEditingPresetIdx] = useState<number | null>(null);
+  const [editPresetVal, setEditPresetVal] = useState("");
+
+  const addPreset = () => {
+    const val = newPreset.trim();
+    if (!val) return;
+    if (pickupPresets.some((p) => p.toLowerCase() === val.toLowerCase())) { setToast("Waktu ambil sudah ada."); return; }
+    onSetPickupPresets([...pickupPresets, val]);
+    setNewPreset("");
+  };
+  const removePreset = (idx: number) => {
+    if (pickupPresets.length <= 1) { setToast("Minimal 1 waktu ambil harus ada."); return; }
+    onSetPickupPresets(pickupPresets.filter((_, i) => i !== idx));
+  };
+  const startPresetEdit = (idx: number) => { setEditingPresetIdx(idx); setEditPresetVal(pickupPresets[idx]); };
+  const savePresetEdit = () => {
+    const val = editPresetVal.trim();
+    if (!val || editingPresetIdx === null) { setEditingPresetIdx(null); return; }
+    if (pickupPresets.some((p, i) => i !== editingPresetIdx && p.toLowerCase() === val.toLowerCase())) {
+      setToast("Waktu ambil sudah ada."); return;
+    }
+    const next = [...pickupPresets];
+    next[editingPresetIdx] = val;
+    onSetPickupPresets(next);
+    setEditingPresetIdx(null);
+  };
 
   // --- Edit Pesanan state ---
   const [editPesananOpen, setEditPesananOpen] = useState(false);
@@ -254,6 +286,65 @@ export default function Pengaturan({
     );
   }
 
+  /* ===== VIEW: Waktu Ambil ===== */
+  if (waktuAmbilOpen) {
+    return (
+      <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
+          <div className="flex items-center gap-3" style={{ padding: "20px 20px 16px" }}>
+            <button onClick={() => { setWaktuAmbilOpen(false); setEditingPresetIdx(null); setNewPreset(""); }}
+              style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>Waktu Ambil</div>
+          </div>
+
+          <div style={{ padding: "0 20px" }}>
+            <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
+              Dipakai sebagai pilihan Waktu Ambil saat ortu pesan. Perubahan berlaku langsung.
+            </div>
+
+            {pickupPresets.map((p, idx) => (
+              <div key={idx} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+                {editingPresetIdx === idx ? (
+                  <>
+                    <input value={editPresetVal} onChange={(e) => setEditPresetVal(e.target.value)} autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && savePresetEdit()}
+                      style={{ ...inp, flex: 1, height: 48 }} />
+                    <button onClick={savePresetEdit} style={iconBtn(t.successBg, t.successText)}>
+                      <Check size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2" style={{ flex: 1, height: 48, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, padding: "0 14px" }}>
+                      <Clock size={15} color={t.amberText} />
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{p}</span>
+                    </div>
+                    <button onClick={() => startPresetEdit(idx)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
+                    <button onClick={() => removePreset(idx)} style={iconBtn(t.errorBg, t.error)}
+                      title={pickupPresets.length <= 1 ? "Minimal 1 waktu ambil" : "Hapus"}>
+                      <Trash2 size={15} />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+              <input value={newPreset} onChange={(e) => setNewPreset(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addPreset()}
+                placeholder="Tambah waktu ambil baru…"
+                style={{ ...inp, flex: 1, height: 48 }} />
+              <button onClick={addPreset} style={iconBtn(t.primary, t.text)}><Plus size={17} /></button>
+            </div>
+          </div>
+        </div>
+        {toast && <Toast msg={toast} />}
+      </div>
+    );
+  }
+
   /* ===== VIEW: Cari Pesanan ===== */
   if (editPesananOpen) {
     return (
@@ -357,6 +448,17 @@ export default function Pengaturan({
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Edit Pesanan</div>
                 <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Koreksi nama, kelas, atau nomor WA</div>
+              </div>
+              <ChevronRight size={18} color={t.textDis} />
+            </button>
+
+            <button
+              onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }}
+              className="flex items-center gap-3" style={rowBtn}>
+              <span style={ic}><Clock size={20} /></span>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Waktu Ambil</div>
+                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{pickupPresets.length} waktu · {pickupPresets.join(", ")}</div>
               </div>
               <ChevronRight size={18} color={t.textDis} />
             </button>
