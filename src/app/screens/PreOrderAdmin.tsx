@@ -66,6 +66,7 @@ export default function PreOrderAdmin({
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [tingkatFilter, setTingkatFilter] = useState("Semua");
   const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   const [copied, setCopied] = useState(false);
   const gantiTanggalRef = useRef<HTMLInputElement>(null);
@@ -93,8 +94,16 @@ export default function PreOrderAdmin({
   const packed = orders.filter((o) => o.packed).length;
   const belum = orders.length - packed;
 
+  const TINGKAT_ORDER = ["KB", "TK A", "TK B", "SD", "SMP", "SMA", "Guru/Karyawan"];
+  const tingkats = useMemo(() => {
+    const found = Array.from(new Set(orders.map((o) => o.tingkat).filter(Boolean)));
+    return ["Semua", ...TINGKAT_ORDER.filter((tg) => found.includes(tg))];
+  }, [orders]);
+
   const ql = q.toLowerCase().trim();
-  const match = (o: AdminOrder) => `${o.nama} ${o.tingkat} ${o.kelas}`.toLowerCase().includes(ql);
+  const match = (o: AdminOrder) =>
+    `${o.nama} ${o.tingkat} ${o.kelas}`.toLowerCase().includes(ql) &&
+    (tingkatFilter === "Semua" || o.tingkat === tingkatFilter);
   const utama = orders.filter((o) => o.ambil === defaultAmbil && match(o));
   const beda = orders.filter((o) => o.ambil !== defaultAmbil && match(o));
 
@@ -189,13 +198,32 @@ export default function PreOrderAdmin({
             <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
           </div>
 
-          {/* Cari (satu-satunya kontrol daftar) */}
+          {/* Cari */}
           <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 50 }}>
             <Search size={20} color={t.text2} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama murid…"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
             {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
           </div>
+
+          {/* Filter Tingkat */}
+          {tingkats.length > 2 && (
+            <div className="flex gap-2" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+              {tingkats.map((tg) => {
+                const on = tg === tingkatFilter;
+                const bgColor = on && tg !== "Semua" ? tingkatColor(tg) : undefined;
+                return (
+                  <button key={tg} onClick={() => setTingkatFilter(tg)}
+                    style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      border: `1.5px solid ${on ? (tg === "Semua" ? t.primary : bgColor!) : t.border}`,
+                      background: on ? (tg === "Semua" ? t.primaryLight : bgColor!) : t.surface,
+                      color: on ? (tg === "Semua" ? t.amberText : "#FFFCF7") : t.text2 }}>
+                    {tg}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Daftar utama — preset pertama, TANPA label */}
@@ -342,7 +370,7 @@ function OrderCard({ o, onTap, showAmbil }: { o: AdminOrder; onTap: () => void; 
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, textDecoration: o.packed ? "line-through" : "none", color: o.packed ? t.text2 : t.text }}>{o.nama}</span>
+            <span style={{ fontSize: 18, fontWeight: 800, textDecoration: o.packed ? "line-through" : "none", color: o.packed ? t.text2 : t.text }}>{o.nama}</span>
             <span style={{ background: tingkatColor(o.tingkat), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
               {o.kelas || o.tingkat}
             </span>
