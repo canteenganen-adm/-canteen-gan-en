@@ -19,6 +19,15 @@ const TINGKAT_WARNA: Record<string, string> = {
   "Guru/Karyawan": "#2F2A24",
 };
 const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
+const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const fmtTx = (iso: string) => {
+  const d = new Date(iso);
+  const date = `${d.getDate()} ${BLN[d.getMonth()]}`;
+  const hh = d.getHours().toString().padStart(2,"0");
+  const mm = d.getMinutes().toString().padStart(2,"0");
+  const ss = d.getSeconds().toString().padStart(2,"0");
+  return `${date} · ${hh}:${mm}:${ss}`;
+};
 const groupKey = (c: Transaction["customer"]) =>
   `${c.nama.toLowerCase()}|${(c.wa || "").toLowerCase()}`;
 
@@ -260,7 +269,10 @@ export default function Tagihan({
                         background: tx.id === highlightedTxId ? "#FFF4DA" : t.surfaceSoft,
                         transition: "background 0.4s ease" }}>
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                        <SourceTag source={tx.source} label={tx.label} />
+                        <div className="flex items-center gap-2">
+                          <SourceTag source={tx.source} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTx(tx.createdAt)}</span>
+                        </div>
                         <span style={{ fontSize: 14, fontWeight: 700, color: t.text2 }}>{rupiah(tx.total)}</span>
                       </div>
                       <div style={{ marginBottom: 12 }}>
@@ -337,7 +349,8 @@ export default function Tagihan({
                     <div key={tx.id} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.68 : 1 }}>
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
-                        <SourceTag source={tx.source} label={tx.label} />
+                        <SourceTag source={tx.source} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTx(tx.createdAt)}</span>
                         <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>
                           {rupiah(tx.total)}
                         </span>
@@ -410,13 +423,14 @@ export default function Tagihan({
 }
 
 /* ---- Tags ---- */
-function SourceTag({ source, label }: { source: Transaction["source"]; label?: string }) {
+function SourceTag({ source }: { source: Transaction["source"] }) {
   const pre = source === "preorder";
   return (
-    <span className="flex items-center gap-1" style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
-      background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText, border: `1px solid ${pre ? "#F1DFB0" : "#D8E6D4"}` }}>
-      {pre ? <Utensils size={12} /> : <ShoppingCart size={12} />}
-      {pre ? "Pre-order" : "Penjualan"}{label ? ` · ${label}` : ""}
+    <span title={pre ? "Pre-order" : "Penjualan"}
+      style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", flex: "none",
+        background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText,
+        border: `1px solid ${pre ? "#F1DFB0" : "#D8E6D4"}` }}>
+      {pre ? <Utensils size={14} /> : <ShoppingCart size={14} />}
     </span>
   );
 }
