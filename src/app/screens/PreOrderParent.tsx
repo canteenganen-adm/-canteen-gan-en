@@ -243,6 +243,13 @@ export default function PreOrderParent({
             {copied ? <Check size={17} /> : <Copy size={17} />} {copied ? "Tersalin!" : "Salin Bukti Pesanan"}
           </button>
 
+          {/* Pesan lagi untuk anak lain / waktu ambil lain — data pemesan TETAP terisi */}
+          <button onClick={() => { setCart({}); setTried(false); setReceipt(null); setStep("menu"); }}
+            className="flex items-center justify-center gap-2"
+            style={{ width: "100%", height: 52, marginTop: 10, borderRadius: 14, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+            <Plus size={18} /> Buat Pesanan Lagi
+          </button>
+
           <div style={{ textAlign: "center", fontSize: 14, color: t.text2, margin: "18px 8px", lineHeight: 1.6 }}>
             Mohon menyiapkan kotak bekal makan Ananda dan meletakkannya di kantin sebelum jam masuk sekolah.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
