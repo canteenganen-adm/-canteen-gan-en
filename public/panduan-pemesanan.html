@@ -1,238 +1,122 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panduan Pemesanan — Canteen Gan En</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #FBF7EF;
-      color: #2F2A24;
-      min-height: 100vh;
-      padding: 0 0 48px;
-    }
-    .hero {
-      background: linear-gradient(160deg, #FFF3CC 0%, #FBF7EF 60%);
-      border-bottom: 1.5px solid #EDE3CF;
-      padding: 36px 24px 28px;
-      text-align: center;
-    }
-    .lotus { font-size: 52px; line-height: 1; }
-    h1 { font-size: 24px; font-weight: 800; margin-top: 12px; letter-spacing: -.02em; }
-    .slogan { font-size: 14px; color: #7A6A52; font-style: italic; margin-top: 4px; }
-    .wrap { max-width: 480px; margin: 0 auto; padding: 0 20px; }
-    .section { margin-top: 28px; }
-    .step {
-      background: #fff;
-      border: 1.5px solid #EDE3CF;
-      border-radius: 16px;
-      padding: 18px 18px 16px;
-      margin-bottom: 12px;
-    }
-    .step-num {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: #FDB833;
-      color: #2F2A24;
-      font-weight: 800;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-    .step-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-    .step-title { font-size: 16px; font-weight: 800; }
-    .step-body { font-size: 14.5px; line-height: 1.7; color: #4A3F30; }
-    .step-body b { color: #2F2A24; }
-    .tip {
-      background: #FFF3CC;
-      border: 1.5px solid #F1DFB0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 13.5px;
-      color: #7A5C00;
-      margin-top: 10px;
-      line-height: 1.6;
-    }
-    .tip::before { content: "💡 "; }
-    .pill {
-      display: inline-block;
-      padding: 3px 11px;
-      border-radius: 999px;
-      font-size: 12.5px;
-      font-weight: 700;
-      background: #FDB833;
-      color: #2F2A24;
-      vertical-align: middle;
-    }
-    .divider {
-      height: 1px;
-      background: #EDE3CF;
-      margin: 28px 0 0;
-    }
-    .faq-title {
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: #9B8A6E;
-      margin: 28px 0 12px;
-    }
-    .faq {
-      background: #fff;
-      border: 1.5px solid #EDE3CF;
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-    .faq strong { display: block; font-size: 14.5px; margin-bottom: 4px; color: #2F2A24; }
-    .footer {
-      text-align: center;
-      margin-top: 36px;
-      font-size: 13px;
-      color: #9B8A6E;
-    }
-    .footer span { display: block; margin-top: 6px; font-size: 18px; }
-  </style>
-</head>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panduan Pemesanan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#FAF6EE;--sf:#FFFCF7;--soft:#FFF8EE;--tx:#2F2A24;--t2:#756B5D;--pr:#FDB833;--pl:#FFF1CC;--am:#8a5c00;--bd:#E8E0D2}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--tx);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;padding:28px 18px 48px}
+  .wrap{max-width:460px;margin:0 auto}
+  .hero{text-align:center;margin-bottom:24px}
+  .hero .lotus{font-size:44px}
+  .hero .kicker{font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--am);margin-top:8px}
+  .hero h1{font-size:23px;font-weight:800;margin-top:2px}
+  .hero .slog{font-style:italic;color:var(--am);font-weight:700;font-size:15px;margin-top:2px}
+  .hero .sub{color:var(--t2);font-size:15px;margin-top:10px}
+  .link{display:block;text-align:center;background:var(--pl);border:1.5px dashed var(--pr);border-radius:14px;padding:14px;margin:0 0 26px;font-weight:800;font-size:17px;color:var(--am);word-break:break-all}
+
+  .step{display:flex;gap:14px;background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+  .num{width:38px;height:38px;flex:none;border-radius:50%;background:var(--pr);color:var(--tx);display:grid;place-items:center;font-weight:800;font-size:18px}
+  .step h2{font-size:17px;font-weight:800;margin-bottom:3px}
+  .step p{font-size:15.5px;color:var(--t2)}
+  .step b{color:var(--tx)}
+  .step ul{margin:6px 0 6px 18px;color:var(--t2);font-size:15.5px}
+  .step li{margin-bottom:3px}
+  .step .btnlike{display:inline-block;background:var(--pr);color:var(--tx);font-weight:800;font-size:14px;padding:4px 12px;border-radius:9px;margin:2px 0}
+
+  .info{background:var(--soft);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-top:20px}
+  .info h3{font-weight:800;margin-bottom:10px;font-size:15px}
+  .info li{margin:0 0 12px 18px;font-size:15.5px}
+  .info li:last-child{margin-bottom:0}
+  .info .bank{display:block;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;margin-top:6px;font-weight:800}
+  .info .ask{margin-top:14px;font-size:15.5px;color:var(--t2)}
+  .foot{text-align:center;color:var(--t2);font-size:14px;margin-top:26px}
+  @media print{body{padding:10px}}
+</style></head>
 <body>
+<div class="wrap">
 
   <div class="hero">
     <div class="lotus">🪷</div>
-    <h1>Panduan Pre-order</h1>
-    <div class="slogan">Canteen Gan En &mdash; Sehangat masakan Ibu</div>
+    <h1 style="font-size:22px">Panduan Pemesanan</h1>
+    <div style="font-size:15px;font-weight:800;margin-top:2px">Canteen Gan En</div>
+    <div class="slog">Sehangat Masakan Ibu</div>
+    <div class="sub">Cara memesan makanan untuk Ananda sangat mudah dan hanya membutuhkan waktu sekitar 2 menit.</div>
   </div>
 
-  <div class="wrap">
+  <div class="link">canteen-gan-en.vercel.app/pesan</div>
 
-    <div class="section">
-      <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#9B8A6E;margin-bottom:12px;">
-        Langkah-Langkah Pemesanan
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">1</span>
-          <span class="step-title">Buka link Pre-order</span>
-        </div>
-        <div class="step-body">
-          Ketuk <b>tautan Pre-order</b> yang dikirimkan oleh pihak kantin melalui grup WhatsApp kelas Ananda.<br><br>
-          Link hanya aktif pada <b>periode yang ditentukan</b>. Jika sudah melewati batas waktu, pesanan tidak dapat diterima.
-        </div>
-        <div class="tip">Simpan link di chat Tersimpan WhatsApp agar mudah ditemukan keesokan harinya.</div>
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">2</span>
-          <span class="step-title">Pilih menu</span>
-        </div>
-        <div class="step-body">
-          Pilih menu dari daftar yang tersedia. Menu dikelompokkan dalam kategori:<br>
-          <b>Makanan Berat · Buah · Snack · Paket · Puding</b><br><br>
-          Gunakan kotak <b>Cari</b> untuk menemukan menu lebih cepat. Ketuk <span class="pill">+ Tambah</span> untuk menambahkan item ke pesanan.
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">3</span>
-          <span class="step-title">Isi data pemesan</span>
-        </div>
-        <div class="step-body">
-          Setelah memilih menu, ketuk tombol <b>Lanjut</b> di bagian bawah layar.<br><br>
-          Isi data berikut dengan benar:
-          <ul style="margin:8px 0 0 18px;line-height:2;">
-            <li><b>Nama lengkap</b> Ananda</li>
-            <li><b>Tingkat</b> (KB / TK / SD / SMP / SMA)</li>
-            <li><b>Kelas</b> (misal: 3C, 8A)</li>
-            <li><b>Nomor WhatsApp</b> Ayah/Bunda (untuk konfirmasi tagihan)</li>
-            <li><b>Waktu Ambil</b> (Istirahat 1 atau Istirahat 2)</li>
-          </ul>
-        </div>
-        <div class="tip">Pastikan nama Ananda ditulis sesuai daftar kelas agar kantin mudah mencocokkan pesanan.</div>
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">4</span>
-          <span class="step-title">Kirim pesanan</span>
-        </div>
-        <div class="step-body">
-          Periksa kembali daftar pesanan, lalu ketuk <b>Kirim Pesanan</b>.<br><br>
-          Setelah berhasil, akan muncul <b>Bukti Pesanan</b> berisi rincian item dan total harga.
-        </div>
-        <div class="tip">Ketuk <b>Salin Bukti Pesanan</b> untuk menyimpan teks bukti ke clipboard — bisa langsung di-paste ke WhatsApp atau catatan.</div>
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">5</span>
-          <span class="step-title">Siapkan kotak bekal</span>
-        </div>
-        <div class="step-body">
-          Mohon Ananda membawa <b>kotak bekal/tempat makan</b> dan meletakkannya di meja kantin <b>sebelum jam masuk sekolah</b>.<br><br>
-          Pesanan akan dikemas oleh pihak kantin dan siap diambil pada waktu istirahat yang dipilih.
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="step-header">
-          <span class="step-num">6</span>
-          <span class="step-title">Pembayaran</span>
-        </div>
-        <div class="step-body">
-          Pembayaran dilakukan secara <b>kolektif</b>. Pihak kantin akan mengirimkan tagihan melalui WhatsApp setelah pesanan selesai.<br><br>
-          Pembayaran dapat dititipkan melalui <b>Ananda</b> atau diserahkan langsung kepada petugas kantin.
-        </div>
-        <div class="tip">Harap melunasi tagihan tepat waktu agar layanan pre-order dapat terus berjalan dengan baik.</div>
-      </div>
+  <div class="step">
+    <div class="num">1</div>
+    <div>
+      <h2>Buka halaman pemesanan</h2>
+      <p>Masuk ke tautan di atas, lalu tekan <span class="btnlike">Mulai Memesan</span>. Tanggal pemesanan sudah disiapkan secara otomatis, jadi Papa/Mama bisa langsung memilih menu.</p>
     </div>
-
-    <div class="divider"></div>
-
-    <div class="faq-title">Pertanyaan Umum</div>
-
-    <div class="faq">
-      <strong>Sampai jam berapa bisa memesan?</strong>
-      Waktu tutup pre-order ditetapkan oleh pihak kantin dan tertera di halaman pemesanan. Pastikan memesan sebelum batas waktu tersebut.
-    </div>
-
-    <div class="faq">
-      <strong>Bolehkah memesan lebih dari satu item?</strong>
-      Ya, Ayah/Bunda dapat memilih beberapa item sekaligus dalam satu pesanan.
-    </div>
-
-    <div class="faq">
-      <strong>Bagaimana jika pesanan ingin dibatalkan?</strong>
-      Hubungi pihak kantin melalui WhatsApp sesegera mungkin. Pembatalan hanya dapat dilakukan sebelum pesanan mulai dikemas.
-    </div>
-
-    <div class="faq">
-      <strong>Tombol "Salin" itu salin foto atau teks?</strong>
-      Tombol Salin hanya menyalin <b>teks</b> bukti pesanan ke clipboard — bukan tangkapan layar. Teks tersebut dapat langsung ditempel (paste) ke WhatsApp atau catatan.
-    </div>
-
-    <div class="faq">
-      <strong>Link pre-order berbeda setiap hari?</strong>
-      Tidak. Linknya sama setiap hari. Yang berubah adalah tanggal layanan yang ditetapkan oleh kantin.
-    </div>
-
-    <div class="footer">
-      Butuh bantuan? Hubungi pihak kantin melalui WhatsApp.
-      <span>🪷 感恩 Gan En 🙏🏻✨</span>
-    </div>
-
   </div>
-</body>
-</html>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div>
+      <h2>Pilih menu yang diinginkan</h2>
+      <p>Jelajahi menu berdasarkan kategori:<br><b>🍛 Makanan Berat • 🍉 Buah • 🍿 Snack • 🍱 Paket • 🍮 Puding</b><br>atau gunakan kolom <b>Cari</b> jika ingin menemukan menu tertentu. Tekan <span class="btnlike">+ Tambah</span> pada setiap menu yang ingin dipesan.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">3</div>
+    <div>
+      <h2>Lanjut ke konfirmasi</h2>
+      <p>Setelah selesai memilih menu, tekan tombol kuning di bagian bawah layar yang menampilkan jumlah pesanan dan total pembayaran, kemudian pilih <b>Lanjut</b>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">4</div>
+    <div>
+      <h2>Lengkapi data Ananda</h2>
+      <p>Isi data berikut:</p>
+      <ul>
+        <li>Nama Ananda</li>
+        <li>Tingkat (KB / TK / SD / SMP / SMA)</li>
+        <li>Kelas</li>
+        <li>Nomor WhatsApp</li>
+        <li>Waktu Pengambilan</li>
+      </ul>
+      <p>Pada halaman ini Papa/Mama juga masih dapat menambah atau mengurangi jumlah pesanan menggunakan tombol <b>+</b> dan <b>−</b>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">5</div>
+    <div>
+      <h2>Kirim pesanan</h2>
+      <p>Setelah semua data sudah benar, tekan <span class="btnlike">Kirim Pesanan</span>. Apabila muncul halaman hijau bertuliskan <b>"Pesanan Berhasil Dikirim"</b>, berarti pesanan telah kami terima. Jangan lupa tekan <span class="btnlike">Salin Bukti Pesanan</span> untuk menyimpan bukti pemesanan sebagai arsip.</p>
+    </div>
+  </div>
+
+  <div class="info">
+    <h3>📌 Hal yang Perlu Diketahui</h3>
+    <ul>
+      <li>Pemesanan ditutup <b>otomatis pukul 08.00</b> pada hari makan. Agar tidak terlewat, kami menyarankan melakukan pemesanan pada malam sebelumnya.</li>
+      <li>Pesanan yang sudah dikirim <b>tidak dapat diubah melalui aplikasi</b>, sehingga mohon pastikan kembali menu dan jumlah pesanan sebelum menekan <b>Kirim Pesanan</b>.</li>
+      <li>Mohon menyiapkan <b>kotak bekal</b> Ananda (beserta wadah tambahan untuk menu berkuah bila diperlukan) dan meletakkannya di kantin sebelum jam masuk sekolah. Kantin tidak menyediakan wadah maupun alat makan.</li>
+      <li>Pembayaran dapat dilakukan secara tunai atau melalui transfer ke:
+        <span class="bank">BCA 7347028990<br>a.n. Roswinarti</span></li>
+    </ul>
+    <div class="ask">Apabila ada pertanyaan, Papa/Mama dapat menghubungi kantin melalui WhatsApp.</div>
+  </div>
+
+  <div class="info" style="margin-top:14px">
+    <h3>❓ Pertanyaan Umum</h3>
+    <ul>
+      <li><b>Apakah link pemesanan berbeda setiap hari?</b><br>Tidak. Link selalu sama. Tanggal makan ditentukan otomatis oleh kantin.</li>
+      <li><b>Memesan untuk 2 anak atau 2 waktu istirahat?</b><br>Buat pesanan terpisah untuk setiap anak dan setiap waktu ambil. Setelah pesanan pertama terkirim, tekan <b>Buat Pesanan Lagi</b> — data tidak perlu diisi ulang, cukup ganti nama/waktu ambil.</li>
+      <li><b>Bolehkah memesan lebih dari satu menu?</b><br>Boleh. Papa/Mama dapat memilih beberapa menu sekaligus dalam satu pesanan.</li>
+      <li><b>Bagaimana jika ingin membatalkan pesanan?</b><br>Silakan hubungi kantin melalui WhatsApp sesegera mungkin.</li>
+      <li><b>Tombol "Salin Bukti Pesanan" menyalin apa?</b><br>Menyalin teks bukti pesanan — bisa langsung ditempel (paste) ke WhatsApp atau catatan.</li>
+    </ul>
+  </div>
+
+  <div class="foot">🪷 感恩 Gan En 🙏🏻✨</div>
+</div>
+</body></html>
