@@ -10,9 +10,10 @@ import {
   insertTransaction, updateTransaction,
   submitPreOrderTransaction,
   upsertKelas, deleteKelas,
+  patchTransactionCustomer,
   appStatePatch,
 } from "../lib/canteenApi";
-import type { MenuItem, Transaction, CanteenSettings, Kelas } from "../types";
+import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas } from "../types";
 
 import MasterMenu from "./screens/MasterMenu";
 import Penjualan from "./screens/Penjualan";
@@ -200,6 +201,12 @@ function useCanteenStore() {
       return next;
     });
   };
+  const editTransactionCustomer = (id: string, customer: TransactionCustomer, waktuAmbil?: string) => {
+    setTransactions((prev) =>
+      prev.map((tx) => tx.id === id ? { ...tx, customer, ...(waktuAmbil !== undefined && { waktuAmbil }) } : tx)
+    );
+    patchTransactionCustomer(id, customer, waktuAmbil).catch((e) => reportError("editTransactionCustomer", e));
+  };
 
   /** Submit Pre-order dari link orang tua. TIDAK optimistic — kalau sesi
    * sudah ditutup/lewat jam tutup, server (trigger DB) menolak dan ini
@@ -273,7 +280,7 @@ function useCanteenStore() {
 
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
-    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked,
+    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
     serviceDate, setServiceDate,
@@ -415,6 +422,9 @@ function MainShell({ store }: { store: CanteenStore }) {
             onPatchKelas={store.patchKelas}
             onRemoveKelas={store.removeKelas}
             onClose={() => setSettingsOpen(false)}
+            transactions={store.transactions}
+            pickupPresets={store.pickupPresets}
+            onEditCustomer={store.editTransactionCustomer}
           />
         </div>
       )}

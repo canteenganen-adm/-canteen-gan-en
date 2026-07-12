@@ -189,6 +189,17 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   if (error) throw error;
 }
 
+export async function patchTransactionCustomer(
+  id: string,
+  customer: TransactionCustomer,
+  waktuAmbil?: string
+): Promise<void> {
+  const patch: Record<string, unknown> = { customer };
+  if (waktuAmbil !== undefined) patch.waktu_ambil = waktuAmbil;
+  const { error } = await supabase.from("transaksi").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
 /* ---------------- App state (status Pre-order, Tanggal Layanan, Pengaturan) ---------------- */
 
 export async function fetchAppState(): Promise<AppStateData> {
