@@ -213,10 +213,20 @@ function Editor({ m, categories, onClose, onPatch, onRemove }: {
   onRemove: () => void;
 }) {
   const hasVariants = m.variants.length > 0;
+  const [newCatMode, setNewCatMode] = useState(false);
+  const [newCat, setNewCat] = useState("");
 
   const setName = (name: string) => onPatch({ name });
-  const setCategory = (category: string) => onPatch({ category });
   const setPrice = (v: string) => onPatch({ price: v === "" ? null : Number(v) });
+
+  const pickCategory = (category: string) => { onPatch({ category }); setNewCatMode(false); setNewCat(""); };
+  const applyNewCat = () => {
+    const val = newCat.trim();
+    if (!val) return;
+    pickCategory(val);
+  };
+  // Kategori item ini bisa saja belum ada di daftar (baru dibuat) — tetap tampilkan.
+  const catChips = categories.includes(m.category) ? categories : [...categories, m.category];
 
   const enableVariants = (on: boolean) => {
     if (on) onPatch({ variants: [{ id: uid(), name: "", price: 0 }], price: null });
@@ -244,12 +254,37 @@ function Editor({ m, categories, onClose, onPatch, onRemove }: {
             <input value={m.name} onChange={(e) => setName(e.target.value)} placeholder="cth. Nasi Goreng Hongkong" style={inputStyle} />
           </Field>
 
-          {/* Kategori */}
+          {/* Kategori — chip ketuk langsung ganti, + Lainnya untuk kategori baru */}
           <Field label="Kategori">
-            <input value={m.category} onChange={(e) => setCategory(e.target.value)} list="kategori-list" placeholder="cth. Nasi" style={inputStyle} />
-            <datalist id="kategori-list">
-              {categories.map((c) => <option key={c} value={c} />)}
-            </datalist>
+            <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+              {catChips.map((c) => {
+                const on = c === m.category && !newCatMode;
+                return (
+                  <button key={c} onClick={() => pickCategory(c)}
+                    style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                    {c}
+                  </button>
+                );
+              })}
+              <button onClick={() => { setNewCatMode(true); setNewCat(""); }}
+                className="flex items-center gap-1"
+                style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  border: `1.5px dashed ${newCatMode ? t.primary : t.border}`, background: newCatMode ? t.primaryLight : t.surfaceSoft, color: t.amberText }}>
+                <Plus size={16} /> Lainnya
+              </button>
+            </div>
+            {newCatMode && (
+              <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
+                <input value={newCat} onChange={(e) => setNewCat(e.target.value)} autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && applyNewCat()}
+                  placeholder="Nama kategori baru…" style={{ ...inputStyle, flex: 1, height: 48 }} />
+                <button onClick={applyNewCat}
+                  style={{ flex: "none", width: 48, height: 48, borderRadius: 10, border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  <Check size={18} />
+                </button>
+              </div>
+            )}
           </Field>
 
           {/* Varian toggle */}
