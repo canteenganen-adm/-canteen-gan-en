@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Database, Info, X, Check, Download, Plus, Trash2, Pencil,
-  Search, ArrowLeft, ChevronRight, Clock,
+  Search, ArrowLeft, ChevronRight, Clock, GraduationCap,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { uid } from "../../lib/format";
@@ -52,6 +52,7 @@ export default function Pengaturan({
 
   // --- Waktu Ambil state ---
   const [waktuAmbilOpen, setWaktuAmbilOpen] = useState(false);
+  const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
   const [newPreset, setNewPreset] = useState("");
   const [editingPresetIdx, setEditingPresetIdx] = useState<number | null>(null);
   const [editPresetVal, setEditPresetVal] = useState("");
@@ -416,6 +417,77 @@ export default function Pengaturan({
     );
   }
 
+  /* ===== VIEW: Daftar Kelas ===== */
+  if (daftarKelasOpen) {
+    return (
+      <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
+          <div className="flex items-center gap-3" style={{ padding: "20px 20px 16px" }}>
+            <button onClick={() => { setDaftarKelasOpen(false); setEditingKelasId(null); setNewNama(""); }}
+              style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>Daftar Kelas</div>
+          </div>
+
+          <div style={{ padding: "0 20px" }}>
+            <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
+              Dipakai sebagai pilihan Kelas di form orang tua — orang tua tidak bisa mengetik sendiri.
+            </div>
+
+            <div className="flex gap-2" style={{ overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
+              {KELAS_TINGKAT.map((tg) => {
+                const on = tg === tingkatFilter;
+                return (
+                  <button key={tg} onClick={() => setTingkatFilter(tg)}
+                    style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                    {tg}
+                  </button>
+                );
+              })}
+            </div>
+
+            {kelasForTingkat.length === 0 && (
+              <div style={{ fontSize: 13, color: t.textDis, padding: "8px 0" }}>Belum ada kelas untuk {tingkatFilter}.</div>
+            )}
+            {kelasForTingkat.map((k) => (
+              <div key={k.id} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+                {editingKelasId === k.id ? (
+                  <>
+                    <input value={editKelasNama} onChange={(e) => setEditKelasNama(e.target.value)} autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && saveKelasEdit()}
+                      style={{ ...inp, flex: 1, height: 48 }} />
+                    <button onClick={saveKelasEdit} style={iconBtn(t.successBg, t.successText)}>
+                      <Check size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center" style={{ flex: 1, height: 48, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, padding: "0 12px", fontSize: 14.5, fontWeight: 600 }}>
+                      {k.nama}
+                    </div>
+                    <button onClick={() => startKelasEdit(k)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
+                    <button onClick={() => onRemoveKelas(k.id)} style={iconBtn(t.errorBg, t.error)}><Trash2 size={15} /></button>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+              <input value={newNama} onChange={(e) => setNewNama(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addKelas()}
+                placeholder={`Kelas baru untuk ${tingkatFilter}…`}
+                style={{ ...inp, flex: 1, height: 48 }} />
+              <button onClick={addKelas} style={iconBtn(t.primary, t.text)}><Plus size={17} /></button>
+            </div>
+          </div>
+        </div>
+        {toast && <Toast msg={toast} />}
+      </div>
+    );
+  }
+
   /* ===== VIEW: Main Pengaturan ===== */
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
@@ -463,59 +535,16 @@ export default function Pengaturan({
               <ChevronRight size={18} color={t.textDis} />
             </button>
 
-            <div style={{ padding: "14px 16px" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>Daftar Kelas</div>
-              <div style={{ fontSize: 12.5, color: t.text2, marginBottom: 12 }}>
-                Dipakai sebagai pilihan Kelas di form orang tua — orang tua tidak bisa mengetik sendiri.
+            <button
+              onClick={() => setDaftarKelasOpen(true)}
+              className="flex items-center gap-3" style={rowBtn}>
+              <span style={ic}><GraduationCap size={20} /></span>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Daftar Kelas</div>
+                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{kelasList.length} kelas · {KELAS_TINGKAT.join(", ")}</div>
               </div>
-
-              <div className="flex gap-2" style={{ overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
-                {KELAS_TINGKAT.map((tg) => {
-                  const on = tg === tingkatFilter;
-                  return (
-                    <button key={tg} onClick={() => setTingkatFilter(tg)}
-                      style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
-                      {tg}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {kelasForTingkat.length === 0 && (
-                <div style={{ fontSize: 13, color: t.textDis, padding: "8px 0" }}>Belum ada kelas untuk {tingkatFilter}.</div>
-              )}
-              {kelasForTingkat.map((k) => (
-                <div key={k.id} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                  {editingKelasId === k.id ? (
-                    <>
-                      <input value={editKelasNama} onChange={(e) => setEditKelasNama(e.target.value)} autoFocus
-                        onKeyDown={(e) => e.key === "Enter" && saveKelasEdit()}
-                        style={{ ...inp, flex: 1, height: 42 }} />
-                      <button onClick={saveKelasEdit} style={iconBtn(t.successBg, t.successText)}>
-                        <Check size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center" style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, padding: "0 12px", fontSize: 14.5, fontWeight: 600 }}>
-                        {k.nama}
-                      </div>
-                      <button onClick={() => startKelasEdit(k)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
-                      <button onClick={() => onRemoveKelas(k.id)} style={iconBtn(t.errorBg, t.error)}><Trash2 size={15} /></button>
-                    </>
-                  )}
-                </div>
-              ))}
-
-              <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-                <input value={newNama} onChange={(e) => setNewNama(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addKelas()}
-                  placeholder={`Kelas baru untuk ${tingkatFilter}…`}
-                  style={{ ...inp, flex: 1, height: 42 }} />
-                <button onClick={addKelas} style={iconBtn(t.primary, t.text)}><Plus size={17} /></button>
-              </div>
-            </div>
+              <ChevronRight size={18} color={t.textDis} />
+            </button>
           </Group>
 
           {/* Printer */}
