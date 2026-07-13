@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
@@ -154,6 +154,11 @@ export default function Tagihan({
 
   const markPaid = (tx: Transaction) => { onMarkPaid(tx.id); setUndo({ type: "paid", tx }); };
   const cancel = (tx: Transaction) => { onCancel(tx.id); setUndo({ type: "cancel", tx }); };
+  const pulihkan = (tx: Transaction) => {
+    onRestore(tx);
+    if (undo?.type === "cancel" && undo.tx.id === tx.id) setUndo(null);
+    setToast(`Dipulihkan — ${tx.customer.nama} kembali ke Belum Dibayar`);
+  };
   const doUndo = () => {
     if (!undo) return;
     if (undo.type === "paid") onUnmarkPaid(undo.tx.id);
@@ -364,11 +369,18 @@ export default function Tagihan({
                         </div>
                       ))}
                       {cancelled && (
-                        <button onClick={() => setTrashConfirmTx(tx)}
-                          className="flex items-center gap-1.5"
-                          style={{ marginTop: 10, height: 34, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                          <Trash2 size={13} /> Hapus
-                        </button>
+                        <div className="flex gap-2" style={{ marginTop: 10 }}>
+                          <button onClick={() => pulihkan(tx)}
+                            className="flex items-center justify-center gap-1.5"
+                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                            <RotateCcw size={13} /> Pulihkan
+                          </button>
+                          <button onClick={() => setTrashConfirmTx(tx)}
+                            className="flex items-center justify-center gap-1.5"
+                            style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                            <Trash2 size={13} /> Hapus
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
