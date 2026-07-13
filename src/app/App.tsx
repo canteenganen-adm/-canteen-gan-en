@@ -96,6 +96,9 @@ function useCanteenStore() {
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const loadedOnce = useRef(false);
+  /** Timer debounce tulis menu per-id — mengetik nama menu TIDAK boleh
+   * jadi satu request per huruf (berat + memicu badai event realtime). */
+  const menuWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const loadAll = useCallback(async () => {
     try {
@@ -105,7 +108,10 @@ function useCanteenStore() {
         fetchAppState(),
         fetchKelas(),
       ]);
-      setMenus(menusData);
+      // Jangan timpa menus saat masih ada tulisan menu yang tertunda
+      // (pengguna sedang mengetik di editor) — data server masih versi
+      // lama dan akan MENGHAPUS ketikan yang belum tersimpan.
+      if (menuWriteTimers.current.size === 0) setMenus(menusData);
       setTransactions(txData);
       setKelasList(kelasData);
       setPreorderOpenLocal(appState.preorderOpen);
@@ -127,11 +133,18 @@ function useCanteenStore() {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     loadAll();
     // Realtime: perubahan dari device/tab lain (mis. pesanan baru dari /pesan)
-    // memicu reload penuh — data kecil (menu+transaksi harian), aman & sederhana.
+    // memicu reload penuh. Reload di-debounce 800ms supaya rentetan event
+    // beruntun (mis. beberapa save berdekatan) jadi SATU fetch, bukan badai.
+    let reloadTimer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = subscribeToCanteenChanges(() => {
-      if (loadedOnce.current) loadAll();
+      if (!loadedOnce.current) return;
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(loadAll, 800);
     });
-    return unsubscribe;
+    return () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
+      unsubscribe();
+    };
   }, [loadAll]);
 
   /** Setiap kegagalan simpan (bukan cuma fetch awal) sekarang juga tampil
@@ -149,11 +162,22 @@ function useCanteenStore() {
     setMenus((prev) => [item, ...prev]);
     upsertMenuItem(item).catch((e) => reportError("addMenuItem", e));
   };
+  /** Simpan ke DB di-debounce 600ms per item: mengetik "Sate Ayam" = SATU
+   * request setelah berhenti mengetik, bukan sembilan. Tiap ketikan
+   * menjadwal ulang timer dengan snapshot item terbaru. */
   const patchMenuItem = (id: string, fields: Partial<MenuItem>) => {
     setMenus((prev) => {
       const next = prev.map((m) => (m.id === id ? { ...m, ...fields } : m));
       const updated = next.find((m) => m.id === id);
-      if (updated) upsertMenuItem(updated).catch((e) => reportError("patchMenuItem", e));
+      if (updated) {
+        const timers = menuWriteTimers.current;
+        const existing = timers.get(id);
+        if (existing) clearTimeout(existing);
+        timers.set(id, setTimeout(() => {
+          timers.delete(id);
+          upsertMenuItem(updated).catch((e) => reportError("patchMenuItem", e));
+        }, 600));
+      }
       return next;
     });
   };
