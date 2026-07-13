@@ -137,7 +137,7 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
     namaKantin: r.nama_kantin,
     whatsapp: r.whatsapp,
     printerConnected: r.printer_connected,
-    waOpening: r.wa_opening ?? "Halo Papa/Mama,\nTerima kasih telah melakukan pemesanan di Canteen Gan En. Berikut rincian pesanan Ananda:",
+    waOpening: r.wa_opening ?? "Halo Papa/Mama,\n\nTerima kasih telah melakukan pemesanan di Canteen Gan En. Berikut rincian pesanan Ananda:",
     waClosing: r.wa_closing ?? "Pembayaran dapat dilakukan secara tunai dengan menitipkan kepada Ananda, atau melalui transfer ke rekening berikut:",
     namaBank: r.nama_bank ?? "BCA",
     noRekening: r.no_rekening ?? "7347028990",

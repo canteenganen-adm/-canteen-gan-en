@@ -172,13 +172,13 @@ export default function Tagihan({
       const itemLines = tx.items
         .map((it) => `• ${it.name.trim()}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
-      return `${fmtWaDate(tx.createdAt)}\n${itemLines}`;
+      return `[${fmtWaDate(tx.createdAt)}]\n${itemLines}`;
     }).join("\n\n");
     const bankLine = [settings.namaBank, settings.noRekening].filter(Boolean).join(" ");
     const bankSection = bankLine
-      ? `\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
+      ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
-    return `${settings.waOpening}\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas}\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n${settings.waClosing}${bankSection}\n\n🪷 Gan En 🙏🏻✨`;
+    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\n🪷 Gan En 🙏🏻✨`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
