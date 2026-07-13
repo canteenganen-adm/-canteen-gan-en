@@ -82,3 +82,12 @@ export interface Kelas {
   tingkat: string;
   nama: string;
 }
+
+/** Jam layanan per Waktu Ambil — dikelola admin di sub-screen Waktu Ambil.
+ * Dipakai untuk deteksi "Lewat Waktu Ambil" di PO Admin.
+ * Guru/Karyawan TIDAK mewarisi defaultTime — hanya dicek kalau byTingkat diisi. */
+export interface PickupSchedule {
+  name: string;
+  defaultTime?: string;
+  byTingkat?: Record<string, string>;
+}

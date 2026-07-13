@@ -4,10 +4,10 @@ import {
   Box, Check, X, Search, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow } from "../../lib/format";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
 import { TINGKAT_LIST } from "../../lib/constants";
-import type { Transaction } from "../../types";
+import type { Transaction, PickupSchedule } from "../../types";
 
 const TINGKAT_WARNA: Record<string, string> = {
   "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
@@ -76,6 +76,7 @@ export default function PreOrderAdmin({
   autoCloseTime,
   onAutoCloseTimeChange,
   presets,
+  schedules,
   transactions,
   onTogglePacked,
   poLink,
@@ -88,6 +89,7 @@ export default function PreOrderAdmin({
   autoCloseTime: string;
   onAutoCloseTimeChange: (t: string) => void;
   presets: string[];
+  schedules: PickupSchedule[];
   transactions: Transaction[];
   onTogglePacked: (id: string) => void;
   poLink: string;
@@ -98,6 +100,7 @@ export default function PreOrderAdmin({
   const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   const [copied, setCopied] = useState(false);
   const [nowTick, setNowTick] = useState(0);
+  const [showLateOnly, setShowLateOnly] = useState(false);
   const gantiTanggalRef = useRef<HTMLInputElement>(null);
   const jamTutupRef = useRef<HTMLInputElement>(null);
 
@@ -111,6 +114,12 @@ export default function PreOrderAdmin({
     void nowTick; // re-evaluate tiap 30 detik
     return open && autoClosedNow(serviceDate, autoCloseTime);
   }, [open, serviceDate, autoCloseTime, nowTick]);
+
+  // Jam WIB sekarang (HH:MM) — di-refresh tiap 30 detik oleh nowTick
+  const currentWIBTime = useMemo(() => {
+    void nowTick;
+    return wibTimeHHMM();
+  }, [nowTick]);
 
   const defaultAmbil = presets[0] || "Istirahat 1";
 
@@ -140,8 +149,31 @@ export default function PreOrderAdmin({
   const match = (o: AdminOrder) =>
     `${o.nama} ${o.tingkat} ${o.kelas}`.toLowerCase().includes(ql) &&
     (tingkatFilter === "Semua" || o.tingkat === tingkatFilter);
-  const utama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
-  const beda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
+
+  const rawUtama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
+  const rawBeda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
+
+  // Deteksi telat: Belum Dikemas + jam WIB sekarang > jam waktu ambil untuk tingkat tsb.
+  // Guru/Karyawan hanya dianggap telat jika byTingkat diisi secara eksplisit.
+  const isGroupLate = (g: MergedGroup): boolean => {
+    if (g.allPacked || !schedules.length) return false;
+    const sched = schedules.find(s => s.name === g.ambil);
+    if (!sched) return false;
+    const time = g.tingkat === "Guru/Karyawan"
+      ? sched.byTingkat?.[g.tingkat]
+      : (sched.byTingkat?.[g.tingkat] || sched.defaultTime);
+    if (!time) return false;
+    return currentWIBTime > time;
+  };
+
+  const sortLateFirst = (list: MergedGroup[]) => {
+    const late = list.filter(isGroupLate);
+    const notLate = list.filter(g => !isGroupLate(g));
+    return [...late, ...notLate];
+  };
+  const utama = showLateOnly ? rawUtama.filter(isGroupLate) : sortLateFirst(rawUtama);
+  const beda = showLateOnly ? rawBeda.filter(isGroupLate) : sortLateFirst(rawBeda);
+  const lateCount = [...rawUtama, ...rawBeda].filter(isGroupLate).length;
 
   const handleGroupTap = (g: MergedGroup) => {
     const shouldBePacked = !g.allPacked;
@@ -272,10 +304,22 @@ export default function PreOrderAdmin({
 
         {/* Daftar utama — preset pertama, TANPA label */}
         <div style={{ padding: "0 20px" }}>
+
+          {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
+          {lateCount > 0 && (
+            <button onClick={() => setShowLateOnly(v => !v)} className="flex items-center gap-2"
+              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "11px 14px", marginBottom: 10, background: t.error, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              <AlertCircle size={16} />
+              <span style={{ flex: 1, textAlign: "left" }}>
+                {showLateOnly ? "← Semua pesanan" : `${lateCount} pesanan lewat waktu ambil`}
+              </span>
+            </button>
+          )}
+
           <div style={{ fontSize: 13, fontWeight: 800, color: t.text, margin: "8px 2px 10px" }}>Pesanan Hari Ini</div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
-          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} />)}
+          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} />)}
 
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
@@ -285,7 +329,7 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
-              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil />)}
+              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil isLate={isGroupLate(g)} />)}
             </>
           )}
         </div>
@@ -388,13 +432,15 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-function MergedOrderCard({ g, onTap, showAmbil }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean }) {
+function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean; isLate?: boolean }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
+  const late = isLate && !g.allPacked;
+  const cardBorder = late ? t.error : g.allPacked ? "#D8E6D4" : t.border;
   return (
     <div onClick={onTap}
-      style={{ background: t.surface, border: `1px solid ${g.allPacked ? "#D8E6D4" : t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
+      style={{ background: t.surface, border: `1.5px solid ${cardBorder}`, borderLeft: late ? `4px solid ${t.error}` : `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
       <div className="flex items-center gap-3">
         <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
           background: checkBg, border: `2px solid ${checkBorder}`, color: "#fff" }}>
@@ -411,6 +457,7 @@ function MergedOrderCard({ g, onTap, showAmbil }: { g: MergedGroup; onTap: () =>
               <span style={{ fontSize: 11, fontWeight: 800, color: t.amberText, background: t.primaryLight, border: `1px solid #F1DFB0`, padding: "2px 8px", borderRadius: 999 }}>{g.ids.length} pesanan</span>
             )}
             {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />{g.ambil}</span>}
+            {late && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.error, background: t.errorBg, border: `1px solid #E8B9B9`, padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />Lewat {g.ambil}</span>}
           </div>
         </div>
       </div>

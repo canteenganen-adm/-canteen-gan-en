@@ -15,7 +15,7 @@ import {
   restoreFromTrash as apiRestoreFromTrash, hardDeleteTransaction,
   appStatePatch,
 } from "../lib/canteenApi";
-import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas } from "../types";
+import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas, PickupSchedule } from "../types";
 
 import MasterMenu from "./screens/MasterMenu";
 import Penjualan from "./screens/Penjualan";
@@ -89,6 +89,7 @@ function useCanteenStore() {
   const [serviceDate, setServiceDateLocal] = useState("");
   const [autoCloseTime, setAutoCloseTimeLocal] = useState("08:00:00");
   const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
+  const [pickupSchedules, setPickupSchedulesLocal] = useState<PickupSchedule[]>([]);
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
   const [trashTransactions, setTrashTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +112,7 @@ function useCanteenStore() {
       setServiceDateLocal(appState.serviceDate);
       setAutoCloseTimeLocal(appState.autoCloseTime);
       setPickupPresetsLocal(appState.pickupPresets);
+      setPickupSchedulesLocal(appState.pickupSchedules);
       setSettingsLocal(appState.settings);
       setError(null);
     } catch (e) {
@@ -304,6 +306,10 @@ function useCanteenStore() {
     setPickupPresetsLocal(presets);
     appStatePatch.pickupPresets(presets).catch((e) => reportError("setPickupPresets", e));
   };
+  const setPickupSchedules = (schedules: PickupSchedule[]) => {
+    setPickupSchedulesLocal(schedules);
+    appStatePatch.pickupSchedules(schedules).catch((e) => reportError("setPickupSchedules", e));
+  };
   const patchSettings = (patch: Partial<CanteenSettings>) => {
     setSettingsLocal((s) => ({ ...s, ...patch }));
     if (patch.namaKantin !== undefined) appStatePatch.namaKantin(patch.namaKantin).catch((e) => reportError("patchSettings.namaKantin", e));
@@ -320,6 +326,7 @@ function useCanteenStore() {
     serviceDate, setServiceDate,
     autoCloseTime, setAutoCloseTime,
     pickupPresets, setPickupPresets,
+    pickupSchedules, setPickupSchedules,
     settings, patchSettings,
     submitPreOrder,
     loading, error,
@@ -389,6 +396,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             autoCloseTime={store.autoCloseTime}
             onAutoCloseTimeChange={store.setAutoCloseTime}
             presets={store.pickupPresets}
+            schedules={store.pickupSchedules}
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             poLink={poLink}
@@ -469,6 +477,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             transactions={store.transactions}
             pickupPresets={store.pickupPresets}
             onSetPickupPresets={store.setPickupPresets}
+            pickupSchedules={store.pickupSchedules}
+            onSetPickupSchedules={store.setPickupSchedules}
             onEditCustomer={store.editTransactionCustomer}
             trashTransactions={store.trashTransactions}
             onLoadTrash={store.loadTrash}

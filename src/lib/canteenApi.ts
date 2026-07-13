@@ -6,6 +6,7 @@ import type {
   TransactionCustomer,
   TransactionItemSnapshot,
   Kelas,
+  PickupSchedule,
 } from "../types";
 
 /* ============================================================
@@ -46,6 +47,7 @@ interface AppStateRow {
   service_date: string;
   auto_close_time: string;
   pickup_presets: string[];
+  pickup_schedules: PickupSchedule[] | null;
   nama_kantin: string;
   whatsapp: string;
   printer_connected: boolean;
@@ -116,6 +118,7 @@ export interface AppStateData {
   serviceDate: string;
   autoCloseTime: string;
   pickupPresets: string[];
+  pickupSchedules: PickupSchedule[];
   settings: CanteenSettings;
 }
 
@@ -124,6 +127,7 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
   serviceDate: r.service_date,
   autoCloseTime: r.auto_close_time,
   pickupPresets: r.pickup_presets,
+  pickupSchedules: r.pickup_schedules ?? [],
   settings: {
     namaKantin: r.nama_kantin,
     whatsapp: r.whatsapp,
@@ -258,6 +262,7 @@ export const appStatePatch = {
   serviceDate: (v: string) => updateAppState({ service_date: v }),
   autoCloseTime: (v: string) => updateAppState({ auto_close_time: v }),
   pickupPresets: (v: string[]) => updateAppState({ pickup_presets: v }),
+  pickupSchedules: (v: PickupSchedule[]) => updateAppState({ pickup_schedules: v }),
   namaKantin: (v: string) => updateAppState({ nama_kantin: v }),
   whatsapp: (v: string) => updateAppState({ whatsapp: v }),
   printerConnected: (v: boolean) => updateAppState({ printer_connected: v }),

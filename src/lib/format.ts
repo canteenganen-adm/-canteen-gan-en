@@ -65,6 +65,13 @@ export function autoClosedNow(serviceDate: string, autoCloseTime: string): boole
   return wibDate === serviceDate && wibTime >= autoCloseTime;
 }
 
+/** Jam WIB sekarang dalam format "HH:MM" — dipakai untuk deteksi Lewat Waktu Ambil. */
+export function wibTimeHHMM(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(new Date());
+}
+
 export function priceLabel(m: MenuItem) {
   if (m.variants.length > 0) {
     const ps = m.variants.map((v) => v.price).filter((x) => x != null);

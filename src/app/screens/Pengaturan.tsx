@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Database, Info, X, Check, Download, Plus, Trash2, Pencil,
-  Search, ArrowLeft, ChevronRight, Clock, GraduationCap, RotateCcw,
+  Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { uid, rupiah } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
-import type { CanteenSettings, Kelas, Transaction, TransactionCustomer } from "../../types";
+import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
 /* ============================================================
    PENGATURAN — Canteen Gan En  (dibuka dari ikon gear di header)
@@ -38,6 +38,8 @@ export default function Pengaturan({
   transactions,
   pickupPresets,
   onSetPickupPresets,
+  pickupSchedules,
+  onSetPickupSchedules,
   onEditCustomer,
   trashTransactions,
   onLoadTrash,
@@ -54,6 +56,8 @@ export default function Pengaturan({
   transactions: Transaction[];
   pickupPresets: string[];
   onSetPickupPresets: (presets: string[]) => void;
+  pickupSchedules: PickupSchedule[];
+  onSetPickupSchedules: (schedules: PickupSchedule[]) => void;
   onEditCustomer: (id: string, customer: TransactionCustomer, waktuAmbil?: string) => void;
   trashTransactions: Transaction[];
   onLoadTrash: () => void;
@@ -70,6 +74,7 @@ export default function Pengaturan({
 
   // --- Waktu Ambil state ---
   const [waktuAmbilOpen, setWaktuAmbilOpen] = useState(false);
+  const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
   const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
@@ -86,7 +91,9 @@ export default function Pengaturan({
   };
   const removePreset = (idx: number) => {
     if (pickupPresets.length <= 1) { setToast("Minimal 1 waktu ambil harus ada."); return; }
+    const removedName = pickupPresets[idx];
     onSetPickupPresets(pickupPresets.filter((_, i) => i !== idx));
+    onSetPickupSchedules(pickupSchedules.filter(s => s.name !== removedName));
   };
   const startPresetEdit = (idx: number) => { setEditingPresetIdx(idx); setEditPresetVal(pickupPresets[idx]); };
   const savePresetEdit = () => {
@@ -95,10 +102,36 @@ export default function Pengaturan({
     if (pickupPresets.some((p, i) => i !== editingPresetIdx && p.toLowerCase() === val.toLowerCase())) {
       setToast("Waktu ambil sudah ada."); return;
     }
+    const oldName = pickupPresets[editingPresetIdx];
     const next = [...pickupPresets];
     next[editingPresetIdx] = val;
     onSetPickupPresets(next);
+    onSetPickupSchedules(pickupSchedules.map(s => s.name === oldName ? { ...s, name: val } : s));
     setEditingPresetIdx(null);
+  };
+
+  // --- Schedule helpers ---
+  const scheduleFor = (name: string): PickupSchedule =>
+    pickupSchedules.find(s => s.name === name) || { name, byTingkat: {} };
+  const setDefaultTime = (presetName: string, time: string) => {
+    const cur = scheduleFor(presetName);
+    const filtered = pickupSchedules.filter(s => s.name !== presetName);
+    onSetPickupSchedules([...filtered, { ...cur, defaultTime: time || undefined }]);
+  };
+  const setTingkatTime = (presetName: string, tingkat: string, time: string) => {
+    const cur = scheduleFor(presetName);
+    const byTingkat = { ...(cur.byTingkat || {}) };
+    if (time) byTingkat[tingkat] = time;
+    else delete byTingkat[tingkat];
+    const filtered = pickupSchedules.filter(s => s.name !== presetName);
+    onSetPickupSchedules([...filtered, { ...cur, byTingkat }]);
+  };
+  const toggleScheduleExpand = (name: string) => {
+    setExpandedSchedules(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
   };
 
   // --- Edit Pesanan state ---
@@ -322,35 +355,78 @@ export default function Pengaturan({
 
           <div style={{ padding: "0 20px" }}>
             <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
-              Dipakai sebagai pilihan Waktu Ambil saat ortu pesan. Perubahan berlaku langsung.
+              Dipakai sebagai pilihan Waktu Ambil saat ortu pesan. Isi jam untuk deteksi pesanan belum dikemas yang sudah terlambat.
             </div>
 
-            {pickupPresets.map((p, idx) => (
-              <div key={idx} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                {editingPresetIdx === idx ? (
-                  <>
-                    <input value={editPresetVal} onChange={(e) => setEditPresetVal(e.target.value)} autoFocus
-                      onKeyDown={(e) => e.key === "Enter" && savePresetEdit()}
-                      style={{ ...inp, flex: 1, height: 48 }} />
-                    <button onClick={savePresetEdit} style={iconBtn(t.successBg, t.successText)}>
-                      <Check size={16} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2" style={{ flex: 1, height: 48, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, padding: "0 14px" }}>
-                      <Clock size={15} color={t.amberText} />
-                      <span style={{ fontSize: 15, fontWeight: 600 }}>{p}</span>
+            {pickupPresets.map((p, idx) => {
+              const sched = scheduleFor(p);
+              const isExpanded = expandedSchedules.has(p);
+              return (
+                <div key={idx} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+                  {/* Baris nama */}
+                  <div className="flex items-center gap-2" style={{ padding: "0 14px", height: 52 }}>
+                    {editingPresetIdx === idx ? (
+                      <>
+                        <input value={editPresetVal} onChange={(e) => setEditPresetVal(e.target.value)} autoFocus
+                          onKeyDown={(e) => e.key === "Enter" && savePresetEdit()}
+                          style={{ ...inp, flex: 1, height: 42 }} />
+                        <button onClick={savePresetEdit} style={iconBtn(t.successBg, t.successText)}>
+                          <Check size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Clock size={15} color={t.amberText} style={{ flex: "none" }} />
+                        <span style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{p}</span>
+                        <button onClick={() => startPresetEdit(idx)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
+                        <button onClick={() => removePreset(idx)} style={iconBtn(t.errorBg, t.error)}
+                          title={pickupPresets.length <= 1 ? "Minimal 1 waktu ambil" : "Hapus"}>
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Jam default */}
+                  <div className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${t.divider}` }}>
+                    <span style={{ flex: 1, fontSize: 14, color: t.text2 }}>Jam default</span>
+                    <input type="time" value={sched.defaultTime || ""}
+                      onChange={(e) => setDefaultTime(p, e.target.value)}
+                      style={{ border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 8px", fontSize: 14, fontWeight: 700, color: sched.defaultTime ? t.text : t.textDis, background: t.bg, fontFamily: "inherit" }} />
+                  </div>
+
+                  {/* Atur per tingkat toggle */}
+                  <button onClick={() => toggleScheduleExpand(p)} className="flex items-center"
+                    style={{ width: "100%", padding: "10px 14px", background: isExpanded ? t.surfaceSoft : "transparent", border: "none", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
+                    <span style={{ flex: 1, textAlign: "left", fontSize: 13.5, color: t.text2, fontWeight: 600, fontFamily: "inherit" }}>Atur per tingkat</span>
+                    {isExpanded ? <ChevronUp size={16} color={t.text2} /> : <ChevronDown size={16} color={t.text2} />}
+                  </button>
+
+                  {/* Per-tingkat jam */}
+                  {isExpanded && (
+                    <div style={{ borderTop: `1px solid ${t.divider}` }}>
+                      {TINGKAT_LIST.map((tingkat, ti) => {
+                        const tingkatTime = sched.byTingkat?.[tingkat] || "";
+                        const isGK = tingkat === "Guru/Karyawan";
+                        return (
+                          <div key={tingkat} className="flex items-center gap-3"
+                            style={{ padding: "9px 14px", borderBottom: ti < TINGKAT_LIST.length - 1 ? `1px solid ${t.divider}` : undefined }}>
+                            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: tingkatColor(tingkat) }}>{tingkat}</span>
+                            <span style={{ fontSize: 11.5, color: t.textDis }}>
+                              {!tingkatTime && !isGK && sched.defaultTime ? sched.defaultTime : ""}
+                              {!tingkatTime && isGK ? "Tidak dicek" : ""}
+                            </span>
+                            <input type="time" value={tingkatTime}
+                              onChange={(e) => setTingkatTime(p, tingkat, e.target.value)}
+                              style={{ border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 8px", fontSize: 13.5, fontWeight: 700, color: tingkatTime ? t.text : t.textDis, background: t.bg, fontFamily: "inherit" }} />
+                          </div>
+                        );
+                      })}
                     </div>
-                    <button onClick={() => startPresetEdit(idx)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
-                    <button onClick={() => removePreset(idx)} style={iconBtn(t.errorBg, t.error)}
-                      title={pickupPresets.length <= 1 ? "Minimal 1 waktu ambil" : "Hapus"}>
-                      <Trash2 size={15} />
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
 
             <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
               <input value={newPreset} onChange={(e) => setNewPreset(e.target.value)}
