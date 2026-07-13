@@ -101,6 +101,7 @@ export default function PreOrderAdmin({
   const [copied, setCopied] = useState(false);
   const [nowTick, setNowTick] = useState(0);
   const [showLateOnly, setShowLateOnly] = useState(false);
+  const [packedFilter, setPackedFilter] = useState<"semua" | "sudah" | "belum">("semua");
   const gantiTanggalRef = useRef<HTMLInputElement>(null);
   const jamTutupRef = useRef<HTMLInputElement>(null);
 
@@ -171,8 +172,11 @@ export default function PreOrderAdmin({
     const notLate = list.filter(g => !isGroupLate(g));
     return [...late, ...notLate];
   };
-  const utama = showLateOnly ? rawUtama.filter(isGroupLate) : sortLateFirst(rawUtama);
-  const beda = showLateOnly ? rawBeda.filter(isGroupLate) : sortLateFirst(rawBeda);
+  // Filter Sudah/Belum Dikemas dari kotak ringkasan (grup campuran dihitung Belum)
+  const byPacked = (g: MergedGroup) =>
+    packedFilter === "semua" || (packedFilter === "sudah" ? g.allPacked : !g.allPacked);
+  const utama = (showLateOnly ? rawUtama.filter(isGroupLate) : sortLateFirst(rawUtama)).filter(byPacked);
+  const beda = (showLateOnly ? rawBeda.filter(isGroupLate) : sortLateFirst(rawBeda)).filter(byPacked);
   const lateCount = [...rawUtama, ...rawBeda].filter(isGroupLate).length;
 
   const handleGroupTap = (g: MergedGroup) => {
@@ -262,11 +266,14 @@ export default function PreOrderAdmin({
             </button>
           </div>
 
-          {/* Ringkasan hari ini */}
+          {/* Ringkasan hari ini — bisa diketuk sebagai filter daftar */}
           <div className="flex gap-2" style={{ marginTop: 12 }}>
-            <Stat n={orders.length} label="Pesanan" />
-            <Stat n={packed} label="Sudah Dikemas" tone="ok" />
-            <Stat n={belum} label="Belum Dikemas" tone="warn" />
+            <Stat n={orders.length} label="Pesanan" active={packedFilter === "semua"}
+              onClick={() => setPackedFilter("semua")} />
+            <Stat n={packed} label="Sudah Dikemas" tone="ok" active={packedFilter === "sudah"}
+              onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
+            <Stat n={belum} label="Belum Dikemas" tone="warn" active={packedFilter === "belum"}
+              onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
           </div>
 
           {/* Actions */}
@@ -471,13 +478,16 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
     </div>
   );
 }
-function Stat({ n, label, tone }: { n: number; label: string; tone?: "ok" | "warn" }) {
+function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
   const col = tone === "ok" ? t.successText : tone === "warn" ? t.error : t.text;
   return (
-    <div style={{ flex: 1, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "12px 8px", textAlign: "center" }}>
+    <button onClick={onClick}
+      style={{ flex: 1, background: active ? t.primaryLight : t.surface,
+        border: active ? `1.5px solid ${t.primary}` : `1px solid ${t.border}`,
+        borderRadius: 14, padding: "12px 8px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 24, fontWeight: 800, color: col, lineHeight: 1 }}>{n}</div>
-      <div style={{ fontSize: 11.5, color: t.text2, marginTop: 5 }}>{label}</div>
-    </div>
+      <div style={{ fontSize: 11.5, color: active ? t.amberText : t.text2, fontWeight: active ? 700 : 400, marginTop: 5 }}>{label}</div>
+    </button>
   );
 }
 function Action({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
