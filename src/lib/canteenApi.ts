@@ -157,10 +157,13 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transaksi")
     .select("*")
-    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as TransaksiRow[]).map(txRowToTransaction);
+  // Filter di JS agar resilient terhadap kolom deleted_at yang belum ada di DB
+  // (kolom ditambah via migration_4_tong_sampah.sql yang perlu dijalankan manual).
+  // Sebelum migration: r.deleted_at undefined → tx.deletedAt undefined → lolos filter (benar).
+  // Setelah migration: baris di tong sampah punya deletedAt terisi → dibuang (benar).
+  return (data as TransaksiRow[]).map(txRowToTransaction).filter((tx) => !tx.deletedAt);
 }
 
 export async function fetchTrashedTransactions(): Promise<Transaction[]> {
