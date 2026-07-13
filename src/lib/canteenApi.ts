@@ -51,6 +51,11 @@ interface AppStateRow {
   nama_kantin: string;
   whatsapp: string;
   printer_connected: boolean;
+  wa_opening: string | null;
+  wa_closing: string | null;
+  nama_bank: string | null;
+  no_rekening: string | null;
+  nama_rekening: string | null;
 }
 
 interface KelasRow {
@@ -132,6 +137,11 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
     namaKantin: r.nama_kantin,
     whatsapp: r.whatsapp,
     printerConnected: r.printer_connected,
+    waOpening: r.wa_opening ?? "Halo Papa/Mama,\nTerima kasih telah melakukan pemesanan di Canteen Gan En. Berikut rincian pesanan Ananda:",
+    waClosing: r.wa_closing ?? "Pembayaran dapat dilakukan secara tunai dengan menitipkan kepada Ananda, atau melalui transfer ke rekening berikut:",
+    namaBank: r.nama_bank ?? "BCA",
+    noRekening: r.no_rekening ?? "7347028990",
+    namaRekening: r.nama_rekening ?? "Roswinarti",
   },
 });
 
@@ -266,6 +276,11 @@ export const appStatePatch = {
   namaKantin: (v: string) => updateAppState({ nama_kantin: v }),
   whatsapp: (v: string) => updateAppState({ whatsapp: v }),
   printerConnected: (v: boolean) => updateAppState({ printer_connected: v }),
+  waOpening: (v: string) => updateAppState({ wa_opening: v }),
+  waClosing: (v: string) => updateAppState({ wa_closing: v }),
+  namaBank: (v: string) => updateAppState({ nama_bank: v }),
+  noRekening: (v: string) => updateAppState({ no_rekening: v }),
+  namaRekening: (v: string) => updateAppState({ nama_rekening: v }),
 };
 
 /* ---------------- Kelas (per Tingkat, dikelola admin) ---------------- */

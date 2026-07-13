@@ -73,6 +73,11 @@ export interface CanteenSettings {
   namaKantin: string;
   whatsapp: string;
   printerConnected: boolean;
+  waOpening: string;
+  waClosing: string;
+  namaBank: string;
+  noRekening: string;
+  namaRekening: string;
 }
 
 /** Kelas per Tingkat — dikelola admin (Pengaturan), jadi sumber picker

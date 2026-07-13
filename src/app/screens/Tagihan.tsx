@@ -4,8 +4,8 @@ import {
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah } from "../../lib/format";
-import type { Transaction } from "../../types";
+import { rupiah, fmtWaDate } from "../../lib/format";
+import type { Transaction, CanteenSettings } from "../../types";
 
 /* ============================================================
    TRANSAKSI — Canteen Gan En
@@ -37,6 +37,7 @@ type UndoAction = { type: "paid"; tx: Transaction } | { type: "cancel"; tx: Tran
 
 export default function Tagihan({
   transactions,
+  settings,
   onMarkPaid,
   onUnmarkPaid,
   onCancel,
@@ -45,6 +46,7 @@ export default function Tagihan({
   onOpenSettings,
 }: {
   transactions: Transaction[];
+  settings: CanteenSettings;
   onMarkPaid: (id: string) => void;
   onUnmarkPaid: (id: string) => void;
   onCancel: (id: string) => void;
@@ -64,8 +66,7 @@ export default function Tagihan({
   const prevTxIdsRef = useRef<Set<string>>(new Set());
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const WA_OPENING = "Selamat siang Ayah/Bunda. Berikut rincian transaksi di Canteen Gan En:";
-  const WA_CLOSING = "Pembayaran dapat dititipkan melalui Ananda. Terima kasih.";
+  const toTitleCase = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 
   useEffect(() => { if (!undo) return; const id = setTimeout(() => setUndo(null), 5000); return () => clearTimeout(id); }, [undo]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 2200); return () => clearTimeout(id); }, [toast]);
@@ -167,12 +168,17 @@ export default function Tagihan({
   };
 
   const buildWaMsg = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
-    const lines = g.txs.map((tx) => {
-      const itemLine = tx.items.map((it) => `  • ${it.name}${it.variant ? ` (${it.variant})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`).join("\n");
-      const label = tx.label ? `[${tx.label}]\n` : "";
-      return `${label}${itemLine}`;
+    const txBlocks = g.txs.map((tx) => {
+      const itemLines = tx.items
+        .map((it) => `• ${it.name.trim()}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
+        .join("\n");
+      return `${fmtWaDate(tx.createdAt)}\n${itemLines}`;
     }).join("\n\n");
-    return `${WA_OPENING}\n\nNama: ${g.customer.nama}\nTingkat/Kelas: ${g.customer.kelas}\n\n${lines}\n\nTotal: ${rupiah(g.total)}\n\n${WA_CLOSING}`;
+    const bankLine = [settings.namaBank, settings.noRekening].filter(Boolean).join(" ");
+    const bankSection = bankLine
+      ? `\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
+      : "";
+    return `${settings.waOpening}\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas}\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n${settings.waClosing}${bankSection}\n\n🪷 Gan En 🙏🏻✨`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");

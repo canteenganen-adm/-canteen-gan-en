@@ -315,6 +315,11 @@ function useCanteenStore() {
     if (patch.namaKantin !== undefined) appStatePatch.namaKantin(patch.namaKantin).catch((e) => reportError("patchSettings.namaKantin", e));
     if (patch.whatsapp !== undefined) appStatePatch.whatsapp(patch.whatsapp).catch((e) => reportError("patchSettings.whatsapp", e));
     if (patch.printerConnected !== undefined) appStatePatch.printerConnected(patch.printerConnected).catch((e) => reportError("patchSettings.printerConnected", e));
+    if (patch.waOpening !== undefined) appStatePatch.waOpening(patch.waOpening).catch((e) => reportError("patchSettings.waOpening", e));
+    if (patch.waClosing !== undefined) appStatePatch.waClosing(patch.waClosing).catch((e) => reportError("patchSettings.waClosing", e));
+    if (patch.namaBank !== undefined) appStatePatch.namaBank(patch.namaBank).catch((e) => reportError("patchSettings.namaBank", e));
+    if (patch.noRekening !== undefined) appStatePatch.noRekening(patch.noRekening).catch((e) => reportError("patchSettings.noRekening", e));
+    if (patch.namaRekening !== undefined) appStatePatch.namaRekening(patch.namaRekening).catch((e) => reportError("patchSettings.namaRekening", e));
   };
 
   return {
@@ -414,6 +419,7 @@ function MainShell({ store }: { store: CanteenStore }) {
         {tab === "tagihan" && (
           <Tagihan
             transactions={store.transactions}
+            settings={store.settings}
             onMarkPaid={store.markPaid}
             onUnmarkPaid={store.unmarkPaid}
             onCancel={store.cancelTransaction}

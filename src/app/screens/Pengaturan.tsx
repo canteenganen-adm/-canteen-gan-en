@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Database, Info, X, Check, Download, Plus, Trash2, Pencil,
-  Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw,
+  Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { uid, rupiah } from "../../lib/format";
@@ -766,6 +766,32 @@ export default function Pengaturan({
             </div>
           </Group>
 
+          {/* Template WA Tagihan */}
+          <Group label="Template WA Tagihan">
+            <div style={{ padding: "12px 16px" }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Pembuka</div>
+              <textarea value={settings.waOpening} onChange={(e) => onChange({ waOpening: e.target.value })}
+                rows={3} style={tarea} />
+            </div>
+            <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Penutup</div>
+              <textarea value={settings.waClosing} onChange={(e) => onChange({ waClosing: e.target.value })}
+                rows={3} style={tarea} />
+            </div>
+            <FieldRow icon={<Landmark size={20} />} label="Bank">
+              <input value={settings.namaBank} onChange={(e) => onChange({ namaBank: e.target.value })}
+                placeholder="BCA" style={inp} />
+            </FieldRow>
+            <FieldRow icon={<Landmark size={20} />} label="Nomor Rekening">
+              <input value={settings.noRekening} onChange={(e) => onChange({ noRekening: e.target.value })}
+                placeholder="7347028990" inputMode="numeric" style={inp} />
+            </FieldRow>
+            <FieldRow icon={<Landmark size={20} />} label="Atas Nama">
+              <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })}
+                placeholder="Nama pemilik rekening" style={inp} />
+            </FieldRow>
+          </Group>
+
           {/* Data */}
           <Group label="Data">
             <button onClick={() => setToast("Backup data dibuat.")} className="flex items-center gap-3" style={rowBtn}>
@@ -808,6 +834,10 @@ const ic: React.CSSProperties = {
 const inp: React.CSSProperties = {
   width: "100%", height: 46, fontSize: 16, color: t.text, background: t.surface,
   border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "0 12px", outline: "none", fontFamily: "inherit",
+};
+const tarea: React.CSSProperties = {
+  width: "100%", fontSize: 14.5, lineHeight: 1.65, color: t.text, background: t.surface,
+  border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "10px 12px", outline: "none", fontFamily: "inherit", resize: "vertical",
 };
 const eInp = (err: boolean): React.CSSProperties => ({
   width: "100%", height: 52, fontSize: 16, color: t.text, background: t.surface,
