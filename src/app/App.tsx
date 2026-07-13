@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route } from "react-router";
 import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
-import { nowLabel, orderNo, serviceDateLabel } from "../lib/format";
+import { nowLabel, orderNo, serviceDateLabel, autoClosedNow } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
   fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
@@ -330,11 +330,19 @@ function useCanteenStore() {
 /* ---------------- Rute "/pesan" — link orang tua, berdiri sendiri ---------------- */
 
 function ParentRoute({ store }: { store: CanteenStore }) {
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  void nowTick;
+  const effectiveOpen = store.preorderOpen && !autoClosedNow(store.serviceDate, store.autoCloseTime);
+
   return (
     <PreOrderParent
       kantin={store.settings.namaKantin}
       serviceDate={serviceDateLabel(store.serviceDate)}
-      open={store.preorderOpen}
+      open={effectiveOpen}
       menus={store.menus}
       kelasList={store.kelasList}
       pickupOptions={store.pickupPresets}

@@ -54,6 +54,17 @@ export function hhmm(time: string) {
   return time.slice(0, 5);
 }
 
+/** true jika sekarang (WIB) sudah lewat jam autoCloseTime pada hari serviceDate.
+ * Dipakai klien untuk menampilkan status "Tutup Otomatis" tanpa harus submit. */
+export function autoClosedNow(serviceDate: string, autoCloseTime: string): boolean {
+  const now = new Date();
+  const wibDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(now);
+  const wibTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).format(now);
+  return wibDate === serviceDate && wibTime >= autoCloseTime;
+}
+
 export function priceLabel(m: MenuItem) {
   if (m.variants.length > 0) {
     const ps = m.variants.map((v) => v.price).filter((x) => x != null);

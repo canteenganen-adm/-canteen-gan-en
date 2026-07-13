@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, Link2, Copy, Share2, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm } from "../../lib/format";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
 import { TINGKAT_LIST } from "../../lib/constants";
 import type { Transaction } from "../../types";
@@ -97,8 +97,20 @@ export default function PreOrderAdmin({
   const [tingkatFilter, setTingkatFilter] = useState("Semua");
   const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   const [copied, setCopied] = useState(false);
+  const [nowTick, setNowTick] = useState(0);
   const gantiTanggalRef = useRef<HTMLInputElement>(null);
   const jamTutupRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // true jika sesi dibuka tapi jam WIB sudah lewat auto_close_time pada hari serviceDate
+  const isAutoClosed = useMemo(() => {
+    void nowTick; // re-evaluate tiap 30 detik
+    return open && autoClosedNow(serviceDate, autoCloseTime);
+  }, [open, serviceDate, autoCloseTime, nowTick]);
 
   const defaultAmbil = presets[0] || "Istirahat 1";
 
@@ -183,8 +195,10 @@ export default function PreOrderAdmin({
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Sesi Pre-order</span>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 32, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 700, fontSize: 12.5, border: "none",
-                  background: open ? t.successBg : t.errorBg, color: open ? t.successText : t.error }}>
-                <Power size={13} /> {open ? "Dibuka" : "Ditutup"}
+                  background: isAutoClosed ? t.primaryLight : open ? t.successBg : t.errorBg,
+                  color: isAutoClosed ? t.amberText : open ? t.successText : t.error }}>
+                <Power size={13} />
+                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
             </div>
 
