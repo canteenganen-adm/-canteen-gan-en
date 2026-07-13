@@ -11,6 +11,8 @@ import {
   submitPreOrderTransaction,
   upsertKelas, deleteKelas,
   patchTransactionCustomer,
+  fetchTrashedTransactions, purgeOldTrash, softDeleteTransaction,
+  restoreFromTrash as apiRestoreFromTrash, hardDeleteTransaction,
   appStatePatch,
 } from "../lib/canteenApi";
 import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas } from "../types";
@@ -88,6 +90,7 @@ function useCanteenStore() {
   const [autoCloseTime, setAutoCloseTimeLocal] = useState("08:00:00");
   const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
+  const [trashTransactions, setTrashTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -193,6 +196,36 @@ function useCanteenStore() {
     setTransactions((prev) => prev.map((x) => (x.id === tx.id ? { ...x, cancelledAt: undefined } : x)));
     updateTransaction(tx.id, { cancelledAt: null }).catch((e) => reportError("restoreTransaction", e));
   };
+  /** Pindahkan transaksi Dibatalkan ke Tong Sampah (set deleted_at). */
+  const moveToTrash = (id: string) => {
+    const deletedAt = new Date().toISOString();
+    const tx = transactions.find((t) => t.id === id);
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    if (tx) setTrashTransactions((prev) => [{ ...tx, deletedAt }, ...prev]);
+    softDeleteTransaction(id).catch((e) => reportError("moveToTrash", e));
+  };
+  /** Pulihkan dari Tong Sampah — kembali ke tab Lunas sebagai Dibatalkan. */
+  const restoreFromTrash = (id: string) => {
+    const tx = trashTransactions.find((t) => t.id === id);
+    setTrashTransactions((prev) => prev.filter((t) => t.id !== id));
+    if (tx) setTransactions((prev) => [{ ...tx, deletedAt: undefined }, ...prev]);
+    apiRestoreFromTrash(id).catch((e) => reportError("restoreFromTrash", e));
+  };
+  /** Hapus permanen dari Tong Sampah — tidak bisa dikembalikan. */
+  const hardDeleteFromTrash = (id: string) => {
+    setTrashTransactions((prev) => prev.filter((t) => t.id !== id));
+    hardDeleteTransaction(id).catch((e) => reportError("hardDeleteFromTrash", e));
+  };
+  /** Muat ulang Tong Sampah (jalankan purge dulu, lalu fetch). */
+  const loadTrash = useCallback(async () => {
+    try {
+      await purgeOldTrash();
+      const data = await fetchTrashedTransactions();
+      setTrashTransactions(data);
+    } catch (e) {
+      reportError("loadTrash", e);
+    }
+  }, []);
   const togglePacked = (id: string) => {
     setTransactions((prev) => {
       const next = prev.map((tx) => (tx.id === id ? { ...tx, packed: !tx.packed } : tx));
@@ -281,6 +314,7 @@ function useCanteenStore() {
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer,
+    trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
     serviceDate, setServiceDate,
@@ -320,6 +354,8 @@ function MainShell({ store }: { store: CanteenStore }) {
   const poLink = `${window.location.origin}/pesan`;
   const unpaidCount = store.transactions.filter((tx) => !tx.paid && !tx.cancelledAt).length;
 
+  const openSettings = () => { setSettingsOpen(true); store.loadTrash(); };
+
   useEffect(() => {
     if (!store.saveError) return;
     const id = setTimeout(store.clearSaveError, 4000);
@@ -348,7 +384,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             poLink={poLink}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={openSettings}
           />
         )}
         {tab === "penjualan" && (
@@ -356,7 +392,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             menus={store.menus}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={openSettings}
           />
         )}
         {tab === "tagihan" && (
@@ -366,7 +402,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onUnmarkPaid={store.unmarkPaid}
             onCancel={store.cancelTransaction}
             onRestore={store.restoreTransaction}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onMoveToTrash={store.moveToTrash}
+            onOpenSettings={openSettings}
           />
         )}
         {tab === "menu" && (
@@ -376,7 +413,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onPatch={store.patchMenuItem}
             onToggleChannel={store.toggleMenuChannel}
             onRemove={store.removeMenuItem}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={openSettings}
           />
         )}
       </div>
@@ -425,6 +462,10 @@ function MainShell({ store }: { store: CanteenStore }) {
             pickupPresets={store.pickupPresets}
             onSetPickupPresets={store.setPickupPresets}
             onEditCustomer={store.editTransactionCustomer}
+            trashTransactions={store.trashTransactions}
+            onLoadTrash={store.loadTrash}
+            onRestoreFromTrash={store.restoreFromTrash}
+            onHardDeleteFromTrash={store.hardDeleteFromTrash}
           />
         </div>
       )}

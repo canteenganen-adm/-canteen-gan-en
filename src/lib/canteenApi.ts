@@ -37,6 +37,7 @@ interface TransaksiRow {
   packed: boolean | null;
   order_no: string | null;
   cancelled_at: string | null;
+  deleted_at: string | null;
 }
 
 interface AppStateRow {
@@ -88,6 +89,7 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   packed: r.packed ?? undefined,
   orderNo: r.order_no ?? undefined,
   cancelledAt: r.cancelled_at ?? undefined,
+  deletedAt: r.deleted_at ?? undefined,
 });
 
 const transactionToRow = (tx: Transaction): Record<string, unknown> => {
@@ -155,9 +157,44 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transaksi")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as TransaksiRow[]).map(txRowToTransaction);
+}
+
+export async function fetchTrashedTransactions(): Promise<Transaction[]> {
+  const { data, error } = await supabase
+    .from("transaksi")
+    .select("*")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false });
+  if (error) throw error;
+  return (data as TransaksiRow[]).map(txRowToTransaction);
+}
+
+export async function purgeOldTrash(): Promise<void> {
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase.from("transaksi").delete().lt("deleted_at", cutoff);
+  if (error) throw error;
+}
+
+export async function softDeleteTransaction(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("transaksi")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function restoreFromTrash(id: string): Promise<void> {
+  const { error } = await supabase.from("transaksi").update({ deleted_at: null }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function hardDeleteTransaction(id: string): Promise<void> {
+  const { error } = await supabase.from("transaksi").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function insertTransaction(tx: Transaction): Promise<void> {

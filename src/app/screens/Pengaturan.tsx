@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Database, Info, X, Check, Download, Plus, Trash2, Pencil,
-  Search, ArrowLeft, ChevronRight, Clock, GraduationCap,
+  Search, ArrowLeft, ChevronRight, Clock, GraduationCap, RotateCcw,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { uid } from "../../lib/format";
+import { uid, rupiah } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer } from "../../types";
 
@@ -16,6 +16,16 @@ import type { CanteenSettings, Kelas, Transaction, TransactionCustomer } from ".
 
 const KELAS_TINGKAT = TINGKAT_LIST.filter((tg) => tg !== NO_KELAS_TINGKAT);
 const MIN_WA = 10;
+
+const TINGKAT_WARNA: Record<string, string> = {
+  "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
+  "SD": "#C94F4F", "SMP": "#4A7BA6", "SMA": "#6E6E6E",
+  "Guru/Karyawan": "#2F2A24",
+};
+const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
+const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const fmtDate = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN[d.getMonth()]} ${d.getFullYear()}`; };
+const sisaHari = (deletedAt: string) => Math.max(0, Math.ceil(30 - (Date.now() - new Date(deletedAt).getTime()) / 86400000));
 
 export default function Pengaturan({
   settings,
@@ -29,6 +39,10 @@ export default function Pengaturan({
   pickupPresets,
   onSetPickupPresets,
   onEditCustomer,
+  trashTransactions,
+  onLoadTrash,
+  onRestoreFromTrash,
+  onHardDeleteFromTrash,
 }: {
   settings: CanteenSettings;
   onChange: (patch: Partial<CanteenSettings>) => void;
@@ -41,6 +55,10 @@ export default function Pengaturan({
   pickupPresets: string[];
   onSetPickupPresets: (presets: string[]) => void;
   onEditCustomer: (id: string, customer: TransactionCustomer, waktuAmbil?: string) => void;
+  trashTransactions: Transaction[];
+  onLoadTrash: () => void;
+  onRestoreFromTrash: (id: string) => void;
+  onHardDeleteFromTrash: (id: string) => void;
 }) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -53,6 +71,8 @@ export default function Pengaturan({
   // --- Waktu Ambil state ---
   const [waktuAmbilOpen, setWaktuAmbilOpen] = useState(false);
   const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
   const [newPreset, setNewPreset] = useState("");
   const [editingPresetIdx, setEditingPresetIdx] = useState<number | null>(null);
   const [editPresetVal, setEditPresetVal] = useState("");
@@ -488,6 +508,99 @@ export default function Pengaturan({
     );
   }
 
+  /* ===== VIEW: Tong Sampah ===== */
+  if (trashOpen) {
+    return (
+      <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
+          <div className="flex items-center gap-3" style={{ padding: "20px 20px 16px" }}>
+            <button onClick={() => setTrashOpen(false)}
+              style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>Tong Sampah</div>
+          </div>
+
+          <div style={{ padding: "0 20px" }}>
+            <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
+              Terhapus otomatis setelah 30 hari. Hanya transaksi Dibatalkan yang bisa dimasukkan ke sini.
+            </div>
+
+            {trashTransactions.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "56px 20px" }}>
+                <div style={{ width: 56, height: 56, borderRadius: 14, background: t.surfaceSoft, color: t.text2, display: "grid", placeItems: "center", margin: "0 auto 12px" }}>
+                  <Trash2 size={26} />
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>Tong sampah kosong</div>
+              </div>
+            ) : trashTransactions.map((tx) => {
+              const sisa = tx.deletedAt ? sisaHari(tx.deletedAt) : 30;
+              const sisaColor = sisa <= 7 ? t.error : t.text2;
+              const kelasParts = [tx.customer.tingkat, tx.customer.kelas].filter(Boolean).join(" ");
+              return (
+                <div key={tx.id} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, marginBottom: 12, padding: "14px 16px" }}>
+                  <div className="flex items-start justify-between gap-3" style={{ marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 15.5, fontWeight: 800 }}>{tx.customer.nama}</div>
+                      {kelasParts && (
+                        <span style={{ background: tingkatColor(tx.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
+                          {kelasParts}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right", flex: "none" }}>
+                      <div style={{ fontSize: 15, fontWeight: 800 }}>{rupiah(tx.total)}</div>
+                      {tx.serviceDate && (
+                        <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{fmtDate(tx.serviceDate)}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: sisaColor, fontWeight: 600, marginBottom: 12 }}>
+                    {sisa > 0 ? `${sisa} hari lagi` : "Dihapus permanen hari ini"}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => onRestoreFromTrash(tx.id)}
+                      className="flex items-center justify-center gap-1.5"
+                      style={{ flex: 2, height: 44, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                      <RotateCcw size={15} /> Pulihkan
+                    </button>
+                    <button onClick={() => setHardDeleteConfirmId(tx.id)}
+                      style={{ flex: 1, height: 44, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.errorBg, color: t.error, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                      Hapus Sekarang
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Konfirmasi hapus permanen */}
+        {hardDeleteConfirmId && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div onClick={() => setHardDeleteConfirmId(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+            <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24 }}>
+              <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>Hapus permanen?</div>
+              <div style={{ fontSize: 14.5, color: t.text2 }}>Data ini tidak bisa dikembalikan.</div>
+              <div className="flex gap-2" style={{ marginTop: 20 }}>
+                <button onClick={() => setHardDeleteConfirmId(null)}
+                  style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Batal
+                </button>
+                <button onClick={() => { onHardDeleteFromTrash(hardDeleteConfirmId); setHardDeleteConfirmId(null); }}
+                  style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.error, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toast && <Toast msg={toast} />}
+      </div>
+    );
+  }
+
   /* ===== VIEW: Main Pengaturan ===== */
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
@@ -542,6 +655,19 @@ export default function Pengaturan({
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Daftar Kelas</div>
                 <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{kelasList.length} kelas · {KELAS_TINGKAT.join(", ")}</div>
+              </div>
+              <ChevronRight size={18} color={t.textDis} />
+            </button>
+
+            <button
+              onClick={() => { setTrashOpen(true); onLoadTrash(); }}
+              className="flex items-center gap-3" style={rowBtn}>
+              <span style={{ ...ic, background: t.errorBg, color: t.error }}><Trash2 size={20} /></span>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Tong Sampah</div>
+                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>
+                  {trashTransactions.length > 0 ? `${trashTransactions.length} item` : "Kosong"}
+                </div>
               </div>
               <ChevronRight size={18} color={t.textDis} />
             </button>

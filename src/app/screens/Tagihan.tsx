@@ -41,6 +41,7 @@ export default function Tagihan({
   onUnmarkPaid,
   onCancel,
   onRestore,
+  onMoveToTrash,
   onOpenSettings,
 }: {
   transactions: Transaction[];
@@ -48,6 +49,7 @@ export default function Tagihan({
   onUnmarkPaid: (id: string) => void;
   onCancel: (id: string) => void;
   onRestore: (tx: Transaction) => void;
+  onMoveToTrash: (id: string) => void;
   onOpenSettings: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
@@ -58,6 +60,7 @@ export default function Tagihan({
   const [waDraft, setWaDraft] = useState<{ wa: string; text: string } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
+  const [trashConfirmTx, setTrashConfirmTx] = useState<Transaction | null>(null);
   const prevTxIdsRef = useRef<Set<string>>(new Set());
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -346,7 +349,7 @@ export default function Tagihan({
                 {g.txs.map((tx) => {
                   const cancelled = !!tx.cancelledAt;
                   return (
-                    <div key={tx.id} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.68 : 1 }}>
+                    <div key={tx.id} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.82 : 1 }}>
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} />
@@ -360,6 +363,13 @@ export default function Tagihan({
                           {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}
+                      {cancelled && (
+                        <button onClick={() => setTrashConfirmTx(tx)}
+                          className="flex items-center gap-1.5"
+                          style={{ marginTop: 10, height: 34, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                          <Trash2 size={13} /> Hapus
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -386,6 +396,30 @@ export default function Tagihan({
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+        </div>
+      )}
+
+      {/* Konfirmasi pindah ke Tong Sampah */}
+      {trashConfirmTx && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setTrashConfirmTx(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>Pindahkan ke Tong Sampah?</div>
+            <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.6 }}>
+              Pesanan <b style={{ color: t.text }}>{trashConfirmTx.customer.nama}</b> akan disembunyikan dari semua halaman. Bisa dipulihkan di Pengaturan → Tong Sampah dalam 30 hari.
+            </div>
+            <div className="flex gap-2" style={{ marginTop: 20 }}>
+              <button onClick={() => setTrashConfirmTx(null)}
+                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                Batal
+              </button>
+              <button onClick={() => { onMoveToTrash(trashConfirmTx.id); setTrashConfirmTx(null); }}
+                className="flex items-center justify-center gap-2"
+                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.errorBg, color: t.error, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                <Trash2 size={17} /> Hapus
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

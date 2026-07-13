@@ -64,6 +64,9 @@ export interface Transaction {
   /** Diisi saat "Batalkan Transaksi" — soft-delete, transaksi TETAP ada untuk
    * Riwayat (audit), bukan dihapus permanen. null/undefined = aktif normal. */
   cancelledAt?: string | null;
+  /** Diisi saat dipindah ke Tong Sampah — tersimpan 30 hari, bisa dipulihkan.
+   * null/undefined = tidak di tong sampah. */
+  deletedAt?: string | null;
 }
 
 export interface CanteenSettings {
