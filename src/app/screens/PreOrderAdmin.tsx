@@ -267,41 +267,14 @@ export default function PreOrderAdmin({
             <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
               <span style={{ fontSize: 13.5, color: t.text2 }}>
                 Otomatis tutup jam <b style={{ color: t.text }}>{hhmm(autoCloseTime)}</b>
+                {open && reopenNow && reopenUntil && autoClosedNow(serviceDate, autoCloseTime) && (
+                  <> · <b style={{ color: t.successText }}>dibuka lagi s/d {wibClock(reopenUntil)}</b></>
+                )}
               </span>
               <button onClick={() => setSheet("jamTutup")} style={{ background: "transparent", border: "none", color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", padding: "6px 4px" }}>
                 Ubah
               </button>
             </div>
-
-            {/* Buka Lagi — hanya saat Tutup Otomatis; jam tutup standar tidak berubah */}
-            {isAutoClosed && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
-                <div style={{ fontSize: 13, color: t.text2, marginBottom: 8 }}>
-                  Ada yang masih mau pesan? Buka lagi sementara:
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => reopenFor(30)}
-                    style={{ flex: 1, height: 44, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                    +30 menit
-                  </button>
-                  <button onClick={() => reopenFor(60)}
-                    style={{ flex: 1, height: 44, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                    +1 jam
-                  </button>
-                </div>
-              </div>
-            )}
-            {open && reopenNow && reopenUntil && autoClosedNow(serviceDate, autoCloseTime) && (
-              <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: t.successText }}>
-                  Dibuka lagi sampai {wibClock(reopenUntil)}
-                </span>
-                <button onClick={() => onReopenUntilChange(null)}
-                  style={{ height: 36, padding: "0 14px", borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                  Tutup Sekarang
-                </button>
-              </div>
-            )}
 
             {/* Ganti Tanggal */}
             <button onClick={() => setSheet("gantiTanggal")} className="flex items-center justify-center gap-2"
@@ -438,6 +411,37 @@ export default function PreOrderAdmin({
               style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }}
             />
           </div>
+
+          {/* Buka Lagi — hanya saat sesi sudah Tutup Otomatis. Jam standar di
+              atas tidak berubah; pembukaan sementara berakhir sendiri. */}
+          {isAutoClosed && (
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${t.divider}` }}>
+              <div style={{ fontSize: 13, color: t.text2, marginBottom: 10 }}>
+                Ada yang masih mau pesan? Buka lagi sementara:
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { reopenFor(30); setSheet(null); }}
+                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  +30 menit
+                </button>
+                <button onClick={() => { reopenFor(60); setSheet(null); }}
+                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  +1 jam
+                </button>
+              </div>
+            </div>
+          )}
+          {open && reopenNow && reopenUntil && autoClosedNow(serviceDate, autoCloseTime) && (
+            <div className="flex items-center justify-between" style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${t.divider}` }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: t.successText }}>
+                Dibuka lagi sampai {wibClock(reopenUntil)}
+              </span>
+              <button onClick={() => { onReopenUntilChange(null); setSheet(null); }}
+                style={{ height: 40, padding: "0 14px", borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Tutup Sekarang
+              </button>
+            </div>
+          )}
         </Sheet>
       )}
       {sheet === "link" && (
