@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Plus, Search, X, Utensils, ShoppingCart, Pencil, Trash2,
+  Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
@@ -180,8 +180,10 @@ export default function MasterMenu({
 /* ---------------- Menu Card ---------------- */
 function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; onToggle: (k: keyof MenuItem["channels"]) => void }) {
   return (
-    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 2px rgba(47,42,36,.04)" }}>
-      <div className="flex items-start justify-between" style={{ cursor: "pointer" }} onClick={onEdit}>
+    // Seluruh kartu tappable = buka form edit; ikon toggle stopPropagation.
+    <div onClick={onEdit}
+      style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 2px rgba(47,42,36,.04)", cursor: "pointer" }}>
+      <div className="flex items-start justify-between" style={{ gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <div className="flex items-center gap-2">
             <div style={{ fontSize: 17, fontWeight: 700 }}>{m.name}</div>
@@ -198,15 +200,34 @@ function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; on
             <span style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
           </div>
         </div>
-        <Pencil size={18} color={t.textDis} />
-      </div>
-
-      {/* Channel toggles — tap = auto-save */}
-      <div className="flex gap-2" style={{ marginTop: 14 }}>
-        <ChannelChip on={m.channels.preorder} icon={<Utensils size={16} />} label="Pre-order" onClick={() => onToggle("preorder")} />
-        <ChannelChip on={m.channels.sales} icon={<ShoppingCart size={16} />} label="Penjualan" onClick={() => onToggle("sales")} />
+        {/* Toggle kanal icon-only — tap TIDAK membuka edit */}
+        <div className="flex gap-2" style={{ flex: "none" }}>
+          <ChannelIcon on={m.channels.preorder} label="Tersedia di Pre-order"
+            onClick={(e) => { e.stopPropagation(); onToggle("preorder"); }}>
+            <Utensils size={17} />
+          </ChannelIcon>
+          <ChannelIcon on={m.channels.sales} label="Tersedia di Penjualan"
+            onClick={(e) => { e.stopPropagation(); onToggle("sales"); }}>
+            <ShoppingCart size={17} />
+          </ChannelIcon>
+        </div>
       </div>
     </div>
+  );
+}
+
+function ChannelIcon({ on, label, onClick, children }: {
+  on: boolean; label: string; onClick: (e: React.MouseEvent) => void; children: React.ReactNode;
+}) {
+  return (
+    <button onClick={onClick} title={label} aria-label={label} aria-pressed={on}
+      style={{ width: 44, height: 44, borderRadius: 12, cursor: "pointer",
+        border: `1.5px solid ${on ? t.primary : t.border}`,
+        background: on ? t.primaryLight : t.surface,
+        color: on ? t.amberText : t.textDis,
+        display: "grid", placeItems: "center", flex: "none" }}>
+      {children}
+    </button>
   );
 }
 

@@ -132,12 +132,35 @@ export default function Penjualan({
     commit(false, { ...form });
   };
 
-  return (
-    <div style={{ background: t.bg, color: t.text, minHeight: "100%", position: "relative" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 110px", position: "relative" }}>
+  // Kartu menu — style TIDAK berubah, hanya posisi filter kategori yang pindah.
+  const menuCard = (m: MenuItem) => {
+    const inCart = qtyOf(m.id);
+    return (
+      <button key={m.id} onClick={() => tapMenu(m)} style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, minHeight: 92 }}>
+        {inCart > 0 && (
+          <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.text, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
+        )}
+        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{m.name}</div>
+        <div className="flex items-center gap-1" style={{ marginTop: 6 }}>
+          {m.variants.length > 0 && <Layers size={13} color={t.amberText} />}
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
+        </div>
+      </button>
+    );
+  };
 
-        {/* Header */}
-        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+  // Kelompokkan hasil filter per kategori admin — untuk tampilan "Semua".
+  const byCat: Record<string, MenuItem[]> = {};
+  filtered.forEach((m) => { (byCat[m.category] = byCat[m.category] || []).push(m); });
+  const sectionCats = cats.filter((c) => c !== "Semua" && byCat[c]);
+
+  return (
+    <div style={{ background: t.bg, color: t.text, height: "100%", position: "relative", display: "flex", flexDirection: "column" }}>
+      <style>{`.pos-scroll::-webkit-scrollbar{display:none}`}</style>
+      <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+
+        {/* Header — selalu terlihat; hanya dua kolom di bawah yang scroll */}
+        <div style={{ padding: "20px 20px 0", flex: "none" }}>
           <div className="flex items-center justify-between">
             <div>
               <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
@@ -158,45 +181,50 @@ export default function Penjualan({
             </div>
           </div>
 
+          {/* Cari — full width, di luar dua kolom */}
           <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
             <Search size={20} color={t.text2} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
             {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
           </div>
+        </div>
 
-          <div className="flex gap-2" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
+        {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
+        <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
+          <div className="pos-scroll" style={{ width: 88, flex: "none", overflowY: "auto", scrollbarWidth: "none", borderRight: `1px solid ${t.divider}`, paddingBottom: 110 }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
-                <button key={c} onClick={() => setCat(c)} style={{ flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                <button key={c} onClick={() => setCat(c)}
+                  style={{ display: "block", width: "100%", padding: "14px 8px 14px 11px", background: on ? t.primaryLight : "transparent",
+                    border: "none", borderLeft: `3px solid ${on ? t.primary : "transparent"}`,
+                    color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
+                    textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit", overflowWrap: "break-word" }}>
                   {c}
                 </button>
               );
             })}
           </div>
-        </div>
 
-        {/* Menu grid */}
-        <div style={{ padding: "4px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {filtered.map((m) => {
-            const inCart = qtyOf(m.id);
-            return (
-              <button key={m.id} onClick={() => tapMenu(m)} style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, minHeight: 92 }}>
-                {inCart > 0 && (
-                  <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.text, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
-                )}
-                <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{m.name}</div>
-                <div className="flex items-center gap-1" style={{ marginTop: 6 }}>
-                  {m.variants.length > 0 && <Layers size={13} color={t.amberText} />}
-                  <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
+          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 20px 110px 12px" }}>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
+            ) : cat === "Semua" ? (
+              sectionCats.map((c) => (
+                <div key={c} style={{ marginBottom: 18 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {byCat[c].map(menuCard)}
+                  </div>
                 </div>
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
-          )}
+              ))
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {filtered.map(menuCard)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
