@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { priceLabel, uid } from "../../lib/format";
+import { KATEGORI_ORTU_LIST } from "../../lib/constants";
 import type { MenuItem, Variant } from "../../types";
 
 /* ============================================================
@@ -37,6 +38,11 @@ export default function MasterMenu({
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showUncategorized, setShowUncategorized] = useState(false);
+
+  // Item yang belum punya Kategori untuk Orang Tua — tampil sebagai "Lainnya"
+  // di halaman ortu; banner di bawah mengajak mengisinya cepat satu per satu.
+  const uncategorized = useMemo(() => menus.filter((m) => !m.kategoriOrtu), [menus]);
 
   const categories = useMemo(
     () => ["Semua", ...Array.from(new Set(menus.map((m) => m.category))).sort()],
@@ -44,12 +50,13 @@ export default function MasterMenu({
   );
 
   const filtered = useMemo(() => {
-    return menus.filter(
+    const base = showUncategorized ? uncategorized : menus;
+    return base.filter(
       (m) =>
-        (cat === "Semua" || m.category === cat) &&
+        (showUncategorized || cat === "Semua" || m.category === cat) &&
         m.name.toLowerCase().includes(q.toLowerCase())
     );
-  }, [menus, cat, q]);
+  }, [menus, cat, q, showUncategorized, uncategorized]);
 
   const editing = menus.find((m) => m.id === editingId) || null;
 
@@ -130,6 +137,20 @@ export default function MasterMenu({
 
         {/* List */}
         <div style={{ padding: "4px 20px" }}>
+          {/* Banner item belum dikategorikan — hilang otomatis saat 0 */}
+          {uncategorized.length > 0 && (
+            <button onClick={() => setShowUncategorized((v) => !v)}
+              className="flex items-center gap-2"
+              style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
+                border: `1.5px solid ${showUncategorized ? t.primary : "#F1DFB0"}`, background: "#FFF4DA", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
+              <Tag size={16} />
+              <span style={{ flex: 1, textAlign: "left" }}>
+                {showUncategorized
+                  ? "← Kembali ke semua menu"
+                  : `${uncategorized.length} item belum dikategorikan untuk halaman ortu`}
+              </span>
+            </button>
+          )}
           {filtered.length === 0 ? (
             <Empty />
           ) : (
@@ -283,6 +304,24 @@ function Editor({ m, categories, onClose, onPatch, onRemove }: {
                   style={{ flex: "none", width: 48, height: 48, borderRadius: 10, border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
                   <Check size={18} />
                 </button>
+              </div>
+            )}
+          </Field>
+
+          {/* Kategori untuk Orang Tua — WAJIB; menentukan kelompok di halaman /pesan */}
+          <Field label="Kategori untuk Orang Tua">
+            <select
+              value={m.kategoriOrtu || ""}
+              onChange={(e) => onPatch({ kategoriOrtu: e.target.value })}
+              style={{ ...inputStyle, height: 50, cursor: "pointer",
+                border: `1.5px solid ${m.kategoriOrtu ? t.border : t.error}`,
+                color: m.kategoriOrtu ? t.text : t.textDis }}>
+              <option value="" disabled>Pilih kategori…</option>
+              {KATEGORI_ORTU_LIST.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+            {!m.kategoriOrtu && (
+              <div style={{ fontSize: 12.5, color: t.error, marginTop: 6 }}>
+                Wajib dipilih — tanpa ini menu tampil sebagai "Lainnya" di halaman ortu.
               </div>
             )}
           </Field>

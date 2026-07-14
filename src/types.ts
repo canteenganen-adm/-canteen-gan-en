@@ -17,6 +17,10 @@ export interface MenuItem {
   id: string;
   name: string;
   category: string;
+  /** Kategori versi orang tua (8 taksonomi tetap) — dipilih admin di editor
+   * menu. null/undefined = belum dikategorikan → tampil sebagai "Lainnya"
+   * di halaman ortu (safety net, tidak pernah disembunyikan). */
+  kategoriOrtu?: string | null;
   /** Harga menu tanpa varian. null jika menu ini punya varian (lihat `variants`). */
   price: number | null;
   variants: Variant[];

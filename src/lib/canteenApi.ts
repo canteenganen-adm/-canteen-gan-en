@@ -19,6 +19,7 @@ interface MenuRow {
   id: string;
   name: string;
   category: string;
+  kategori_ortu?: string | null;
   price: number | null;
   variants: MenuItem["variants"];
   channels: MenuItem["channels"];
@@ -69,19 +70,26 @@ const menuRowToItem = (r: MenuRow): MenuItem => ({
   id: r.id,
   name: r.name,
   category: r.category,
+  kategoriOrtu: r.kategori_ortu ?? null,
   price: r.price,
   variants: r.variants,
   channels: r.channels,
 });
 
-const menuItemToRow = (m: MenuItem): MenuRow => ({
-  id: m.id,
-  name: m.name,
-  category: m.category,
-  price: m.price,
-  variants: m.variants,
-  channels: m.channels,
-});
+const menuItemToRow = (m: MenuItem): MenuRow => {
+  const row: MenuRow = {
+    id: m.id,
+    name: m.name,
+    category: m.category,
+    price: m.price,
+    variants: m.variants,
+    channels: m.channels,
+  };
+  // Sertakan kategori_ortu hanya kalau terisi — supaya upsert tetap jalan
+  // sebelum migration_8_kategori_ortu.sql dijalankan (kolom belum ada).
+  if (m.kategoriOrtu != null) row.kategori_ortu = m.kategoriOrtu;
+  return row;
+};
 
 const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   id: r.id,
