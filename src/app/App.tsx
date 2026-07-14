@@ -53,8 +53,11 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/pesan" element={<ParentRoute store={store} />} />
-      <Route path="*" element={<MainShell store={store} />} />
+      {/* Admin di path tersembunyi — root & path nyasar SELALU jatuh ke halaman
+          ortu, supaya ortu yang mengetik domain tanpa /pesan tidak pernah
+          mendarat di layar admin (app ini tanpa login). */}
+      <Route path="/dapur-gan-en" element={<MainShell store={store} />} />
+      <Route path="*" element={<ParentRoute store={store} />} />
     </Routes>
   );
 }
