@@ -33,6 +33,11 @@ const KAT_ORDER = [
 ];
 const katOf = (m: MenuItem) => m.kategoriOrtu || "Lainnya";
 
+/** Banner "Paket Spesial Hari Ini" — sedang DITUTUP atas permintaan pemilik.
+ * Ubah ke true untuk menampilkan kembali (posisi: paling atas, di bawah Cari).
+ * Item kategori Paket tetap tampil & bisa dipesan lewat section di daftar. */
+const PAKET_BANNER_AKTIF = false;
+
 const DEFAULT_PICKUP_FALLBACK = "Istirahat 1";
 const MIN_WA_DIGITS = 10;
 
@@ -426,6 +431,21 @@ export default function PreOrderParent({
         </div>
       </div>
 
+      {/* Banner Paket — PALING ATAS saat aktif; hanya saat ada item Paket */}
+      {PAKET_BANNER_AKTIF && paketItems.length > 0 && (
+        <button onClick={() => setMenuCat(menuCat === "Paket" ? "Semua" : "Paket")}
+          className="flex items-center gap-3"
+          style={{ margin: "14px 16px 0", width: "calc(100% - 32px)", textAlign: "left", cursor: "pointer",
+            background: `linear-gradient(135deg, ${t.primaryLight}, ${t.surfaceSoft})`,
+            border: `1px solid ${t.primary}`, borderRadius: 16, padding: 14 }}>
+          <span style={{ fontSize: 28, flex: "none" }}>🍱</span>
+          <span>
+            <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: t.amberText }}>Paket Spesial Hari Ini</span>
+            <span style={{ display: "block", fontSize: 11.5, color: t.text2 }}>{paketItems.length} pilihan tersedia</span>
+          </span>
+        </button>
+      )}
+
       {/* Tile kategori — scroll-snap horizontal, scrollbar tersembunyi.
           Ketuk tile aktif sekali lagi = kembali ke Semua. */}
       <div className="catscroll" style={{ display: "flex", gap: 10, overflowX: "auto", padding: "14px 16px 4px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
@@ -443,21 +463,6 @@ export default function PreOrderParent({
           );
         })}
       </div>
-
-      {/* Banner Paket — hanya saat ada item Paket; hilang total saat kosong */}
-      {paketItems.length > 0 && (
-        <button onClick={() => setMenuCat(menuCat === "Paket" ? "Semua" : "Paket")}
-          className="flex items-center gap-3"
-          style={{ margin: "18px 16px 0", width: "calc(100% - 32px)", textAlign: "left", cursor: "pointer",
-            background: `linear-gradient(135deg, ${t.primaryLight}, ${t.surfaceSoft})`,
-            border: `1px solid ${t.primary}`, borderRadius: 16, padding: 14 }}>
-          <span style={{ fontSize: 28, flex: "none" }}>🍱</span>
-          <span>
-            <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: t.amberText }}>Paket Spesial Hari Ini</span>
-            <span style={{ display: "block", fontSize: 11.5, color: t.text2 }}>{paketItems.length} pilihan tersedia</span>
-          </span>
-        </button>
-      )}
 
       {filteredPre.length === 0 && (
         <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 16px" }}>Tidak ada menu yang cocok.</div>
