@@ -594,7 +594,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           {/* 5 Langkah */}
           {[
             ["Buka halaman pemesanan", "Masuk ke tautan canteen-gan-en.vercel.app/pesan, lalu tekan Mulai Memesan. Tanggal pemesanan sudah disiapkan secara otomatis."],
-            ["Pilih menu yang diinginkan", "Jelajahi menu berdasarkan kategori (Makanan Berat, Buah, Snack, Paket, Puding) atau gunakan kolom Cari. Tekan + Tambah pada setiap menu yang ingin dipesan."],
+            ["Pilih menu yang diinginkan", "Jelajahi menu lewat deretan kategori (Makanan Utama, Lauk, Gorengan, Camilan Sehat, Snack, Buah, Dessert) atau gunakan kolom Cari. Tekan + Tambah pada setiap menu yang ingin dipesan; menu dengan pilihan ukuran menampilkan tombol Pilih."],
             ["Lanjut ke konfirmasi", "Setelah selesai memilih menu, tekan tombol kuning di bagian bawah layar, kemudian pilih Lanjut."],
             ["Lengkapi data Ananda", "Isi nama, tingkat, kelas, nomor WhatsApp, dan waktu pengambilan. Papa/Mama masih dapat mengubah jumlah pesanan di halaman ini."],
             ["Kirim pesanan", "Setelah semua data benar, tekan Kirim Pesanan. Jika muncul halaman hijau \"Pesanan Berhasil Dikirim\", pesanan telah kami terima. Tekan Salin Bukti Pesanan untuk menyimpan arsip."],
