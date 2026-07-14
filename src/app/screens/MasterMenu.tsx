@@ -188,8 +188,9 @@ function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; on
           <div className="flex items-center gap-2">
             <div style={{ fontSize: 17, fontWeight: 700 }}>{m.name}</div>
             {m.variants.length > 0 && (
-              <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.amberText, background: t.primaryLight, padding: "2px 8px", borderRadius: 999 }}>
-                <Layers size={12} /> {m.variants.length} varian
+              <span className="flex items-center gap-1" title={`${m.variants.length} varian`}
+                style={{ fontSize: 11, fontWeight: 700, color: t.amberText, background: t.primaryLight, padding: "2px 8px", borderRadius: 999 }}>
+                <Layers size={12} /> {m.variants.length}
               </span>
             )}
           </div>
