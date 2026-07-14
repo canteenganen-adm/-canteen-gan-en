@@ -254,7 +254,7 @@ export default function PreOrderParent({
           </button>
 
           <div style={{ textAlign: "center", fontSize: 14, color: t.text2, margin: "18px 8px", lineHeight: 1.6 }}>
-            Mohon menitipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, termasuk Guru/Karyawan, pesanan dapat diambil di lemari pengambilan bekal di lobby.
+            Mohon menitipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil di lemari pengambilan bekal di lobby.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
           </div>
           <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
@@ -614,7 +614,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             {[
               ["Pemesanan ditutup otomatis pukul 08.00 pada hari makan.", "Agar tidak terlewat, kami menyarankan melakukan pemesanan pada malam sebelumnya."],
               ["Pesanan yang sudah dikirim tidak dapat diubah melalui aplikasi.", "Mohon pastikan kembali menu dan jumlah pesanan sebelum menekan Kirim Pesanan."],
-              ["Mohon menitipkan kotak bekal Ananda (beserta wadah tambahan untuk menu berkuah bila diperlukan) di pos satpam sebelum jam masuk sekolah.", "Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, termasuk Guru/Karyawan, pesanan dapat diambil di lemari pengambilan bekal di lobby. Kantin tidak menyediakan wadah maupun alat makan."],
+              ["Mohon menitipkan kotak bekal Ananda (beserta wadah tambahan untuk menu berkuah bila diperlukan) di pos satpam sebelum jam masuk sekolah.", "Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil di lemari pengambilan bekal di lobby. Kantin tidak menyediakan wadah maupun alat makan."],
               ["Pembayaran tunai atau transfer:", "BCA 7347028990 a.n. Roswinarti"],
             ].map(([bold, rest], i) => (
               <div key={i} style={{ fontSize: 14.5, lineHeight: 1.55, marginBottom: 10, paddingLeft: 14, borderLeft: `3px solid ${t.border}` }}>
