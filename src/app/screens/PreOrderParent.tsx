@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Layers, Trash2,
+  Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Trash2,
   Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search, HelpCircle,
 } from "lucide-react";
 import { t } from "../../lib/theme";
@@ -19,25 +19,19 @@ import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
    bukan foto).
    ============================================================ */
 
-/* --- Mapping 5 kelompok besar untuk orang tua --- */
-const GROUP_OF: Record<string, string> = {
-  "Lauk": "Makanan Berat", "Sayur": "Makanan Berat", "Sup": "Makanan Berat",
-  "Nasi Goreng": "Makanan Berat", "Nasi": "Makanan Berat", "Mie": "Makanan Berat",
-  "Tahu": "Makanan Berat", "Tempe": "Makanan Berat", "Telur": "Makanan Berat",
-  "Bubur": "Makanan Berat", "Gorengan": "Makanan Berat",
-  "Buah": "Buah", "Snack": "Snack", "Roti": "Snack", "Paket": "Paket", "Puding": "Puding",
+/* --- Taksonomi 8 kategori versi orang tua (kategori_ortu, vegan-safe) ---
+   Emoji sesuai prototipe pemilik — TANPA ikon hewan/daging/seafood.
+   "Lainnya" = fallback item yang belum dikategorikan (tidak pernah
+   disembunyikan); "Paket" tampil sebagai banner khusus, bukan tile. */
+const KAT_EMOJI: Record<string, string> = {
+  "Makanan Utama": "🍚", "Lauk": "🥘", "Gorengan": "🧆", "Camilan Sehat": "🥗",
+  "Snack": "🍪", "Buah": "🍎", "Dessert": "🧁", "Paket": "🍱", "Lainnya": "🍽️",
 };
-const CAT_EMOJI: Record<string, string> = {
-  "Paket": "🍱", "Nasi Goreng": "🍛", "Nasi": "🍚", "Mie": "🍜", "Tahu": "🧆",
-  "Tempe": "🫘", "Telur": "🥚", "Sayur": "🥦", "Sup": "🍲", "Gorengan": "🍤",
-  "Lauk": "🍗", "Snack": "🍿", "Roti": "🍞", "Buah": "🍉", "Puding": "🍮", "Bubur": "🥣",
-};
-const GROUP_EMOJI: Record<string, string> = {
-  "Makanan Berat": "🍛", "Buah": "🍉", "Snack": "🍿", "Paket": "🍱", "Puding": "🍮",
-};
-const GROUPS = ["Makanan Berat", "Buah", "Snack", "Paket", "Puding"];
-const groupOf = (c: string) => GROUP_OF[c] || "Makanan Berat";
-const catEmoji = (c: string) => CAT_EMOJI[c] || "🍽️";
+const KAT_ORDER = [
+  "Makanan Utama", "Lauk", "Gorengan", "Camilan Sehat",
+  "Snack", "Buah", "Dessert", "Paket", "Lainnya",
+];
+const katOf = (m: MenuItem) => m.kategoriOrtu || "Lainnya";
 
 const DEFAULT_PICKUP_FALLBACK = "Istirahat 1";
 const MIN_WA_DIGITS = 10;
@@ -105,10 +99,13 @@ export default function PreOrderParent({
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const waDigits = form.wa.replace(/\D/g, "");
 
-  const cats = useMemo(
-    () => ["Semua", ...GROUPS.filter((g) => pre.some((m) => groupOf(m.category) === g))],
+  // Tile kategori: tanpa "Paket" (banner khusus) dan tanpa "Lainnya" (hanya
+  // section terakhir di tampilan Semua). Kategori kosong tidak diberi tile.
+  const tileCats = useMemo(
+    () => KAT_ORDER.filter((k) => k !== "Paket" && k !== "Lainnya" && pre.some((m) => katOf(m) === k)),
     [pre]
   );
+  const paketItems = useMemo(() => pre.filter((m) => katOf(m) === "Paket"), [pre]);
 
   const keyOf = (l: CartLine) => l.menu.id + (l.variant ? ":" + l.variant.id : "");
   const add = (menu: MenuItem, variant?: Variant) => {
@@ -384,104 +381,132 @@ export default function PreOrderParent({
     );
   }
 
-  /* ---------- MENU (sticky header + 5 kelompok + emoji tile) ---------- */
+  /* ---------- MENU (redesign sesuai prototipe-redesign-parent.html) ---------- */
   const filteredPre = pre.filter(
-    (m) => (menuCat === "Semua" || groupOf(m.category) === menuCat) &&
+    (m) => (menuCat === "Semua" || katOf(m) === menuCat) &&
       m.name.toLowerCase().includes(menuQ.toLowerCase().trim())
   );
   const byCatMap: Record<string, MenuItem[]> = {};
   filteredPre.forEach((m) => {
-    const g = groupOf(m.category);
-    if (!byCatMap[g]) byCatMap[g] = [];
-    byCatMap[g].push(m);
+    const k = katOf(m);
+    if (!byCatMap[k]) byCatMap[k] = [];
+    byCatMap[k].push(m);
   });
 
   return (
-    <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
-      {/* Sticky header: judul + cari + chip kelompok */}
-      <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "18px 20px 10px", borderBottom: `1px solid ${t.divider}` }}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setStep("landing")} style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
-            <ArrowLeft size={20} />
-          </button>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>🪷 {kantin}</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: t.text2, marginTop: 2 }}>{serviceDate}</div>
+    <Screen showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
+      <style>{`.catscroll::-webkit-scrollbar{display:none}`}</style>
+
+      {/* Header sticky: brand + tombol bantuan; tanggal teks polos tanpa chip */}
+      <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "18px 16px 14px", borderBottom: `1px solid ${t.border}` }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
+          <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
+            <button onClick={() => setStep("landing")} aria-label="Kembali"
+              style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+              <ArrowLeft size={17} />
+            </button>
+            <span style={{ fontSize: 22 }}>🪷</span>
+            <span style={{ fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kantin}</span>
           </div>
+          <button onClick={() => setShowHelp(true)} aria-label="Panduan pemesanan"
+            style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, border: "none", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 14, color: t.text, cursor: "pointer", flex: "none" }}>
+            ?
+          </button>
         </div>
-        <div className="flex items-center gap-2" style={{ marginTop: 12, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 46 }}>
+        <div style={{ fontSize: 12.5, color: t.text2, paddingLeft: 2 }}>{serviceDate}</div>
+      </div>
+
+      {/* Cari — full width, di luar kategori */}
+      <div style={{ padding: "14px 16px 0" }}>
+        <div className="flex items-center gap-2" style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "0 14px", height: 46 }}>
           <Search size={18} color={t.text2} />
           <input value={menuQ} onChange={(e) => setMenuQ(e.target.value)} placeholder="Cari menu…"
-            style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, width: "100%", color: t.text, fontFamily: "inherit" }} />
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 14.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
           {menuQ && <X size={17} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setMenuQ("")} />}
-        </div>
-        <div className="flex gap-2" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
-          {cats.map((c) => {
-            const on = c === menuCat;
-            return (
-              <button key={c} onClick={() => setMenuCat(c)}
-                style={{ flex: "none", height: 38, padding: "0 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-                  border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
-                {c === "Semua" ? "🍽️ Semua" : `${GROUP_EMOJI[c] || ""} ${c}`}
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      <div style={{ padding: "4px 20px 20px" }}>
-        {filteredPre.length === 0 && (
-          <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 10px" }}>Tidak ada menu yang cocok.</div>
-        )}
-        {GROUPS.filter((g) => byCatMap[g]).map((g) => (
-          <div key={g}>
-            <div className="flex items-center gap-2" style={{ margin: "20px 2px 10px" }}>
-              <span style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: ".04em", textTransform: "uppercase", color: t.text2 }}>{g}</span>
-              <span style={{ flex: 1, height: 1, background: t.divider }} />
-            </div>
-            {byCatMap[g].map((m) => {
+      {/* Tile kategori — scroll-snap horizontal, scrollbar tersembunyi.
+          Ketuk tile aktif sekali lagi = kembali ke Semua. */}
+      <div className="catscroll" style={{ display: "flex", gap: 10, overflowX: "auto", padding: "14px 16px 4px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+        {tileCats.map((c) => {
+          const on = c === menuCat;
+          return (
+            <button key={c} onClick={() => setMenuCat(on ? "Semua" : c)}
+              className="flex flex-col items-center"
+              style={{ flex: "none", scrollSnapAlign: "start", width: 64, gap: 5, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+              <span style={{ width: 52, height: 52, borderRadius: 16, background: on ? t.primaryLight : t.surface, border: `1.5px solid ${on ? t.primary : t.border}`, display: "grid", placeItems: "center", fontSize: 24 }}>
+                {KAT_EMOJI[c]}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: on ? t.amberText : t.text2, textAlign: "center", lineHeight: 1.2 }}>{c}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Banner Paket — hanya saat ada item Paket; hilang total saat kosong */}
+      {paketItems.length > 0 && (
+        <button onClick={() => setMenuCat(menuCat === "Paket" ? "Semua" : "Paket")}
+          className="flex items-center gap-3"
+          style={{ margin: "18px 16px 0", width: "calc(100% - 32px)", textAlign: "left", cursor: "pointer",
+            background: `linear-gradient(135deg, ${t.primaryLight}, ${t.surfaceSoft})`,
+            border: `1px solid ${t.primary}`, borderRadius: 16, padding: 14 }}>
+          <span style={{ fontSize: 28, flex: "none" }}>🍱</span>
+          <span>
+            <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: t.amberText }}>Paket Spesial Hari Ini</span>
+            <span style={{ display: "block", fontSize: 11.5, color: t.text2 }}>{paketItems.length} pilihan tersedia</span>
+          </span>
+        </button>
+      )}
+
+      {filteredPre.length === 0 && (
+        <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 16px" }}>Tidak ada menu yang cocok.</div>
+      )}
+
+      {/* Section per kategori — judul emoji + nama uppercase, grid 2 kolom */}
+      {KAT_ORDER.filter((k) => byCatMap[k]).map((k) => (
+        <div key={k} style={{ padding: "18px 16px 4px" }}>
+          <div className="flex items-center" style={{ gap: 6, fontSize: 13, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 10 }}>
+            {KAT_EMOJI[k]} {k}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {byCatMap[k].map((m) => {
               const inCart = qtyOf(m.id);
               return (
-                <div key={m.id} style={{ background: t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 15, padding: 13, marginBottom: 10 }}>
-                  <div className="flex items-center gap-3">
-                    <span style={{ width: 46, height: 46, borderRadius: 12, background: t.surfaceSoft, border: `1px solid ${t.border}`, display: "grid", placeItems: "center", fontSize: 23, flex: "none" }}>
-                      {catEmoji(m.category)}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.3 }}>{m.name}</div>
-                      <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
-                        {m.variants.length > 0 && <Layers size={12} color={t.amberText} />}
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: t.text2 }}>
-                          {m.variants.length
-                            ? <><span style={{ fontSize: 11, fontWeight: 700, color: t.textDis }}>MULAI </span>{rupiah(Math.min(...m.variants.map((v) => v.price)))}</>
-                            : rupiah(m.price)}
-                        </span>
-                      </div>
-                    </div>
-                    {inCart > 0 && !m.variants.length ? (
-                      <Stepper val={inCart} onMinus={() => dec(m.id)} onPlus={() => add(m)} />
-                    ) : (
-                      <button onClick={() => tap(m)} className="flex items-center gap-1"
-                        style={{ height: 40, padding: "0 14px", borderRadius: 11, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 13.5, cursor: "pointer", flex: "none" }}>
-                        {m.variants.length ? "Pilih" : <><Plus size={16} /> Tambah</>}
-                      </button>
-                    )}
+                <div key={m.id} style={{ background: t.surface, border: `1px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{m.name}</div>
+                  <div style={{ fontSize: 12, color: t.text2, marginBottom: 10 }}>
+                    {m.variants.length
+                      ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
+                      : rupiah(m.price)}
                   </div>
+                  {inCart > 0 && !m.variants.length ? (
+                    <div className="flex" style={{ justifyContent: "center" }}>
+                      <Stepper val={inCart} onMinus={() => dec(m.id)} onPlus={() => add(m)} />
+                    </div>
+                  ) : (
+                    <button onClick={() => tap(m)}
+                      style={{ width: "100%", height: 34, borderRadius: 9, background: t.primary, border: "none", fontWeight: 800, fontSize: 12, color: t.text, cursor: "pointer" }}>
+                      {m.variants.length ? "Pilih" : "+ Tambah"}
+                    </button>
+                  )}
                   {Object.values(cart).filter((l) => l.menu.id === m.id && l.variant).map((l) => (
-                    <div key={l.variant!.id} className="flex items-center justify-between" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.divider}` }}>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>{l.variant!.name} · {rupiah(l.variant!.price)}</span>
-                      <Stepper val={l.qty} onMinus={() => dec(m.id + ":" + l.variant!.id)} onPlus={() => add(m, l.variant!)} />
+                    <div key={l.variant!.id} style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.divider}` }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>{l.variant!.name} · {rupiah(l.variant!.price)}</div>
+                      <div className="flex" style={{ justifyContent: "center" }}>
+                        <Stepper val={l.qty} onMinus={() => dec(m.id + ":" + l.variant!.id)} onPlus={() => add(m, l.variant!)} />
+                      </div>
                     </div>
                   ))}
                   {inCart > 0 && (
                     noteFor === m.id ? (
                       <input autoFocus placeholder="Catatan (cth. tidak pedas)" onBlur={() => setNoteFor(null)}
-                        onChange={(e) => setCart((c) => { const n = { ...c }; Object.keys(n).forEach((k) => { if (n[k].menu.id === m.id) n[k] = { ...n[k], note: e.target.value }; }); return n; })}
-                        style={{ ...inp(false), marginTop: 10, height: 44, fontSize: 14 }} />
+                        onChange={(e) => setCart((c) => { const n = { ...c }; Object.keys(n).forEach((key) => { if (n[key].menu.id === m.id) n[key] = { ...n[key], note: e.target.value }; }); return n; })}
+                        style={{ ...inp(false), marginTop: 10, height: 40, fontSize: 13 }} />
                     ) : (
                       <button onClick={() => setNoteFor(m.id)} className="flex items-center gap-1"
-                        style={{ marginTop: 10, background: "transparent", border: "none", color: t.amberText, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                        <StickyNote size={14} /> {Object.values(cart).find((l) => l.menu.id === m.id)?.note ? "Edit catatan" : "Tambah catatan"}
+                        style={{ marginTop: 10, background: "transparent", border: "none", color: t.amberText, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+                        <StickyNote size={13} /> {Object.values(cart).find((l) => l.menu.id === m.id)?.note ? "Edit catatan" : "Catatan"}
                       </button>
                     )
                   )}
@@ -489,8 +514,9 @@ export default function PreOrderParent({
               );
             })}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+      <div style={{ height: 16 }} />
 
       {variantFor && (
         <BottomSheet title={variantFor.name} onClose={() => setVariantFor(null)}>
