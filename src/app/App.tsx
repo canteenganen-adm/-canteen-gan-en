@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route } from "react-router";
 import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
-import { nowLabel, orderNo, serviceDateLabel, autoClosedNow } from "../lib/format";
+import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
   fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
@@ -88,6 +88,7 @@ function useCanteenStore() {
   const [preorderOpen, setPreorderOpenLocal] = useState(true);
   const [serviceDate, setServiceDateLocal] = useState("");
   const [autoCloseTime, setAutoCloseTimeLocal] = useState("08:00:00");
+  const [reopenUntil, setReopenUntilLocal] = useState<string | null>(null);
   const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
   const [pickupSchedules, setPickupSchedulesLocal] = useState<PickupSchedule[]>([]);
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
@@ -117,6 +118,7 @@ function useCanteenStore() {
       setPreorderOpenLocal(appState.preorderOpen);
       setServiceDateLocal(appState.serviceDate);
       setAutoCloseTimeLocal(appState.autoCloseTime);
+      setReopenUntilLocal(appState.reopenUntil);
       setPickupPresetsLocal(appState.pickupPresets);
       setPickupSchedulesLocal(appState.pickupSchedules);
       setSettingsLocal(appState.settings);
@@ -326,6 +328,11 @@ function useCanteenStore() {
     setAutoCloseTimeLocal(time);
     appStatePatch.autoCloseTime(time).catch((e) => reportError("setAutoCloseTime", e));
   };
+  /** "Buka Lagi" sementara setelah tutup otomatis — null = tutup lagi sekarang. */
+  const setReopenUntil = (iso: string | null) => {
+    setReopenUntilLocal(iso);
+    appStatePatch.reopenUntil(iso).catch((e) => reportError("setReopenUntil", e));
+  };
   const setPickupPresets = (presets: string[]) => {
     setPickupPresetsLocal(presets);
     appStatePatch.pickupPresets(presets).catch((e) => reportError("setPickupPresets", e));
@@ -354,6 +361,7 @@ function useCanteenStore() {
     preorderOpen, togglePreorderOpen,
     serviceDate, setServiceDate,
     autoCloseTime, setAutoCloseTime,
+    reopenUntil, setReopenUntil,
     pickupPresets, setPickupPresets,
     pickupSchedules, setPickupSchedules,
     settings, patchSettings,
@@ -372,7 +380,8 @@ function ParentRoute({ store }: { store: CanteenStore }) {
     return () => clearInterval(id);
   }, []);
   void nowTick;
-  const effectiveOpen = store.preorderOpen && !autoClosedNow(store.serviceDate, store.autoCloseTime);
+  const effectiveOpen = store.preorderOpen &&
+    (!autoClosedNow(store.serviceDate, store.autoCloseTime) || reopenActiveNow(store.reopenUntil));
 
   return (
     <PreOrderParent
@@ -424,6 +433,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onToggleOpen={store.togglePreorderOpen}
             autoCloseTime={store.autoCloseTime}
             onAutoCloseTimeChange={store.setAutoCloseTime}
+            reopenUntil={store.reopenUntil}
+            onReopenUntilChange={store.setReopenUntil}
             presets={store.pickupPresets}
             schedules={store.pickupSchedules}
             transactions={store.transactions}

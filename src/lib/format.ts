@@ -73,6 +73,18 @@ export function fmtWaDate(iso: string): string {
   return `${HARI_PANJANG[d.getDay()]}, ${d.getDate()} ${BULAN_PANJANG[d.getMonth()]} ${d.getFullYear()} • ${hh}.${mm} WIB`;
 }
 
+/** true jika pembukaan sementara ("Buka Lagi") masih berlaku. */
+export function reopenActiveNow(reopenUntil: string | null): boolean {
+  return !!reopenUntil && Date.now() < new Date(reopenUntil).getTime();
+}
+
+/** Jam WIB "HH:MM" dari timestamp ISO — untuk label "Dibuka lagi sampai …". */
+export function wibClock(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(new Date(iso));
+}
+
 /** Jam WIB sekarang dalam format "HH:MM" — dipakai untuk deteksi Lewat Waktu Ambil. */
 export function wibTimeHHMM(): string {
   return new Intl.DateTimeFormat("en-GB", {

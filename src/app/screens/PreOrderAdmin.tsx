@@ -4,7 +4,7 @@ import {
   Box, Check, X, Search, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM } from "../../lib/format";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
 import { TINGKAT_LIST } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
@@ -75,6 +75,8 @@ export default function PreOrderAdmin({
   onToggleOpen,
   autoCloseTime,
   onAutoCloseTimeChange,
+  reopenUntil,
+  onReopenUntilChange,
   presets,
   schedules,
   transactions,
@@ -88,6 +90,8 @@ export default function PreOrderAdmin({
   onToggleOpen: () => void;
   autoCloseTime: string;
   onAutoCloseTimeChange: (t: string) => void;
+  reopenUntil: string | null;
+  onReopenUntilChange: (iso: string | null) => void;
   presets: string[];
   schedules: PickupSchedule[];
   transactions: Transaction[];
@@ -110,11 +114,21 @@ export default function PreOrderAdmin({
     return () => clearInterval(id);
   }, []);
 
-  // true jika sesi dibuka tapi jam WIB sudah lewat auto_close_time pada hari serviceDate
+  // "Buka Lagi" sementara masih berlaku? (re-evaluate tiap 30 detik)
+  const reopenNow = useMemo(() => {
+    void nowTick;
+    return reopenActiveNow(reopenUntil);
+  }, [reopenUntil, nowTick]);
+
+  // true jika sesi dibuka tapi jam WIB sudah lewat auto_close_time pada hari
+  // serviceDate — dan tidak sedang "Buka Lagi"
   const isAutoClosed = useMemo(() => {
     void nowTick; // re-evaluate tiap 30 detik
-    return open && autoClosedNow(serviceDate, autoCloseTime);
-  }, [open, serviceDate, autoCloseTime, nowTick]);
+    return open && autoClosedNow(serviceDate, autoCloseTime) && !reopenNow;
+  }, [open, serviceDate, autoCloseTime, nowTick, reopenNow]);
+
+  const reopenFor = (minutes: number) =>
+    onReopenUntilChange(new Date(Date.now() + minutes * 60_000).toISOString());
 
   // Jam WIB sekarang (HH:MM) — di-refresh tiap 30 detik oleh nowTick
   const currentWIBTime = useMemo(() => {
@@ -258,6 +272,36 @@ export default function PreOrderAdmin({
                 Ubah
               </button>
             </div>
+
+            {/* Buka Lagi — hanya saat Tutup Otomatis; jam tutup standar tidak berubah */}
+            {isAutoClosed && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+                <div style={{ fontSize: 13, color: t.text2, marginBottom: 8 }}>
+                  Ada yang masih mau pesan? Buka lagi sementara:
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => reopenFor(30)}
+                    style={{ flex: 1, height: 44, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                    +30 menit
+                  </button>
+                  <button onClick={() => reopenFor(60)}
+                    style={{ flex: 1, height: 44, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                    +1 jam
+                  </button>
+                </div>
+              </div>
+            )}
+            {open && reopenNow && reopenUntil && autoClosedNow(serviceDate, autoCloseTime) && (
+              <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: t.successText }}>
+                  Dibuka lagi sampai {wibClock(reopenUntil)}
+                </span>
+                <button onClick={() => onReopenUntilChange(null)}
+                  style={{ height: 36, padding: "0 14px", borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                  Tutup Sekarang
+                </button>
+              </div>
+            )}
 
             {/* Ganti Tanggal */}
             <button onClick={() => setSheet("gantiTanggal")} className="flex items-center justify-center gap-2"

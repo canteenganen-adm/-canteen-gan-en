@@ -46,6 +46,7 @@ interface AppStateRow {
   preorder_open: boolean;
   service_date: string;
   auto_close_time: string;
+  reopen_until: string | null;
   pickup_presets: string[];
   pickup_schedules: PickupSchedule[] | null;
   nama_kantin: string;
@@ -122,6 +123,7 @@ export interface AppStateData {
   preorderOpen: boolean;
   serviceDate: string;
   autoCloseTime: string;
+  reopenUntil: string | null;
   pickupPresets: string[];
   pickupSchedules: PickupSchedule[];
   settings: CanteenSettings;
@@ -131,6 +133,7 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
   preorderOpen: r.preorder_open,
   serviceDate: r.service_date,
   autoCloseTime: r.auto_close_time,
+  reopenUntil: r.reopen_until ?? null,
   pickupPresets: r.pickup_presets,
   pickupSchedules: r.pickup_schedules ?? [],
   settings: {
@@ -271,6 +274,7 @@ export const appStatePatch = {
   preorderOpen: (v: boolean) => updateAppState({ preorder_open: v }),
   serviceDate: (v: string) => updateAppState({ service_date: v }),
   autoCloseTime: (v: string) => updateAppState({ auto_close_time: v }),
+  reopenUntil: (v: string | null) => updateAppState({ reopen_until: v }),
   pickupPresets: (v: string[]) => updateAppState({ pickup_presets: v }),
   pickupSchedules: (v: PickupSchedule[]) => updateAppState({ pickup_schedules: v }),
   namaKantin: (v: string) => updateAppState({ nama_kantin: v }),
