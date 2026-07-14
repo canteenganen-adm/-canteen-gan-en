@@ -36,6 +36,7 @@ Aplikasi kantin sekolah keluarga. Pengguna utama: Mama & Papa (±50–60 th, non
 - Batalkan transaksi = **soft-delete** (tetap tampil di riwayat Lunas dengan badge).
 - Nav 4 tab: Pre-order · Penjualan · Transaksi · Menu; Pengaturan via gear.
 - Tingkat dinamis (KB, TK A, TK B, SD, SMP, SMA, Guru/Karyawan) dikelola dari Pengaturan.
+- **Waktu Ambil dinamis** (default: "Istirahat 1", "Istirahat 2", "Istirahat 3", "Pulang Sekolah") dikelola dari Pengaturan → tambah/edit/hapus tanpa coding.
 - Pil kelas berwarna per tingkat (solid, teks putih): KB `#D6608A` · TK `#7C6BAF` · SD `#C94F4F` · SMP `#4A7BA6` · SMA `#6E6E6E` · Guru/Karyawan `#2F2A24`.
 - WA tagihan gaya struk, **pratinjau & bisa diedit sebelum kirim**; pembuka/penutup dari Pengaturan; template tanpa emoji; encoding UTF-8 (jangan sampai `�`).
 - Satu pesanan = satu anak + satu waktu ambil; layar sukses punya "Buat Pesanan Lagi" (data pemesan tetap terisi).
