@@ -599,7 +599,7 @@ export default function Pengaturan({
 
           <div style={{ padding: "0 20px" }}>
             <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
-              Terhapus otomatis setelah 30 hari. Hanya transaksi Dibatalkan yang bisa dimasukkan ke sini.
+              Terhapus otomatis setelah 30 hari. Diisi dari tombol Hapus di riwayat Lunas.
             </div>
 
             {trashTransactions.length === 0 ? (

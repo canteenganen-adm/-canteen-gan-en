@@ -374,12 +374,29 @@ export default function Tagihan({
                           {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}
-                      {cancelled && (
+                      {cancelled ? (
                         <div className="flex gap-2" style={{ marginTop: 10 }}>
                           <button onClick={() => pulihkan(tx)}
                             className="flex items-center justify-center gap-1.5"
                             style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                             <RotateCcw size={13} /> Pulihkan
+                          </button>
+                          <button onClick={() => setTrashConfirmTx(tx)}
+                            className="flex items-center justify-center gap-1.5"
+                            style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                            <Trash2 size={13} /> Hapus
+                          </button>
+                        </div>
+                      ) : (
+                        /* Transaksi Lunas: bisa Dibatalkan (dengan Urungkan) atau
+                           langsung ke Tong Sampah. Batal = keluar dari total Masuk,
+                           tetap tampil dengan badge Dibatalkan; Pulihkan mengembalikan
+                           ke Lunas karena status paid tidak diubah. */
+                        <div className="flex gap-2" style={{ marginTop: 10 }}>
+                          <button onClick={() => cancel(tx)}
+                            className="flex items-center justify-center gap-1.5"
+                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                            <Ban size={13} /> Batalkan
                           </button>
                           <button onClick={() => setTrashConfirmTx(tx)}
                             className="flex items-center justify-center gap-1.5"
