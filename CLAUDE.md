@@ -1,13 +1,15 @@
 # CLAUDE.md — Canteen Gan En
 
-Aplikasi kantin sekolah keluarga. Pengguna utama: Mama & Papa (±50–60 th, non-teknis) dan orang tua murid. Live di canteen-gan-en.vercel.app (halaman ortu: /pesan). Stack: React + Supabase + Vercel.
+Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/olahan nabati (termasuk menu bernama "ayam", "bakso", dsb — itu mock meat, BUKAN daging asli). Pengguna utama: Mama & Papa (±50–60 th, non-teknis) dan orang tua murid. Live di canteen-gan-en.vercel.app (halaman ortu: /pesan). Stack: React + Supabase + Vercel.
 
 ## ATURAN EMAS (baca dulu)
 
 1. **File dari pemilik = pakai APA ADANYA.** Jangan menulis ulang, meringkas, "memperbaiki", atau menambah konten/desain pada file .jsx/.html yang diberikan. Konten sudah final.
 2. **Jangan mengarang kebijakan.** Dilarang menambah kalimat aturan/kebijakan apa pun di halaman yang dilihat orang tua (mis. syarat pembatalan, jam layanan) tanpa diminta eksplisit.
 3. **Semua halaman/komponen BARU wajib memakai design tokens di bawah.** Jangan pakai styling default/bootstrap-ish/gradien ungu/font sistem.
-4. Keputusan produk lengkap ada di `perintah-perbaikan-claude-code.md` — kalau ragu, rujuk ke sana, jangan menebak.
+4. **TIDAK ADA emoji/ikon daging atau seafood di mana pun** (🍗🍤🍖🥩🍣🐟 dsb) — kantin ini vegan. Untuk menu bernama seperti "ayam"/"bakso" (mock meat nabati), pakai ikon netral (mis. 🥘🧆🍚), bukan ikon hewan/daging asli.
+5. Keputusan produk lengkap ada di `perintah-perbaikan-claude-code.md` — kalau ragu, rujuk ke sana, jangan menebak.
+6. **Panduan wajib satu sumber.** Konten floating help button (?) di PreOrderParent HARUS sama persis dengan `panduan-pemesanan.html` — jangan duplikat/tulis ulang terpisah. Kalau modal butuh render beda (mis. bukan iframe), ambil isinya dari file yang sama, bukan salin-tempel manual yang bisa nyimpang seiring waktu.
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
@@ -40,3 +42,5 @@ Aplikasi kantin sekolah keluarga. Pengguna utama: Mama & Papa (±50–60 th, non
 - Pil kelas berwarna per tingkat (solid, teks putih): KB `#D6608A` · TK `#7C6BAF` · SD `#C94F4F` · SMP `#4A7BA6` · SMA `#6E6E6E` · Guru/Karyawan `#2F2A24`.
 - WA tagihan gaya struk, **pratinjau & bisa diedit sebelum kirim**; pembuka/penutup dari Pengaturan; template tanpa emoji; encoding UTF-8 (jangan sampai `�`).
 - Satu pesanan = satu anak + satu waktu ambil; layar sukses punya "Buat Pesanan Lagi" (data pemesan tetap terisi).
+- **Drop-off**: kotak bekal dititipkan di **Pos Satpam** sebelum jam masuk sekolah, berlaku SEMUA tingkat.
+- **Pickup (beda per tingkat, WAJIB tampil jelas)**: **KB/TK/SD kelas 1–2 → diantar ke kelas** oleh kantin; **SD kelas 3 ke atas → diambil sendiri di Lemari Pengambilan Bekal** (loker di lobby).
