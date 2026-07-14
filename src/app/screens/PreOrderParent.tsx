@@ -252,7 +252,7 @@ export default function PreOrderParent({
           </button>
 
           <div style={{ textAlign: "center", fontSize: 14, color: t.text2, margin: "18px 8px", lineHeight: 1.6 }}>
-            Mohon menyiapkan kotak bekal makan Ananda dan meletakkannya di kantin sebelum jam masuk sekolah.
+            Mohon menitipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Kotak bekal yang telah diproses dapat diambil di lemari pengambilan bekal di lobby.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
           </div>
           <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
@@ -583,7 +583,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             {[
               ["Pemesanan ditutup otomatis pukul 08.00 pada hari makan.", "Agar tidak terlewat, kami menyarankan melakukan pemesanan pada malam sebelumnya."],
               ["Pesanan yang sudah dikirim tidak dapat diubah melalui aplikasi.", "Mohon pastikan kembali menu dan jumlah pesanan sebelum menekan Kirim Pesanan."],
-              ["Mohon menyiapkan kotak bekal Ananda sebelum jam masuk sekolah.", "Kantin tidak menyediakan wadah maupun alat makan."],
+              ["Mohon menitipkan kotak bekal Ananda (beserta wadah tambahan untuk menu berkuah bila diperlukan) di pos satpam sebelum jam masuk sekolah.", "Kotak bekal yang telah diproses dapat diambil di lemari pengambilan bekal di lobby. Kantin tidak menyediakan wadah maupun alat makan."],
               ["Pembayaran tunai atau transfer:", "BCA 7347028990 a.n. Roswinarti"],
             ].map(([bold, rest], i) => (
               <div key={i} style={{ fontSize: 14.5, lineHeight: 1.55, marginBottom: 10, paddingLeft: 14, borderLeft: `3px solid ${t.border}` }}>
@@ -597,13 +597,12 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16, marginTop: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>❓ Pertanyaan Umum</div>
             {[
-              ["Apakah link pemesanan berbeda setiap hari?", "Tidak. Link selalu sama. Tanggal makan ditentukan otomatis oleh kantin."],
+              ["Apakah link pemesanan berbeda setiap hari?", "Tidak. Link selalu sama. Tanggal layanan ditentukan otomatis oleh kantin."],
               ["Memesan untuk 2 anak atau 2 waktu istirahat?", "Buat pesanan terpisah. Setelah pesanan pertama terkirim, tekan Buat Pesanan Lagi — data tidak perlu diisi ulang."],
               ["Bolehkah memesan lebih dari satu menu?", "Boleh. Papa/Mama dapat memilih beberapa menu sekaligus dalam satu pesanan."],
-              ["Bagaimana jika ingin membatalkan pesanan?", "Silakan hubungi kantin melalui WhatsApp sesegera mungkin."],
               ["Tombol \"Salin Bukti Pesanan\" menyalin apa?", "Menyalin teks bukti pesanan — bisa langsung ditempel ke WhatsApp atau catatan."],
             ].map(([q, a], i) => (
-              <div key={i} style={{ marginBottom: i < 4 ? 12 : 0 }}>
+              <div key={i} style={{ marginBottom: i < 3 ? 12 : 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: t.text, marginBottom: 3 }}>{q}</div>
                 <div style={{ fontSize: 14, color: t.text2, lineHeight: 1.55 }}>{a}</div>
               </div>
