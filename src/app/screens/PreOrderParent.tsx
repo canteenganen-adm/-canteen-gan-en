@@ -64,6 +64,7 @@ export default function PreOrderParent({
   kelasList,
   pickupOptions,
   onSubmit,
+  previewMode = false,
 }: {
   kantin: string;
   serviceDate: string;
@@ -72,9 +73,12 @@ export default function PreOrderParent({
   kelasList: Kelas[];
   pickupOptions: string[];
   onSubmit: (r: PreOrderReceipt) => Promise<Transaction>;
+  /** Pratinjau untuk admin ("Lihat sebagai Ortu"): komponen SAMA persis,
+   * langsung ke layar menu, tanpa pemesanan/keranjang/checkout. */
+  previewMode?: boolean;
 }) {
   const defaultPickup = pickupOptions[0] || DEFAULT_PICKUP_FALLBACK;
-  const [step, setStep] = useState<"landing" | "menu" | "checkout" | "done">("landing");
+  const [step, setStep] = useState<"landing" | "menu" | "checkout" | "done">(previewMode ? "menu" : "landing");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [variantFor, setVariantFor] = useState<MenuItem | null>(null);
   const [noteFor, setNoteFor] = useState<string | null>(null);
@@ -108,6 +112,7 @@ export default function PreOrderParent({
 
   const keyOf = (l: CartLine) => l.menu.id + (l.variant ? ":" + l.variant.id : "");
   const add = (menu: MenuItem, variant?: Variant) => {
+    if (previewMode) return; // pratinjau: tampilan sama, pemesanan mati
     const key = menu.id + (variant ? ":" + variant.id : "");
     setCart((c) => ({ ...c, [key]: { menu, variant: variant || null, qty: (c[key]?.qty || 0) + 1, note: c[key]?.note || "" } }));
   };
@@ -117,7 +122,10 @@ export default function PreOrderParent({
     if (n[key].qty <= 1) delete n[key]; else n[key] = { ...n[key], qty: n[key].qty - 1 };
     return n;
   });
-  const tap = (m: MenuItem) => (m.variants.length ? setVariantFor(m) : add(m));
+  const tap = (m: MenuItem) => {
+    if (previewMode) return;
+    m.variants.length ? setVariantFor(m) : add(m);
+  };
   const qtyOf = (id: string) => Object.values(cart).filter((l) => l.menu.id === id).reduce((s, l) => s + l.qty, 0);
   const pickTingkat = (tg: string) => setForm({ ...form, tingkat: tg, kelas: "" });
   const invalid = () =>
@@ -400,7 +408,7 @@ export default function PreOrderParent({
       <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "18px 16px 14px", borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
           <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
-            <button onClick={() => setStep("landing")} aria-label="Kembali"
+            <button onClick={() => !previewMode && setStep("landing")} aria-label="Kembali"
               style={{ width: 34, height: 34, borderRadius: 10, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
               <ArrowLeft size={17} />
             </button>

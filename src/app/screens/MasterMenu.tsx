@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock,
+  Check, Tag, Layers, Settings, Calendar, Lock, Eye,
 } from "lucide-react";
+import PreOrderParent from "./PreOrderParent";
 import { t } from "../../lib/theme";
 import { priceLabel, uid, rupiah, serviceDateLabel, todayISO } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
@@ -38,6 +39,7 @@ export default function MasterMenu({
   menuHarianReady,
   onLoadDate,
   onSaveDaily,
+  kantin,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -56,6 +58,8 @@ export default function MasterMenu({
   menuHarianReady: boolean;
   onLoadDate: (tanggal: string) => void;
   onSaveDaily: (tanggal: string, items: MenuItem[]) => Promise<void>;
+  /** Nama kantin — dipakai header pratinjau "Lihat sebagai Ortu". */
+  kantin: string;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -155,6 +159,16 @@ export default function MasterMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [menus, draft, menuHarianReady, isPast]
   );
+
+  /* "Lihat sebagai Ortu" — pratinjau memakai komponen PreOrderParent ASLI
+     (mode baca). Membaca DRAFT yang sedang disusun; bar status kuning/hijau
+     selalu menyatakan apakah ini sudah resmi tersimpan atau belum. */
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const previewMenus = useMemo(() => {
+    if (isPast && menuHarianReady) return snapshot || [];
+    return menus.map((m) => ({ ...m, channels: { ...m.channels, preorder: poOn(m) } }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menus, draft, snapshot, isPast, menuHarianReady]);
 
   // Simpan (dengan konfirmasi) + toast hasil
   const [confirmSave, setConfirmSave] = useState(false);
@@ -320,6 +334,15 @@ export default function MasterMenu({
                 </div>
               )}
 
+              {/* Verifikasi sebelum publish — buka tampilan ortu yang asli */}
+              {!(isPast && menuHarianReady && snapshot === null) && (
+                <button onClick={() => setPreviewOpen(true)}
+                  className="flex items-center justify-center gap-2"
+                  style={{ width: "100%", height: 48, marginBottom: 16, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                  <Eye size={17} color={t.amberText} /> Lihat sebagai Ortu
+                </button>
+              )}
+
               {isPast && menuHarianReady && !snapLoaded ? (
                 <div style={{ textAlign: "center", color: t.text2, fontSize: 14, padding: "32px 0" }}>Memuat…</div>
               ) : isPast && menuHarianReady && snapshot === null ? (
@@ -421,6 +444,56 @@ export default function MasterMenu({
           )}
         </div>
       </div>
+
+      {/* ============ Pratinjau "Lihat sebagai Ortu" ============
+          Komponen PreOrderParent ASLI dalam mode baca. Bar status selalu
+          menyatakan: kuning = rancangan (ortu belum melihat ini), hijau =
+          resmi tersimpan. "Simpan Sekarang" hanyalah shortcut — lokasi
+          utama Simpan tetap di halaman Menu. */}
+      {previewOpen && (() => {
+        const belumResmi = menuHarianReady && !isPast && (dailyDirty || !snapshot);
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 55, background: t.bg, display: "flex", flexDirection: "column" }}>
+            <div className="flex items-center gap-2"
+              style={{ flex: "none", padding: "10px 14px",
+                background: belumResmi ? "#FFF4DA" : t.successBg,
+                borderBottom: `1.5px solid ${belumResmi ? "#F1DFB0" : "#D8E6D4"}` }}>
+              <Eye size={15} color={belumResmi ? t.amberText : t.successText} style={{ flex: "none" }} />
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, color: belumResmi ? t.amberText : t.successText }}>
+                {!menuHarianReady
+                  ? "Pratinjau tampilan ortu"
+                  : belumResmi
+                    ? "Rancangan — belum disimpan. Ortu masih melihat versi lama."
+                    : isPast
+                      ? `Tersimpan — inilah yang dilihat ortu pada ${serviceDateLabel(tanggal)}.`
+                      : "Resmi tersimpan — persis yang dilihat ortu."}
+              </span>
+              {belumResmi && (
+                <button onClick={() => setConfirmSave(true)}
+                  style={{ height: 36, padding: "0 12px", borderRadius: 10, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 12.5, cursor: "pointer", flex: "none" }}>
+                  Simpan Sekarang
+                </button>
+              )}
+              <button onClick={() => setPreviewOpen(false)} aria-label="Tutup pratinjau"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1.5px solid ${belumResmi ? "#F1DFB0" : "#D8E6D4"}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                <X size={17} />
+              </button>
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+              <PreOrderParent
+                previewMode
+                kantin={kantin}
+                serviceDate={serviceDateLabel(tanggal)}
+                open
+                menus={previewMenus}
+                kelasList={[]}
+                pickupOptions={[]}
+                onSubmit={async () => { throw new Error("preview"); }}
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Konfirmasi Simpan Menu Harian */}
       {confirmSave && (
