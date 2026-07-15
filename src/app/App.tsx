@@ -523,6 +523,9 @@ function MainShell({ store }: { store: CanteenStore }) {
           <Penjualan
             menus={salesMenus}
             kelasList={store.kelasList}
+            menuHarian={store.menuHarian}
+            menuHarianReady={store.menuHarianReady}
+            onLoadDate={store.loadMenuHarianDate}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
             onOpenSettings={openSettings}

@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from "react";
 import {
   Search, X, Plus, Minus, ShoppingCart, Check, Receipt,
-  Layers, ChevronRight, ArrowLeft, Wallet, Settings, Trash2, Undo2,
+  Layers, ChevronRight, ArrowLeft, Wallet, Settings, Trash2, Undo2, Calendar,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, uid, nowLabel, priceLabel } from "../../lib/format";
+import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
@@ -35,16 +35,36 @@ export default function Penjualan({
   menus,
   transactions,
   kelasList,
+  menuHarian,
+  menuHarianReady,
+  onLoadDate,
   onTransaction,
   onOpenSettings,
 }: {
   menus: MenuItem[];
   transactions: Transaction[];
   kelasList: Kelas[];
+  menuHarian: Record<string, MenuItem[] | null>;
+  menuHarianReady: boolean;
+  onLoadDate: (tanggal: string) => void;
   onTransaction: (tx: Transaction) => void;
   onOpenSettings: () => void;
 }) {
-  const sales = useMemo(() => menus.filter((m) => m.channels.sales), [menus]);
+  /* Tanggal kerja Penjualan — TERPISAH dari sesi PO. Default hari ini;
+     dipilih mundur untuk input OTS susulan: daftar & harga memakai
+     snapshot menu_harian tanggal itu, transaksi tercatat atas tanggal
+     itu, dan sesi PO live tidak pernah tersentuh. */
+  const todayIso = todayISO();
+  const [txDate, setTxDate] = useState(todayIso);
+  const isBackdate = txDate !== todayIso;
+  const snapTx = menuHarian[txDate];
+  useEffect(() => {
+    if (isBackdate && menuHarianReady && snapTx === undefined) onLoadDate(txDate);
+  }, [txDate, isBackdate, menuHarianReady, snapTx, onLoadDate]);
+  const pakaiSnapshot = isBackdate && menuHarianReady && !!snapTx;
+  const sourceMenus = pakaiSnapshot ? (snapTx as MenuItem[]) : menus;
+
+  const sales = useMemo(() => sourceMenus.filter((m) => m.channels.sales), [sourceMenus]);
   const cats = useMemo(() => ["Semua", ...Array.from(new Set(sales.map((m) => m.category)))], [sales]);
 
   const [cat, setCat] = useState("Semua");
@@ -69,10 +89,15 @@ export default function Penjualan({
     return () => clearTimeout(id);
   }, [cartUndo]);
 
+  /* Statistik mengikuti tanggal OPERASIONAL (serviceDate jika ada,
+     jatuh ke tanggal input untuk transaksi lama) — transaksi susulan
+     masuk rekap tanggal operasionalnya, bukan tanggal diketiknya. */
   const { todayCount, todaySum } = useMemo(() => {
-    const today = transactions.filter((tx) => tx.source === "penjualan" && isToday(tx.createdAt));
-    return { todayCount: today.length, todaySum: today.reduce((s, tx) => s + tx.total, 0) };
-  }, [transactions]);
+    const opMatch = (tx: Transaction) =>
+      tx.serviceDate ? tx.serviceDate === txDate : (txDate === todayIso && isToday(tx.createdAt));
+    const list = transactions.filter((tx) => tx.source === "penjualan" && opMatch(tx));
+    return { todayCount: list.length, todaySum: list.reduce((s, tx) => s + tx.total, 0) };
+  }, [transactions, txDate, todayIso]);
 
   const filtered = useMemo(
     () => sales.filter((m) => (cat === "Semua" || m.category === cat) && m.name.toLowerCase().includes(q.toLowerCase())),
@@ -127,13 +152,16 @@ export default function Penjualan({
         : { nama: "", kelas: "" },
       createdAt: new Date().toISOString(),
       label: nowLabel(),
+      // Tanggal operasional transaksi — untuk input susulan = tanggal lampau
+      serviceDate: txDate,
       items: cart.map((l) => ({ name: l.name, variant: l.variant, price: l.price, qty: l.qty })),
       total,
     };
     onTransaction(tx);
     setCart([]); setView("shop"); setBilling(false); setForm({ nama: "", tingkat: "", kelas: "", wa: "" }); setTried(false);
-    setToast(paid ? { ok: true, msg: `Penjualan dicatat — ${rupiah(total)} · Lunas` }
-                   : { ok: false, msg: `Masuk Tagihan — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
+    const utk = isBackdate ? ` untuk ${serviceDateLabel(txDate)}` : "";
+    setToast(paid ? { ok: true, msg: `Penjualan dicatat${utk} — ${rupiah(total)} · Lunas` }
+                   : { ok: false, msg: `Masuk Tagihan${utk} — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
   };
   const submitTagihan = () => {
     if (!form.nama.trim() || !form.tingkat || (kelasNeeded && !form.kelas)) { setTried(true); return; }
@@ -176,7 +204,7 @@ export default function Penjualan({
             </div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>Hari ini</div>
+                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>{isBackdate ? serviceDateLabel(txDate) : "Hari ini"}</div>
                 <div style={{ fontSize: 15, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
               <button
@@ -188,6 +216,35 @@ export default function Penjualan({
               </button>
             </div>
           </div>
+
+          {/* Tanggal transaksi — seluruh area diketuk via input overlay inset:0 */}
+          <div className="flex items-center gap-2"
+            style={{ marginTop: 12, position: "relative", background: isBackdate ? "#FFF4DA" : t.surface, border: `1.5px solid ${isBackdate ? t.primary : t.border}`, borderRadius: 12, padding: "9px 12px", cursor: "pointer" }}>
+            <Calendar size={17} color={t.amberText} style={{ flex: "none" }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Tanggal transaksi</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: isBackdate ? t.amberText : t.text }}>
+                {isBackdate ? `${serviceDateLabel(txDate)} · input susulan` : "Hari ini"}
+              </div>
+            </div>
+            {isBackdate && (
+              <button onClick={(e) => { e.stopPropagation(); setTxDate(todayIso); }}
+                style={{ position: "relative", zIndex: 2, height: 38, padding: "0 12px", borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12.5, cursor: "pointer", flex: "none" }}>
+                Kembali ke Hari Ini
+              </button>
+            )}
+            <input type="date" value={txDate} max={todayIso}
+              onChange={(e) => e.target.value && setTxDate(e.target.value)}
+              aria-label="Tanggal transaksi"
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+          </div>
+          {isBackdate && (
+            <div style={{ marginTop: 8, fontSize: 12, color: t.amberText, fontWeight: 600, lineHeight: 1.5 }}>
+              {pakaiSnapshot
+                ? `Menu & harga memakai data tersimpan tanggal ${serviceDateLabel(txDate)}.`
+                : `Menu tanggal ini tidak tersimpan — memakai daftar menu saat ini.`}
+            </div>
+          )}
 
           {/* Cari — full width, di luar dua kolom */}
           <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
