@@ -555,7 +555,6 @@ function MainShell({ store }: { store: CanteenStore }) {
             menuHarianReady={store.menuHarianReady}
             onLoadDate={store.loadMenuHarianDate}
             onSaveDaily={store.saveDailyMenu}
-            kantin={store.settings.namaKantin}
           />
         )}
       </div>

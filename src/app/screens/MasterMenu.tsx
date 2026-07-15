@@ -3,10 +3,9 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Settings, Calendar, Lock,
 } from "lucide-react";
-import PreOrderParent from "./PreOrderParent";
 import { t } from "../../lib/theme";
-import { priceLabel, uid, serviceDateLabel, todayISO } from "../../lib/format";
-import { KATEGORI_ORTU_LIST } from "../../lib/constants";
+import { priceLabel, uid, rupiah, serviceDateLabel, todayISO } from "../../lib/format";
+import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
 
@@ -38,7 +37,6 @@ export default function MasterMenu({
   menuHarianReady,
   onLoadDate,
   onSaveDaily,
-  kantin,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -57,8 +55,6 @@ export default function MasterMenu({
   menuHarianReady: boolean;
   onLoadDate: (tanggal: string) => void;
   onSaveDaily: (tanggal: string, items: MenuItem[]) => Promise<void>;
-  /** Nama kantin — dipakai header pratinjau "Lihat sebagai Ortu". */
-  kantin: string;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -315,21 +311,49 @@ export default function MasterMenu({
                 <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 12px" }}>Belum ada data tersimpan untuk tanggal ini.</div>
               ) : (
                 <>
-                  {/* Pratinjau = komponen halaman ortu ASLI (previewMode),
-                      membaca draft. Menyusun (toggle) dilakukan di kertas
-                      Menu; kertas ini murni untuk memastikan hasilnya. */}
-                  <div style={{ border: `1.5px solid ${t.border}`, borderRadius: 18, overflow: "hidden", background: t.bg }}>
-                    <PreOrderParent
-                      previewMode
-                      kantin={kantin}
-                      serviceDate={serviceDateLabel(tanggal)}
-                      open
-                      menus={previewMenus}
-                      kelasList={[]}
-                      pickupOptions={[]}
-                      onSubmit={async () => { throw new Error("preview"); }}
-                    />
-                  </div>
+                  {/* Daftar proofread — data & urutan SAMA dengan halaman ortu
+                      (kelompok kategori ortu), tapi bentuk daftar baca cepat:
+                      tanpa kartu/tombol/keranjang. Tujuannya satu: memastikan
+                      tidak ada menu yang tertinggal sebelum PO dibuka. */}
+                  {(() => {
+                    const tampil = previewMenus.filter((m) => m.channels.preorder);
+                    const byKat: Record<string, MenuItem[]> = {};
+                    tampil.forEach((m) => {
+                      const k = m.kategoriOrtu && KATEGORI_ORTU_ORDER.includes(m.kategoriOrtu) ? m.kategoriOrtu : KATEGORI_ORTU_FALLBACK;
+                      (byKat[k] = byKat[k] || []).push(m);
+                    });
+                    for (const k in byKat) byKat[k].sort((a, b) => a.name.localeCompare(b.name, "id"));
+                    const riwayat = isPast && menuHarianReady;
+                    const kats = KATEGORI_ORTU_ORDER.filter((k) =>
+                      riwayat ? byKat[k]?.length : (k !== KATEGORI_ORTU_FALLBACK || byKat[k]?.length));
+                    return (
+                      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: "4px 16px 10px" }}>
+                        {kats.map((k) => (
+                          <div key={k}>
+                            <div className="flex items-center" style={{ gap: 6, fontSize: 12.5, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", margin: "14px 0 4px" }}>
+                              {KATEGORI_ORTU_EMOJI[k]} {k}
+                              <span style={{ fontWeight: 800, color: byKat[k]?.length ? t.amberText : t.textDis }}>({byKat[k]?.length || 0})</span>
+                            </div>
+                            {byKat[k]?.length ? byKat[k].map((m) => (
+                              <div key={m.id} className="flex items-center gap-3" style={{ padding: "6px 0", borderBottom: `1px solid ${t.divider}` }}>
+                                <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600 }}>{m.name}</span>
+                                <span style={{ flex: "none", fontSize: 12.5, color: t.text2, fontVariantNumeric: "tabular-nums" }}>
+                                  {m.variants.length
+                                    ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
+                                    : rupiah(m.price)}
+                                </span>
+                              </div>
+                            )) : (
+                              <div style={{ fontSize: 12.5, color: t.textDis, padding: "4px 0 6px" }}>Belum ada menu di kategori ini</div>
+                            )}
+                          </div>
+                        ))}
+                        {tampil.length === 0 && (
+                          <div style={{ textAlign: "center", color: t.text2, fontSize: 14, padding: "24px 0" }}>Belum ada menu yang akan tampil ke orang tua.</div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Bar status + Simpan — kuning: belum resmi, hijau: tersimpan */}
                   {menuHarianReady && !isPast && (() => {
