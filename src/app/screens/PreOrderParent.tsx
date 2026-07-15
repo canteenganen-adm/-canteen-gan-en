@@ -6,7 +6,7 @@ import {
 import { t } from "../../lib/theme";
 import { rupiah, orderNo, serviceDateLabel } from "../../lib/format";
 import { fetchAppState } from "../../lib/canteenApi";
-import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER } from "../../lib/constants";
 import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
 
 /* ============================================================
@@ -20,17 +20,11 @@ import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
    ============================================================ */
 
 /* --- Taksonomi 8 kategori versi orang tua (kategori_ortu, vegan-safe) ---
-   Emoji sesuai prototipe pemilik — TANPA ikon hewan/daging/seafood.
+   Emoji + urutan dari lib/constants (dipakai juga pratinjau tab Menu admin).
    "Lainnya" = fallback item yang belum dikategorikan (tidak pernah
    disembunyikan); "Paket" tampil sebagai banner khusus, bukan tile. */
-const KAT_EMOJI: Record<string, string> = {
-  "Makanan Utama": "🍚", "Lauk": "🥘", "Gorengan": "🧆", "Camilan Sehat": "🥗",
-  "Snack": "🍪", "Buah": "🍎", "Dessert": "🧁", "Paket": "🍱", "Lainnya": "🍽️",
-};
-const KAT_ORDER = [
-  "Makanan Utama", "Lauk", "Gorengan", "Camilan Sehat",
-  "Snack", "Buah", "Dessert", "Paket", "Lainnya",
-];
+const KAT_EMOJI = KATEGORI_ORTU_EMOJI;
+const KAT_ORDER = KATEGORI_ORTU_ORDER;
 const katOf = (m: MenuItem) => m.kategoriOrtu || "Lainnya";
 
 /** Banner "Paket Spesial Hari Ini" — sedang DITUTUP atas permintaan pemilik.

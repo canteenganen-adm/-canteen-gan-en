@@ -4,8 +4,8 @@ import {
   Check, Tag, Layers, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { priceLabel, uid } from "../../lib/format";
-import { KATEGORI_ORTU_LIST } from "../../lib/constants";
+import { priceLabel, uid, rupiah } from "../../lib/format";
+import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import type { MenuItem, Variant } from "../../types";
 
 /* ============================================================
@@ -57,6 +57,24 @@ export default function MasterMenu({
         m.name.toLowerCase().includes(q.toLowerCase())
     );
   }, [menus, cat, q, showUncategorized, uncategorized]);
+
+  /* Tampilan DEFAULT (Semua + tanpa cari): dua bagian — grid visual persis
+     seperti /pesan (item Pre-order aktif per kategori ortu) + daftar kerja
+     "Belum Aktif". Filter kategori admin & cari tetap pakai list biasa. */
+  const defaultView = cat === "Semua" && !q.trim() && !showUncategorized;
+  const aktifByKat = useMemo(() => {
+    const map: Record<string, MenuItem[]> = {};
+    menus.filter((m) => m.channels.preorder).forEach((m) => {
+      const k = m.kategoriOrtu && KATEGORI_ORTU_ORDER.includes(m.kategoriOrtu) ? m.kategoriOrtu : KATEGORI_ORTU_FALLBACK;
+      (map[k] = map[k] || []).push(m);
+    });
+    for (const k in map) map[k].sort((a, b) => a.name.localeCompare(b.name, "id"));
+    return map;
+  }, [menus]);
+  const belumAktif = useMemo(
+    () => menus.filter((m) => !m.channels.preorder).sort((a, b) => a.name.localeCompare(b.name, "id")),
+    [menus]
+  );
 
   const editing = menus.find((m) => m.id === editingId) || null;
 
@@ -151,7 +169,62 @@ export default function MasterMenu({
               </span>
             </button>
           )}
-          {filtered.length === 0 ? (
+          {defaultView ? (
+            <>
+              {/* Bagian 1: Yang Akan Tampil ke Orang Tua — gaya visual /pesan.
+                  Kategori kosong TETAP tampil supaya kekosongan kelihatan. */}
+              {KATEGORI_ORTU_ORDER
+                .filter((k) => k !== KATEGORI_ORTU_FALLBACK || aktifByKat[k]?.length)
+                .map((k) => (
+                <div key={k} style={{ marginBottom: 20 }}>
+                  <div className="flex items-center" style={{ gap: 6, fontSize: 13, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 10 }}>
+                    {KATEGORI_ORTU_EMOJI[k]} {k}
+                  </div>
+                  {aktifByKat[k]?.length ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      {aktifByKat[k].map((m) => (
+                        <div key={m.id} onClick={() => setEditingId(m.id)}
+                          style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 14, cursor: "pointer" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{m.name}</div>
+                          <div style={{ fontSize: 12, color: t.text2 }}>
+                            {m.variants.length
+                              ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
+                              : rupiah(m.price)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12.5, color: t.textDis, padding: "2px 2px 4px" }}>Belum ada menu di kategori ini</div>
+                  )}
+                </div>
+              ))}
+
+              {/* Bagian 2: Belum Aktif untuk Pre-order — daftar kerja */}
+              <div style={{ marginTop: 26, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 16, padding: "14px 16px" }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: t.text2, textTransform: "uppercase", letterSpacing: ".03em" }}>Belum Aktif untuk Pre-order</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: t.text2, background: t.surface, border: `1px solid ${t.border}`, padding: "1px 9px", borderRadius: 999 }}>{belumAktif.length}</span>
+                </div>
+                <div style={{ fontSize: 12, color: t.textDis, marginBottom: 6 }}>Ketuk ikon untuk langsung menyalakan; ketuk nama untuk edit.</div>
+                {belumAktif.length === 0 ? (
+                  <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>Semua menu sudah aktif untuk Pre-order.</div>
+                ) : belumAktif.map((m) => (
+                  <div key={m.id} onClick={() => setEditingId(m.id)} className="flex items-center gap-3"
+                    style={{ padding: "9px 0", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{m.name}</div>
+                      <div style={{ fontSize: 11.5, color: t.textDis, marginTop: 1 }}>{m.category} · {priceLabel(m)}</div>
+                    </div>
+                    <ChannelIcon on={false} label="Nyalakan di Pre-order"
+                      onClick={(e) => { e.stopPropagation(); toggleChannel(m.id, "preorder"); }}>
+                      <Utensils size={16} />
+                    </ChannelIcon>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : filtered.length === 0 ? (
             <Empty />
           ) : (
             filtered.map((m) => (

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Database, Info, X, Check, Download, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
+  Link2, Copy, Share2,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { uid, rupiah } from "../../lib/format";
+import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
@@ -45,6 +46,9 @@ export default function Pengaturan({
   onLoadTrash,
   onRestoreFromTrash,
   onHardDeleteFromTrash,
+  poLink,
+  serviceDate,
+  preorderOpen,
 }: {
   settings: CanteenSettings;
   onChange: (patch: Partial<CanteenSettings>) => void;
@@ -63,6 +67,9 @@ export default function Pengaturan({
   onLoadTrash: () => void;
   onRestoreFromTrash: (id: string) => void;
   onHardDeleteFromTrash: (id: string) => void;
+  poLink: string;
+  serviceDate: string;
+  preorderOpen: boolean;
 }) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -78,6 +85,22 @@ export default function Pengaturan({
   const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
+  // Bagikan Link Pemesanan — dipindah dari PO Admin (dipakai jarang)
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(poLink).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  const handleShareLinkWA = () => {
+    const text = encodeURIComponent(
+      preorderOpen
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\n🪷Gan En🙏🏻✨`
+        : "Pre-order untuk tanggal ini sudah ditutup."
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
   const [newPreset, setNewPreset] = useState("");
   const [editingPresetIdx, setEditingPresetIdx] = useState<number | null>(null);
   const [editPresetVal, setEditPresetVal] = useState("");
@@ -736,6 +759,17 @@ export default function Pengaturan({
             </button>
 
             <button
+              onClick={() => setLinkOpen(true)}
+              className="flex items-center gap-3" style={rowBtn}>
+              <span style={ic}><Link2 size={20} /></span>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Bagikan Link Pemesanan</div>
+                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Salin link /pesan atau kirim ke WhatsApp</div>
+              </div>
+              <ChevronRight size={18} color={t.textDis} />
+            </button>
+
+            <button
               onClick={() => { setTrashOpen(true); onLoadTrash(); }}
               className="flex items-center gap-3" style={rowBtn}>
               <span style={{ ...ic, background: t.errorBg, color: t.error }}><Trash2 size={20} /></span>
@@ -820,6 +854,33 @@ export default function Pengaturan({
           </div>
         </div>
       </div>
+
+      {/* Sheet Bagikan Link Pemesanan */}
+      {linkOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setLinkOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Bagikan Link Pemesanan</div>
+              <button onClick={() => setLinkOpen(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+            </div>
+            <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
+              Link untuk {serviceDateLabel(serviceDate)}. {preorderOpen ? "Pre-order sedang dibuka." : "Saat ini ditutup."}
+            </div>
+            <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 13.5, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
+            <div className="flex gap-2">
+              <button onClick={handleCopyLink} className="flex items-center justify-center gap-2"
+                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Tersalin!" : "Salin Link"}
+              </button>
+              <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
+                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                <Share2 size={18} /> WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast msg={toast} />}
     </div>

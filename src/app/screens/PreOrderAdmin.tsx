@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Calendar, Link2, Copy, Share2, Clock, CookingPot, Printer,
+  Calendar, Eye, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
 } from "lucide-react";
 import { t } from "../../lib/theme";
@@ -81,7 +81,7 @@ export default function PreOrderAdmin({
   schedules,
   transactions,
   onTogglePacked,
-  poLink,
+  onLihatMenu,
   onOpenSettings,
 }: {
   serviceDate: string;
@@ -96,13 +96,12 @@ export default function PreOrderAdmin({
   schedules: PickupSchedule[];
   transactions: Transaction[];
   onTogglePacked: (id: string) => void;
-  poLink: string;
+  onLihatMenu: () => void;
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState("Semua");
-  const [sheet, setSheet] = useState<null | "link" | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
-  const [copied, setCopied] = useState(false);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   const [nowTick, setNowTick] = useState(0);
   const [showLateOnly, setShowLateOnly] = useState(false);
   const [packedFilter, setPackedFilter] = useState<"semua" | "sudah" | "belum">("semua");
@@ -204,20 +203,6 @@ export default function PreOrderAdmin({
 
   const dateLabel = useMemo(() => serviceDateLabel(serviceDate), [serviceDate]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(poLink).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  const handleShareWA = () => {
-    const text = encodeURIComponent(
-      open
-        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${dateLabel} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\n🪷Gan En🙏🏻✨`
-        : "Pre-order untuk tanggal ini sudah ditutup."
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
-  };
-
   const pickNextSchoolDay = () => {
     onServiceDateChange(nextSchoolDayISO());
     setSheet(null);
@@ -293,9 +278,9 @@ export default function PreOrderAdmin({
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
           </div>
 
-          {/* Actions */}
+          {/* Actions — Bagikan Link pindah ke Pengaturan; Lihat Menu = pratinjau di tab Menu */}
           <div className="flex gap-2" style={{ marginTop: 12 }}>
-            <Action icon={<Link2 size={20} />} label="Bagikan Link" onClick={() => setSheet("link")} />
+            <Action icon={<Eye size={20} />} label="Lihat Menu" onClick={onLihatMenu} />
             <Action icon={<CookingPot size={20} />} label="Rekap Masak" onClick={() => setSheet("rekap")} />
             <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
           </div>
@@ -444,16 +429,6 @@ export default function PreOrderAdmin({
           )}
         </Sheet>
       )}
-      {sheet === "link" && (
-        <Sheet title="Bagikan Link Pre-order" onClose={() => setSheet(null)}>
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>Link untuk {dateLabel}. {open ? "Pre-order sedang dibuka." : "Saat ini ditutup."}</div>
-          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 13.5, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
-          <div className="flex gap-2">
-            <button onClick={handleCopy} className="flex items-center justify-center gap-2" style={btn(false)}>{copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Tersalin!" : "Salin Link"}</button>
-            <button onClick={handleShareWA} className="flex items-center justify-center gap-2" style={btn(true)}><Share2 size={18} /> WhatsApp</button>
-          </div>
-        </Sheet>
-      )}
       {sheet === "rekap" && (
         <Sheet title="Rekap Masak" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>{dateLabel} · semua pesanan</div>
@@ -560,5 +535,3 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
     </div>
   );
 }
-const inputStyle: React.CSSProperties = { width: "100%", height: 50, fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 14px", outline: "none", fontFamily: "inherit" };
-const btn = (primary: boolean): React.CSSProperties => ({ flex: 1, height: 52, borderRadius: 12, border: primary ? "none" : `1.5px solid ${t.border}`, background: primary ? t.primary : t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" });

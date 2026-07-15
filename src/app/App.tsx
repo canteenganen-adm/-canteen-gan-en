@@ -406,6 +406,14 @@ type Tab = "preorder" | "penjualan" | "tagihan" | "menu";
 function MainShell({ store }: { store: CanteenStore }) {
   const [tab, setTab] = useState<Tab>("preorder");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  /* "Lihat Menu" dari PO Admin: lompat ke tab Menu, scroll ke atas
+     (bagian grid "Yang Akan Tampil ke Orang Tua"). */
+  const lihatMenu = () => {
+    setTab("menu");
+    requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0 }));
+  };
 
   const poLink = `${window.location.origin}/pesan`;
   const unpaidCount = store.transactions.filter((tx) => !tx.paid && !tx.cancelledAt).length;
@@ -427,7 +435,7 @@ function MainShell({ store }: { store: CanteenStore }) {
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: t.bg }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", position: "relative" }}>
+      <div ref={contentRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", position: "relative" }}>
         {tab === "preorder" && (
           <PreOrderAdmin
             serviceDate={store.serviceDate}
@@ -442,7 +450,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             schedules={store.pickupSchedules}
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
-            poLink={poLink}
+            onLihatMenu={lihatMenu}
             onOpenSettings={openSettings}
           />
         )}
@@ -528,6 +536,9 @@ function MainShell({ store }: { store: CanteenStore }) {
             onLoadTrash={store.loadTrash}
             onRestoreFromTrash={store.restoreFromTrash}
             onHardDeleteFromTrash={store.hardDeleteFromTrash}
+            poLink={poLink}
+            serviceDate={store.serviceDate}
+            preorderOpen={store.preorderOpen}
           />
         </div>
       )}
