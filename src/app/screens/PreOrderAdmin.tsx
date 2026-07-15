@@ -82,6 +82,7 @@ export default function PreOrderAdmin({
   transactions,
   onTogglePacked,
   onLihatMenu,
+  menuBelumDisimpan,
   onOpenSettings,
 }: {
   serviceDate: string;
@@ -97,6 +98,9 @@ export default function PreOrderAdmin({
   transactions: Transaction[];
   onTogglePacked: (id: string) => void;
   onLihatMenu: () => void;
+  /** true = tanggal sesi belum punya snapshot menu_harian — halaman ortu
+   * kosong sampai admin menekan Simpan di tab Menu (kertas PO). */
+  menuBelumDisimpan: boolean;
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
@@ -313,6 +317,15 @@ export default function PreOrderAdmin({
 
         {/* Daftar utama — preset pertama, TANPA label */}
         <div style={{ padding: "0 20px" }}>
+
+          {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
+          {menuBelumDisimpan && (
+            <button onClick={onLihatMenu} className="flex items-center gap-2"
+              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4DA", border: "1.5px solid #F1DFB0", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <AlertCircle size={16} style={{ flex: "none" }} />
+              <span style={{ flex: 1 }}>Menu untuk {dateLabel} belum disimpan — ortu belum bisa melihat menu. Ketuk untuk mengatur & Simpan.</span>
+            </button>
+          )}
 
           {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
           {lateCount > 0 && (

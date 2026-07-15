@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router";
 import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
-import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow } from "../lib/format";
+import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
   fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
@@ -13,6 +13,7 @@ import {
   patchTransactionCustomer,
   fetchTrashedTransactions, purgeOldTrash, softDeleteTransaction,
   restoreFromTrash as apiRestoreFromTrash, hardDeleteTransaction,
+  fetchMenuHarian, saveMenuHarianSnapshot,
   appStatePatch,
 } from "../lib/canteenApi";
 import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas, PickupSchedule } from "../types";
@@ -96,6 +97,12 @@ function useCanteenStore() {
   const [pickupSchedules, setPickupSchedulesLocal] = useState<PickupSchedule[]>([]);
   const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
   const [trashTransactions, setTrashTransactions] = useState<Transaction[]>([]);
+  /** Snapshot menu per tanggal (menu_harian). null = tanggal itu belum pernah
+   * disimpan; key tidak ada = belum di-fetch. */
+  const [menuHarian, setMenuHarianLocal] = useState<Record<string, MenuItem[] | null>>({});
+  /** false = tabel menu_harian belum ada (migration_9 belum jalan) → semua
+   * layar fallback ke perilaku lama (baca channels di master menu). */
+  const [menuHarianReady, setMenuHarianReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -125,6 +132,16 @@ function useCanteenStore() {
       setPickupPresetsLocal(appState.pickupPresets);
       setPickupSchedulesLocal(appState.pickupSchedules);
       setSettingsLocal(appState.settings);
+      // Snapshot menu untuk tanggal sesi PO + hari ini (untuk POS).
+      // Kalau tabel belum ada (migration_9 belum jalan) → fallback mode.
+      try {
+        const dates = Array.from(new Set([appState.serviceDate, todayISO()]));
+        const map = await fetchMenuHarian(dates);
+        setMenuHarianLocal((prev) => ({ ...prev, ...map }));
+        setMenuHarianReady(true);
+      } catch {
+        setMenuHarianReady(false);
+      }
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat data dari Supabase.");
@@ -297,6 +314,24 @@ function useCanteenStore() {
     return confirmed;
   };
 
+  /* ---- Menu Harian (snapshot per tanggal + history) ---- */
+  /** Muat snapshot untuk satu tanggal (dipakai selector riwayat di tab Menu). */
+  const loadMenuHarianDate = useCallback(async (tanggal: string) => {
+    try {
+      const map = await fetchMenuHarian([tanggal]);
+      setMenuHarianLocal((prev) => ({ ...prev, ...map }));
+    } catch (e) {
+      reportError("loadMenuHarianDate", e);
+    }
+  }, []);
+  /** Simpan snapshot dari tombol Simpan eksplisit. TIDAK optimistic —
+   * menunggu server supaya konfirmasi "tersimpan" yang tampil itu jujur. */
+  const saveDailyMenu = async (tanggal: string, items: MenuItem[]) => {
+    await saveMenuHarianSnapshot(tanggal, items);
+    const aktif = items.filter((m) => m.channels.preorder || m.channels.sales);
+    setMenuHarianLocal((prev) => ({ ...prev, [tanggal]: aktif.length ? aktif : null }));
+  };
+
   /* ---- Kelas (per Tingkat, dikelola admin) ---- */
   const addKelas = (k: Kelas) => {
     setKelasList((prev) => [...prev, k]);
@@ -358,6 +393,7 @@ function useCanteenStore() {
 
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
+    menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
     transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
@@ -386,12 +422,20 @@ function ParentRoute({ store }: { store: CanteenStore }) {
   const effectiveOpen = store.preorderOpen &&
     (!autoClosedNow(store.serviceDate, store.autoCloseTime) || reopenActiveNow(store.reopenUntil));
 
+  /* Menu yang dilihat ortu = SNAPSHOT menu_harian untuk Tanggal Layanan
+   * (yang disimpan lewat tombol Simpan) — bukan lagi toggle live. Belum
+   * disimpan = kosong (PO Admin menampilkan banner peringatan). Fallback
+   * ke master hanya jika migration_9 belum dijalankan. */
+  const parentMenus = store.menuHarianReady
+    ? (store.menuHarian[store.serviceDate] ?? [])
+    : store.menus;
+
   return (
     <PreOrderParent
       kantin={store.settings.namaKantin}
       serviceDate={serviceDateLabel(store.serviceDate)}
       open={effectiveOpen}
-      menus={store.menus}
+      menus={parentMenus}
       kelasList={store.kelasList}
       pickupOptions={store.pickupPresets}
       onSubmit={store.submitPreOrder}
@@ -419,6 +463,24 @@ function MainShell({ store }: { store: CanteenStore }) {
 
   const poLink = `${window.location.origin}/pesan`;
   const unpaidCount = store.transactions.filter((tx) => !tx.paid && !tx.cancelledAt).length;
+
+  /* POS: ketersediaan Penjualan ikut snapshot HARI INI per item (kalau ada);
+   * item yang tidak ada di snapshot (mis. menu baru) ikut master. Data
+   * nama/harga selalu dari master (harga jual = harga terkini). */
+  const salesMenus = useMemo(() => {
+    if (!store.menuHarianReady) return store.menus;
+    const snap = store.menuHarian[todayISO()];
+    if (!snap) return store.menus;
+    const byId = new Map(snap.map((s) => [s.id, s]));
+    return store.menus.map((m) => {
+      const s = byId.get(m.id);
+      return s ? { ...m, channels: { ...m.channels, sales: s.channels.sales } } : m;
+    });
+  }, [store.menus, store.menuHarian, store.menuHarianReady]);
+
+  /* Guard: sesi PO dibuka tapi menu untuk tanggalnya belum disimpan →
+   * halaman ortu kosong. Banner di PO Admin mengarahkan ke tab Menu. */
+  const menuBelumDisimpan = store.menuHarianReady && !(store.menuHarian[store.serviceDate]?.length);
 
   const openSettings = () => { setSettingsOpen(true); store.loadTrash(); };
 
@@ -453,12 +515,13 @@ function MainShell({ store }: { store: CanteenStore }) {
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             onLihatMenu={lihatMenu}
+            menuBelumDisimpan={menuBelumDisimpan}
             onOpenSettings={openSettings}
           />
         )}
         {tab === "penjualan" && (
           <Penjualan
-            menus={store.menus}
+            menus={salesMenus}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
             onOpenSettings={openSettings}
@@ -486,6 +549,11 @@ function MainShell({ store }: { store: CanteenStore }) {
             onOpenSettings={openSettings}
             view={menuView}
             onViewChange={setMenuView}
+            serviceDate={store.serviceDate}
+            menuHarian={store.menuHarian}
+            menuHarianReady={store.menuHarianReady}
+            onLoadDate={store.loadMenuHarianDate}
+            onSaveDaily={store.saveDailyMenu}
           />
         )}
       </div>

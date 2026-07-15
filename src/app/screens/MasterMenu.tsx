@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings,
+  Check, Tag, Layers, Settings, Calendar, Lock,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { priceLabel, uid, rupiah } from "../../lib/format";
+import { priceLabel, uid, rupiah, serviceDateLabel, todayISO } from "../../lib/format";
+import { openPicker } from "../../lib/picker";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
@@ -32,6 +33,11 @@ export default function MasterMenu({
   onOpenSettings,
   view,
   onViewChange,
+  serviceDate,
+  menuHarian,
+  menuHarianReady,
+  onLoadDate,
+  onSaveDaily,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -41,6 +47,15 @@ export default function MasterMenu({
   onOpenSettings: () => void;
   view: MenuView;
   onViewChange: (v: MenuView) => void;
+  /** Tanggal sesi PO berikutnya — default selector tanggal di kertas PO. */
+  serviceDate: string;
+  /** Snapshot menu_harian per tanggal: null = belum pernah disimpan,
+   * key tidak ada = belum di-fetch. */
+  menuHarian: Record<string, MenuItem[] | null>;
+  /** false = migration_9 belum dijalankan → kertas PO fallback ke toggle live. */
+  menuHarianReady: boolean;
+  onLoadDate: (tanggal: string) => void;
+  onSaveDaily: (tanggal: string, items: MenuItem[]) => Promise<void>;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -65,22 +80,105 @@ export default function MasterMenu({
     );
   }, [menus, cat, q, showUncategorized, uncategorized]);
 
-  /* Sub-tab "Menu PO" (kertas ala Chrome): pratinjau visual persis seperti
-     /pesan (item Pre-order aktif per kategori ortu) + daftar kerja "Belum
-     Aktif". Sub-tab "Menu" = UI daftar semula, tidak berubah. */
-  const aktifByKat = useMemo(() => {
+  /* ============ Kertas PO: MENU HARIAN per tanggal + tombol Simpan ============
+     Toggle di kertas ini mengubah DRAFT di layar saja; baru tersimpan permanen
+     ke menu_harian saat tombol "Simpan" ditekan (dengan konfirmasi). Tanggal
+     lampau = read-only (riwayat). Sebelum migration_9: fallback toggle live. */
+  const [tanggal, setTanggal] = useState(serviceDate);
+  useEffect(() => { setTanggal(serviceDate); }, [serviceDate]);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const isPast = tanggal < todayISO();
+  const snapshot = menuHarian[tanggal]; // undefined = belum di-fetch
+  const snapLoaded = snapshot !== undefined;
+
+  useEffect(() => {
+    if (menuHarianReady && !snapLoaded) onLoadDate(tanggal);
+  }, [tanggal, menuHarianReady, snapLoaded, onLoadDate]);
+
+  const [draft, setDraft] = useState<Record<string, boolean>>({});
+  const [seed, setSeed] = useState<Record<string, boolean>>({});
+  const menusRef = useRef(menus);
+  menusRef.current = menus;
+  useEffect(() => {
+    // Seed draft saat ganti tanggal / snapshot pertama termuat. SENGAJA tidak
+    // depend ke `menus` supaya reload realtime tidak menghapus draft yang
+    // sedang diedit.
+    if (!menuHarianReady || isPast || !snapLoaded) return;
+    const base: Record<string, boolean> = {};
+    if (snapshot) {
+      const on = new Set(snapshot.filter((s) => s.channels.preorder).map((s) => s.id));
+      menusRef.current.forEach((m) => { base[m.id] = on.has(m.id); });
+    } else {
+      menusRef.current.forEach((m) => { base[m.id] = m.channels.preorder; });
+    }
+    setDraft(base);
+    setSeed(base);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tanggal, menuHarianReady, isPast, snapLoaded]);
+
+  /** Flag Pre-order yang berlaku di kertas PO: draft (mode harian) atau
+   * channels live (fallback pra-migration). */
+  const poOn = (m: MenuItem) =>
+    menuHarianReady && !isPast ? !!draft[m.id] : m.channels.preorder;
+  const poToggle = (m: MenuItem, on: boolean) => {
+    if (menuHarianReady && !isPast) setDraft((prev) => ({ ...prev, [m.id]: on }));
+    else toggleChannel(m.id, "preorder");
+  };
+
+  const dailyDirty = useMemo(
+    () => menuHarianReady && !isPast && menus.some((m) => (draft[m.id] ?? false) !== (seed[m.id] ?? false)),
+    [menus, draft, seed, menuHarianReady, isPast]
+  );
+  const aktifCount = useMemo(() => menus.filter((m) => poOn(m)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [menus, draft, menuHarianReady, isPast]);
+
+  const groupByKat = (list: MenuItem[]) => {
     const map: Record<string, MenuItem[]> = {};
-    menus.filter((m) => m.channels.preorder).forEach((m) => {
+    list.forEach((m) => {
       const k = m.kategoriOrtu && KATEGORI_ORTU_ORDER.includes(m.kategoriOrtu) ? m.kategoriOrtu : KATEGORI_ORTU_FALLBACK;
       (map[k] = map[k] || []).push(m);
     });
     for (const k in map) map[k].sort((a, b) => a.name.localeCompare(b.name, "id"));
     return map;
-  }, [menus]);
+  };
+  // Mode edit (hari ini/besok): grid dari draft. Mode riwayat: dari snapshot.
+  const aktifByKat = useMemo(() => {
+    const source = isPast && menuHarianReady
+      ? (snapshot || []).filter((s) => s.channels.preorder)
+      : menus.filter((m) => poOn(m));
+    return groupByKat(source);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menus, draft, snapshot, isPast, menuHarianReady]);
   const belumAktif = useMemo(
-    () => menus.filter((m) => !m.channels.preorder).sort((a, b) => a.name.localeCompare(b.name, "id")),
-    [menus]
+    () => menus.filter((m) => !poOn(m)).sort((a, b) => a.name.localeCompare(b.name, "id")),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [menus, draft, menuHarianReady, isPast]
   );
+
+  // Simpan (dengan konfirmasi) + toast hasil
+  const [confirmSave, setConfirmSave] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(id);
+  }, [toast]);
+  const doSave = async () => {
+    setSaving(true);
+    try {
+      const items = menus.map((m) => ({ ...m, channels: { preorder: !!draft[m.id], sales: m.channels.sales } }));
+      await onSaveDaily(tanggal, items);
+      setSeed({ ...draft });
+      setConfirmSave(false);
+      setToast(`Menu untuk ${serviceDateLabel(tanggal)} berhasil disimpan (${aktifCount} item aktif)`);
+    } catch {
+      setToast("Gagal menyimpan. Periksa koneksi internet, lalu coba lagi.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const editing = menus.find((m) => m.id === editingId) || null;
 
@@ -190,58 +288,127 @@ export default function MasterMenu({
           )}
           {view === "po" ? (
             <>
-              {/* Bagian 1: Yang Akan Tampil ke Orang Tua — gaya visual /pesan.
-                  Kategori kosong TETAP tampil supaya kekosongan kelihatan. */}
-              {KATEGORI_ORTU_ORDER
-                .filter((k) => k !== KATEGORI_ORTU_FALLBACK || aktifByKat[k]?.length)
-                .map((k) => (
-                <div key={k} style={{ marginBottom: 20 }}>
-                  <div className="flex items-center" style={{ gap: 6, fontSize: 13, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 10 }}>
-                    {KATEGORI_ORTU_EMOJI[k]} {k}
+              {/* Selector tanggal — default: tanggal sesi PO berikutnya.
+                  Boleh pilih tanggal lampau untuk lihat riwayat (read-only). */}
+              {menuHarianReady ? (
+                <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 14, overflow: "hidden" }}>
+                  <div
+                    role="button" tabIndex={0}
+                    onClick={() => openPicker(dateRef)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(dateRef); } }}
+                    className="flex items-center gap-3"
+                    style={{ position: "relative", padding: "12px 14px", cursor: "pointer" }}>
+                    <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Menu untuk</div>
+                      <div style={{ fontSize: 16.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
+                    </div>
+                    <input ref={dateRef} type="date" value={tanggal}
+                      onChange={(e) => e.target.value && setTanggal(e.target.value)}
+                      aria-label="Pilih tanggal menu" tabIndex={-1}
+                      style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }} />
                   </div>
-                  {aktifByKat[k]?.length ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                      {aktifByKat[k].map((m) => (
-                        <div key={m.id} onClick={() => setEditingId(m.id)}
-                          style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 14, cursor: "pointer" }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{m.name}</div>
-                          <div style={{ fontSize: 12, color: t.text2 }}>
-                            {m.variants.length
-                              ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
-                              : rupiah(m.price)}
+                  {isPast && (
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, fontSize: 12.5, fontWeight: 700, color: t.text2 }}>
+                      <Lock size={13} /> Mode Lihat Riwayat — data tanggal ini terkunci
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ background: "#FFF4DA", border: "1px solid #F1DFB0", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
+                  Riwayat menu per tanggal butuh <b>migration_9_menu_harian.sql</b> dijalankan di Supabase dulu. Sementara itu toggle di bawah masih langsung tersimpan (perilaku lama).
+                </div>
+              )}
+
+              {isPast && menuHarianReady && !snapLoaded ? (
+                <div style={{ textAlign: "center", color: t.text2, fontSize: 14, padding: "32px 0" }}>Memuat…</div>
+              ) : isPast && menuHarianReady && snapshot === null ? (
+                <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 12px" }}>Belum ada data tersimpan untuk tanggal ini.</div>
+              ) : (
+                <>
+                  {/* Grid gaya /pesan. Kategori kosong tetap tampil saat mode
+                      edit (kekosongan harus kelihatan); di riwayat hanya yang berisi. */}
+                  {KATEGORI_ORTU_ORDER
+                    .filter((k) => (isPast && menuHarianReady)
+                      ? aktifByKat[k]?.length
+                      : (k !== KATEGORI_ORTU_FALLBACK || aktifByKat[k]?.length))
+                    .map((k) => (
+                    <div key={k} style={{ marginBottom: 20 }}>
+                      <div className="flex items-center" style={{ gap: 6, fontSize: 13, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 10 }}>
+                        {KATEGORI_ORTU_EMOJI[k]} {k}
+                      </div>
+                      {aktifByKat[k]?.length ? (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          {aktifByKat[k].map((m) => (
+                            <div key={m.id} onClick={() => { if (!(isPast && menuHarianReady)) setEditingId(m.id); }}
+                              style={{ position: "relative", background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 14, cursor: isPast && menuHarianReady ? "default" : "pointer" }}>
+                              {menuHarianReady && !isPast && (
+                                <button onClick={(e) => { e.stopPropagation(); poToggle(m, false); }}
+                                  title="Matikan untuk tanggal ini" aria-label="Matikan untuk tanggal ini"
+                                  style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: 9, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                                  <Utensils size={14} />
+                                </button>
+                              )}
+                              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34, paddingRight: menuHarianReady && !isPast ? 30 : 0 }}>{m.name}</div>
+                              <div style={{ fontSize: 12, color: t.text2 }}>
+                                {m.variants.length
+                                  ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
+                                  : rupiah(m.price)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12.5, color: t.textDis, padding: "2px 2px 4px" }}>Belum ada menu di kategori ini</div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Belum Aktif — hanya di mode edit/fallback, bukan riwayat */}
+                  {!(isPast && menuHarianReady) && (
+                    <div style={{ marginTop: 26, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 16, padding: "14px 16px" }}>
+                      <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: t.text2, textTransform: "uppercase", letterSpacing: ".03em" }}>Belum Aktif untuk Pre-order</span>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: t.text2, background: t.surface, border: `1px solid ${t.border}`, padding: "1px 9px", borderRadius: 999 }}>{belumAktif.length}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: t.textDis, marginBottom: 6 }}>Ketuk ikon untuk menyalakan; ketuk nama untuk edit.</div>
+                      {belumAktif.length === 0 ? (
+                        <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>Semua menu sudah aktif untuk Pre-order.</div>
+                      ) : belumAktif.map((m) => (
+                        <div key={m.id} onClick={() => setEditingId(m.id)} className="flex items-center gap-3"
+                          style={{ padding: "9px 0", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{m.name}</div>
+                            <div style={{ fontSize: 11.5, color: t.textDis, marginTop: 1 }}>{m.category} · {priceLabel(m)}</div>
                           </div>
+                          <ChannelIcon on={false} label="Nyalakan di Pre-order"
+                            onClick={(e) => { e.stopPropagation(); poToggle(m, true); }}>
+                            <Utensils size={16} />
+                          </ChannelIcon>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div style={{ fontSize: 12.5, color: t.textDis, padding: "2px 2px 4px" }}>Belum ada menu di kategori ini</div>
                   )}
-                </div>
-              ))}
 
-              {/* Bagian 2: Belum Aktif untuk Pre-order — daftar kerja */}
-              <div style={{ marginTop: 26, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 16, padding: "14px 16px" }}>
-                <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: t.text2, textTransform: "uppercase", letterSpacing: ".03em" }}>Belum Aktif untuk Pre-order</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: t.text2, background: t.surface, border: `1px solid ${t.border}`, padding: "1px 9px", borderRadius: 999 }}>{belumAktif.length}</span>
-                </div>
-                <div style={{ fontSize: 12, color: t.textDis, marginBottom: 6 }}>Ketuk ikon untuk langsung menyalakan; ketuk nama untuk edit.</div>
-                {belumAktif.length === 0 ? (
-                  <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>Semua menu sudah aktif untuk Pre-order.</div>
-                ) : belumAktif.map((m) => (
-                  <div key={m.id} onClick={() => setEditingId(m.id)} className="flex items-center gap-3"
-                    style={{ padding: "9px 0", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{m.name}</div>
-                      <div style={{ fontSize: 11.5, color: t.textDis, marginTop: 1 }}>{m.category} · {priceLabel(m)}</div>
+                  {/* Bar Simpan — sticky, selalu terlihat saat mode edit */}
+                  {menuHarianReady && !isPast && (
+                    <div style={{ position: "sticky", bottom: 10, marginTop: 18, zIndex: 5 }}>
+                      <div className="flex items-center gap-3" style={{ background: t.surface, border: `1.5px solid ${dailyDirty ? t.primary : t.border}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800 }}>{aktifCount} item aktif</div>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: dailyDirty ? t.amberText : t.text2 }}>
+                            {dailyDirty ? "Ada perubahan belum disimpan" : snapshot ? "Sesuai yang tersimpan" : "Belum pernah disimpan untuk tanggal ini"}
+                          </div>
+                        </div>
+                        <button onClick={() => setConfirmSave(true)}
+                          style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
+                          Simpan
+                        </button>
+                      </div>
                     </div>
-                    <ChannelIcon on={false} label="Nyalakan di Pre-order"
-                      onClick={(e) => { e.stopPropagation(); toggleChannel(m.id, "preorder"); }}>
-                      <Utensils size={16} />
-                    </ChannelIcon>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </>
+              )}
             </>
           ) : filtered.length === 0 ? (
             <Empty />
@@ -254,6 +421,39 @@ export default function MasterMenu({
           )}
         </div>
       </div>
+
+      {/* Konfirmasi Simpan Menu Harian */}
+      {confirmSave && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => !saving && setConfirmSave(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>Simpan menu untuk {serviceDateLabel(tanggal)}?</div>
+            <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.6 }}>
+              <b style={{ color: t.text }}>{aktifCount} item aktif</b> akan disimpan sebagai menu tanggal ini — inilah yang tampil ke orang tua.
+            </div>
+            <div className="flex gap-2" style={{ marginTop: 20 }}>
+              <button onClick={() => setConfirmSave(false)} disabled={saving}
+                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                Batal
+              </button>
+              <button onClick={doSave} disabled={saving}
+                className="flex items-center justify-center gap-2"
+                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                <Check size={18} /> {saving ? "Menyimpan…" : "Ya, Simpan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast hasil simpan */}
+      {toast && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 90, display: "flex", justifyContent: "center", zIndex: 70 }}>
+          <div className="flex items-center gap-2" style={{ maxWidth: 400, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 600, boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+            <Check size={18} color={t.success} /> {toast}
+          </div>
+        </div>
+      )}
 
       {/* Editor sheet */}
       {editing && (

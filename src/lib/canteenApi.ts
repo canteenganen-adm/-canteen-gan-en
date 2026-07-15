@@ -176,6 +176,76 @@ export async function deleteMenuItem(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/* ---------------- Menu Harian (snapshot per tanggal + history) ---------------- */
+
+interface MenuHarianRow {
+  tanggal: string;
+  item_id: string;
+  nama: string;
+  kategori: string;
+  kategori_ortu: string | null;
+  price: number | null;
+  variants: MenuItem["variants"];
+  tersedia_preorder: boolean;
+  tersedia_penjualan: boolean;
+}
+
+const menuHarianRowToItem = (r: MenuHarianRow): MenuItem => ({
+  id: r.item_id,
+  name: r.nama,
+  category: r.kategori,
+  kategoriOrtu: r.kategori_ortu,
+  price: r.price,
+  variants: r.variants,
+  channels: { preorder: r.tersedia_preorder, sales: r.tersedia_penjualan },
+});
+
+/** Ambil snapshot menu untuk beberapa tanggal sekaligus. Tanggal yang
+ * diminta tapi tidak punya baris = null ("belum pernah disimpan").
+ * Melempar error kalau tabel belum ada (migration_9 belum dijalankan) —
+ * pemanggil fallback ke perilaku lama. */
+export async function fetchMenuHarian(dates: string[]): Promise<Record<string, MenuItem[] | null>> {
+  const { data, error } = await supabase
+    .from("menu_harian")
+    .select("*")
+    .in("tanggal", dates)
+    .order("nama");
+  if (error) throw error;
+  const map: Record<string, MenuItem[] | null> = {};
+  dates.forEach((d) => { map[d] = null; });
+  (data as MenuHarianRow[]).forEach((r) => {
+    const list = (map[r.tanggal] as MenuItem[] | null) ?? [];
+    list.push(menuHarianRowToItem(r));
+    map[r.tanggal] = list;
+  });
+  return map;
+}
+
+/** Simpan snapshot menu untuk satu tanggal (dipanggil dari tombol Simpan
+ * eksplisit — BUKAN auto-save). Ganti seluruh isi tanggal itu: item yang
+ * kedua kanalnya mati tidak ikut disimpan. */
+export async function saveMenuHarianSnapshot(tanggal: string, items: MenuItem[]): Promise<void> {
+  const rows = items
+    .filter((m) => m.channels.preorder || m.channels.sales)
+    .map((m) => ({
+      tanggal,
+      item_id: m.id,
+      nama: m.name,
+      kategori: m.category,
+      kategori_ortu: m.kategoriOrtu ?? null,
+      price: m.price,
+      variants: m.variants,
+      tersedia_preorder: m.channels.preorder,
+      tersedia_penjualan: m.channels.sales,
+    }));
+  const del = await supabase.from("menu_harian").delete().eq("tanggal", tanggal);
+  if (del.error) throw del.error;
+  if (rows.length) {
+    const ins = await supabase.from("menu_harian").insert(rows);
+    if (ins.error) throw ins.error;
+  }
+}
+
 /* ---------------- Transaksi ---------------- */
 
 export async function fetchTransactions(): Promise<Transaction[]> {
@@ -325,6 +395,7 @@ export function subscribeToCanteenChanges(onChange: () => void): () => void {
     .on("postgres_changes", { event: "*", schema: "public", table: "transaksi" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "app_state" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "kelas" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "menu_harian" }, onChange)
     .subscribe();
 
   return () => {
