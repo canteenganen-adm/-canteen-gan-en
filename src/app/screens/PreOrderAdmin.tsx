@@ -462,7 +462,7 @@ export default function PreOrderAdmin({
               o.items.forEach((it) => { const k = it.name + (it.variant ? " " + it.variant : ""); acc[k] = (acc[k] || 0) + it.qty; });
               return acc;
             }, {})
-          ).sort((a, b) => b[1] - a[1]).map(([name, qty]) => (
+          ).sort((a, b) => a[0].localeCompare(b[0], "id")).map(([name, qty]) => (
             <div key={name} className="flex items-center justify-between" style={{ padding: "13px 0", borderBottom: `1px solid ${t.divider}` }}>
               <span style={{ fontSize: 15, fontWeight: 600 }}>{name}</span>
               <span style={{ fontSize: 20, fontWeight: 800 }}>{qty}</span>
