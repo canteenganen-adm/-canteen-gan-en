@@ -20,6 +20,8 @@ import type { MenuItem, Variant } from "../../types";
    seluruh array 179 item tiap ketikan.
    ============================================================ */
 
+export type MenuView = "po" | "menu";
+
 export default function MasterMenu({
   menus,
   onAdd,
@@ -27,6 +29,8 @@ export default function MasterMenu({
   onToggleChannel,
   onRemove,
   onOpenSettings,
+  view,
+  onViewChange,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -34,6 +38,8 @@ export default function MasterMenu({
   onToggleChannel: (id: string, key: keyof MenuItem["channels"]) => void;
   onRemove: (id: string) => void;
   onOpenSettings: () => void;
+  view: MenuView;
+  onViewChange: (v: MenuView) => void;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -58,10 +64,9 @@ export default function MasterMenu({
     );
   }, [menus, cat, q, showUncategorized, uncategorized]);
 
-  /* Tampilan DEFAULT (Semua + tanpa cari): dua bagian — grid visual persis
-     seperti /pesan (item Pre-order aktif per kategori ortu) + daftar kerja
-     "Belum Aktif". Filter kategori admin & cari tetap pakai list biasa. */
-  const defaultView = cat === "Semua" && !q.trim() && !showUncategorized;
+  /* Sub-tab "Menu PO" (kertas ala Chrome): pratinjau visual persis seperti
+     /pesan (item Pre-order aktif per kategori ortu) + daftar kerja "Belum
+     Aktif". Sub-tab "Menu" = UI daftar semula, tidak berubah. */
   const aktifByKat = useMemo(() => {
     const map: Record<string, MenuItem[]> = {};
     menus.filter((m) => m.channels.preorder).forEach((m) => {
@@ -126,37 +131,65 @@ export default function MasterMenu({
             </div>
           </div>
 
-          {/* Search */}
-          <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-            <Search size={20} color={t.text2} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+          {/* Dua "kertas" ala tab Chrome: Menu PO (pratinjau) · Menu (daftar semula) */}
+          <div style={{ marginTop: 16 }}>
+            <div className="flex" style={{ gap: 4, alignItems: "flex-end" }}>
+              {([["po", "Menu PO"], ["menu", "Menu"]] as const).map(([v, label]) => {
+                const on = view === v;
+                return (
+                  <button key={v} onClick={() => onViewChange(v)}
+                    style={{ padding: "11px 22px 10px", fontSize: 14, fontWeight: on ? 800 : 600, cursor: "pointer",
+                      borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
+                      borderTop: `1px solid ${on ? t.border : "transparent"}`,
+                      borderLeft: `1px solid ${on ? t.border : "transparent"}`,
+                      borderRight: `1px solid ${on ? t.border : "transparent"}`,
+                      borderBottom: 0,
+                      background: on ? t.surface : "transparent",
+                      color: on ? t.text : t.text2,
+                      position: "relative", top: 1, fontFamily: "inherit" }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ height: 1, background: t.border }} />
           </div>
 
-          {/* Category filter */}
-          <div className="flex gap-2" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
-            {categories.map((c) => {
-              const on = c === cat;
-              return (
-                <button key={c} onClick={() => setCat(c)}
-                  style={{
-                    flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                    border: `1.5px solid ${on ? t.primary : t.border}`,
-                    background: on ? t.primaryLight : t.surface,
-                    color: on ? t.amberText : t.text2,
-                  }}>
-                  {c}
-                </button>
-              );
-            })}
-          </div>
+          {view === "menu" && (
+            <>
+              {/* Search */}
+              <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
+                <Search size={20} color={t.text2} />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
+                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
+                {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+              </div>
+
+              {/* Category filter */}
+              <div className="flex gap-2" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
+                {categories.map((c) => {
+                  const on = c === cat;
+                  return (
+                    <button key={c} onClick={() => setCat(c)}
+                      style={{
+                        flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                        border: `1.5px solid ${on ? t.primary : t.border}`,
+                        background: on ? t.primaryLight : t.surface,
+                        color: on ? t.amberText : t.text2,
+                      }}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* List */}
         <div style={{ padding: "4px 20px" }}>
           {/* Banner item belum dikategorikan — hilang otomatis saat 0 */}
-          {uncategorized.length > 0 && (
+          {view === "menu" && uncategorized.length > 0 && (
             <button onClick={() => setShowUncategorized((v) => !v)}
               className="flex items-center gap-2"
               style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
@@ -169,7 +202,7 @@ export default function MasterMenu({
               </span>
             </button>
           )}
-          {defaultView ? (
+          {view === "po" ? (
             <>
               {/* Bagian 1: Yang Akan Tampil ke Orang Tua — gaya visual /pesan.
                   Kategori kosong TETAP tampil supaya kekosongan kelihatan. */}

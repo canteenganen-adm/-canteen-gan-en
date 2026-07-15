@@ -17,7 +17,7 @@ import {
 } from "../lib/canteenApi";
 import type { MenuItem, Transaction, TransactionCustomer, CanteenSettings, Kelas, PickupSchedule } from "../types";
 
-import MasterMenu from "./screens/MasterMenu";
+import MasterMenu, { type MenuView } from "./screens/MasterMenu";
 import Penjualan from "./screens/Penjualan";
 import Tagihan from "./screens/Tagihan";
 import PreOrderAdmin from "./screens/PreOrderAdmin";
@@ -406,12 +406,14 @@ type Tab = "preorder" | "penjualan" | "tagihan" | "menu";
 function MainShell({ store }: { store: CanteenStore }) {
   const [tab, setTab] = useState<Tab>("preorder");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
 
-  /* "Lihat Menu" dari PO Admin: lompat ke tab Menu, scroll ke atas
-     (bagian grid "Yang Akan Tampil ke Orang Tua"). */
+  /* "Lihat Menu" dari PO Admin: lompat ke tab Menu, kertas "Menu PO"
+     (pratinjau seperti /pesan), scroll ke atas. */
   const lihatMenu = () => {
     setTab("menu");
+    setMenuView("po");
     requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0 }));
   };
 
@@ -482,6 +484,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onToggleChannel={store.toggleMenuChannel}
             onRemove={store.removeMenuItem}
             onOpenSettings={openSettings}
+            view={menuView}
+            onViewChange={setMenuView}
           />
         )}
       </div>
