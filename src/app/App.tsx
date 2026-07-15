@@ -522,6 +522,7 @@ function MainShell({ store }: { store: CanteenStore }) {
         {tab === "penjualan" && (
           <Penjualan
             menus={salesMenus}
+            kelasList={store.kelasList}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
             onOpenSettings={openSettings}

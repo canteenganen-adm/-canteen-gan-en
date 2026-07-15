@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, Eye,
+  Check, Tag, Layers, Settings, Calendar, Lock,
 } from "lucide-react";
 import PreOrderParent from "./PreOrderParent";
 import { t } from "../../lib/theme";
-import { priceLabel, uid, rupiah, serviceDateLabel, todayISO } from "../../lib/format";
-import { openPicker } from "../../lib/picker";
-import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
+import { priceLabel, uid, serviceDateLabel, todayISO } from "../../lib/format";
+import { KATEGORI_ORTU_LIST } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
 
@@ -137,33 +136,9 @@ export default function MasterMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [menus, draft, menuHarianReady, isPast]);
 
-  const groupByKat = (list: MenuItem[]) => {
-    const map: Record<string, MenuItem[]> = {};
-    list.forEach((m) => {
-      const k = m.kategoriOrtu && KATEGORI_ORTU_ORDER.includes(m.kategoriOrtu) ? m.kategoriOrtu : KATEGORI_ORTU_FALLBACK;
-      (map[k] = map[k] || []).push(m);
-    });
-    for (const k in map) map[k].sort((a, b) => a.name.localeCompare(b.name, "id"));
-    return map;
-  };
-  // Mode edit (hari ini/besok): grid dari draft. Mode riwayat: dari snapshot.
-  const aktifByKat = useMemo(() => {
-    const source = isPast && menuHarianReady
-      ? (snapshot || []).filter((s) => s.channels.preorder)
-      : menus.filter((m) => poOn(m));
-    return groupByKat(source);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menus, draft, snapshot, isPast, menuHarianReady]);
-  const belumAktif = useMemo(
-    () => menus.filter((m) => !poOn(m)).sort((a, b) => a.name.localeCompare(b.name, "id")),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [menus, draft, menuHarianReady, isPast]
-  );
-
-  /* "Lihat sebagai Ortu" — pratinjau memakai komponen PreOrderParent ASLI
-     (mode baca). Membaca DRAFT yang sedang disusun; bar status kuning/hijau
-     selalu menyatakan apakah ini sudah resmi tersimpan atau belum. */
-  const [previewOpen, setPreviewOpen] = useState(false);
+  /* Data untuk pratinjau tampilan ortu (komponen PreOrderParent asli,
+     mode baca) — membaca DRAFT yang sedang disusun; tanggal lampau
+     membaca snapshot yang tersimpan. */
   const previewMenus = useMemo(() => {
     if (isPast && menuHarianReady) return snapshot || [];
     return menus.map((m) => ({ ...m, channels: { ...m.channels, preorder: poOn(m) } }));
@@ -306,11 +281,10 @@ export default function MasterMenu({
                   Boleh pilih tanggal lampau untuk lihat riwayat (read-only). */}
               {menuHarianReady ? (
                 <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 14, overflow: "hidden" }}>
-                  <div
-                    role="button" tabIndex={0}
-                    onClick={() => openPicker(dateRef)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(dateRef); } }}
-                    className="flex items-center gap-3"
+                  {/* Seluruh area bisa diketuk: input date overlay inset:0
+                      menerima ketukan langsung (pola wajib CLAUDE.md — fix
+                      "tidak merespon di HP"). showPicker = pemanis desktop. */}
+                  <div className="flex items-center gap-3"
                     style={{ position: "relative", padding: "12px 14px", cursor: "pointer" }}>
                     <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -319,8 +293,9 @@ export default function MasterMenu({
                     </div>
                     <input ref={dateRef} type="date" value={tanggal}
                       onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                      aria-label="Pilih tanggal menu" tabIndex={-1}
-                      style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }} />
+                      onClick={() => { try { dateRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
+                      aria-label="Pilih tanggal menu"
+                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
                   </div>
                   {isPast && (
                     <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, fontSize: 12.5, fontWeight: 700, color: t.text2 }}>
@@ -334,102 +309,48 @@ export default function MasterMenu({
                 </div>
               )}
 
-              {/* Verifikasi sebelum publish — buka tampilan ortu yang asli */}
-              {!(isPast && menuHarianReady && snapshot === null) && (
-                <button onClick={() => setPreviewOpen(true)}
-                  className="flex items-center justify-center gap-2"
-                  style={{ width: "100%", height: 48, marginBottom: 16, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                  <Eye size={17} color={t.amberText} /> Lihat sebagai Ortu
-                </button>
-              )}
-
               {isPast && menuHarianReady && !snapLoaded ? (
                 <div style={{ textAlign: "center", color: t.text2, fontSize: 14, padding: "32px 0" }}>Memuat…</div>
               ) : isPast && menuHarianReady && snapshot === null ? (
                 <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 12px" }}>Belum ada data tersimpan untuk tanggal ini.</div>
               ) : (
                 <>
-                  {/* Grid gaya /pesan. Kategori kosong tetap tampil saat mode
-                      edit (kekosongan harus kelihatan); di riwayat hanya yang berisi. */}
-                  {KATEGORI_ORTU_ORDER
-                    .filter((k) => (isPast && menuHarianReady)
-                      ? aktifByKat[k]?.length
-                      : (k !== KATEGORI_ORTU_FALLBACK || aktifByKat[k]?.length))
-                    .map((k) => (
-                    <div key={k} style={{ marginBottom: 20 }}>
-                      <div className="flex items-center" style={{ gap: 6, fontSize: 13, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 10 }}>
-                        {KATEGORI_ORTU_EMOJI[k]} {k}
-                      </div>
-                      {aktifByKat[k]?.length ? (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                          {aktifByKat[k].map((m) => (
-                            <div key={m.id} onClick={() => { if (!(isPast && menuHarianReady)) setEditingId(m.id); }}
-                              style={{ position: "relative", background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 14, cursor: isPast && menuHarianReady ? "default" : "pointer" }}>
-                              {menuHarianReady && !isPast && (
-                                <button onClick={(e) => { e.stopPropagation(); poToggle(m, false); }}
-                                  title="Matikan untuk tanggal ini" aria-label="Matikan untuk tanggal ini"
-                                  style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: 9, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                                  <Utensils size={14} />
-                                </button>
-                              )}
-                              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34, paddingRight: menuHarianReady && !isPast ? 30 : 0 }}>{m.name}</div>
-                              <div style={{ fontSize: 12, color: t.text2 }}>
-                                {m.variants.length
-                                  ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
-                                  : rupiah(m.price)}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 12.5, color: t.textDis, padding: "2px 2px 4px" }}>Belum ada menu di kategori ini</div>
-                      )}
-                    </div>
-                  ))}
+                  {/* Pratinjau = komponen halaman ortu ASLI (previewMode),
+                      membaca draft. Menyusun (toggle) dilakukan di kertas
+                      Menu; kertas ini murni untuk memastikan hasilnya. */}
+                  <div style={{ border: `1.5px solid ${t.border}`, borderRadius: 18, overflow: "hidden", background: t.bg }}>
+                    <PreOrderParent
+                      previewMode
+                      kantin={kantin}
+                      serviceDate={serviceDateLabel(tanggal)}
+                      open
+                      menus={previewMenus}
+                      kelasList={[]}
+                      pickupOptions={[]}
+                      onSubmit={async () => { throw new Error("preview"); }}
+                    />
+                  </div>
 
-                  {/* Belum Aktif — hanya di mode edit/fallback, bukan riwayat */}
-                  {!(isPast && menuHarianReady) && (
-                    <div style={{ marginTop: 26, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 16, padding: "14px 16px" }}>
-                      <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: t.text2, textTransform: "uppercase", letterSpacing: ".03em" }}>Belum Aktif untuk Pre-order</span>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: t.text2, background: t.surface, border: `1px solid ${t.border}`, padding: "1px 9px", borderRadius: 999 }}>{belumAktif.length}</span>
-                      </div>
-                      <div style={{ fontSize: 12, color: t.textDis, marginBottom: 6 }}>Ketuk ikon untuk menyalakan; ketuk nama untuk edit.</div>
-                      {belumAktif.length === 0 ? (
-                        <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>Semua menu sudah aktif untuk Pre-order.</div>
-                      ) : belumAktif.map((m) => (
-                        <div key={m.id} onClick={() => setEditingId(m.id)} className="flex items-center gap-3"
-                          style={{ padding: "9px 0", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
+                  {/* Bar status + Simpan — kuning: belum resmi, hijau: tersimpan */}
+                  {menuHarianReady && !isPast && (() => {
+                    const belumResmi = dailyDirty || !snapshot;
+                    return (
+                      <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
+                        <div className="flex items-center gap-3" style={{ background: belumResmi ? "#FFF4DA" : t.successBg, border: `1.5px solid ${belumResmi ? t.primary : "#D8E6D4"}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{m.name}</div>
-                            <div style={{ fontSize: 11.5, color: t.textDis, marginTop: 1 }}>{m.category} · {priceLabel(m)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 800 }}>{aktifCount} item aktif</div>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: belumResmi ? t.amberText : t.successText }}>
+                              {belumResmi ? "Belum disimpan — ortu masih melihat versi lama" : "Resmi tersimpan — persis yang dilihat ortu"}
+                            </div>
                           </div>
-                          <ChannelIcon on={false} label="Nyalakan di Pre-order"
-                            onClick={(e) => { e.stopPropagation(); poToggle(m, true); }}>
-                            <Utensils size={16} />
-                          </ChannelIcon>
+                          <button onClick={() => setConfirmSave(true)}
+                            style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
+                            Simpan
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Bar Simpan — sticky, selalu terlihat saat mode edit */}
-                  {menuHarianReady && !isPast && (
-                    <div style={{ position: "sticky", bottom: 10, marginTop: 18, zIndex: 5 }}>
-                      <div className="flex items-center gap-3" style={{ background: t.surface, border: `1.5px solid ${dailyDirty ? t.primary : t.border}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800 }}>{aktifCount} item aktif</div>
-                          <div style={{ fontSize: 11.5, fontWeight: 700, color: dailyDirty ? t.amberText : t.text2 }}>
-                            {dailyDirty ? "Ada perubahan belum disimpan" : snapshot ? "Sesuai yang tersimpan" : "Belum pernah disimpan untuk tanggal ini"}
-                          </div>
-                        </div>
-                        <button onClick={() => setConfirmSave(true)}
-                          style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
-                          Simpan
-                        </button>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </>
               )}
             </>
@@ -437,63 +358,32 @@ export default function MasterMenu({
             <Empty />
           ) : (
             filtered.map((m) => (
-              <MenuCard key={m.id} m={m}
+              // Ikon Utensils = "jual di PO tanggal terpilih" (draft, disahkan
+              // lewat Simpan); ikon ShoppingCart tetap ketersediaan Penjualan.
+              <MenuCard key={m.id} m={{ ...m, channels: { ...m.channels, preorder: poOn(m) } }}
                 onEdit={() => setEditingId(m.id)}
-                onToggle={(k) => toggleChannel(m.id, k)} />
+                onToggle={(k) => k === "preorder" ? poToggle(m, !poOn(m)) : toggleChannel(m.id, k)} />
             ))
+          )}
+
+          {/* Pengingat Simpan — ikut tampil di kertas Menu saat ada draft
+              yang belum disahkan, supaya tidak ada perubahan yang terlupa */}
+          {view === "menu" && menuHarianReady && !isPast && dailyDirty && (
+            <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
+              <div className="flex items-center gap-3" style={{ background: "#FFF4DA", border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)}</div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: t.amberText }}>Belum disimpan — ortu masih melihat versi lama</div>
+                </div>
+                <button onClick={() => setConfirmSave(true)}
+                  style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
+                  Simpan
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
-
-      {/* ============ Pratinjau "Lihat sebagai Ortu" ============
-          Komponen PreOrderParent ASLI dalam mode baca. Bar status selalu
-          menyatakan: kuning = rancangan (ortu belum melihat ini), hijau =
-          resmi tersimpan. "Simpan Sekarang" hanyalah shortcut — lokasi
-          utama Simpan tetap di halaman Menu. */}
-      {previewOpen && (() => {
-        const belumResmi = menuHarianReady && !isPast && (dailyDirty || !snapshot);
-        return (
-          <div style={{ position: "fixed", inset: 0, zIndex: 55, background: t.bg, display: "flex", flexDirection: "column" }}>
-            <div className="flex items-center gap-2"
-              style={{ flex: "none", padding: "10px 14px",
-                background: belumResmi ? "#FFF4DA" : t.successBg,
-                borderBottom: `1.5px solid ${belumResmi ? "#F1DFB0" : "#D8E6D4"}` }}>
-              <Eye size={15} color={belumResmi ? t.amberText : t.successText} style={{ flex: "none" }} />
-              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, color: belumResmi ? t.amberText : t.successText }}>
-                {!menuHarianReady
-                  ? "Pratinjau tampilan ortu"
-                  : belumResmi
-                    ? "Rancangan — belum disimpan. Ortu masih melihat versi lama."
-                    : isPast
-                      ? `Tersimpan — inilah yang dilihat ortu pada ${serviceDateLabel(tanggal)}.`
-                      : "Resmi tersimpan — persis yang dilihat ortu."}
-              </span>
-              {belumResmi && (
-                <button onClick={() => setConfirmSave(true)}
-                  style={{ height: 36, padding: "0 12px", borderRadius: 10, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 12.5, cursor: "pointer", flex: "none" }}>
-                  Simpan Sekarang
-                </button>
-              )}
-              <button onClick={() => setPreviewOpen(false)} aria-label="Tutup pratinjau"
-                style={{ width: 36, height: 36, borderRadius: 10, border: `1.5px solid ${belumResmi ? "#F1DFB0" : "#D8E6D4"}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                <X size={17} />
-              </button>
-            </div>
-            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-              <PreOrderParent
-                previewMode
-                kantin={kantin}
-                serviceDate={serviceDateLabel(tanggal)}
-                open
-                menus={previewMenus}
-                kelasList={[]}
-                pickupOptions={[]}
-                onSubmit={async () => { throw new Error("preview"); }}
-              />
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Konfirmasi Simpan Menu Harian */}
       {confirmSave && (

@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel } from "../../lib/format";
-import type { MenuItem, Transaction, Variant } from "../../types";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
+import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
 /* ============================================================
    PENJUALAN — Canteen Gan En (POS tenang)
@@ -33,11 +34,13 @@ function isToday(iso: string) {
 export default function Penjualan({
   menus,
   transactions,
+  kelasList,
   onTransaction,
   onOpenSettings,
 }: {
   menus: MenuItem[];
   transactions: Transaction[];
+  kelasList: Kelas[];
   onTransaction: (tx: Transaction) => void;
   onOpenSettings: () => void;
 }) {
@@ -50,7 +53,7 @@ export default function Penjualan({
   const [view, setView] = useState<"shop" | "summary">("shop");
   const [variantFor, setVariantFor] = useState<MenuItem | null>(null);
   const [billing, setBilling] = useState(false);
-  const [form, setForm] = useState({ nama: "", kelas: "", wa: "" });
+  const [form, setForm] = useState({ nama: "", tingkat: "", kelas: "", wa: "" });
   const [tried, setTried] = useState(false);
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
   const [cartUndo, setCartUndo] = useState<{ type: "line"; line: CartLine } | { type: "all"; cart: CartLine[] } | null>(null);
@@ -111,25 +114,30 @@ export default function Penjualan({
     setCartUndo(null);
   };
 
-  const commit = (paid: boolean, customer?: { nama: string; kelas: string; wa: string }) => {
+  const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS_TINGKAT;
+  const kelasOptions = kelasList.filter((k) => k.tingkat === form.tingkat);
+
+  const commit = (paid: boolean, customer?: { nama: string; tingkat: string; kelas: string; wa: string }) => {
     const tx: Transaction = {
       id: uid(),
       source: "penjualan",
       paid,
-      customer: customer ? { nama: customer.nama, kelas: customer.kelas, wa: customer.wa || undefined } : { nama: "", kelas: "" },
+      customer: customer
+        ? { nama: customer.nama, tingkat: customer.tingkat, kelas: customer.kelas, wa: customer.wa || undefined }
+        : { nama: "", kelas: "" },
       createdAt: new Date().toISOString(),
       label: nowLabel(),
       items: cart.map((l) => ({ name: l.name, variant: l.variant, price: l.price, qty: l.qty })),
       total,
     };
     onTransaction(tx);
-    setCart([]); setView("shop"); setBilling(false); setForm({ nama: "", kelas: "", wa: "" }); setTried(false);
+    setCart([]); setView("shop"); setBilling(false); setForm({ nama: "", tingkat: "", kelas: "", wa: "" }); setTried(false);
     setToast(paid ? { ok: true, msg: `Penjualan dicatat — ${rupiah(total)} · Lunas` }
-                   : { ok: false, msg: `Masuk Tagihan — ${customer?.nama} (${customer?.kelas})` });
+                   : { ok: false, msg: `Masuk Tagihan — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
   };
   const submitTagihan = () => {
-    if (!form.nama.trim() || !form.kelas.trim()) { setTried(true); return; }
-    commit(false, { ...form });
+    if (!form.nama.trim() || !form.tingkat || (kelasNeeded && !form.kelas)) { setTried(true); return; }
+    commit(false, { ...form, kelas: kelasNeeded ? form.kelas : "" });
   };
 
   // Kartu menu — style TIDAK berubah, hanya posisi filter kategori yang pindah.
@@ -301,9 +309,42 @@ export default function Penjualan({
           <Field label="Nama Siswa" req tried={tried} val={form.nama}>
             <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="cth. Aisyah Putri" style={inputStyle(tried && !form.nama.trim())} />
           </Field>
-          <Field label="Kelas" req tried={tried} val={form.kelas}>
-            <input value={form.kelas} onChange={(e) => setForm({ ...form, kelas: e.target.value })} placeholder="cth. 3B" style={inputStyle(tried && !form.kelas.trim())} />
+          {/* Tingkat + Kelas pakai chip standar (bukan ketik bebas) — supaya
+              pil kelas di Transaksi berwarna sesuai ketentuan per tingkat */}
+          <Field label="Tingkat" req tried={tried} val={form.tingkat}>
+            <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+              {TINGKAT_LIST.map((tg) => {
+                const on = tg === form.tingkat;
+                return (
+                  <button key={tg} onClick={() => setForm({ ...form, tingkat: tg, kelas: "" })}
+                    style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                    {tg}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
+          {kelasNeeded && (
+            <Field label="Kelas" req tried={tried} val={form.kelas}>
+              {kelasOptions.length === 0 ? (
+                <div style={{ fontSize: 13, color: t.text2 }}>Belum ada kelas untuk {form.tingkat} — tambah dulu di Pengaturan → Daftar Kelas.</div>
+              ) : (
+                <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+                  {kelasOptions.map((k) => {
+                    const on = k.nama === form.kelas;
+                    return (
+                      <button key={k.id} onClick={() => setForm({ ...form, kelas: k.nama })}
+                        style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                          border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                        {k.nama}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </Field>
+          )}
           <Field label="WhatsApp (opsional)">
             <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inputStyle(false)} />
           </Field>
