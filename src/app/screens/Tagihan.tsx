@@ -312,15 +312,16 @@ export default function Tagihan({
                     </div>
                   ))}
 
-                  {/* Footer aksi */}
-                  <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
-                    <button onClick={() => shareWA(g)} className="flex items-center justify-center gap-2"
-                      style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                      <Share2 size={17} /> Bagikan WA
+                  {/* Footer aksi — ikon kompak rata kanan, supaya deret kartu
+                      tidak ramai oleh tombol besar yang berulang-ulang */}
+                  <div className="flex items-center justify-end gap-2" style={{ padding: "10px 16px", borderTop: `1px solid ${t.divider}` }}>
+                    <button onClick={() => shareWA(g)} title="Bagikan WA" aria-label="Bagikan WA"
+                      style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                      <Share2 size={18} />
                     </button>
-                    <button onClick={() => g.txs.forEach(markPaid)} className="flex items-center justify-center gap-2"
-                      style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                      <Wallet size={17} /> Lunaskan Semua
+                    <button onClick={() => g.txs.forEach(markPaid)} title="Lunaskan Semua" aria-label="Lunaskan Semua"
+                      style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                      <Wallet size={18} />
                     </button>
                   </div>
                 </div>
