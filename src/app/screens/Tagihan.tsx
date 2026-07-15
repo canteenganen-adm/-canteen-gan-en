@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate } from "../../lib/format";
+import PaperTabs from "../components/PaperTabs";
 import type { Transaction, CanteenSettings } from "../../types";
 
 /* ============================================================
@@ -213,17 +214,15 @@ export default function Tagihan({
             </div>
           </div>
 
-          <div className="flex" style={{ marginTop: 14, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 12, padding: 3 }}>
-            <button onClick={() => setTab("unpaid")} className="flex items-center justify-center gap-1.5"
-              style={{ flex: 1, height: 38, borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
-                background: tab === "unpaid" ? t.primary : "transparent", color: tab === "unpaid" ? t.text : t.text2 }}>
-              <Wallet size={14} /> Belum Dibayar
-            </button>
-            <button onClick={() => setTab("riwayat")} className="flex items-center justify-center gap-1.5"
-              style={{ flex: 1, height: 38, borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
-                background: tab === "riwayat" ? t.primary : "transparent", color: tab === "riwayat" ? t.text : t.text2 }}>
-              <History size={14} /> Lunas
-            </button>
+          <div style={{ marginTop: 14 }}>
+            <PaperTabs
+              tabs={[
+                { id: "unpaid", label: <><Wallet size={14} /> Belum Dibayar</> },
+                { id: "riwayat", label: <><History size={14} /> Lunas</> },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
           </div>
 
           <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>

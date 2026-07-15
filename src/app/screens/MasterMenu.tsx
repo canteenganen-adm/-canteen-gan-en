@@ -6,6 +6,7 @@ import {
 import { t } from "../../lib/theme";
 import { priceLabel, uid, rupiah } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
+import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
 
 /* ============================================================
@@ -131,28 +132,13 @@ export default function MasterMenu({
             </div>
           </div>
 
-          {/* Dua "kertas" ala tab Chrome: Menu PO (pratinjau) · Menu (daftar semula) */}
+          {/* Dua "kertas" ala tab Chrome: Tampilan Ortu (pratinjau) · Menu (daftar semula) */}
           <div style={{ marginTop: 16 }}>
-            <div className="flex" style={{ gap: 4, alignItems: "flex-end" }}>
-              {([["po", "Menu PO"], ["menu", "Menu"]] as const).map(([v, label]) => {
-                const on = view === v;
-                return (
-                  <button key={v} onClick={() => onViewChange(v)}
-                    style={{ padding: "11px 22px 10px", fontSize: 14, fontWeight: on ? 800 : 600, cursor: "pointer",
-                      borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
-                      borderTop: `1px solid ${on ? t.border : "transparent"}`,
-                      borderLeft: `1px solid ${on ? t.border : "transparent"}`,
-                      borderRight: `1px solid ${on ? t.border : "transparent"}`,
-                      borderBottom: 0,
-                      background: on ? t.surface : "transparent",
-                      color: on ? t.text : t.text2,
-                      position: "relative", top: 1, fontFamily: "inherit" }}>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ height: 1, background: t.border }} />
+            <PaperTabs
+              tabs={[{ id: "po", label: "Tampilan Ortu" }, { id: "menu", label: "Menu" }]}
+              value={view}
+              onChange={onViewChange}
+            />
           </div>
 
           {view === "menu" && (
