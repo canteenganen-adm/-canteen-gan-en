@@ -4,7 +4,7 @@ import {
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, fmtWaDate } from "../../lib/format";
+import { rupiah, fmtWaDate, todayISO } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
 import type { Transaction, CanteenSettings } from "../../types";
 
@@ -34,6 +34,16 @@ const groupKey = (c: Transaction["customer"]) =>
 
 type Tab = "unpaid" | "riwayat";
 type SourceFilter = "semua" | "preorder" | "penjualan";
+type DateFilter = "semua" | "hari" | "7" | "30" | "rentang";
+
+/** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
+ * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
+const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
+const isoShift = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 type UndoAction = { type: "paid"; tx: Transaction } | { type: "cancel"; tx: Transaction };
 
 export default function Tagihan({
@@ -57,6 +67,9 @@ export default function Tagihan({
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("semua");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("semua");
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -105,6 +118,18 @@ export default function Tagihan({
     });
 
   const bySource = (tx: Transaction) => sourceFilter === "semua" || tx.source === sourceFilter;
+
+  /* Filter tanggal operasional — murni tampilan baca, tidak menyentuh
+     sesi PO. Rentang custom: kosong salah satu = terbuka di sisi itu. */
+  const byDate = (tx: Transaction) => {
+    if (dateFilter === "semua") return true;
+    const d = opDate(tx);
+    if (dateFilter === "hari") return d === todayISO();
+    if (dateFilter === "7") return d >= isoShift(6) && d <= todayISO();
+    if (dateFilter === "30") return d >= isoShift(29) && d <= todayISO();
+    if (!rangeFrom && !rangeTo) return true;
+    return (!rangeFrom || d >= rangeFrom) && (!rangeTo || d <= rangeTo);
+  };
   const matchQuery = (nama: string, kelas: string, wa?: string) => {
     const ql = q.toLowerCase().trim();
     if (!ql) return true;
@@ -112,8 +137,9 @@ export default function Tagihan({
   };
 
   const unpaid = useMemo(
-    () => transactions.filter((x) => !x.paid && !x.cancelledAt && bySource(x)),
-    [transactions, sourceFilter]
+    () => transactions.filter((x) => !x.paid && !x.cancelledAt && bySource(x) && byDate(x)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, sourceFilter, dateFilter, rangeFrom, rangeTo]
   );
 
   /* Grupkan Belum Dibayar per Nama + WA, urutkan grup: terbaru di atas */
@@ -137,7 +163,7 @@ export default function Tagihan({
   /* Grupkan Lunas per Nama + WA */
   const riwayatGroups = useMemo(() => {
     const done = transactions.filter(
-      (x) => (x.paid || x.cancelledAt) && bySource(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
+      (x) => (x.paid || x.cancelledAt) && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
     );
     const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; totalMasuk: number; newestAt: string }>();
     for (const tx of done) {
@@ -150,7 +176,8 @@ export default function Tagihan({
     }
     for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
-  }, [transactions, sourceFilter, q]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo]);
 
   const historyMasuk = riwayatGroups.reduce((s, g) => s + g.totalMasuk, 0);
 
@@ -244,6 +271,31 @@ export default function Tagihan({
               );
             })}
           </div>
+
+          {/* Filter tanggal operasional — rekap susulan tanpa sentuh sesi PO */}
+          <div className="flex gap-2" style={{ marginTop: 8, overflowX: "auto", paddingBottom: 2 }}>
+            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari"], ["30", "30 Hari"], ["rentang", "Pilih Rentang"]] as const).map(([val, label]) => {
+              const on = dateFilter === val;
+              return (
+                <button key={val} onClick={() => setDateFilter(val)}
+                  style={{ flex: "none", height: 34, padding: "0 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                    border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          {dateFilter === "rentang" && (
+            <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
+              <input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)}
+                aria-label="Dari tanggal"
+                style={{ flex: 1, height: 42, fontSize: 13.5, fontWeight: 600, color: rangeFrom ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit" }} />
+              <span style={{ fontSize: 12.5, color: t.text2, flex: "none" }}>s/d</span>
+              <input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)}
+                aria-label="Sampai tanggal"
+                style={{ flex: 1, height: 42, fontSize: 13.5, fontWeight: 600, color: rangeTo ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit" }} />
+            </div>
+          )}
         </div>
 
         {/* ---- Tab: Belum Dibayar ---- */}
