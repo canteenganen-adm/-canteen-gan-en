@@ -171,17 +171,19 @@ export default function MasterMenu({
   const patch = onPatch;
   const toggleChannel = onToggleChannel;
 
+  /* Tambah = DRAFT dulu, bukan langsung tercipta di database. Baru benar-benar
+     ditambahkan saat "Simpan" ditekan di editor; batal (ketuk area gelap) =
+     tidak ada jejak. Mencegah sampah "Menu Baru" dari percobaan yang urung. */
+  const [draftNew, setDraftNew] = useState<MenuItem | null>(null);
   const addMenu = () => {
-    const m: MenuItem = {
+    setDraftNew({
       id: uid(),
-      name: "Menu Baru",
+      name: "",
       category: categories[1] || "Lainnya",
       price: 0,
       variants: [],
       channels: { preorder: true, sales: true },
-    };
-    onAdd(m);
-    setEditingId(m.id);
+    });
   };
 
   const removeMenu = (id: string) => {
@@ -442,14 +444,23 @@ export default function MasterMenu({
         </div>
       )}
 
-      {/* Editor sheet */}
-      {editing && (
+      {/* Editor sheet — item existing (auto-save) atau draft menu baru */}
+      {(editing || draftNew) && (
         <Editor
-          m={editing}
+          m={draftNew ?? editing!}
+          isNew={!!draftNew}
           categories={categories.filter((c) => c !== "Semua")}
-          onClose={() => setEditingId(null)}
-          onPatch={(f) => patch(editing.id, f)}
-          onRemove={() => removeMenu(editing.id)}
+          onClose={() => { setEditingId(null); setDraftNew(null); }}
+          onPatch={(f) => draftNew
+            ? setDraftNew((prev) => (prev ? { ...prev, ...f } : prev))
+            : patch(editing!.id, f)}
+          onSaveNew={() => {
+            setDraftNew((prev) => {
+              if (prev) onAdd(prev);
+              return null;
+            });
+          }}
+          onRemove={() => editing && removeMenu(editing.id)}
         />
       )}
     </div>
@@ -527,16 +538,20 @@ function ChannelChip({ on, icon, label, onClick }: { on: boolean; icon: React.Re
 }
 
 /* ---------------- Editor (bottom sheet) ---------------- */
-function Editor({ m, categories, onClose, onPatch, onRemove }: {
+function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSaveNew }: {
   m: MenuItem;
   categories: string[];
   onClose: () => void;
   onPatch: (f: Partial<MenuItem>) => void;
   onRemove: () => void;
+  /** true = draft menu baru: belum ada di database sampai Simpan ditekan. */
+  isNew?: boolean;
+  onSaveNew?: () => void;
 }) {
   const hasVariants = m.variants.length > 0;
   const [newCatMode, setNewCatMode] = useState(false);
   const [newCat, setNewCat] = useState("");
+  const canSaveNew = m.name.trim().length > 0 && !!m.kategoriOrtu;
 
   const setName = (name: string) => onPatch({ name });
   const setPrice = (v: string) => onPatch({ price: v === "" ? null : Number(v) });
@@ -564,10 +579,20 @@ function Editor({ m, categories, onClose, onPatch, onRemove }: {
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
         <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center justify-between">
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Edit Menu</div>
-          <button onClick={onClose} className="flex items-center gap-2" style={{ background: t.primary, color: t.text, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-            <Check size={18} /> Selesai
-          </button>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{isNew ? "Menu Baru" : "Edit Menu"}</div>
+          <div className="flex items-center gap-2">
+            {isNew && (
+              <button onClick={onClose} style={{ background: "transparent", color: t.text2, border: `1.5px solid ${t.border}`, borderRadius: 10, height: 40, padding: "0 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                Batal
+              </button>
+            )}
+            <button
+              onClick={isNew ? (canSaveNew ? onSaveNew : undefined) : onClose}
+              className="flex items-center gap-2"
+              style={{ background: t.primary, color: t.text, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: isNew && !canSaveNew ? 0.45 : 1 }}>
+              <Check size={18} /> {isNew ? "Simpan" : "Selesai"}
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: 20 }}>
@@ -676,12 +701,18 @@ function Editor({ m, categories, onClose, onPatch, onRemove }: {
             </div>
           </Field>
 
-          {/* Delete */}
-          <button onClick={onRemove} className="flex items-center justify-center gap-2"
-            style={{ width: "100%", height: 48, borderRadius: 12, border: `1.5px solid ${t.error}`, background: t.errorBg, color: t.error, fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 20 }}>
-            <Trash2 size={18} /> Hapus Menu
-          </button>
-          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 10 }}>Perubahan tersimpan otomatis — tanpa tombol Simpan.</div>
+          {/* Delete — hanya untuk item yang sudah ada */}
+          {!isNew && (
+            <button onClick={onRemove} className="flex items-center justify-center gap-2"
+              style={{ width: "100%", height: 48, borderRadius: 12, border: `1.5px solid ${t.error}`, background: t.errorBg, color: t.error, fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 20 }}>
+              <Trash2 size={18} /> Hapus Menu
+            </button>
+          )}
+          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 10 }}>
+            {isNew
+              ? "Menu BELUM tersimpan — isi nama & kategori ortu, lalu tekan Simpan. Batal = tidak ada yang ditambahkan."
+              : "Perubahan tersimpan otomatis — tanpa tombol Simpan."}
+          </div>
         </div>
       </div>
     </div>
