@@ -143,39 +143,50 @@ export default function Penjualan({
   const kelasOptions = kelasList.filter((k) => k.tingkat === form.tingkat);
 
   /* Pelanggan dikenal dari riwayat transaksi (pre-order menyimpan nama+WA+
-     tingkat+kelas). Ketik nama -> saran muncul; satu ketuk mengisi semua
-     kolom. Data terbaru per nama yang menang. */
+     tingkat+kelas). Dedupe per (nama, kelas) — dua anak beda kelas dengan
+     nama sama muncul sebagai saran TERPISAH. Data terbaru per pasangan
+     yang menang; tanggal transaksi terakhir ikut disimpan sebagai pembeda. */
   const knownCustomers = useMemo(() => {
-    const map = new Map<string, { nama: string; wa: string; tingkat: string; kelas: string }>();
+    const map = new Map<string, { nama: string; wa: string; tingkat: string; kelas: string; terakhir: string }>();
     [...transactions]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .forEach((tx) => {
         const nama = tx.customer.nama.trim();
         if (!nama) return;
-        const key = nama.toLowerCase();
+        const key = `${nama.toLowerCase()}|${(tx.customer.kelas || "").toLowerCase()}`;
         if (!map.has(key)) {
-          map.set(key, { nama, wa: tx.customer.wa || "", tingkat: tx.customer.tingkat || "", kelas: tx.customer.kelas || "" });
+          map.set(key, {
+            nama, wa: tx.customer.wa || "", tingkat: tx.customer.tingkat || "",
+            kelas: tx.customer.kelas || "",
+            terakhir: tx.serviceDate || tx.createdAt.slice(0, 10),
+          });
         }
       });
     return Array.from(map.values());
   }, [transactions]);
 
+  const BLN_S = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const tglSingkat = (d: string) => `${parseInt(d.slice(8, 10), 10)} ${BLN_S[parseInt(d.slice(5, 7), 10) - 1]}`;
+
+  const [saranTertutup, setSaranTertutup] = useState(false);
   const namaQ = form.nama.trim().toLowerCase();
   const saranNama = useMemo(() => {
-    if (namaQ.length < 2) return [];
-    return knownCustomers
-      .filter((c) => c.nama.toLowerCase().includes(namaQ) && c.nama.toLowerCase() !== namaQ)
-      .slice(0, 5);
-  }, [knownCustomers, namaQ]);
+    if (saranTertutup || namaQ.length < 2) return [];
+    return knownCustomers.filter((c) => c.nama.toLowerCase().includes(namaQ)).slice(0, 5);
+  }, [knownCustomers, namaQ, saranTertutup]);
 
-  const pilihSaran = (c: { nama: string; wa: string; tingkat: string; kelas: string }) =>
+  const pilihSaran = (c: { nama: string; wa: string; tingkat: string; kelas: string }) => {
     setForm({ nama: c.nama, tingkat: c.tingkat, kelas: c.kelas, wa: c.wa });
+    setSaranTertutup(true);
+  };
 
-  /** Isi-otomatis kolom KOSONG saat nama persis cocok — tidak menimpa isian manual. */
+  /** Isi-otomatis kolom KOSONG hanya saat nama persis cocok dengan TEPAT SATU
+   * pelanggan — nama kembar beda kelas dibiarkan dipilih lewat saran. */
   const namaBerubah = (nama: string) => {
-    const match = knownCustomers.find((c) => c.nama.toLowerCase() === nama.trim().toLowerCase());
-    setForm((f) => match
-      ? { nama, tingkat: f.tingkat || match.tingkat, kelas: f.kelas || match.kelas, wa: f.wa || match.wa }
+    setSaranTertutup(false);
+    const matches = knownCustomers.filter((c) => c.nama.toLowerCase() === nama.trim().toLowerCase());
+    setForm((f) => matches.length === 1
+      ? { nama, tingkat: f.tingkat || matches[0].tingkat, kelas: f.kelas || matches[0].kelas, wa: f.wa || matches[0].wa }
       : { ...f, nama });
   };
 
@@ -402,14 +413,17 @@ export default function Penjualan({
             {saranNama.length > 0 && (
               <div style={{ marginTop: 6, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 12, overflow: "hidden" }}>
                 {saranNama.map((c) => (
-                  <button key={c.nama.toLowerCase()} onClick={() => pilihSaran(c)}
+                  <button key={`${c.nama.toLowerCase()}|${c.kelas.toLowerCase()}`} onClick={() => pilihSaran(c)}
                     className="flex items-center gap-2"
                     style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left" }}>
                     <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{c.nama}</span>
                     {c.kelas && (
                       <span style={{ fontSize: 11, fontWeight: 800, color: "#FFFCF7", background: tingkatColor(c.tingkat, c.kelas), padding: "1px 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
                     )}
-                    <span style={{ marginLeft: "auto", fontSize: 12, color: t.text2, flex: "none" }}>{c.wa || "tanpa WA"}</span>
+                    <span style={{ marginLeft: "auto", textAlign: "right", flex: "none" }}>
+                      <span style={{ display: "block", fontSize: 12, color: t.text2 }}>{c.wa || "tanpa WA"}</span>
+                      <span style={{ display: "block", fontSize: 10.5, color: t.textDis }}>terakhir {tglSingkat(c.terakhir)}</span>
+                    </span>
                   </button>
                 ))}
               </div>
