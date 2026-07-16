@@ -198,61 +198,55 @@ export default function Penjualan({
         {/* Header — selalu terlihat; hanya dua kolom di bawah yang scroll */}
         <div style={{ padding: "20px 20px 0", flex: "none" }}>
           <div className="flex items-center justify-between">
-            <div>
-              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
-              <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{nowLabel()}</div>
-            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>{isBackdate ? serviceDateLabel(txDate) : "Hari ini"}</div>
-                <div style={{ fontSize: 15, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
+                <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{isBackdate ? serviceDateLabel(txDate) : "Hari ini"}</div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
               <button
                 onClick={onOpenSettings}
                 aria-label="Pengaturan"
-                style={{ width: 40, height: 40, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
+                style={{ width: 36, height: 36, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
               >
-                <Settings size={18} />
+                <Settings size={16} />
               </button>
             </div>
           </div>
 
-          {/* Tanggal transaksi — seluruh area diketuk via input overlay inset:0 */}
-          <div className="flex items-center gap-2"
-            style={{ marginTop: 12, position: "relative", background: isBackdate ? "#FFF4DA" : t.surface, border: `1.5px solid ${isBackdate ? t.primary : t.border}`, borderRadius: 12, padding: "9px 12px", cursor: "pointer" }}>
-            <Calendar size={17} color={t.amberText} style={{ flex: "none" }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Tanggal transaksi</div>
-              <div style={{ fontSize: 14.5, fontWeight: 800, color: isBackdate ? t.amberText : t.text }}>
-                {isBackdate ? `${serviceDateLabel(txDate)} · input susulan` : "Hari ini"}
-              </div>
+          {/* Satu baris: tanggal transaksi (input OTS susulan) + cari.
+              Seluruh area tanggal diketuk via input date overlay inset:0 */}
+          <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
+            <div className="flex items-center gap-1"
+              style={{ position: "relative", flex: "none", height: 42, padding: "0 12px", borderRadius: 11, cursor: "pointer",
+                background: isBackdate ? "#FFF4DA" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}` }}>
+              <Calendar size={14} color={t.amberText} />
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
+                {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
+              </span>
+              <input type="date" value={txDate} max={todayIso}
+                onChange={(e) => e.target.value && setTxDate(e.target.value)}
+                aria-label="Tanggal transaksi"
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
             </div>
-            {isBackdate && (
-              <button onClick={(e) => { e.stopPropagation(); setTxDate(todayIso); }}
-                style={{ position: "relative", zIndex: 2, height: 38, padding: "0 12px", borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12.5, cursor: "pointer", flex: "none" }}>
-                Kembali ke Hari Ini
-              </button>
-            )}
-            <input type="date" value={txDate} max={todayIso}
-              onChange={(e) => e.target.value && setTxDate(e.target.value)}
-              aria-label="Tanggal transaksi"
-              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+            <div className="flex items-center gap-2" style={{ flex: 1, background: t.surfaceSoft, border: `1px solid ${t.divider}`, borderRadius: 11, padding: "0 12px", height: 42 }}>
+              <Search size={16} color={t.textDis} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 14.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={16} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+            </div>
           </div>
           {isBackdate && (
-            <div style={{ marginTop: 8, fontSize: 12, color: t.amberText, fontWeight: 600, lineHeight: 1.5 }}>
-              {pakaiSnapshot
-                ? `Menu & harga memakai data tersimpan tanggal ${serviceDateLabel(txDate)}.`
-                : `Menu tanggal ini tidak tersimpan — memakai daftar menu saat ini.`}
+            <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
+              <span style={{ flex: 1, fontSize: 12, color: t.amberText, fontWeight: 600, lineHeight: 1.45 }}>
+                Input susulan {serviceDateLabel(txDate)}{pakaiSnapshot ? " — menu & harga sesuai tanggal itu" : " — menu tanggal ini tidak tersimpan, memakai daftar saat ini"}
+              </span>
+              <button onClick={() => setTxDate(todayIso)}
+                style={{ flex: "none", height: 34, padding: "0 11px", borderRadius: 10, border: `1px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                Kembali ke Hari Ini
+              </button>
             </div>
           )}
-
-          {/* Cari — full width, di luar dua kolom */}
-          <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-            <Search size={20} color={t.text2} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
-          </div>
         </div>
 
         {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}

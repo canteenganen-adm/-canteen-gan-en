@@ -6,15 +6,9 @@ import {
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
 import { openPicker } from "../../lib/picker";
-import { TINGKAT_LIST } from "../../lib/constants";
+import { TINGKAT_LIST, tingkatColor } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
 
-const TINGKAT_WARNA: Record<string, string> = {
-  "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
-  "SD": "#C94F4F", "SMP": "#4A7BA6", "SMA": "#6E6E6E",
-  "Guru/Karyawan": "#2F2A24",
-};
-const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
 
 /* ============================================================
    PRE-ORDER (ADMIN) — versi SEDERHANA (untuk mama, gaptek-friendly)

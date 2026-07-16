@@ -220,7 +220,7 @@ export default function MasterMenu({
           {/* Dua "kertas" ala tab Chrome: Tampilan Ortu (pratinjau) · Menu (daftar semula) */}
           <div style={{ marginTop: 16 }}>
             <PaperTabs
-              tabs={[{ id: "po", label: "PO" }, { id: "menu", label: "Menu" }]}
+              tabs={[{ id: "menu", label: "Menu" }, { id: "po", label: "PO" }]}
               value={view}
               onChange={onViewChange}
             />

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
-import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -18,12 +18,6 @@ import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSc
 const KELAS_TINGKAT = TINGKAT_LIST.filter((tg) => tg !== NO_KELAS_TINGKAT);
 const MIN_WA = 10;
 
-const TINGKAT_WARNA: Record<string, string> = {
-  "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
-  "SD": "#C94F4F", "SMP": "#4A7BA6", "SMA": "#6E6E6E",
-  "Guru/Karyawan": "#2F2A24",
-};
-const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 const fmtDate = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN[d.getMonth()]} ${d.getFullYear()}`; };
 const sisaHari = (deletedAt: string) => Math.max(0, Math.ceil(30 - (Date.now() - new Date(deletedAt).getTime()) / 86400000));
@@ -642,7 +636,7 @@ export default function Pengaturan({
                     <div>
                       <div style={{ fontSize: 15.5, fontWeight: 800 }}>{tx.customer.nama}</div>
                       {kelasParts && (
-                        <span style={{ background: tingkatColor(tx.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
+                        <span style={{ background: tingkatColor(tx.customer.tingkat, tx.customer.kelas), color: "#FFFCF7", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
                           {kelasParts}
                         </span>
                       )}

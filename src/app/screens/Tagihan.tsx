@@ -6,6 +6,7 @@ import {
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
+import { tingkatColor } from "../../lib/constants";
 import type { Transaction, CanteenSettings } from "../../types";
 
 /* ============================================================
@@ -14,12 +15,6 @@ import type { Transaction, CanteenSettings } from "../../types";
    Lunas: dikelompokkan per Nama + WA (terbaru di atas).
    ============================================================ */
 
-const TINGKAT_WARNA: Record<string, string> = {
-  "KB": "#D6608A", "TK A": "#7C6BAF", "TK B": "#7C6BAF",
-  "SD": "#C94F4F", "SMP": "#4A7BA6", "SMA": "#6E6E6E",
-  "Guru/Karyawan": "#2F2A24",
-};
-const tingkatColor = (tg: string) => TINGKAT_WARNA[tg] || "#2F2A24";
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 const fmtTx = (iso: string) => {
   const d = new Date(iso);
@@ -306,7 +301,7 @@ export default function Tagihan({
                     <div className="flex items-center justify-between" style={{ gap: 10 }}>
                       <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
                         <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
-                        <span style={{ background: tingkatColor(g.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
+                        <span style={{ background: tingkatColor(g.customer.tingkat, g.customer.kelas), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
                           {g.customer.kelas || g.customer.tingkat}
                         </span>
                       </div>
@@ -394,7 +389,7 @@ export default function Tagihan({
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
                       <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama}</span>
-                      <span style={{ background: tingkatColor(g.customer.tingkat || ""), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
+                      <span style={{ background: tingkatColor(g.customer.tingkat, g.customer.kelas), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
                         {g.customer.kelas || g.customer.tingkat}
                       </span>
                     </div>
