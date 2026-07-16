@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock,
+  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { priceLabel, uid, rupiah, serviceDateLabel, todayISO } from "../../lib/format";
-import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
+import { priceLabel, uid, serviceDateLabel, todayISO } from "../../lib/format";
+import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
 
@@ -286,9 +286,16 @@ export default function MasterMenu({
                     style={{ position: "relative", padding: "12px 14px", cursor: "pointer" }}>
                     <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Menu untuk</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Tanggal Layanan</div>
                       <div style={{ fontSize: 16.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
                     </div>
+                    {!isPast && (
+                      <button onClick={(e) => { e.stopPropagation(); onLoadDate(tanggal); }}
+                        title="Refresh" aria-label="Refresh pratinjau"
+                        style={{ position: "relative", zIndex: 2, width: 40, height: 40, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.surface, color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                        <RefreshCw size={17} />
+                      </button>
+                    )}
                     <input ref={dateRef} type="date" value={tanggal}
                       onChange={(e) => e.target.value && setTanggal(e.target.value)}
                       onClick={() => { try { dateRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
@@ -313,10 +320,10 @@ export default function MasterMenu({
                 <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 12px" }}>Belum ada data tersimpan untuk tanggal ini.</div>
               ) : (
                 <>
-                  {/* Daftar proofread — data & urutan SAMA dengan halaman ortu
-                      (kelompok kategori ortu), tapi bentuk daftar baca cepat:
-                      tanpa kartu/tombol/keranjang. Tujuannya satu: memastikan
-                      tidak ada menu yang tertinggal sebelum PO dibuka. */}
+                  {/* STRUK THERMAL — proofread menu ala cetakan kasir. Data &
+                      urutan SAMA dengan halaman ortu; tanpa tombol/keranjang.
+                      Satu-satunya tempat di app yang memakai huruf monospace
+                      (pengecualian gaya yang disengaja, pilihan pemilik). */}
                   {(() => {
                     const tampil = previewMenus.filter((m) => m.channels.preorder);
                     const byKat: Record<string, MenuItem[]> = {};
@@ -328,30 +335,43 @@ export default function MasterMenu({
                     const riwayat = isPast && menuHarianReady;
                     const kats = KATEGORI_ORTU_ORDER.filter((k) =>
                       riwayat ? byKat[k]?.length : (k !== KATEGORI_ORTU_FALLBACK || byKat[k]?.length));
+                    const strukHarga = (m: MenuItem) => m.variants.length
+                      ? `${Math.min(...m.variants.map((v) => v.price)).toLocaleString("id-ID")}+`
+                      : (m.price ?? 0).toLocaleString("id-ID");
+                    const garis = (c: string) => (
+                      <div style={{ overflow: "hidden", whiteSpace: "nowrap", color: t.textDis, userSelect: "none" }}>{c.repeat(72)}</div>
+                    );
+                    const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
-                      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: "4px 16px 10px" }}>
-                        {kats.map((k) => (
+                      <div style={{ background: t.surface, margin: "0 6px", padding: "18px 16px 22px",
+                        fontFamily: "ui-monospace, 'Cascadia Mono', 'Courier New', monospace",
+                        fontSize: 13, lineHeight: 1.85, color: t.text,
+                        boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
+                        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PRE-ORDER</div>
+                        {garis("=")}
+                        {kats.map((k, i) => (
                           <div key={k}>
-                            <div className="flex items-center" style={{ gap: 6, fontSize: 12.5, fontWeight: 800, color: t.amberText, textTransform: "uppercase", letterSpacing: ".03em", margin: "14px 0 4px" }}>
-                              {KATEGORI_ORTU_EMOJI[k]} {k}
-                              <span style={{ fontWeight: 800, color: byKat[k]?.length ? t.amberText : t.textDis }}>({byKat[k]?.length || 0})</span>
+                            {i > 0 && garis("-")}
+                            <div style={{ textAlign: "center", fontWeight: 700, letterSpacing: ".06em" }}>
+                              {k.toUpperCase()} ({byKat[k]?.length || 0})
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
-                              <div key={m.id} className="flex items-center gap-3" style={{ padding: "6px 0", borderBottom: `1px solid ${t.divider}` }}>
-                                <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600 }}>{m.name}</span>
-                                <span style={{ flex: "none", fontSize: 12.5, color: t.text2, fontVariantNumeric: "tabular-nums" }}>
-                                  {m.variants.length
-                                    ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
-                                    : rupiah(m.price)}
-                                </span>
+                              <div key={m.id} className="flex" style={{ gap: 8 }}>
+                                <span style={{ flex: 1, minWidth: 0 }}>{m.name}</span>
+                                <span style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
-                              <div style={{ fontSize: 12.5, color: t.textDis, padding: "4px 0 6px" }}>Belum ada menu di kategori ini</div>
+                              <div style={{ textAlign: "center", color: t.textDis }}>(kosong)</div>
                             )}
                           </div>
                         ))}
+                        {garis("=")}
+                        <div className="flex" style={{ gap: 8, fontWeight: 700 }}>
+                          <span style={{ flex: 1 }}>TOTAL</span>
+                          <span>{tampil.length} ITEM</span>
+                        </div>
                         {tampil.length === 0 && (
-                          <div style={{ textAlign: "center", color: t.text2, fontSize: 14, padding: "24px 0" }}>Belum ada menu yang akan tampil ke orang tua.</div>
+                          <div style={{ textAlign: "center", color: t.text2, marginTop: 8 }}>Belum ada menu yang akan tampil ke orang tua.</div>
                         )}
                       </div>
                     );
