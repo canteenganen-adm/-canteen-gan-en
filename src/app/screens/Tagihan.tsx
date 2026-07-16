@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO } from "../../lib/format";
@@ -70,6 +70,15 @@ export default function Tagihan({
   const [dateFilter, setDateFilter] = useState<DateFilter>("semua");
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
+  const [dateSheet, setDateSheet] = useState(false);
+
+  const fmtShort = (d: string) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "…");
+  const dateChipLabel =
+    dateFilter === "semua" ? "Tanggal"
+      : dateFilter === "hari" ? "Hari Ini"
+      : dateFilter === "7" ? "7 Hari"
+      : dateFilter === "30" ? "30 Hari"
+      : rangeFrom || rangeTo ? `${fmtShort(rangeFrom)}–${fmtShort(rangeTo)}` : "Rentang";
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -223,79 +232,64 @@ export default function Tagihan({
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
 
-        {/* Header sticky */}
-        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-          <div className="flex items-end justify-between">
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
-            <div className="flex items-center gap-3">
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: t.text2, fontWeight: 600 }}>{tab === "unpaid" ? "Total Belum Dibayar" : "Masuk (Lunas)"}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: tab === "unpaid" ? t.amberText : t.successText }}>
-                  {rupiah(tab === "unpaid" ? grandTotal : historyMasuk)}
-                </div>
+        {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
+            adalah memproses daftar transaksi, bukan dashboard keuangan */}
+        <div className="flex items-center justify-between" style={{ padding: "18px 20px 6px" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
+          <div className="flex items-center gap-2">
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{tab === "unpaid" ? "Total Belum Dibayar" : "Masuk (Lunas)"}</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: tab === "unpaid" ? t.amberText : t.successText }}>
+                {rupiah(tab === "unpaid" ? grandTotal : historyMasuk)}
               </div>
-              <button onClick={onOpenSettings} aria-label="Pengaturan"
-                style={{ width: 40, height: 40, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                <Settings size={18} />
-              </button>
             </div>
+            <button onClick={onOpenSettings} aria-label="Pengaturan"
+              style={{ width: 36, height: 36, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              <Settings size={16} />
+            </button>
           </div>
+        </div>
 
-          <div style={{ marginTop: 14 }}>
-            <PaperTabs
-              tabs={[
-                { id: "unpaid", label: <><Wallet size={14} /> Belum Dibayar</> },
-                { id: "riwayat", label: <><History size={14} /> Lunas</> },
-              ]}
-              value={tab}
-              onChange={setTab}
-            />
-          </div>
+        {/* Sticky: hanya alat kerja — tab, cari, satu baris filter */}
+        <div style={{ padding: "4px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+          <PaperTabs
+            tabs={[
+              { id: "unpaid", label: <><Wallet size={14} /> Belum Dibayar</> },
+              { id: "riwayat", label: <><History size={14} /> Lunas</> },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
 
-          <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-            <Search size={20} color={t.text2} />
+          {/* Cari — ramping, tanpa border berat */}
+          <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surfaceSoft, border: `1px solid ${t.divider}`, borderRadius: 11, padding: "0 12px", height: 42 }}>
+            <Search size={17} color={t.textDis} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kelas, atau WhatsApp…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+              style={{ border: "none", outline: "none", background: "transparent", fontSize: 14.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
+            {q && <X size={17} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
           </div>
 
-          <div className="flex gap-2" style={{ marginTop: 10 }}>
+          {/* SATU baris filter: chip sumber (senyap saat nonaktif) + satu
+              tombol tanggal yang membuka sheet — bukan dua deret chip */}
+          <div className="flex items-center gap-1" style={{ marginTop: 8 }}>
             {([["semua", "Semua"], ["preorder", "Pre-order"], ["penjualan", "Penjualan"]] as const).map(([val, label]) => {
               const on = sourceFilter === val;
               return (
                 <button key={val} onClick={() => setSourceFilter(val)}
-                  style={{ flex: 1, height: 36, borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                  style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: "pointer",
+                    border: `1px solid ${on ? t.primary : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
                   {label}
                 </button>
               );
             })}
+            <span style={{ flex: 1 }} />
+            <button onClick={() => setDateSheet(true)}
+              className="flex items-center gap-1"
+              style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: dateFilter !== "semua" ? 700 : 600, cursor: "pointer",
+                border: `1px solid ${dateFilter !== "semua" ? t.primary : t.border}`, background: dateFilter !== "semua" ? t.primaryLight : t.surface, color: dateFilter !== "semua" ? t.amberText : t.text2 }}>
+              <Calendar size={13} /> {dateChipLabel} <ChevronDown size={13} />
+            </button>
           </div>
-
-          {/* Filter tanggal operasional — rekap susulan tanpa sentuh sesi PO */}
-          <div className="flex gap-2" style={{ marginTop: 8, overflowX: "auto", paddingBottom: 2 }}>
-            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari"], ["30", "30 Hari"], ["rentang", "Pilih Rentang"]] as const).map(([val, label]) => {
-              const on = dateFilter === val;
-              return (
-                <button key={val} onClick={() => setDateFilter(val)}
-                  style={{ flex: "none", height: 34, padding: "0 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-                    border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          {dateFilter === "rentang" && (
-            <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-              <input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)}
-                aria-label="Dari tanggal"
-                style={{ flex: 1, height: 42, fontSize: 13.5, fontWeight: 600, color: rangeFrom ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit" }} />
-              <span style={{ fontSize: 12.5, color: t.text2, flex: "none" }}>s/d</span>
-              <input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)}
-                aria-label="Sampai tanggal"
-                style={{ flex: 1, height: 42, fontSize: 13.5, fontWeight: 600, color: rangeTo ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit" }} />
-            </div>
-          )}
         </div>
 
         {/* ---- Tab: Belum Dibayar ---- */}
@@ -483,6 +477,49 @@ export default function Tagihan({
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+        </div>
+      )}
+
+      {/* Sheet Filter Tanggal — pilihan langsung berlaku; rentang custom
+          punya dua picker di dalam sheet */}
+      {dateSheet && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setDateSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Filter Tanggal</div>
+              <button onClick={() => setDateSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+            </div>
+            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["30", "30 Hari Terakhir"], ["rentang", "Pilih Rentang"]] as const).map(([val, label]) => {
+              const on = dateFilter === val;
+              return (
+                <button key={val}
+                  onClick={() => { setDateFilter(val); if (val !== "rentang") setDateSheet(false); }}
+                  className="flex items-center justify-between"
+                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{label}</span>
+                  {on && <Check size={17} color={t.amberText} />}
+                </button>
+              );
+            })}
+            {dateFilter === "rentang" && (
+              <>
+                <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
+                  <input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)}
+                    aria-label="Dari tanggal"
+                    style={{ flex: 1, height: 46, fontSize: 14, fontWeight: 600, color: rangeFrom ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 11, padding: "0 10px", fontFamily: "inherit" }} />
+                  <span style={{ fontSize: 13, color: t.text2, flex: "none" }}>s/d</span>
+                  <input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)}
+                    aria-label="Sampai tanggal"
+                    style={{ flex: 1, height: 46, fontSize: 14, fontWeight: 600, color: rangeTo ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 11, padding: "0 10px", fontFamily: "inherit" }} />
+                </div>
+                <button onClick={() => setDateSheet(false)}
+                  style={{ width: "100%", height: 50, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Terapkan
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
