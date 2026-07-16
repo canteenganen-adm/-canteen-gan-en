@@ -377,26 +377,8 @@ export default function MasterMenu({
                     );
                   })()}
 
-                  {/* Bar status + Simpan — kuning: belum resmi, hijau: tersimpan */}
-                  {menuHarianReady && !isPast && (() => {
-                    const belumResmi = dailyDirty || !snapshot;
-                    return (
-                      <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
-                        <div className="flex items-center gap-3" style={{ background: belumResmi ? "#FFF4DA" : t.successBg, border: `1.5px solid ${belumResmi ? t.primary : "#D8E6D4"}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 800 }}>{aktifCount} item aktif</div>
-                            <div style={{ fontSize: 11.5, fontWeight: 700, color: belumResmi ? t.amberText : t.successText }}>
-                              {belumResmi ? "Belum disimpan — ortu masih melihat versi lama" : "Resmi tersimpan — persis yang dilihat ortu"}
-                            </div>
-                          </div>
-                          <button onClick={() => setConfirmSave(true)}
-                            style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
-                            Simpan
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                  {/* Tanpa bar Simpan di sini — kertas PO murni pratinjau;
+                      menyusun & Simpan seluruhnya di kertas Menu. */}
                 </>
               )}
             </>
@@ -412,14 +394,19 @@ export default function MasterMenu({
             ))
           )}
 
-          {/* Pengingat Simpan — ikut tampil di kertas Menu saat ada draft
-              yang belum disahkan, supaya tidak ada perubahan yang terlupa */}
-          {view === "menu" && menuHarianReady && !isPast && dailyDirty && (
+          {/* Bar Simpan — SATU-SATUNYA tempat mengesahkan menu harian
+              (kertas PO murni pratinjau). Muncul saat ada perubahan belum
+              disimpan ATAU tanggal terpilih belum pernah disimpan. */}
+          {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
             <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
               <div className="flex items-center gap-3" style={{ background: "#FFF4DA", border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)}</div>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: t.amberText }}>Belum disimpan — ortu masih melihat versi lama</div>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)} · {aktifCount} item</div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: t.amberText }}>
+                    {snapshot === null
+                      ? "Belum pernah disimpan — ortu belum melihat menu tanggal ini"
+                      : "Belum disimpan — ortu masih melihat versi lama"}
+                  </div>
                 </div>
                 <button onClick={() => setConfirmSave(true)}
                   style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
