@@ -197,10 +197,7 @@ export default function MasterMenu({
         {/* Header */}
         <div style={{ padding: "22px 20px 12px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <div className="flex items-center justify-between">
-            <div>
-              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
-              <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>Master Menu — sumber data semua transaksi</div>
-            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenSettings}
@@ -411,6 +408,13 @@ export default function MasterMenu({
                       : "Belum disimpan — ortu masih melihat versi lama"}
                   </div>
                 </div>
+                {dailyDirty && (
+                  <button onClick={() => setDraft({ ...seed })}
+                    title="Batalkan perubahan" aria-label="Batalkan perubahan"
+                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                    <X size={16} />
+                  </button>
+                )}
                 <button onClick={() => setConfirmSave(true)}
                   style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
                   Simpan

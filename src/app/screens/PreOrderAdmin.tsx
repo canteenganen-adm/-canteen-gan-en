@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
-import { openPicker } from "../../lib/picker";
 import { TINGKAT_LIST, tingkatColor } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
 
@@ -212,7 +211,7 @@ export default function PreOrderAdmin({
 
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
             <button
               onClick={onOpenSettings}
               aria-label="Pengaturan"
@@ -360,24 +359,21 @@ export default function PreOrderAdmin({
             <Calendar size={18} /> Hari Sekolah Berikutnya
           </button>
           <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, margin: "12px 0" }}>atau</div>
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => openPicker(gantiTanggalRef)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(gantiTanggalRef); } }}
-            className="flex items-center gap-3"
-            style={{ position: "relative", height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}
-          >
+          {/* Pola wajib CLAUDE.md: input date overlay inset:0 MENERIMA ketukan
+              langsung (bukan pointerEvents:none + skrip pembuka yang gagal
+              senyap di HP). showPicker di onClick = pemanis desktop. */}
+          <div className="flex items-center gap-3"
+            style={{ position: "relative", height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
             <Calendar size={18} color={t.amberText} />
             <span style={{ fontWeight: 700, fontSize: 15 }}>Pilih tanggal lain</span>
             <input
               ref={gantiTanggalRef}
               type="date"
               value={serviceDate}
-              onChange={(e) => { onServiceDateChange(e.target.value); setSheet(null); }}
+              onChange={(e) => { if (e.target.value) { onServiceDateChange(e.target.value); setSheet(null); } }}
+              onClick={() => { try { gantiTanggalRef.current?.showPicker?.(); } catch { /* native fallback */ } }}
               aria-label="Pilih tanggal lain"
-              tabIndex={-1}
-              style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }}
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
             />
           </div>
         </Sheet>
@@ -385,22 +381,16 @@ export default function PreOrderAdmin({
       {sheet === "jamTutup" && (
         <Sheet title="Jam Tutup Otomatis" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pre-order otomatis ditutup pada jam ini di hari layanan. Ditegakkan di server — bukan cuma tampilan.</div>
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => openPicker(jamTutupRef)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(jamTutupRef); } }}
-            style={{ position: "relative", height: 84, borderRadius: 16, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, cursor: "pointer", display: "grid", placeItems: "center" }}
-          >
+          <div style={{ position: "relative", height: 84, borderRadius: 16, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, cursor: "pointer", display: "grid", placeItems: "center" }}>
             <span style={{ fontSize: 34, fontWeight: 800, color: t.amberText, fontVariantNumeric: "tabular-nums" }}>{hhmm(autoCloseTime)}</span>
             <input
               ref={jamTutupRef}
               type="time"
               value={hhmm(autoCloseTime)}
-              onChange={(e) => onAutoCloseTimeChange(e.target.value + ":00")}
+              onChange={(e) => e.target.value && onAutoCloseTimeChange(e.target.value + ":00")}
+              onClick={() => { try { jamTutupRef.current?.showPicker?.(); } catch { /* native fallback */ } }}
               aria-label="Jam Tutup Otomatis"
-              tabIndex={-1}
-              style={{ position: "absolute", inset: 0, opacity: 0, pointerEvents: "none" }}
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
             />
           </div>
 
@@ -529,8 +519,15 @@ function Action({ icon, label, onClick }: { icon: React.ReactNode; label: string
   );
 }
 function Sheet({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  // Pelindung ghost-tap di HP: ketukan yang membuka sheet tidak boleh ikut
+  // menekan tombol yang muncul di posisi jari (mis. "Hari Sekolah Berikutnya").
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setReady(true), 300);
+    return () => clearTimeout(id);
+  }, []);
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end", pointerEvents: ready ? "auto" : "none" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
         <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center justify-between">

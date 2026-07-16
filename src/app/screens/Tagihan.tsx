@@ -63,6 +63,9 @@ export default function Tagihan({
   const [tab, setTab] = useState<Tab>("unpaid");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("semua");
   const [dateFilter, setDateFilter] = useState<DateFilter>("semua");
+  /** Sub-filter tab Lunas: default hanya Lunas asli (total murni);
+   * "Dibatalkan" menampilkan transaksi batal dengan Pulihkan/Hapus. */
+  const [riwayatFilter, setRiwayatFilter] = useState<"lunas" | "batal">("lunas");
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
   const [dateSheet, setDateSheet] = useState(false);
@@ -167,7 +170,8 @@ export default function Tagihan({
   /* Grupkan Lunas per Nama + WA */
   const riwayatGroups = useMemo(() => {
     const done = transactions.filter(
-      (x) => (x.paid || x.cancelledAt) && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
+      (x) => (riwayatFilter === "lunas" ? (x.paid && !x.cancelledAt) : !!x.cancelledAt)
+        && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
     );
     const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; totalMasuk: number; newestAt: string }>();
     for (const tx of done) {
@@ -181,9 +185,16 @@ export default function Tagihan({
     for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo]);
+  }, [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo, riwayatFilter]);
 
-  const historyMasuk = riwayatGroups.reduce((s, g) => s + g.totalMasuk, 0);
+  // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
+  const historyMasuk = useMemo(
+    () => transactions
+      .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa))
+      .reduce((s, x) => s + x.total, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo]
+  );
 
   const markPaid = (tx: Transaction) => { onMarkPaid(tx.id); setUndo({ type: "paid", tx }); };
   const cancel = (tx: Transaction) => { onCancel(tx.id); setUndo({ type: "cancel", tx }); };
@@ -277,6 +288,21 @@ export default function Tagihan({
                 </button>
               );
             })}
+            {tab === "riwayat" && (
+              <>
+                <span style={{ width: 1, height: 18, background: t.border, margin: "0 3px", flex: "none" }} />
+                {([["lunas", "Lunas"], ["batal", "Dibatalkan"]] as const).map(([val, label]) => {
+                  const on = riwayatFilter === val;
+                  return (
+                    <button key={val} onClick={() => setRiwayatFilter(val)}
+                      style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: "pointer",
+                        border: `1px solid ${on ? t.primary : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </>
+            )}
             <span style={{ flex: 1 }} />
             <button onClick={() => setDateSheet(true)}
               className="flex items-center gap-1"
@@ -393,7 +419,9 @@ export default function Tagihan({
                         {g.customer.kelas || g.customer.tingkat}
                       </span>
                     </div>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: t.successText, flex: "none" }}>{rupiah(g.totalMasuk)}</span>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: riwayatFilter === "batal" ? t.text2 : t.successText, flex: "none" }}>
+                      {rupiah(riwayatFilter === "batal" ? g.txs.reduce((s, tx) => s + tx.total, 0) : g.totalMasuk)}
+                    </span>
                   </div>
                   {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
                 </div>
