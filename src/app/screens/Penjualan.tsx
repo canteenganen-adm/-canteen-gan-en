@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel } from "../../lib/format";
-import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
 /* ============================================================
@@ -141,6 +141,43 @@ export default function Penjualan({
 
   const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS_TINGKAT;
   const kelasOptions = kelasList.filter((k) => k.tingkat === form.tingkat);
+
+  /* Pelanggan dikenal dari riwayat transaksi (pre-order menyimpan nama+WA+
+     tingkat+kelas). Ketik nama -> saran muncul; satu ketuk mengisi semua
+     kolom. Data terbaru per nama yang menang. */
+  const knownCustomers = useMemo(() => {
+    const map = new Map<string, { nama: string; wa: string; tingkat: string; kelas: string }>();
+    [...transactions]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .forEach((tx) => {
+        const nama = tx.customer.nama.trim();
+        if (!nama) return;
+        const key = nama.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, { nama, wa: tx.customer.wa || "", tingkat: tx.customer.tingkat || "", kelas: tx.customer.kelas || "" });
+        }
+      });
+    return Array.from(map.values());
+  }, [transactions]);
+
+  const namaQ = form.nama.trim().toLowerCase();
+  const saranNama = useMemo(() => {
+    if (namaQ.length < 2) return [];
+    return knownCustomers
+      .filter((c) => c.nama.toLowerCase().includes(namaQ) && c.nama.toLowerCase() !== namaQ)
+      .slice(0, 5);
+  }, [knownCustomers, namaQ]);
+
+  const pilihSaran = (c: { nama: string; wa: string; tingkat: string; kelas: string }) =>
+    setForm({ nama: c.nama, tingkat: c.tingkat, kelas: c.kelas, wa: c.wa });
+
+  /** Isi-otomatis kolom KOSONG saat nama persis cocok — tidak menimpa isian manual. */
+  const namaBerubah = (nama: string) => {
+    const match = knownCustomers.find((c) => c.nama.toLowerCase() === nama.trim().toLowerCase());
+    setForm((f) => match
+      ? { nama, tingkat: f.tingkat || match.tingkat, kelas: f.kelas || match.kelas, wa: f.wa || match.wa }
+      : { ...f, nama });
+  };
 
   const commit = (paid: boolean, customer?: { nama: string; tingkat: string; kelas: string; wa: string }) => {
     const tx: Transaction = {
@@ -358,7 +395,25 @@ export default function Penjualan({
         <Sheet onClose={() => setBilling(false)} title="Masuk Tagihan">
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Catat atas nama siapa tagihannya:</div>
           <Field label="Nama Siswa" req tried={tried} val={form.nama}>
-            <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="cth. Aisyah Putri" style={inputStyle(tried && !form.nama.trim())} />
+            <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="cth. Aisyah Putri" style={inputStyle(tried && !form.nama.trim())} />
+            {/* Saran dari riwayat transaksi — satu ketuk mengisi nama, tingkat,
+                kelas, dan nomor WA sekaligus (permintaan Mama: tidak perlu
+                mengetik nomor WA satu per satu lagi) */}
+            {saranNama.length > 0 && (
+              <div style={{ marginTop: 6, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 12, overflow: "hidden" }}>
+                {saranNama.map((c) => (
+                  <button key={c.nama.toLowerCase()} onClick={() => pilihSaran(c)}
+                    className="flex items-center gap-2"
+                    style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{c.nama}</span>
+                    {c.kelas && (
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#FFFCF7", background: tingkatColor(c.tingkat, c.kelas), padding: "1px 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
+                    )}
+                    <span style={{ marginLeft: "auto", fontSize: 12, color: t.text2, flex: "none" }}>{c.wa || "tanpa WA"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </Field>
           {/* Tingkat + Kelas pakai chip standar (bukan ketik bebas) — supaya
               pil kelas di Transaksi berwarna sesuai ketentuan per tingkat */}
