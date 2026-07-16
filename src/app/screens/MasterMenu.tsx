@@ -347,7 +347,7 @@ export default function MasterMenu({
                         fontFamily: "ui-monospace, 'Cascadia Mono', 'Courier New', monospace",
                         fontSize: 13, lineHeight: 1.85, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
-                        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PRE-ORDER</div>
+                        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PO</div>
                         {garis("=")}
                         {kats.map((k, i) => (
                           <div key={k}>
@@ -356,8 +356,11 @@ export default function MasterMenu({
                               {k.toUpperCase()} ({byKat[k]?.length || 0})
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
-                              <div key={m.id} className="flex" style={{ gap: 8 }}>
-                                <span style={{ flex: 1, minWidth: 0 }}>{m.name}</span>
+                              <div key={m.id} className="flex" style={{ gap: 8, alignItems: "baseline" }}>
+                                {/* Hybrid: nama menu (yang paling lama ditatap saat
+                                    proofread) pakai font standar app; kerangka struk
+                                    (judul/garis/harga) tetap monospace */}
+                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Plus Jakarta Sans', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{m.name}</span>
                                 <span style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
