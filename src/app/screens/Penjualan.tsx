@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import {
   Search, X, Plus, Minus, ShoppingCart, Check, Receipt,
-  Layers, ChevronRight, ArrowLeft, Wallet, Settings, Trash2, Undo2, Calendar,
+  Layers, ChevronRight, Wallet, Settings, Trash2, Undo2, Calendar,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel } from "../../lib/format";
@@ -118,8 +118,12 @@ export default function Penjualan({
     });
   };
   const tapMenu = (menu: MenuItem) => (menu.variants.length ? setVariantFor(menu) : addLine(menu));
-  const changeQty = (key: string, d: number) =>
-    setCart((c) => c.map((l) => (l.key === key ? { ...l, qty: l.qty + d } : l)).filter((l) => l.qty > 0));
+  /** Minus pada jumlah 1 = hapus baris LEWAT jalur Undo (bukan hilang senyap). */
+  const changeQty = (key: string, d: number) => {
+    const line = cart.find((l) => l.key === key);
+    if (line && line.qty + d <= 0) { removeCartLine(key); return; }
+    setCart((c) => c.map((l) => (l.key === key ? { ...l, qty: l.qty + d } : l)));
+  };
 
   const removeCartLine = (key: string) => {
     const line = cart.find((l) => l.key === key);
@@ -362,20 +366,16 @@ export default function Penjualan({
 
       {/* Ringkasan */}
       {view === "summary" && (
-        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan" leftIcon={<ArrowLeft size={20} />} onLeft={() => setView("shop")}>
+        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan">
           {cart.map((l) => (
             <div key={l.key} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>{l.name}{l.variant ? ` · ${l.variant}` : ""}</div>
                 <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah(l.price)}</div>
               </div>
-              <div className="flex items-center gap-2">
-                <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
-              </div>
-              <div style={{ width: 72, textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
-              <button onClick={() => removeCartLine(l.key)} aria-label="Hapus" style={{ width: 36, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                <Trash2 size={15} />
-              </button>
+              {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
+              <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
+              <div style={{ width: 68, textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
             </div>
           ))}
 
@@ -522,12 +522,12 @@ function Sheet({ title, children, onClose, leftIcon, onLeft }: {
   );
 }
 function Stepper({ onMinus, onPlus, val }: { onMinus: () => void; onPlus: () => void; val: number }) {
-  const b: React.CSSProperties = { width: 40, height: 40, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
+  const b: React.CSSProperties = { width: 34, height: 34, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
   return (
-    <div className="flex items-center gap-2" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3 }}>
-      <button onClick={onMinus} style={b}><Minus size={18} /></button>
-      <span style={{ minWidth: 22, textAlign: "center", fontWeight: 800, fontSize: 16 }}>{val}</span>
-      <button onClick={onPlus} style={b}><Plus size={18} /></button>
+    <div className="flex items-center gap-1" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3, flex: "none" }}>
+      <button onClick={onMinus} style={b}><Minus size={16} /></button>
+      <span style={{ minWidth: 20, textAlign: "center", fontWeight: 800, fontSize: 15 }}>{val}</span>
+      <button onClick={onPlus} style={b}><Plus size={16} /></button>
     </div>
   );
 }
