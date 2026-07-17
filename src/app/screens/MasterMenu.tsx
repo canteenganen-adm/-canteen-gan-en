@@ -154,8 +154,7 @@ export default function MasterMenu({
   };
 
 
-  // Simpan (dengan konfirmasi) + toast hasil
-  const [confirmSave, setConfirmSave] = useState(false);
+  // Simpan + toast hasil
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
@@ -169,7 +168,6 @@ export default function MasterMenu({
       const items = menus.map((m) => ({ ...m, channels: { preorder: !!draft[m.id], sales: m.channels.sales } }));
       await onSaveDaily(tanggal, items);
       setSeed({ ...draft });
-      setConfirmSave(false);
       setToast(`Menu untuk ${serviceDateLabel(tanggal)} berhasil disimpan (${aktifCount} item aktif)`);
     } catch {
       setToast("Gagal menyimpan. Periksa koneksi internet, lalu coba lagi.");
@@ -422,26 +420,35 @@ export default function MasterMenu({
           {/* Bar Simpan — SATU-SATUNYA tempat mengesahkan menu harian
               (kertas PO murni pratinjau). Muncul saat ada perubahan belum
               disimpan ATAU tanggal terpilih belum pernah disimpan. */}
-          {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && !confirmSave && (
-            /* Pengingat Simpan gaya STRUK THERMAL — X nongol = buang perubahan
-               (dengan toast); Simpan = popup KONFIRMASI PERUBAHAN MENU.
-               Disembunyikan saat popup terbuka supaya zigzag tidak dobel. */
-            <div style={{ position: "fixed", left: 20, right: 20, bottom: NAV_HEIGHT + 14, zIndex: 40, pointerEvents: "none" }}>
-              <div style={{ position: "relative", maxWidth: 330, margin: "0 auto", filter: "drop-shadow(0 8px 22px rgba(47,42,36,.28))", pointerEvents: "auto" }}>
-                <div style={{ background: t.surface, padding: "18px 16px 16px", textAlign: "center",
-                  fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace",
-                  fontWeight: 600, clipPath: STRUK_ZIGZAG }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: ".02em" }}>
+          {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
+            /* SATU struk KONFIRMASI PERUBAHAN MENU — MELAYANG DI TENGAH layar,
+               tanpa lapisan gelap: daftar di belakang tetap bisa digulir &
+               di-toggle. Batal / X = buang perubahan; Simpan = langsung simpan. */
+            <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "grid", placeItems: "center", padding: 20, pointerEvents: "none" }}>
+              <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))", pointerEvents: "auto" }}>
+                <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
+                  fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".01em" }}>KONFIRMASI PERUBAHAN MENU</div>
+                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+                  <div className="flex items-center justify-center gap-1.5" style={{ fontSize: 13 }}>
+                    <Calendar size={14} color={t.amberText} style={{ flex: "none" }} />
                     {serviceDateLabel(tanggal).toUpperCase()}
                   </div>
-                  <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0 0" }} />
-                  <button onClick={() => setConfirmSave(true)}
-                    style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15.5, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    Simpan
-                  </button>
+                  <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
+                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    {dailyDirty && (
+                      <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }} disabled={saving}
+                        style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                        Batal
+                      </button>
+                    )}
+                    <button onClick={doSave} disabled={saving}
+                      style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                      {saving ? "Menyimpan…" : "Simpan"}
+                    </button>
+                  </div>
                 </div>
-                {dailyDirty && (
+                {dailyDirty && !saving && (
                   <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }}
                     title="Buang perubahan" aria-label="Buang perubahan"
                     style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
@@ -453,41 +460,6 @@ export default function MasterMenu({
           )}
         </div>
       </div>
-
-      {/* Konfirmasi Simpan Menu Harian — SATU-SATUNYA popup struk (tengah) */}
-      {confirmSave && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 20 }}>
-          <div onClick={() => !saving && setConfirmSave(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
-            <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
-              fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".01em" }}>KONFIRMASI PERUBAHAN MENU</div>
-              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-              <div className="flex items-center justify-center gap-1.5" style={{ fontSize: 13 }}>
-                <Calendar size={14} color={t.amberText} style={{ flex: "none" }} />
-                {serviceDateLabel(tanggal).toUpperCase()}
-              </div>
-              <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                <button onClick={() => setConfirmSave(false)} disabled={saving}
-                  style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  Batal
-                </button>
-                <button onClick={doSave} disabled={saving}
-                  style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
-                  {saving ? "Menyimpan…" : "Simpan"}
-                </button>
-              </div>
-            </div>
-            {!saving && (
-              <button onClick={() => setConfirmSave(false)} aria-label="Batal simpan"
-                style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
-                <X size={19} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Toast hasil simpan */}
       {toast && (
