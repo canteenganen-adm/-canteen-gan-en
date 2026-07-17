@@ -111,6 +111,18 @@ function useCanteenStore() {
    * jadi satu request per huruf (berat + memicu badai event realtime). */
   const menuWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
+  /** Cadangan LOKAL status "sudah ditagih" — supaya tombol hijau Ditagih
+   * langsung berubah dan BERTAHAN walau data dimuat ulang (mis. balik dari
+   * WhatsApp), bahkan sebelum kolom billed_at ada di DB (migration_10). */
+  const billedLocal = useRef<Record<string, string>>((() => {
+    try { return JSON.parse(localStorage.getItem("ganen_billed") || "{}"); } catch { return {}; }
+  })());
+  const applyBilledLocal = useCallback((txs: Transaction[]) => {
+    const map = billedLocal.current;
+    if (Object.keys(map).length === 0) return txs;
+    return txs.map((tx) => (!tx.billedAt && map[tx.id] ? { ...tx, billedAt: map[tx.id] } : tx));
+  }, []);
+
   const loadAll = useCallback(async () => {
     try {
       const [menusData, txData, appState, kelasData] = await Promise.all([
@@ -123,7 +135,7 @@ function useCanteenStore() {
       // (pengguna sedang mengetik di editor) — data server masih versi
       // lama dan akan MENGHAPUS ketikan yang belum tersimpan.
       if (menuWriteTimers.current.size === 0) setMenus(menusData);
-      setTransactions(txData);
+      setTransactions(applyBilledLocal(txData));
       setKelasList(kelasData);
       setPreorderOpenLocal(appState.preorderOpen);
       setServiceDateLocal(appState.serviceDate);
@@ -149,7 +161,7 @@ function useCanteenStore() {
       setLoading(false);
       loadedOnce.current = true;
     }
-  }, []);
+  }, [applyBilledLocal]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -243,6 +255,9 @@ function useCanteenStore() {
   const markBilled = (ids: string[]) => {
     const billedAt = new Date().toISOString();
     setTransactions((prev) => prev.map((tx) => (ids.includes(tx.id) ? { ...tx, billedAt } : tx)));
+    // Cadangan lokal: hijau "Ditagih" bertahan melewati muat-ulang apa pun
+    ids.forEach((id) => { billedLocal.current[id] = billedAt; });
+    try { localStorage.setItem("ganen_billed", JSON.stringify(billedLocal.current)); } catch { /* penuh/di-blok: abaikan */ }
     ids.forEach((id) => updateTransaction(id, { billedAt }).catch(() => {}));
   };
   /** Ubah Tanggal Layanan transaksi — untuk membetulkan entri yang terlanjur
