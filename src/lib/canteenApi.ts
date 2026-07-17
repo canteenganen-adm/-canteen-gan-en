@@ -320,6 +320,7 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   if (patch.paid !== undefined) row.paid = patch.paid;
   if (patch.packed !== undefined) row.packed = patch.packed;
   if (patch.cancelledAt !== undefined) row.cancelled_at = patch.cancelledAt;
+  if (patch.serviceDate !== undefined) row.service_date = patch.serviceDate;
   const { error } = await supabase.from("transaksi").update(row).eq("id", id);
   if (error) throw error;
 }

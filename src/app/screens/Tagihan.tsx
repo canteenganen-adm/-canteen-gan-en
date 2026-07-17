@@ -19,7 +19,7 @@ const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","
 /** Rincian transaksi (tanggal · item · harga) pakai font thermal/mono
  * seperti struk PO — kontras dengan Jakarta Sans di kartu info anak,
  * supaya fokus tidak terbagi. */
-const MONO = "ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
+const MONO = "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 /** Label transaksi memakai TANGGAL OPERASIONAL (Tanggal Layanan), bukan
  * tanggal input — transaksi susulan tgl 14 yang diketik tgl 16 tampil
  * "14 Jul · dicatat 16/07", bukan "16 Jul". */
@@ -61,6 +61,7 @@ export default function Tagihan({
   onCancel,
   onRestore,
   onMoveToTrash,
+  onChangeDate,
   onOpenSettings,
 }: {
   transactions: Transaction[];
@@ -70,6 +71,7 @@ export default function Tagihan({
   onCancel: (id: string) => void;
   onRestore: (tx: Transaction) => void;
   onMoveToTrash: (id: string) => void;
+  onChangeDate: (id: string, date: string) => void;
   onOpenSettings: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
@@ -223,6 +225,25 @@ export default function Tagihan({
     setUndo(null);
   };
 
+  /** Tanggal transaksi yang BISA DIKETUK — membetulkan Tanggal Layanan untuk
+   * entri yang terlanjur tercatat di tanggal salah. Garis putus-putus =
+   * penanda bisa diedit; seluruh area tanggal membuka picker (input overlay). */
+  const dateTap = (tx: Transaction) => (
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", padding: "6px 4px", margin: "-6px -4px" }}>
+      <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO, borderBottom: `1.5px dashed ${t.border}`, paddingBottom: 1 }}>
+        {fmtTxOp(tx)}
+      </span>
+      <input type="date" value={opDate(tx)} max={todayISO()}
+        onChange={(e) => {
+          if (!e.target.value) return;
+          onChangeDate(tx.id, e.target.value);
+          setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
+        }}
+        aria-label="Ubah Tanggal Layanan"
+        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+    </span>
+  );
+
   const buildWaMsg = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const txBlocks = g.txs.map((tx) => {
       const itemLines = tx.items
@@ -352,13 +373,13 @@ export default function Tagihan({
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
                           <SourceTag source={tx.source} />
-                          <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO }}>{fmtTxOp(tx)}</span>
+                          {dateTap(tx)}
                         </div>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontFamily: MONO }}>{rupiah(tx.total)}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: t.text2, fontFamily: MONO }}>{rupiah(tx.total)}</span>
                       </div>
                       <div style={{ marginBottom: 12 }}>
                         {tx.items.map((it, i) => (
-                          <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, fontFamily: MONO }}>
+                          <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, fontFamily: MONO }}>
                             {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                           </div>
                         ))}
@@ -434,13 +455,13 @@ export default function Tagihan({
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} />
-                        <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO }}>{fmtTxOp(tx)}</span>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
+                        {dateTap(tx)}
+                        <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
                           {rupiah(tx.total)}
                         </span>
                       </div>
                       {tx.items.map((it, i) => (
-                        <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
+                        <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
                           {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}

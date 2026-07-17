@@ -3,7 +3,7 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw,
 } from "lucide-react";
-import { t } from "../../lib/theme";
+import { t, NAV_HEIGHT } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
@@ -24,7 +24,7 @@ import type { MenuItem, Variant } from "../../types";
 export type MenuView = "po" | "menu";
 
 /* Tepi zigzag ala struk thermal — dipakai pratinjau PO & pengingat Simpan */
-const STRUK_ZIGZAG = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
+const STRUK_ZIGZAG = "polygon(0 4px, 4% 0, 8% 4px, 12% 0, 16% 4px, 20% 0, 24% 4px, 28% 0, 32% 4px, 36% 0, 40% 4px, 44% 0, 48% 4px, 52% 0, 56% 4px, 60% 0, 64% 4px, 68% 0, 72% 4px, 76% 0, 80% 4px, 84% 0, 88% 4px, 92% 0, 96% 4px, 100% 0, 100% calc(100% - 4px), 96% 100%, 92% calc(100% - 4px), 88% 100%, 84% calc(100% - 4px), 80% 100%, 76% calc(100% - 4px), 72% 100%, 68% calc(100% - 4px), 64% 100%, 60% calc(100% - 4px), 56% 100%, 52% calc(100% - 4px), 48% 100%, 44% calc(100% - 4px), 40% 100%, 36% calc(100% - 4px), 32% 100%, 28% calc(100% - 4px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 4px), 8% 100%, 4% calc(100% - 4px), 0 100%)";
 
 export default function MasterMenu({
   menus,
@@ -427,10 +427,10 @@ export default function MasterMenu({
           {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
             /* Pengingat Simpan gaya STRUK THERMAL — X nongol di pojok kanan
                atas membuka pilihan Batal / Buang Perubahan / Simpan. */
-            <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
-              <div style={{ position: "relative", maxWidth: 330, margin: "0 auto", filter: "drop-shadow(0 8px 22px rgba(47,42,36,.28))" }}>
+            <div style={{ position: "fixed", left: 20, right: 20, bottom: NAV_HEIGHT + 14, zIndex: 40, pointerEvents: "none" }}>
+              <div style={{ position: "relative", maxWidth: 330, margin: "0 auto", filter: "drop-shadow(0 8px 22px rgba(47,42,36,.28))", pointerEvents: "auto" }}>
                 <div style={{ background: t.surface, padding: "18px 16px 16px", textAlign: "center",
-                  fontFamily: "ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace",
+                  fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace",
                   fontWeight: 600, clipPath: STRUK_ZIGZAG }}>
                   <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: ".02em" }}>
                     {serviceDateLabel(tanggal).toUpperCase()}

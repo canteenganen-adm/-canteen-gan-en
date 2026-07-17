@@ -231,6 +231,12 @@ function useCanteenStore() {
     setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false } : tx)));
     updateTransaction(id, { paid: false }).catch((e) => reportError("unmarkPaid", e));
   };
+  /** Ubah Tanggal Layanan transaksi — untuk membetulkan entri yang terlanjur
+   * tercatat di tanggal yang salah (mis. input susulan yang lupa backdate). */
+  const changeTxDate = (id: string, date: string) => {
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, serviceDate: date } : tx)));
+    updateTransaction(id, { serviceDate: date }).catch((e) => reportError("changeTxDate", e));
+  };
   /** Batalkan Transaksi = soft-delete (set cancelled_at), BUKAN hapus permanen —
    * transaksi tetap ada untuk Riwayat/audit, hanya hilang dari daftar Belum Dibayar. */
   const cancelTransaction = (id: string) => {
@@ -394,7 +400,7 @@ function useCanteenStore() {
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
-    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer,
+    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
@@ -557,6 +563,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onCancel={store.cancelTransaction}
             onRestore={store.restoreTransaction}
             onMoveToTrash={store.moveToTrash}
+            onChangeDate={store.changeTxDate}
             onOpenSettings={openSettings}
           />
         )}
