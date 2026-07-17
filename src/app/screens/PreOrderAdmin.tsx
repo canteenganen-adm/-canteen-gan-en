@@ -257,8 +257,8 @@ export default function PreOrderAdmin({
               <button onClick={() => setSheet("gantiTanggal")}
                 className="flex items-center justify-center gap-2"
                 style={{ flex: 1, minHeight: 48, background: "transparent", border: "none", padding: 0, cursor: "pointer" }}>
-                <Calendar size={18} color={t.amberText} style={{ flex: "none" }} />
-                <span style={{ fontSize: 18, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, textAlign: "center" }}>
+                <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
+                <span style={{ fontSize: 21, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, textAlign: "center", lineHeight: 1.25 }}>
                   {serviceDateLabel(viewDate)}
                 </span>
               </button>
@@ -268,15 +268,11 @@ export default function PreOrderAdmin({
               </button>
             </div>
             {!lihatSesi && (
-              <div className="flex items-center justify-between" style={{ marginTop: 4, background: t.primaryLight, border: `1px solid ${t.primary}`, borderRadius: 10, padding: "6px 8px 6px 12px" }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: t.amberText }}>
-                  Melihat hari lain · sesi tetap {serviceDateLabel(serviceDate)}
-                </span>
-                <button onClick={() => setViewDate(serviceDate)}
-                  style={{ flex: "none", height: 32, padding: "0 12px", borderRadius: 999, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
-                  Ke Sesi
-                </button>
-              </div>
+              /* Satu baris kecil, tanpa kotak — tidak mengganggu widget */
+              <button onClick={() => setViewDate(serviceDate)}
+                style={{ display: "block", margin: "0 auto", background: "transparent", border: "none", minHeight: 34, padding: "2px 12px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                Ke Sesi · {serviceDateLabel(serviceDate)}
+              </button>
             )}
 
             {/* Otomatis tutup jam — "Ubah" buka widget jam besar, seluruhnya bisa diketuk */}
