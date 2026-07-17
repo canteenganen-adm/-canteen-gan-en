@@ -455,52 +455,65 @@ export default function MasterMenu({
         </div>
       </div>
 
-      {/* Pilihan saat menutup pengingat: Simpan / Buang Perubahan / Kembali */}
+      {/* Popup struk (TENGAH layar) saat menutup pengingat: Simpan / Buang / X */}
       {discardSheet && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setDiscardSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Perubahan belum disimpan</div>
-            <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.6, marginBottom: 18 }}>
-              Menu {serviceDateLabel(tanggal)} · <b style={{ color: t.text }}>{aktifCount} item aktif</b>. Mau diapakan?
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 20 }}>
+          <div onClick={() => setDiscardSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
+            <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
+              fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>PERUBAHAN BELUM DISIMPAN</div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              <div style={{ fontSize: 13 }}>{serviceDateLabel(tanggal).toUpperCase()}</div>
+              <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
+              <div style={{ display: "grid", gap: 8, marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <button onClick={() => { setDiscardSheet(false); setConfirmSave(true); }}
+                  style={{ height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Simpan
+                </button>
+                <button onClick={() => { setDraft({ ...seed }); setDiscardSheet(false); }}
+                  style={{ height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.errorBg, color: t.error, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Buang Perubahan
+                </button>
+              </div>
             </div>
-            <button onClick={() => { setDiscardSheet(false); setConfirmSave(true); }}
-              className="flex items-center justify-center gap-2"
-              style={{ width: "100%", height: 54, marginBottom: 10, borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-              <Check size={18} /> Simpan
-            </button>
-            <button onClick={() => { setDraft({ ...seed }); setDiscardSheet(false); }}
-              style={{ width: "100%", height: 54, marginBottom: 10, borderRadius: 13, border: `1.5px solid ${t.border}`, background: t.errorBg, color: t.error, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-              Buang Perubahan
-            </button>
-            <button onClick={() => setDiscardSheet(false)}
-              style={{ width: "100%", height: 54, borderRadius: 13, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              Batal
+            <button onClick={() => setDiscardSheet(false)} aria-label="Batal"
+              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+              <X size={19} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Konfirmasi Simpan Menu Harian */}
+      {/* Konfirmasi Simpan Menu Harian — popup struk TENGAH layar (Ya/Tidak) */}
       {confirmSave && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => !saving && setConfirmSave(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>Simpan menu untuk {serviceDateLabel(tanggal)}?</div>
-            <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.6 }}>
-              <b style={{ color: t.text }}>{aktifCount} item aktif</b> akan disimpan sebagai menu tanggal ini — inilah yang tampil ke orang tua.
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 20 }}>
+          <div onClick={() => !saving && setConfirmSave(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
+            <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
+              fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>SIMPAN MENU?</div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              <div style={{ fontSize: 13 }}>{serviceDateLabel(tanggal).toUpperCase()}</div>
+              <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
+              <div style={{ fontSize: 12, color: t.text2, marginTop: 8, lineHeight: 1.5 }}>Menu ini yang tampil ke orang tua.</div>
+              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <button onClick={() => setConfirmSave(false)} disabled={saving}
+                  style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Batal
+                </button>
+                <button onClick={doSave} disabled={saving}
+                  style={{ flex: 1, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                  {saving ? "Menyimpan…" : "Ya, Simpan"}
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2" style={{ marginTop: 20 }}>
-              <button onClick={() => setConfirmSave(false)} disabled={saving}
-                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                Batal
+            {!saving && (
+              <button onClick={() => setConfirmSave(false)} aria-label="Batal simpan"
+                style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+                <X size={19} />
               </button>
-              <button onClick={doSave} disabled={saving}
-                className="flex items-center justify-center gap-2"
-                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
-                <Check size={18} /> {saving ? "Menyimpan…" : "Ya, Simpan"}
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
