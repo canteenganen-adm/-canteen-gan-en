@@ -95,7 +95,14 @@ export default function Tagihan({
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [waDraft, setWaDraft] = useState<{ wa: string; text: string; txIds: string[] } | null>(null);
+  /** Draf WA. `siblings` = grup lain (anak lain) dengan nomor WA sama —
+   * ditawarkan digabung jadi SATU pesan supaya ortu tidak ditagih dua kali. */
+  const [waDraft, setWaDraft] = useState<{
+    wa: string; text: string; txIds: string[];
+    base: { customer: Transaction["customer"]; txs: Transaction[]; total: number };
+    siblings: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[];
+    merged: boolean;
+  } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
   const [trashConfirmTx, setTrashConfirmTx] = useState<Transaction | null>(null);
@@ -175,7 +182,9 @@ export default function Tagihan({
       g.total += tx.total;
       if (tx.createdAt > g.newestAt) { g.newestAt = tx.createdAt; g.customer = c; }
     }
-    return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
+    // Urut A–Z murni nama (tanpa kelas/tingkat) — mudah dicari saat daftar panjang
+    return Array.from(map.values()).sort((a, b) =>
+      a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
   }, [unpaid, q]);
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
@@ -196,7 +205,9 @@ export default function Tagihan({
       if (tx.createdAt > g.newestAt) g.newestAt = tx.createdAt;
     }
     for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
+    // Urut A–Z murni nama, konsisten dengan tab Belum Dibayar
+    return Array.from(map.values()).sort((a, b) =>
+      a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter]);
 
@@ -244,8 +255,11 @@ export default function Tagihan({
     </button>
   );
 
-  const buildWaMsg = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
-    const txBlocks = g.txs.map((tx) => {
+  /** Bangun pesan tagihan. 1 grup = format lama persis; >1 grup (kakak-adik
+   * satu nomor WA) = satu pesan dengan bagian per anak + Subtotal, lalu
+   * SATU Total Pembayaran gabungan. */
+  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[]) => {
+    const txBlocksOf = (g: (typeof gs)[number]) => g.txs.map((tx) => {
       const itemLines = tx.items
         .map((it) => `• ${it.name.trim()}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
@@ -258,12 +272,36 @@ export default function Tagihan({
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
-    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
+    const sections = gs.map((g) =>
+      `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
+    ).join("\n\n--------------------\n\n");
+    const total = gs.reduce((s, g) => s + g.total, 0);
+    return `${settings.waOpening}\n\n${sections}\nTotal Pembayaran: ${rupiah(total)}\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
     if (!wa) { setToast("Nomor WhatsApp belum ada untuk murid ini."); return; }
-    setWaDraft({ wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa, text: buildWaMsg(g), txIds: g.txs.map((tx) => tx.id) });
+    // Anak lain (nama beda) yang nomor WA-nya sama → tawarkan gabung tagihan
+    const siblings = groups.filter(
+      (o) => o.customer.nama.toLowerCase() !== g.customer.nama.toLowerCase()
+        && (o.customer.wa || "").replace(/\D/g, "") === wa
+    );
+    setWaDraft({
+      wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa,
+      text: buildWaMsg([g]),
+      txIds: g.txs.map((tx) => tx.id),
+      base: g, siblings, merged: false,
+    });
+  };
+  const toggleMergeWa = () => {
+    if (!waDraft) return;
+    const merged = !waDraft.merged;
+    const gs = merged ? [waDraft.base, ...waDraft.siblings] : [waDraft.base];
+    setWaDraft({
+      ...waDraft, merged,
+      text: buildWaMsg(gs),
+      txIds: gs.flatMap((g) => g.txs.map((tx) => tx.id)),
+    });
   };
   const sendWA = () => {
     if (!waDraft) return;
@@ -684,6 +722,24 @@ export default function Tagihan({
               <button onClick={() => setWaDraft(null)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
             <div style={{ fontSize: 12.5, color: t.text2, marginBottom: 10 }}>Periksa & edit sebelum dikirim.</div>
+            {waDraft.siblings.length > 0 && (
+              /* Kakak-adik satu nomor WA → tawarkan SATU pesan gabungan
+                 supaya ortu tidak menerima tagihan dua kali */
+              <button onClick={toggleMergeWa} className="flex items-center gap-3"
+                style={{ width: "100%", marginBottom: 10, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+                  border: `1.5px solid ${waDraft.merged ? t.primary : t.border}`,
+                  background: waDraft.merged ? t.primaryLight : t.surfaceSoft }}>
+                <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center",
+                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${waDraft.merged ? t.primary : t.border}`, color: t.text }}>
+                  {waDraft.merged && <Check size={16} />}
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: waDraft.merged ? t.amberText : t.text, lineHeight: 1.45 }}>
+                  {waDraft.merged
+                    ? `Tagihan digabung (${1 + waDraft.siblings.length} anak, satu pesan)`
+                    : `Nomor ini juga punya tagihan: ${waDraft.siblings.map((s) => `${toTitleCase(s.customer.nama)} (${s.customer.kelas || s.customer.tingkat})`).join(", ")} — ketuk untuk gabungkan`}
+                </span>
+              </button>
+            )}
             <textarea
               value={waDraft.text}
               onChange={(e) => setWaDraft({ ...waDraft, text: e.target.value })}
