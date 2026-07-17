@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Trash2,
   Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search, HelpCircle,
@@ -81,6 +81,32 @@ export default function PreOrderParent({
   const [showKelasSheet, setShowKelasSheet] = useState(false);
   const [form, setForm] = useState({ nama: "", tingkat: "", kelas: "", wa: "", ambil: defaultPickup });
   const [tried, setTried] = useState(false);
+
+  /* "Akun" tanpa akun: data pemesan yang berhasil dipakai DISIMPAN DI HP INI
+     (localStorage) — kunjungan berikutnya form terisi otomatis, dan kalau
+     satu HP dipakai untuk beberapa anak (kakak-adik) muncul pilihan cepat.
+     Tidak membaca data keluarga lain sama sekali → tanpa risiko salah tempel
+     nomor orang, tanpa akun, tanpa biaya. */
+  type SavedAnak = { nama: string; tingkat: string; kelas: string; wa: string };
+  const [savedAnak, setSavedAnak] = useState<SavedAnak[]>(() => {
+    try { return JSON.parse(localStorage.getItem("ganen_anak") || "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    // Prefill sekali dengan anak terakhir yang dipakai di HP ini
+    setForm((f) => {
+      if (f.nama || savedAnak.length === 0) return f;
+      const a = savedAnak[0];
+      return { ...f, nama: a.nama, tingkat: a.tingkat, kelas: a.kelas, wa: a.wa };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const pilihAnak = (a: SavedAnak) => setForm((f) => ({ ...f, nama: a.nama, tingkat: a.tingkat, kelas: a.kelas, wa: a.wa }));
+  const simpanAnak = (a: SavedAnak) => {
+    const key = (x: SavedAnak) => `${x.nama.trim().toLowerCase()}|${x.kelas.trim().toLowerCase()}`;
+    const next = [a, ...savedAnak.filter((x) => key(x) !== key(a))].slice(0, 4);
+    setSavedAnak(next);
+    try { localStorage.setItem("ganen_anak", JSON.stringify(next)); } catch { /* penuh/di-blok: abaikan */ }
+  };
   const [receipt, setReceipt] = useState<PreOrderReceipt | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -156,6 +182,7 @@ export default function PreOrderParent({
         total,
       };
       const confirmed = await onSubmit(r);
+      simpanAnak({ nama: form.nama.trim(), tingkat: form.tingkat, kelas: kelasNeeded ? form.kelas : "", wa: waDigits });
       setReceipt({ ...r, serviceDate: confirmed.serviceDate ? serviceDateLabel(confirmed.serviceDate) : serviceDate });
       setStep("done");
     } catch (e) {
@@ -294,6 +321,25 @@ export default function PreOrderParent({
           )}
 
           <SectionLabel>Data Pemesan</SectionLabel>
+          {savedAnak.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>
+                Pernah pesan di HP ini — ketuk untuk isi otomatis:
+              </div>
+              <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+                {savedAnak.map((a) => {
+                  const on = form.nama === a.nama && form.kelas === a.kelas;
+                  return (
+                    <button key={`${a.nama}|${a.kelas}`} onClick={() => pilihAnak(a)}
+                      style={{ height: 44, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: "pointer",
+                        border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                      {a.nama}{a.kelas ? ` · ${a.kelas}` : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <Field label="Nama" req err={tried && !form.nama.trim()}>
             <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Nama lengkap" style={inp(tried && !form.nama.trim())} />
           </Field>
