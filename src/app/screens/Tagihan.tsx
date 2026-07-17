@@ -4,7 +4,7 @@ import {
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, fmtWaDate, todayISO } from "../../lib/format";
+import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
 import { tingkatColor } from "../../lib/constants";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -239,6 +239,7 @@ export default function Tagihan({
           onChangeDate(tx.id, e.target.value);
           setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
         }}
+        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
         aria-label="Ubah Tanggal Layanan"
         style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
     </span>
@@ -249,13 +250,16 @@ export default function Tagihan({
       const itemLines = tx.items
         .map((it) => `• ${it.name.trim()}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
-      return `[${fmtWaDate(tx.createdAt)}]\n${itemLines}`;
+      // Tanggal di tagihan = TANGGAL LAYANAN; entri susulan tanpa jam input
+      const op = opDate(tx);
+      const tgl = tx.createdAt.slice(0, 10) === op ? fmtWaDate(tx.createdAt) : serviceDateLabel(op);
+      return `[${tgl}]\n${itemLines}`;
     }).join("\n\n");
     const bankLine = [settings.namaBank, settings.noRekening].filter(Boolean).join(" ");
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
-    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\n🪷 Gan En 🙏🏻✨`;
+    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\n🌸 Gan En 🙏🏻✨`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");

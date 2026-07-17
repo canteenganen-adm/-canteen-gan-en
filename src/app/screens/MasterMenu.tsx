@@ -436,12 +436,7 @@ export default function MasterMenu({
                     {serviceDateLabel(tanggal).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-                  <div style={{ fontSize: 12, fontWeight: 700, color: t.amberText, lineHeight: 1.5 }}>
-                    {snapshot === null
-                      ? "Belum pernah disimpan — ortu belum melihat menu tanggal ini"
-                      : "Belum disimpan — ortu masih melihat versi lama"}
-                  </div>
+                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0 0" }} />
                   <button onClick={() => setConfirmSave(true)}
                     style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15.5, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Simpan
