@@ -141,6 +141,18 @@ export default function MasterMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menus, draft, snapshot, isPast, menuHarianReady]);
 
+  // Refresh dengan umpan balik visual — ikon berputar sebentar supaya
+  // jelas bahwa data benar-benar diambil ulang
+  const [refreshing, setRefreshing] = useState(false);
+  const doRefresh = () => {
+    setRefreshing(true);
+    onLoadDate(tanggal);
+    setTimeout(() => setRefreshing(false), 900);
+  };
+
+  // Sheet pilihan saat menutup pengingat Simpan: Simpan / Buang / Kembali
+  const [discardSheet, setDiscardSheet] = useState(false);
+
   // Simpan (dengan konfirmasi) + toast hasil
   const [confirmSave, setConfirmSave] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -287,10 +299,14 @@ export default function MasterMenu({
                       <div style={{ fontSize: 16.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
                     </div>
                     {!isPast && (
-                      <button onClick={(e) => { e.stopPropagation(); onLoadDate(tanggal); }}
+                      <button onClick={(e) => { e.stopPropagation(); doRefresh(); }}
                         title="Refresh" aria-label="Refresh pratinjau"
-                        style={{ position: "relative", zIndex: 2, width: 40, height: 40, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.surface, color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                        <RefreshCw size={17} />
+                        style={{ position: "relative", zIndex: 2, width: 40, height: 40, borderRadius: 11,
+                          border: `1.5px solid ${refreshing ? t.primary : t.border}`,
+                          background: refreshing ? t.primaryLight : t.surface,
+                          color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                        <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+                        <RefreshCw size={17} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
                       </button>
                     )}
                     <input ref={dateRef} type="date" value={tanggal}
@@ -332,9 +348,17 @@ export default function MasterMenu({
                     const riwayat = isPast && menuHarianReady;
                     const kats = KATEGORI_ORTU_ORDER.filter((k) =>
                       riwayat ? byKat[k]?.length : (k !== KATEGORI_ORTU_FALLBACK || byKat[k]?.length));
-                    const strukHarga = (m: MenuItem) => m.variants.length
-                      ? `${Math.min(...m.variants.map((v) => v.price)).toLocaleString("id-ID")}+`
-                      : (m.price ?? 0).toLocaleString("id-ID");
+                    /* Format harga ala struk: ".000" jadi "k" (10.000 -> 10k).
+                       Varian ditulis berjejer "3k 5k 7k" (urutan S/M/L sesuai
+                       data); lebih dari 3 varian diringkas jadi rentang. */
+                    const hargaK = (n: number) => n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString("id-ID");
+                    const strukHarga = (m: MenuItem) => {
+                      if (!m.variants.length) return hargaK(m.price ?? 0);
+                      const ps = m.variants.map((v) => v.price);
+                      return ps.length <= 3
+                        ? ps.map(hargaK).join(" ")
+                        : `${hargaK(Math.min(...ps))}~${hargaK(Math.max(...ps))}`;
+                    };
                     const garis = (c: string) => (
                       <div style={{ overflow: "hidden", whiteSpace: "nowrap", color: t.textDis, userSelect: "none" }}>{c.repeat(72)}</div>
                     );
@@ -399,24 +423,24 @@ export default function MasterMenu({
               disimpan ATAU tanggal terpilih belum pernah disimpan. */}
           {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
             <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
-              <div className="flex items-center gap-3" style={{ background: "#FFF4DA", border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "10px 12px", boxShadow: "0 6px 20px rgba(47,42,36,.14)" }}>
+              <div className="flex items-center gap-3" style={{ background: "#FFF4DA", border: `1.5px solid ${t.primary}`, borderRadius: 16, padding: "14px 14px", boxShadow: "0 8px 24px rgba(47,42,36,.18)" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)} · {aktifCount} item</div>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: t.amberText }}>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)} · {aktifCount} item</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: t.amberText, marginTop: 2 }}>
                     {snapshot === null
                       ? "Belum pernah disimpan — ortu belum melihat menu tanggal ini"
                       : "Belum disimpan — ortu masih melihat versi lama"}
                   </div>
                 </div>
                 {dailyDirty && (
-                  <button onClick={() => setDraft({ ...seed })}
-                    title="Batalkan perubahan" aria-label="Batalkan perubahan"
-                    style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                    <X size={16} />
+                  <button onClick={() => setDiscardSheet(true)}
+                    title="Tutup pengingat" aria-label="Tutup pengingat"
+                    style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                    <X size={20} />
                   </button>
                 )}
                 <button onClick={() => setConfirmSave(true)}
-                  style={{ height: 48, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 14, cursor: "pointer", flex: "none" }}>
+                  style={{ height: 52, padding: "0 20px", borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", flex: "none" }}>
                   Simpan
                 </button>
               </div>
@@ -424,6 +448,32 @@ export default function MasterMenu({
           )}
         </div>
       </div>
+
+      {/* Pilihan saat menutup pengingat: Simpan / Buang Perubahan / Kembali */}
+      {discardSheet && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setDiscardSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 24, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Perubahan belum disimpan</div>
+            <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.6, marginBottom: 18 }}>
+              Menu {serviceDateLabel(tanggal)} · <b style={{ color: t.text }}>{aktifCount} item aktif</b>. Mau diapakan?
+            </div>
+            <button onClick={() => { setDiscardSheet(false); setConfirmSave(true); }}
+              className="flex items-center justify-center gap-2"
+              style={{ width: "100%", height: 54, marginBottom: 10, borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              <Check size={18} /> Simpan
+            </button>
+            <button onClick={() => { setDraft({ ...seed }); setDiscardSheet(false); }}
+              style={{ width: "100%", height: 54, marginBottom: 10, borderRadius: 13, border: `1.5px solid ${t.border}`, background: t.errorBg, color: t.error, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              Buang Perubahan
+            </button>
+            <button onClick={() => setDiscardSheet(false)}
+              style={{ width: "100%", height: 54, borderRadius: 13, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              Kembali
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Konfirmasi Simpan Menu Harian */}
       {confirmSave && (

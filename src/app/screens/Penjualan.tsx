@@ -405,8 +405,8 @@ export default function Penjualan({
       {billing && (
         <Sheet onClose={() => setBilling(false)} title="Masuk Tagihan">
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Catat atas nama siapa tagihannya:</div>
-          <Field label="Nama Siswa" req tried={tried} val={form.nama}>
-            <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="cth. Aisyah Putri" style={inputStyle(tried && !form.nama.trim())} />
+          <Field label="Nama Lengkap" req tried={tried} val={form.nama}>
+            <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
             {/* Saran dari riwayat transaksi — satu ketuk mengisi nama, tingkat,
                 kelas, dan nomor WA sekaligus (permintaan Mama: tidak perlu
                 mengetik nomor WA satu per satu lagi) */}
@@ -465,7 +465,7 @@ export default function Penjualan({
               )}
             </Field>
           )}
-          <Field label="WhatsApp (opsional)">
+          <Field label="WhatsApp">
             <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inputStyle(false)} />
           </Field>
           <button onClick={submitTagihan} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
