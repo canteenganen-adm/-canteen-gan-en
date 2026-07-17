@@ -16,6 +16,10 @@ import type { Transaction, CanteenSettings } from "../../types";
    ============================================================ */
 
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+/** Rincian transaksi (tanggal · item · harga) pakai font thermal/mono
+ * seperti struk PO — kontras dengan Jakarta Sans di kartu info anak,
+ * supaya fokus tidak terbagi. */
+const MONO = "ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 /** Label transaksi memakai TANGGAL OPERASIONAL (Tanggal Layanan), bukan
  * tanggal input — transaksi susulan tgl 14 yang diketik tgl 16 tampil
  * "14 Jul · dicatat 16/07", bukan "16 Jul". */
@@ -348,18 +352,18 @@ export default function Tagihan({
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
                           <SourceTag source={tx.source} />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTxOp(tx)}</span>
+                          <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO }}>{fmtTxOp(tx)}</span>
                         </div>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: t.text2 }}>{rupiah(tx.total)}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontFamily: MONO }}>{rupiah(tx.total)}</span>
                       </div>
                       <div style={{ marginBottom: 12 }}>
                         {tx.items.map((it, i) => (
-                          <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.65 }}>
+                          <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, fontFamily: MONO }}>
                             {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                           </div>
                         ))}
                         {tx.waktuAmbil && (
-                          <div style={{ fontSize: 13, color: t.text2, marginTop: 4 }}>{tx.waktuAmbil}</div>
+                          <div style={{ fontSize: 12, color: t.text2, marginTop: 4, fontFamily: MONO }}>{tx.waktuAmbil}</div>
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -430,13 +434,13 @@ export default function Tagihan({
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTxOp(tx)}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO }}>{fmtTxOp(tx)}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
                           {rupiah(tx.total)}
                         </span>
                       </div>
                       {tx.items.map((it, i) => (
-                        <div key={i} style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.65, color: cancelled ? t.text2 : t.text }}>
+                        <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
                           {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}
