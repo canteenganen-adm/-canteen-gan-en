@@ -492,19 +492,21 @@ export default function MasterMenu({
           <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
             <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
               fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 800 }}>SIMPAN MENU?</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>UPDATE MENU</div>
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-              <div style={{ fontSize: 13 }}>{serviceDateLabel(tanggal).toUpperCase()}</div>
+              <div className="flex items-center justify-center gap-1.5" style={{ fontSize: 13 }}>
+                <Calendar size={14} color={t.amberText} style={{ flex: "none" }} />
+                {serviceDateLabel(tanggal).toUpperCase()}
+              </div>
               <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-              <div style={{ fontSize: 12, color: t.text2, marginTop: 8, lineHeight: 1.5 }}>Menu ini yang tampil ke orang tua.</div>
               <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 <button onClick={() => setConfirmSave(false)} disabled={saving}
                   style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                   Batal
                 </button>
                 <button onClick={doSave} disabled={saving}
-                  style={{ flex: 1, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
-                  {saving ? "Menyimpan…" : "Ya, Simpan"}
+                  style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                  {saving ? "Menyimpan…" : "Simpan"}
                 </button>
               </div>
             </div>
