@@ -454,13 +454,14 @@ function MainShell({ store }: { store: CanteenStore }) {
   const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
 
-  /* Double-tap ikon tab yang sedang aktif = refresh data (ambil ulang
-     semua dari server) + toast kecil supaya jelas sudah diperbarui. */
+  /* Double-tap ikon tab yang sedang aktif = scroll ke atas + refresh data
+     (ambil ulang semua dari server) + toast kecil di atas. */
   const lastNavTap = useRef<{ id: Tab; at: number }>({ id: "preorder", at: 0 });
   const [refreshedToast, setRefreshedToast] = useState(false);
   const tapNav = (id: Tab) => {
     const now = Date.now();
     if (tab === id && lastNavTap.current.id === id && now - lastNavTap.current.at < 500) {
+      contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
       store.reload();
       setRefreshedToast(true);
       setTimeout(() => setRefreshedToast(false), 1600);
@@ -635,10 +636,11 @@ function MainShell({ store }: { store: CanteenStore }) {
         </div>
       )}
 
-      {/* Toast refresh dari double-tap nav */}
+      {/* Toast refresh dari double-tap nav — di ATAS, searah dengan
+          scroll-ke-atas yang menyertai refresh */}
       {refreshedToast && (
-        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 75, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
-          <div style={{ background: t.text, color: "#FBF7EF", borderRadius: 12, padding: "10px 16px", fontSize: 13.5, fontWeight: 700 }}>
+        <div style={{ position: "fixed", left: 20, right: 20, top: 18, zIndex: 75, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ background: t.text, color: "#FBF7EF", borderRadius: 12, padding: "10px 16px", fontSize: 13.5, fontWeight: 700, boxShadow: "0 8px 24px rgba(47,42,36,.25)" }}>
             Data diperbarui
           </div>
         </div>

@@ -35,9 +35,9 @@ const fmtTxOp = (tx: Transaction) => {
 const groupKey = (c: Transaction["customer"]) =>
   `${c.nama.toLowerCase()}|${(c.wa || "").toLowerCase()}`;
 
-type Tab = "unpaid" | "riwayat";
+type Tab = "unpaid" | "riwayat" | "batal";
 type SourceFilter = "semua" | "preorder" | "penjualan";
-type DateFilter = "semua" | "hari" | "7" | "30" | "rentang";
+type DateFilter = "semua" | "hari" | "7" | "tanggal";
 
 /** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
  * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
@@ -71,11 +71,9 @@ export default function Tagihan({
   const [tab, setTab] = useState<Tab>("unpaid");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("semua");
   const [dateFilter, setDateFilter] = useState<DateFilter>("semua");
-  /** Sub-filter tab Lunas: default hanya Lunas asli (total murni);
-   * "Dibatalkan" menampilkan transaksi batal dengan Pulihkan/Hapus. */
-  const [riwayatFilter, setRiwayatFilter] = useState<"lunas" | "batal">("lunas");
-  const [rangeFrom, setRangeFrom] = useState("");
-  const [rangeTo, setRangeTo] = useState("");
+  /** Tab Dibatalkan berdiri sendiri; kode grup riwayat dipakai bersama. */
+  const riwayatFilter: "lunas" | "batal" = tab === "batal" ? "batal" : "lunas";
+  const [pickDate, setPickDate] = useState("");
   const [dateSheet, setDateSheet] = useState(false);
 
   const fmtShort = (d: string) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "…");
@@ -83,8 +81,7 @@ export default function Tagihan({
     dateFilter === "semua" ? "Tanggal"
       : dateFilter === "hari" ? "Hari Ini"
       : dateFilter === "7" ? "7 Hari"
-      : dateFilter === "30" ? "30 Hari"
-      : rangeFrom || rangeTo ? `${fmtShort(rangeFrom)}–${fmtShort(rangeTo)}` : "Rentang";
+      : pickDate ? fmtShort(pickDate) : "Pilih Tanggal";
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -135,15 +132,13 @@ export default function Tagihan({
   const bySource = (tx: Transaction) => sourceFilter === "semua" || tx.source === sourceFilter;
 
   /* Filter tanggal operasional — murni tampilan baca, tidak menyentuh
-     sesi PO. Rentang custom: kosong salah satu = terbuka di sisi itu. */
+     sesi PO. */
   const byDate = (tx: Transaction) => {
     if (dateFilter === "semua") return true;
     const d = opDate(tx);
     if (dateFilter === "hari") return d === todayISO();
     if (dateFilter === "7") return d >= isoShift(6) && d <= todayISO();
-    if (dateFilter === "30") return d >= isoShift(29) && d <= todayISO();
-    if (!rangeFrom && !rangeTo) return true;
-    return (!rangeFrom || d >= rangeFrom) && (!rangeTo || d <= rangeTo);
+    return !pickDate || d === pickDate;
   };
   const matchQuery = (nama: string, kelas: string, wa?: string) => {
     const ql = q.toLowerCase().trim();
@@ -154,7 +149,7 @@ export default function Tagihan({
   const unpaid = useMemo(
     () => transactions.filter((x) => !x.paid && !x.cancelledAt && bySource(x) && byDate(x)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, sourceFilter, dateFilter, rangeFrom, rangeTo]
+    [transactions, sourceFilter, dateFilter, pickDate]
   );
 
   /* Grupkan Belum Dibayar per Nama + WA, urutkan grup: terbaru di atas */
@@ -193,7 +188,7 @@ export default function Tagihan({
     for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return Array.from(map.values()).sort((a, b) => b.newestAt.localeCompare(a.newestAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo, riwayatFilter]);
+  }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter]);
 
   // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
   const historyMasuk = useMemo(
@@ -201,7 +196,13 @@ export default function Tagihan({
       .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa))
       .reduce((s, x) => s + x.total, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, sourceFilter, q, dateFilter, rangeFrom, rangeTo]
+    [transactions, sourceFilter, q, dateFilter, pickDate]
+  );
+
+  // Total tab Dibatalkan (abu-abu, sekadar informasi)
+  const batalTotal = useMemo(
+    () => (tab === "batal" ? riwayatGroups.reduce((s, g) => s + g.txs.reduce((s2, tx) => s2 + tx.total, 0), 0) : 0),
+    [tab, riwayatGroups]
   );
 
   const markPaid = (tx: Transaction) => { onMarkPaid(tx.id); setUndo({ type: "paid", tx }); };
@@ -252,9 +253,11 @@ export default function Tagihan({
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
           <div className="flex items-center gap-2">
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{tab === "unpaid" ? "Total Belum Dibayar" : "Masuk (Lunas)"}</div>
-              <div style={{ fontSize: 14.5, fontWeight: 800, color: tab === "unpaid" ? t.amberText : t.successText }}>
-                {rupiah(tab === "unpaid" ? grandTotal : historyMasuk)}
+              <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>
+                {tab === "unpaid" ? "Total Belum Dibayar" : tab === "riwayat" ? "Masuk (Lunas)" : "Dibatalkan"}
+              </div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: tab === "unpaid" ? t.amberText : tab === "riwayat" ? t.successText : t.text2 }}>
+                {rupiah(tab === "unpaid" ? grandTotal : tab === "riwayat" ? historyMasuk : batalTotal)}
               </div>
             </div>
             <button onClick={onOpenSettings} aria-label="Pengaturan"
@@ -268,8 +271,9 @@ export default function Tagihan({
         <div style={{ padding: "4px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <PaperTabs
             tabs={[
-              { id: "unpaid", label: <><Wallet size={14} /> Belum Dibayar</> },
-              { id: "riwayat", label: <><History size={14} /> Lunas</> },
+              { id: "unpaid", label: "Belum Dibayar" },
+              { id: "riwayat", label: "Lunas" },
+              { id: "batal", label: "Dibatalkan" },
             ]}
             value={tab}
             onChange={setTab}
@@ -296,21 +300,6 @@ export default function Tagihan({
                 </button>
               );
             })}
-            {tab === "riwayat" && (
-              <>
-                <span style={{ width: 1, height: 18, background: t.border, margin: "0 3px", flex: "none" }} />
-                {([["lunas", "Lunas"], ["batal", "Dibatalkan"]] as const).map(([val, label]) => {
-                  const on = riwayatFilter === val;
-                  return (
-                    <button key={val} onClick={() => setRiwayatFilter(val)}
-                      style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: "pointer",
-                        border: `1px solid ${on ? t.primary : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </>
-            )}
             <span style={{ flex: 1 }} />
             <button onClick={() => setDateSheet(true)}
               className="flex items-center gap-1"
@@ -405,16 +394,16 @@ export default function Tagihan({
           </div>
         )}
 
-        {/* ---- Tab: Lunas ---- */}
-        {tab === "riwayat" && (
+        {/* ---- Tab: Lunas & Dibatalkan (render sama, isi beda) ---- */}
+        {tab !== "unpaid" && (
           <div style={{ padding: "4px 20px" }}>
             {riwayatGroups.length === 0 ? (
               <div style={{ textAlign: "center", padding: "56px 20px" }}>
                 <div style={{ width: 60, height: 60, borderRadius: 16, background: t.surfaceSoft, color: t.text2, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
-                  <History size={28} />
+                  {tab === "batal" ? <Ban size={28} /> : <History size={28} />}
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : "Belum ada riwayat"}</div>
-                <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Transaksi Lunas & Dibatalkan akan muncul di sini."}</div>
+                <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : tab === "batal" ? "Tidak ada yang dibatalkan" : "Belum ada riwayat"}</div>
+                <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : tab === "batal" ? "Transaksi yang dibatalkan akan muncul di sini." : "Transaksi Lunas akan muncul di sini."}</div>
               </div>
             ) : riwayatGroups.map((g) => (
               <div key={groupKey(g.customer)} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
@@ -521,11 +510,11 @@ export default function Tagihan({
               <div style={{ fontSize: 18, fontWeight: 800 }}>Filter Tanggal</div>
               <button onClick={() => setDateSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
-            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["30", "30 Hari Terakhir"], ["rentang", "Pilih Rentang"]] as const).map(([val, label]) => {
+            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["tanggal", "Pilih Tanggal"]] as const).map(([val, label]) => {
               const on = dateFilter === val;
               return (
                 <button key={val}
-                  onClick={() => { setDateFilter(val); if (val !== "rentang") setDateSheet(false); }}
+                  onClick={() => { setDateFilter(val); if (val !== "tanggal") setDateSheet(false); }}
                   className="flex items-center justify-between"
                   style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{label}</span>
@@ -533,22 +522,11 @@ export default function Tagihan({
                 </button>
               );
             })}
-            {dateFilter === "rentang" && (
-              <>
-                <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
-                  <input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)}
-                    aria-label="Dari tanggal"
-                    style={{ flex: 1, height: 46, fontSize: 14, fontWeight: 600, color: rangeFrom ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 11, padding: "0 10px", fontFamily: "inherit" }} />
-                  <span style={{ fontSize: 13, color: t.text2, flex: "none" }}>s/d</span>
-                  <input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)}
-                    aria-label="Sampai tanggal"
-                    style={{ flex: 1, height: 46, fontSize: 14, fontWeight: 600, color: rangeTo ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 11, padding: "0 10px", fontFamily: "inherit" }} />
-                </div>
-                <button onClick={() => setDateSheet(false)}
-                  style={{ width: "100%", height: 50, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-                  Terapkan
-                </button>
-              </>
+            {dateFilter === "tanggal" && (
+              <input type="date" value={pickDate}
+                onChange={(e) => { setPickDate(e.target.value); if (e.target.value) setDateSheet(false); }}
+                aria-label="Pilih tanggal"
+                style={{ width: "100%", height: 50, marginTop: 4, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
             )}
           </div>
         </div>
