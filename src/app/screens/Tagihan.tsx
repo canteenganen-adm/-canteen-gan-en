@@ -400,17 +400,9 @@ export default function Tagihan({
                         {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3" style={{ marginTop: 4, flexWrap: "wrap" }}>
+                    <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
                       {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
                       <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
-                      {g.txs.every((tx) => tx.billedAt) && (() => {
-                        const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
-                        return (
-                          <span className="flex items-center gap-1" style={{ fontSize: 11.5, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: t.successBg, color: t.successText, border: "1px solid #D8E6D4" }}>
-                            <Share2 size={11} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
-                          </span>
-                        );
-                      })()}
                     </div>
                   </button>
 
@@ -454,10 +446,24 @@ export default function Tagihan({
                   {/* Footer aksi — ikon kompak rata kanan, supaya deret kartu
                       tidak ramai oleh tombol besar yang berulang-ulang */}
                   <div className="flex items-center justify-end gap-2" style={{ padding: "10px 16px", borderTop: `1px solid ${t.divider}` }}>
-                    <button onClick={() => shareWA(g)} title="Bagikan WA" aria-label="Bagikan WA"
-                      style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                      <Share2 size={18} />
-                    </button>
+                    {/* Tombol share BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan
+                        dikirim via WA — sekali lihat tahu belum/sudah ditagih.
+                        Tetap bisa diketuk untuk mengirim ulang. */}
+                    {g.txs.every((tx) => tx.billedAt) ? (() => {
+                      const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
+                      return (
+                        <button onClick={() => shareWA(g)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Bagikan WA"
+                          className="flex items-center gap-1.5"
+                          style={{ height: 44, padding: "0 14px", borderRadius: 12, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 13, flex: "none" }}>
+                          <Share2 size={15} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                        </button>
+                      );
+                    })() : (
+                      <button onClick={() => shareWA(g)} title="Bagikan WA" aria-label="Bagikan WA"
+                        style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                        <Share2 size={18} />
+                      </button>
+                    )}
                     <button onClick={() => setConfirmLunas(g)}
                       style={{ height: 44, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, cursor: "pointer", fontWeight: 800, fontSize: 14, flex: "none" }}>
                       Lunaskan
