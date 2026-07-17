@@ -53,7 +53,9 @@ type MergedGroup = {
 function mergeOrders(list: AdminOrder[]): MergedGroup[] {
   const map = new Map<string, MergedGroup & { _orders: AdminOrder[] }>();
   for (const o of list) {
-    const key = `${o.nama.toLowerCase()}|${o.kelas.toLowerCase()}`;
+    // Nama dinormalkan (spasi ganda/ujung) supaya pesanan anak yang sama
+    // tidak pecah jadi dua kartu hanya karena beda ketikan spasi
+    const key = `${o.nama.trim().replace(/\s+/g, " ").toLowerCase()}|${o.kelas.trim().toLowerCase()}`;
     if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, flatItems: [], perOrder: [], total: 0, _orders: [] });
     const g = map.get(key)!;
     g.ids.push(o.id);

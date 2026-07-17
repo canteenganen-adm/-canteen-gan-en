@@ -38,8 +38,40 @@ const fmtTxOp = (tx: Transaction) => {
   }
   return `${base} · dicatat ${created.slice(8, 10)}/${created.slice(5, 7)}`;
 };
-const groupKey = (c: Transaction["customer"]) =>
-  `${c.nama.toLowerCase()}|${(c.wa || "").toLowerCase()}`;
+/** Nomor WA dinormalkan: hanya angka; "62…" dan "8…" (lupa 0) disamakan
+ * jadi format "08…" — untuk deteksi kakak-adik satu nomor. */
+const normWa = (wa?: string) => {
+  let d = (wa || "").replace(/\D/g, "");
+  if (d.startsWith("62")) d = "0" + d.slice(2);
+  else if (d.startsWith("8")) d = "0" + d;
+  return d;
+};
+/** Kunci grup = NAMA + KELAS (identitas anak), BUKAN nomor WA — ortu sering
+ * salah ketik nomor (kurang 0, angka kebalik) dan itu sempat memecah anak
+ * yang sama jadi beberapa kartu. Nama dinormalkan dari spasi ganda/ujung. */
+const normNama = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+const normKelas = (c: Transaction["customer"]) => (c.kelas || c.tingkat || "").replace(/\s+/g, "").toLowerCase();
+const groupKey = (c: Transaction["customer"]) => `${normNama(c.nama)}|${normKelas(c)}`;
+
+/** Gabungkan transaksi jadi kartu per ANAK dengan aturan ganda:
+ * nama sama + (kelas cocok ATAU nomor WA cocok) = anak yang sama.
+ * Menutup dua sumber dobel sekaligus: ortu salah ketik nomor (kurang 0,
+ * angka kebalik) DAN ortu salah ketik kelas (6A vs "6 B") — selama salah
+ * satunya masih cocok, kartu tetap SATU. Kartu memakai data ketikan terbaru. */
+function unionGroups(txs: Transaction[]) {
+  type G = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; _nama: string; _kelas: Set<string>; _wa: Set<string> };
+  const list: G[] = [];
+  for (const tx of txs) {
+    const c = tx.customer;
+    const nn = normNama(c.nama); const kn = normKelas(c); const wn = normWa(c.wa);
+    let g = list.find((x) => x._nama === nn && (x._kelas.has(kn) || (!!wn && x._wa.has(wn))));
+    if (!g) { g = { customer: c, txs: [], newestAt: tx.createdAt, _nama: nn, _kelas: new Set(), _wa: new Set() }; list.push(g); }
+    g.txs.push(tx);
+    g._kelas.add(kn); if (wn) g._wa.add(wn);
+    if (tx.createdAt >= g.newestAt) { g.newestAt = tx.createdAt; g.customer = c; }
+  }
+  return list;
+}
 
 type Tab = "unpaid" | "riwayat" | "batal";
 type SourceFilter = "semua" | "preorder" | "penjualan";
@@ -169,45 +201,29 @@ export default function Tagihan({
     [transactions, sourceFilter, dateFilter, pickDate]
   );
 
-  /* Grupkan Belum Dibayar per Nama + WA, urutkan grup: terbaru di atas */
+  /* Grupkan Belum Dibayar per ANAK (aturan ganda unionGroups), urut A–Z */
   const groups = useMemo(() => {
-    const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; total: number; newestAt: string }>();
-    for (const tx of unpaid) {
-      const c = tx.customer;
-      if (!matchQuery(c.nama, c.kelas, c.wa)) continue;
-      const key = groupKey(c);
-      if (!map.has(key)) map.set(key, { customer: c, txs: [], total: 0, newestAt: tx.createdAt });
-      const g = map.get(key)!;
-      g.txs.push(tx);
-      g.total += tx.total;
-      if (tx.createdAt > g.newestAt) { g.newestAt = tx.createdAt; g.customer = c; }
-    }
-    // Urut A–Z murni nama (tanpa kelas/tingkat) — mudah dicari saat daftar panjang
-    return Array.from(map.values()).sort((a, b) =>
-      a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
+    const filtered = unpaid.filter((tx) => matchQuery(tx.customer.nama, tx.customer.kelas, tx.customer.wa));
+    return unionGroups(filtered)
+      .map((g) => ({ customer: g.customer, txs: g.txs, newestAt: g.newestAt, total: g.txs.reduce((s, tx) => s + tx.total, 0) }))
+      .sort((a, b) => a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
   }, [unpaid, q]);
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
 
-  /* Grupkan Lunas per Nama + WA */
+  /* Grupkan Lunas/Dibatalkan per ANAK (aturan ganda unionGroups), urut A–Z */
   const riwayatGroups = useMemo(() => {
     const done = transactions.filter(
       (x) => (riwayatFilter === "lunas" ? (x.paid && !x.cancelledAt) : !!x.cancelledAt)
         && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
     );
-    const map = new Map<string, { customer: Transaction["customer"]; txs: Transaction[]; totalMasuk: number; newestAt: string }>();
-    for (const tx of done) {
-      const key = groupKey(tx.customer);
-      if (!map.has(key)) map.set(key, { customer: tx.customer, txs: [], totalMasuk: 0, newestAt: tx.createdAt });
-      const g = map.get(key)!;
-      g.txs.push(tx);
-      if (tx.paid && !tx.cancelledAt) g.totalMasuk += tx.total;
-      if (tx.createdAt > g.newestAt) g.newestAt = tx.createdAt;
-    }
-    for (const g of map.values()) g.txs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    // Urut A–Z murni nama, konsisten dengan tab Belum Dibayar
-    return Array.from(map.values()).sort((a, b) =>
-      a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
+    return unionGroups(done)
+      .map((g) => ({
+        customer: g.customer, newestAt: g.newestAt,
+        txs: [...g.txs].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        totalMasuk: g.txs.reduce((s, tx) => s + (tx.paid && !tx.cancelledAt ? tx.total : 0), 0),
+      }))
+      .sort((a, b) => a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter]);
 
@@ -282,9 +298,10 @@ export default function Tagihan({
     const wa = g.customer.wa?.replace(/\D/g, "");
     if (!wa) { setToast("Nomor WhatsApp belum ada untuk murid ini."); return; }
     // Anak lain (nama beda) yang nomor WA-nya sama → tawarkan gabung tagihan
+    const meNama = g.customer.nama.trim().replace(/\s+/g, " ").toLowerCase();
     const siblings = groups.filter(
-      (o) => o.customer.nama.toLowerCase() !== g.customer.nama.toLowerCase()
-        && (o.customer.wa || "").replace(/\D/g, "") === wa
+      (o) => o.customer.nama.trim().replace(/\s+/g, " ").toLowerCase() !== meNama
+        && normWa(o.customer.wa) === normWa(g.customer.wa)
     );
     setWaDraft({
       wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa,
