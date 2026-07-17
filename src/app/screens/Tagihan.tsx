@@ -20,6 +20,8 @@ const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","
  * seperti struk PO — kontras dengan Jakarta Sans di kartu info anak,
  * supaya fokus tidak terbagi. */
 const MONO = "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
+/* Tepi zigzag struk thermal — dipakai popup rincian & konfirmasi Lunaskan */
+const ZIGZAG = "polygon(0 4px, 4% 0, 8% 4px, 12% 0, 16% 4px, 20% 0, 24% 4px, 28% 0, 32% 4px, 36% 0, 40% 4px, 44% 0, 48% 4px, 52% 0, 56% 4px, 60% 0, 64% 4px, 68% 0, 72% 4px, 76% 0, 80% 4px, 84% 0, 88% 4px, 92% 0, 96% 4px, 100% 0, 100% calc(100% - 4px), 96% 100%, 92% calc(100% - 4px), 88% 100%, 84% calc(100% - 4px), 80% 100%, 76% calc(100% - 4px), 72% 100%, 68% calc(100% - 4px), 64% 100%, 60% calc(100% - 4px), 56% 100%, 52% calc(100% - 4px), 48% 100%, 44% calc(100% - 4px), 40% 100%, 36% calc(100% - 4px), 32% 100%, 28% calc(100% - 4px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 4px), 8% 100%, 4% calc(100% - 4px), 0 100%)";
 /** Label transaksi memakai TANGGAL OPERASIONAL (Tanggal Layanan), bukan
  * tanggal input — transaksi susulan tgl 14 yang diketik tgl 16 tampil
  * "14 Jul · dicatat 16/07", bukan "16 Jul". */
@@ -62,6 +64,7 @@ export default function Tagihan({
   onRestore,
   onMoveToTrash,
   onChangeDate,
+  onMarkBilled,
   onOpenSettings,
 }: {
   transactions: Transaction[];
@@ -72,6 +75,7 @@ export default function Tagihan({
   onRestore: (tx: Transaction) => void;
   onMoveToTrash: (id: string) => void;
   onChangeDate: (id: string, date: string) => void;
+  onMarkBilled: (ids: string[]) => void;
   onOpenSettings: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
@@ -91,7 +95,7 @@ export default function Tagihan({
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [waDraft, setWaDraft] = useState<{ wa: string; text: string } | null>(null);
+  const [waDraft, setWaDraft] = useState<{ wa: string; text: string; txIds: string[] } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
   const [trashConfirmTx, setTrashConfirmTx] = useState<Transaction | null>(null);
@@ -225,24 +229,19 @@ export default function Tagihan({
     setUndo(null);
   };
 
-  /** Tanggal transaksi yang BISA DIKETUK — membetulkan Tanggal Layanan untuk
-   * entri yang terlanjur tercatat di tanggal salah. Garis putus-putus =
-   * penanda bisa diedit; seluruh area tanggal membuka picker (input overlay). */
+  /* Popup struk per transaksi: ketuk baris tanggal → rincian (untuk hari apa,
+     dicatat kapan) + tombol Ubah Tanggal Layanan. detailTx menyimpan SNAPSHOT
+     objek transaksi, jadi reload realtime tidak menutup picker (fix iOS). */
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null);
+  const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number } | null>(null);
+
   const dateTap = (tx: Transaction) => (
-    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", padding: "6px 4px", margin: "-6px -4px" }}>
+    <button onClick={() => setDetailTx(tx)}
+      style={{ background: "transparent", border: "none", padding: "10px 4px", margin: "-10px -4px", cursor: "pointer", minHeight: 44, display: "inline-flex", alignItems: "center" }}>
       <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO, borderBottom: `1.5px dashed ${t.border}`, paddingBottom: 1 }}>
         {fmtTxOp(tx)}
       </span>
-      <input type="date" value={opDate(tx)} max={todayISO()}
-        onChange={(e) => {
-          if (!e.target.value) return;
-          onChangeDate(tx.id, e.target.value);
-          setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
-        }}
-        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
-        aria-label="Ubah Tanggal Layanan"
-        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-    </span>
+    </button>
   );
 
   const buildWaMsg = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
@@ -259,16 +258,17 @@ export default function Tagihan({
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
-    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\n🌸 Gan En 🙏🏻✨`;
+    return `${settings.waOpening}\n\nNama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocks}\nTotal Pembayaran: ${rupiah(g.total)}\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
     if (!wa) { setToast("Nomor WhatsApp belum ada untuk murid ini."); return; }
-    setWaDraft({ wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa, text: buildWaMsg(g) });
+    setWaDraft({ wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa, text: buildWaMsg(g), txIds: g.txs.map((tx) => tx.id) });
   };
   const sendWA = () => {
     if (!waDraft) return;
     window.open(`https://wa.me/${waDraft.wa}?text=${encodeURIComponent(waDraft.text)}`, "_blank");
+    onMarkBilled(waDraft.txIds); // penanda "sudah ditagih" — sinkron antar gadget
     setWaDraft(null);
   };
 
@@ -362,9 +362,17 @@ export default function Tagihan({
                         {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
+                    <div className="flex items-center gap-3" style={{ marginTop: 4, flexWrap: "wrap" }}>
                       {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
                       <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
+                      {g.txs.every((tx) => tx.billedAt) && (() => {
+                        const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
+                        return (
+                          <span className="flex items-center gap-1" style={{ fontSize: 11.5, fontWeight: 700, padding: "2px 9px", borderRadius: 999, background: t.successBg, color: t.successText, border: "1px solid #D8E6D4" }}>
+                            <Share2 size={11} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </button>
 
@@ -412,9 +420,9 @@ export default function Tagihan({
                       style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
                       <Share2 size={18} />
                     </button>
-                    <button onClick={() => g.txs.forEach(markPaid)} title="Lunaskan Semua" aria-label="Lunaskan Semua"
-                      style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                      <Wallet size={18} />
+                    <button onClick={() => setConfirmLunas(g)}
+                      style={{ height: 44, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, cursor: "pointer", fontWeight: 800, fontSize: 14, flex: "none" }}>
+                      Lunaskan
                     </button>
                   </div>
                 </div>
@@ -526,6 +534,87 @@ export default function Tagihan({
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+        </div>
+      )}
+
+      {/* Popup struk RINCIAN TRANSAKSI — ketuk tanggal di kartu. Menampilkan
+          untuk hari apa & dicatat kapan; Ubah Tanggal Layanan pakai input
+          overlay besar (pola wajib CLAUDE.md, andal di iOS). */}
+      {detailTx && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
+          <div onClick={() => setDetailTx(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
+            <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600 }}>
+              <div style={{ textAlign: "center", fontSize: 14.5, fontWeight: 800 }}>{detailTx.customer.nama.toUpperCase()}</div>
+              <div style={{ textAlign: "center", fontSize: 12, color: t.text2, marginTop: 2 }}>
+                {detailTx.customer.kelas || detailTx.customer.tingkat || ""}
+              </div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              {detailTx.items.map((it, i) => (
+                <div key={i} className="flex justify-between" style={{ fontSize: 13, lineHeight: 1.7, gap: 8 }}>
+                  <span>{it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
+                  <span style={{ flex: "none" }}>{rupiah(it.price * it.qty)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between" style={{ fontSize: 13.5, fontWeight: 800, marginTop: 6 }}>
+                <span>TOTAL</span><span>{rupiah(detailTx.total)}</span>
+              </div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Untuk</span><span style={{ fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
+              </div>
+              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
+                <Calendar size={16} /> Ubah Tanggal Layanan
+                <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
+                  onChange={(e) => {
+                    if (!e.target.value || e.target.value === opDate(detailTx)) return;
+                    onChangeDate(detailTx.id, e.target.value);
+                    setDetailTx(null);
+                    setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
+                  }}
+                  onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                  aria-label="Ubah Tanggal Layanan"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+              </div>
+            </div>
+            <button onClick={() => setDetailTx(null)} aria-label="Tutup rincian"
+              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+              <X size={19} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Popup struk KONFIRMASI LUNASKAN (Ya/Tidak) */}
+      {confirmLunas && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
+          <div onClick={() => setConfirmLunas(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
+            <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600, textAlign: "center" }}>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>LUNASKAN SEMUA?</div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              <div style={{ fontSize: 13, lineHeight: 1.7 }}>{confirmLunas.customer.nama}</div>
+              <div style={{ fontSize: 12, color: t.text2 }}>{confirmLunas.txs.length} transaksi</div>
+              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4 }}>{rupiah(confirmLunas.total)}</div>
+              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <button onClick={() => setConfirmLunas(null)}
+                  style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Tidak
+                </button>
+                <button onClick={() => { confirmLunas.txs.forEach(markPaid); setConfirmLunas(null); }}
+                  style={{ flex: 1, height: 50, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Ya
+                </button>
+              </div>
+            </div>
+            <button onClick={() => setConfirmLunas(null)} aria-label="Batal lunaskan"
+              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+              <X size={19} />
+            </button>
+          </div>
         </div>
       )}
 

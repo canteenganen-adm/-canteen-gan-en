@@ -649,7 +649,14 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
         <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center justify-between">
-          <div style={{ fontSize: 18, fontWeight: 800 }}>{isNew ? "Menu Baru" : "Edit Menu"}</div>
+          <div className="flex items-center gap-2">
+            {/* X keluar — menutup editor tanpa menyentuh apa pun */}
+            <button onClick={onClose} aria-label="Keluar"
+              style={{ width: 40, height: 40, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              <X size={18} />
+            </button>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{isNew ? "Menu Baru" : "Edit Menu"}</div>
+          </div>
           <div className="flex items-center gap-2">
             {isNew && (
               <button onClick={onClose} style={{ background: "transparent", color: t.text2, border: `1.5px solid ${t.border}`, borderRadius: 10, height: 40, padding: "0 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>

@@ -71,6 +71,9 @@ export interface Transaction {
   /** Diisi saat dipindah ke Tong Sampah — tersimpan 30 hari, bisa dipulihkan.
    * null/undefined = tidak di tong sampah. */
   deletedAt?: string | null;
+  /** Diisi saat tagihan DIKIRIM via WhatsApp — penanda "sudah ditagih"
+   * supaya tidak dobel menagih. Sinkron antar perangkat (kolom DB). */
+  billedAt?: string | null;
 }
 
 export interface CanteenSettings {

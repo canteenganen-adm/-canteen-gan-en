@@ -40,6 +40,7 @@ interface TransaksiRow {
   order_no: string | null;
   cancelled_at: string | null;
   deleted_at: string | null;
+  billed_at?: string | null;
 }
 
 interface AppStateRow {
@@ -106,6 +107,7 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   orderNo: r.order_no ?? undefined,
   cancelledAt: r.cancelled_at ?? undefined,
   deletedAt: r.deleted_at ?? undefined,
+  billedAt: r.billed_at ?? undefined,
 });
 
 const transactionToRow = (tx: Transaction): Record<string, unknown> => {
@@ -321,6 +323,7 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   if (patch.packed !== undefined) row.packed = patch.packed;
   if (patch.cancelledAt !== undefined) row.cancelled_at = patch.cancelledAt;
   if (patch.serviceDate !== undefined) row.service_date = patch.serviceDate;
+  if (patch.billedAt !== undefined) row.billed_at = patch.billedAt;
   const { error } = await supabase.from("transaksi").update(row).eq("id", id);
   if (error) throw error;
 }

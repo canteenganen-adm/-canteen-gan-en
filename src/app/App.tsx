@@ -163,8 +163,14 @@ function useCanteenStore() {
       if (reloadTimer) clearTimeout(reloadTimer);
       reloadTimer = setTimeout(loadAll, 800);
     });
+    // HP yang lama di background: Safari/Chrome mematikan koneksi realtime,
+    // jadi data bisa basi tanpa terasa (kasus dua gadget beda angka).
+    // Setiap aplikasi kembali terlihat → ambil ulang semua dari server.
+    const onVisible = () => { if (document.visibilityState === "visible") loadAll(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (reloadTimer) clearTimeout(reloadTimer);
+      document.removeEventListener("visibilitychange", onVisible);
       unsubscribe();
     };
   }, [loadAll]);
@@ -230,6 +236,14 @@ function useCanteenStore() {
   const unmarkPaid = (id: string) => {
     setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false } : tx)));
     updateTransaction(id, { paid: false }).catch((e) => reportError("unmarkPaid", e));
+  };
+  /** Tandai "sudah ditagih via WA" — dicatat saat Kirim ke WhatsApp ditekan.
+   * Error DITELAN diam-diam: sebelum migration_10 dijalankan kolomnya belum
+   * ada, dan fitur ini murni penanda (bukan data uang). */
+  const markBilled = (ids: string[]) => {
+    const billedAt = new Date().toISOString();
+    setTransactions((prev) => prev.map((tx) => (ids.includes(tx.id) ? { ...tx, billedAt } : tx)));
+    ids.forEach((id) => updateTransaction(id, { billedAt }).catch(() => {}));
   };
   /** Ubah Tanggal Layanan transaksi — untuk membetulkan entri yang terlanjur
    * tercatat di tanggal yang salah (mis. input susulan yang lupa backdate). */
@@ -400,7 +414,7 @@ function useCanteenStore() {
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
-    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate,
+    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate, markBilled,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
@@ -468,6 +482,8 @@ function MainShell({ store }: { store: CanteenStore }) {
     const now = Date.now();
     if (tab === id && lastNavTap.current.id === id && now - lastNavTap.current.at < 500) {
       contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      // Penjualan pakai kolom scroll sendiri (rail kategori + grid menu)
+      contentRef.current?.querySelectorAll(".pos-scroll").forEach((el) => el.scrollTo({ top: 0, behavior: "smooth" }));
       store.reload();
       setRefreshedToast(true);
       setTimeout(() => setRefreshedToast(false), 1600);
@@ -564,6 +580,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onRestore={store.restoreTransaction}
             onMoveToTrash={store.moveToTrash}
             onChangeDate={store.changeTxDate}
+            onMarkBilled={store.markBilled}
             onOpenSettings={openSettings}
           />
         )}

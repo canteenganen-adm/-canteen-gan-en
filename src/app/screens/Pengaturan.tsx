@@ -90,7 +90,7 @@ export default function Pengaturan({
   const handleShareLinkWA = () => {
     const text = encodeURIComponent(
       preorderOpen
-        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\n🌸 Gan En 🙏🏻✨`
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En 🙏🏻`
         : "Pre-order untuk tanggal ini sudah ditutup."
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");

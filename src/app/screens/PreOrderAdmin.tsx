@@ -43,6 +43,10 @@ type MergedGroup = {
   allPacked: boolean;
   somePacked: boolean;
   flatItems: Transaction["items"];
+  /** Daftar item PER PESANAN — pesanan dobel tampil sebagai 2 daftar
+   * terpisah (bukan digabung), supaya ketahuan kalau ortu tak sengaja
+   * memesan dua kali. */
+  perOrder: Transaction["items"][];
   total: number;
 };
 
@@ -50,12 +54,13 @@ function mergeOrders(list: AdminOrder[]): MergedGroup[] {
   const map = new Map<string, MergedGroup & { _orders: AdminOrder[] }>();
   for (const o of list) {
     const key = `${o.nama.toLowerCase()}|${o.kelas.toLowerCase()}`;
-    if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, flatItems: [], total: 0, _orders: [] });
+    if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, flatItems: [], perOrder: [], total: 0, _orders: [] });
     const g = map.get(key)!;
     g.ids.push(o.id);
     g.allPacked = g.allPacked && o.packed;
     g.somePacked = g.somePacked || o.packed;
     g.flatItems = [...g.flatItems, ...o.items];
+    g.perOrder.push(o.items);
     g.total += o.total;
     g._orders.push(o);
   }
@@ -516,11 +521,26 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
         </div>
       </div>
       <div style={{ marginTop: 10, paddingLeft: 42 }}>
-        {g.flatItems.map((it, i) => (
-          <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
-            {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
-          </div>
-        ))}
+        {g.perOrder.length <= 1 ? (
+          g.flatItems.map((it, i) => (
+            <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
+              {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+            </div>
+          ))
+        ) : (
+          /* Pesanan dobel/tripel: daftar per pesanan DIPISAH, tidak digabung —
+             supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
+          g.perOrder.map((items, oi) => (
+            <div key={oi} style={{ borderLeft: `3px solid ${t.primary}`, paddingLeft: 10, marginBottom: oi < g.perOrder.length - 1 ? 10 : 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
+              {items.map((it, i) => (
+                <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
+                  {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+                </div>
+              ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
