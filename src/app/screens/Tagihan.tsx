@@ -16,13 +16,21 @@ import type { Transaction, CanteenSettings } from "../../types";
    ============================================================ */
 
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-const fmtTx = (iso: string) => {
-  const d = new Date(iso);
-  const date = `${d.getDate()} ${BLN[d.getMonth()]}`;
-  const hh = d.getHours().toString().padStart(2,"0");
-  const mm = d.getMinutes().toString().padStart(2,"0");
-  const ss = d.getSeconds().toString().padStart(2,"0");
-  return `${date} · ${hh}:${mm}:${ss}`;
+/** Label transaksi memakai TANGGAL OPERASIONAL (Tanggal Layanan), bukan
+ * tanggal input — transaksi susulan tgl 14 yang diketik tgl 16 tampil
+ * "14 Jul · dicatat 16/07", bukan "16 Jul". */
+const fmtTxOp = (tx: Transaction) => {
+  const op = tx.serviceDate || tx.createdAt.slice(0, 10);
+  const od = new Date(op + "T00:00:00");
+  const base = `${od.getDate()} ${BLN[od.getMonth()]}`;
+  const created = tx.createdAt.slice(0, 10);
+  if (created === op) {
+    const c = new Date(tx.createdAt);
+    const hh = c.getHours().toString().padStart(2, "0");
+    const mm = c.getMinutes().toString().padStart(2, "0");
+    return `${base} · ${hh}:${mm}`;
+  }
+  return `${base} · dicatat ${created.slice(8, 10)}/${created.slice(5, 7)}`;
 };
 const groupKey = (c: Transaction["customer"]) =>
   `${c.nama.toLowerCase()}|${(c.wa || "").toLowerCase()}`;
@@ -277,8 +285,8 @@ export default function Tagihan({
 
           {/* SATU baris filter: chip sumber (senyap saat nonaktif) + satu
               tombol tanggal yang membuka sheet — bukan dua deret chip */}
-          <div className="flex items-center gap-1" style={{ marginTop: 8 }}>
-            {([["semua", "Semua"], ["preorder", "Pre-order"], ["penjualan", "Penjualan"]] as const).map(([val, label]) => {
+          <div className="flex items-center gap-1" style={{ marginTop: 8, flexWrap: "wrap", rowGap: 6 }}>
+            {([["semua", "Semua"], ["preorder", "PO"], ["penjualan", "Penjualan"]] as const).map(([val, label]) => {
               const on = sourceFilter === val;
               return (
                 <button key={val} onClick={() => setSourceFilter(val)}
@@ -351,7 +359,7 @@ export default function Tagihan({
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
                           <SourceTag source={tx.source} />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTx(tx.createdAt)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTxOp(tx)}</span>
                         </div>
                         <span style={{ fontSize: 14, fontWeight: 700, color: t.text2 }}>{rupiah(tx.total)}</span>
                       </div>
@@ -433,7 +441,7 @@ export default function Tagihan({
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTx(tx.createdAt)}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: t.text2 }}>{fmtTxOp(tx)}</span>
                         <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>
                           {rupiah(tx.total)}
                         </span>

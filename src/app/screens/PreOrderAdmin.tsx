@@ -134,10 +134,23 @@ export default function PreOrderAdmin({
 
   const defaultAmbil = presets[0] || "Istirahat 1";
 
+  /* Tanggal yang DILIHAT di daftar pesanan — terpisah dari sesi live.
+     Geser < > untuk menengok hari lain (kemarin/besok) tanpa pernah
+     menyentuh buka/tutup/tanggal sesi PO yang sedang berjalan. */
+  const [viewDate, setViewDate] = useState(serviceDate);
+  useEffect(() => { setViewDate(serviceDate); }, [serviceDate]);
+  const viewDateRef = useRef<HTMLInputElement>(null);
+  const shiftDay = (n: number) => {
+    const d = new Date(viewDate + "T00:00:00");
+    d.setDate(d.getDate() + n);
+    setViewDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+  };
+  const lihatSesi = viewDate === serviceDate;
+
   const orders: AdminOrder[] = useMemo(
     () =>
       transactions
-        .filter((tx) => tx.source === "preorder" && tx.serviceDate === serviceDate && !tx.cancelledAt)
+        .filter((tx) => tx.source === "preorder" && tx.serviceDate === viewDate && !tx.cancelledAt)
         .map((tx) => ({
           id: tx.id,
           nama: tx.customer.nama,
@@ -148,7 +161,7 @@ export default function PreOrderAdmin({
           items: tx.items,
           total: tx.total,
         })),
-    [transactions, serviceDate, defaultAmbil]
+    [transactions, viewDate, defaultAmbil]
   );
 
   const packed = orders.filter((o) => o.packed).length;
@@ -265,6 +278,38 @@ export default function PreOrderAdmin({
             </button>
           </div>
 
+          {/* Jelajah hari: lihat pesanan tanggal lain TANPA menyentuh sesi.
+              Panah geser sehari; area tengah = date picker (input overlay). */}
+          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
+            <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
+              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", fontSize: 18, fontWeight: 800, fontFamily: "inherit" }}>
+              ‹
+            </button>
+            <div className="flex items-center justify-center gap-2"
+              style={{ position: "relative", flex: 1, height: 44, borderRadius: 12, cursor: "pointer",
+                border: `1.5px solid ${lihatSesi ? t.border : t.primary}`,
+                background: lihatSesi ? t.surface : t.primaryLight }}>
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, whiteSpace: "nowrap" }}>
+                {serviceDateLabel(viewDate)}
+              </span>
+              <input ref={viewDateRef} type="date" value={viewDate}
+                onChange={(e) => e.target.value && setViewDate(e.target.value)}
+                onClick={() => { try { viewDateRef.current?.showPicker?.(); } catch { /* native */ } }}
+                aria-label="Lihat pesanan tanggal"
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+            </div>
+            <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
+              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", fontSize: 18, fontWeight: 800, fontFamily: "inherit" }}>
+              ›
+            </button>
+            {!lihatSesi && (
+              <button onClick={() => setViewDate(serviceDate)}
+                style={{ flex: "none", height: 44, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+                Ke Sesi
+              </button>
+            )}
+          </div>
+
           {/* Ringkasan hari ini — bisa diketuk sebagai filter daftar */}
           <div className="flex gap-2" style={{ marginTop: 12 }}>
             <Stat n={orders.length} label="Pesanan" active={packedFilter === "semua"}
@@ -331,7 +376,9 @@ export default function PreOrderAdmin({
             </button>
           )}
 
-          <div style={{ fontSize: 13, fontWeight: 800, color: t.text, margin: "8px 2px 10px" }}>Pesanan Hari Ini</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: t.text, margin: "8px 2px 10px" }}>
+            {lihatSesi ? "Pesanan Hari Ini" : `Pesanan ${serviceDateLabel(viewDate)}`}
+          </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
           ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} />)}
@@ -428,7 +475,7 @@ export default function PreOrderAdmin({
       )}
       {sheet === "rekap" && (
         <Sheet title="Rekap Masak" onClose={() => setSheet(null)}>
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>{dateLabel} · semua pesanan</div>
+          <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>{serviceDateLabel(viewDate)} · semua pesanan</div>
           {Object.entries(
             orders.reduce<Record<string, number>>((acc, o) => {
               o.items.forEach((it) => { const k = it.name + (it.variant ? " " + it.variant : ""); acc[k] = (acc[k] || 0) + it.qty; });

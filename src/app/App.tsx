@@ -405,6 +405,7 @@ function useCanteenStore() {
     pickupSchedules, setPickupSchedules,
     settings, patchSettings,
     submitPreOrder,
+    reload: loadAll,
     loading, error,
     saveError, clearSaveError,
   };
@@ -452,6 +453,21 @@ function MainShell({ store }: { store: CanteenStore }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
+
+  /* Double-tap ikon tab yang sedang aktif = refresh data (ambil ulang
+     semua dari server) + toast kecil supaya jelas sudah diperbarui. */
+  const lastNavTap = useRef<{ id: Tab; at: number }>({ id: "preorder", at: 0 });
+  const [refreshedToast, setRefreshedToast] = useState(false);
+  const tapNav = (id: Tab) => {
+    const now = Date.now();
+    if (tab === id && lastNavTap.current.id === id && now - lastNavTap.current.at < 500) {
+      store.reload();
+      setRefreshedToast(true);
+      setTimeout(() => setRefreshedToast(false), 1600);
+    }
+    lastNavTap.current = { id, at: now };
+    setTab(id);
+  };
 
   /* "Lihat Menu" dari PO Admin: lompat ke tab Menu, kertas "Menu PO"
      (pratinjau seperti /pesan), scroll ke atas. */
@@ -570,7 +586,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             <button
               key={id}
               data-testid={`tab-${id}`}
-              onClick={() => setTab(id)}
+              onClick={() => tapNav(id)}
               className="flex flex-col items-center justify-center gap-1"
               style={{ flex: 1, background: "transparent", border: "none", cursor: "pointer", position: "relative" }}
             >
@@ -616,6 +632,15 @@ function MainShell({ store }: { store: CanteenStore }) {
             serviceDate={store.serviceDate}
             preorderOpen={store.preorderOpen}
           />
+        </div>
+      )}
+
+      {/* Toast refresh dari double-tap nav */}
+      {refreshedToast && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 75, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ background: t.text, color: "#FBF7EF", borderRadius: 12, padding: "10px 16px", fontSize: 13.5, fontWeight: 700 }}>
+            Data diperbarui
+          </div>
         </div>
       )}
 

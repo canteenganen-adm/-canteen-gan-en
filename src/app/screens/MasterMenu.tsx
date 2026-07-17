@@ -356,7 +356,7 @@ export default function MasterMenu({
                       if (!m.variants.length) return hargaK(m.price ?? 0);
                       const ps = m.variants.map((v) => v.price);
                       return ps.length <= 3
-                        ? ps.map(hargaK).join(" ")
+                        ? ps.map(hargaK).join("/")
                         : `${hargaK(Math.min(...ps))}~${hargaK(Math.max(...ps))}`;
                     };
                     const garis = (c: string) => (
@@ -366,7 +366,7 @@ export default function MasterMenu({
                     return (
                       <div style={{ background: t.surface, margin: "0 6px", padding: "18px 16px 22px",
                         fontFamily: "ui-monospace, 'Cascadia Mono', 'Courier New', monospace",
-                        fontSize: 13, lineHeight: 1.85, color: t.text,
+                        fontSize: 13, fontWeight: 600, lineHeight: 1.85, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PO</div>
                         {garis("=")}
