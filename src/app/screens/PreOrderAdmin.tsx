@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, Eye, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
@@ -139,7 +140,6 @@ export default function PreOrderAdmin({
      menyentuh buka/tutup/tanggal sesi PO yang sedang berjalan. */
   const [viewDate, setViewDate] = useState(serviceDate);
   useEffect(() => { setViewDate(serviceDate); }, [serviceDate]);
-  const viewDateRef = useRef<HTMLInputElement>(null);
   const shiftDay = (n: number) => {
     const d = new Date(viewDate + "T00:00:00");
     d.setDate(d.getDate() + n);
@@ -247,16 +247,37 @@ export default function PreOrderAdmin({
               </button>
             </div>
 
-            {/* Tanggal (besar) — juga bisa diketuk untuk ganti tanggal, sesuai
-                bagian 0 (seluruh area, bukan cuma tombol Ganti Tanggal di bawah) */}
-            <button
-              onClick={() => setSheet("gantiTanggal")}
-              className="flex items-center gap-2"
-              style={{ width: "100%", marginTop: 8, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-            >
-              <Calendar size={20} color={t.amberText} />
-              <span style={{ fontSize: 21, fontWeight: 800 }}>{dateLabel}</span>
-            </button>
+            {/* Tanggal Layanan: panah kiri/kanan = jelajah pesanan hari lain
+                (TANPA menyentuh sesi); ketuk tanggal di tengah = Ganti Tanggal. */}
+            <div className="flex items-center gap-1" style={{ marginTop: 10 }}>
+              <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
+                style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                <ChevronLeft size={22} />
+              </button>
+              <button onClick={() => setSheet("gantiTanggal")}
+                className="flex items-center justify-center gap-2"
+                style={{ flex: 1, minHeight: 48, background: "transparent", border: "none", padding: 0, cursor: "pointer" }}>
+                <Calendar size={18} color={t.amberText} style={{ flex: "none" }} />
+                <span style={{ fontSize: 18, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, textAlign: "center" }}>
+                  {serviceDateLabel(viewDate)}
+                </span>
+              </button>
+              <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
+                style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                <ChevronRight size={22} />
+              </button>
+            </div>
+            {!lihatSesi && (
+              <div className="flex items-center justify-between" style={{ marginTop: 4, background: t.primaryLight, border: `1px solid ${t.primary}`, borderRadius: 10, padding: "6px 8px 6px 12px" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: t.amberText }}>
+                  Melihat hari lain · sesi tetap {serviceDateLabel(serviceDate)}
+                </span>
+                <button onClick={() => setViewDate(serviceDate)}
+                  style={{ flex: "none", height: 32, padding: "0 12px", borderRadius: 999, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
+                  Ke Sesi
+                </button>
+              </div>
+            )}
 
             {/* Otomatis tutup jam — "Ubah" buka widget jam besar, seluruhnya bisa diketuk */}
             <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
@@ -271,43 +292,6 @@ export default function PreOrderAdmin({
               </button>
             </div>
 
-            {/* Ganti Tanggal */}
-            <button onClick={() => setSheet("gantiTanggal")} className="flex items-center justify-center gap-2"
-              style={{ width: "100%", height: 46, marginTop: 12, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surfaceSoft, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              <Calendar size={16} /> Ganti Tanggal
-            </button>
-          </div>
-
-          {/* Jelajah hari: lihat pesanan tanggal lain TANPA menyentuh sesi.
-              Panah geser sehari; area tengah = date picker (input overlay). */}
-          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
-            <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
-              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", fontSize: 18, fontWeight: 800, fontFamily: "inherit" }}>
-              ‹
-            </button>
-            <div className="flex items-center justify-center gap-2"
-              style={{ position: "relative", flex: 1, height: 44, borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${lihatSesi ? t.border : t.primary}`,
-                background: lihatSesi ? t.surface : t.primaryLight }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, whiteSpace: "nowrap" }}>
-                {serviceDateLabel(viewDate)}
-              </span>
-              <input ref={viewDateRef} type="date" value={viewDate}
-                onChange={(e) => e.target.value && setViewDate(e.target.value)}
-                onClick={() => { try { viewDateRef.current?.showPicker?.(); } catch { /* native */ } }}
-                aria-label="Lihat pesanan tanggal"
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-            </div>
-            <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
-              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", fontSize: 18, fontWeight: 800, fontFamily: "inherit" }}>
-              ›
-            </button>
-            {!lihatSesi && (
-              <button onClick={() => setViewDate(serviceDate)}
-                style={{ flex: "none", height: 44, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
-                Ke Sesi
-              </button>
-            )}
           </div>
 
           {/* Ringkasan hari ini — bisa diketuk sebagai filter daftar */}
