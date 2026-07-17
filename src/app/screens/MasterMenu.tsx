@@ -23,6 +23,9 @@ import type { MenuItem, Variant } from "../../types";
 
 export type MenuView = "po" | "menu";
 
+/* Tepi zigzag ala struk thermal — dipakai pratinjau PO & pengingat Simpan */
+const STRUK_ZIGZAG = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
+
 export default function MasterMenu({
   menus,
   onAdd,
@@ -422,27 +425,35 @@ export default function MasterMenu({
               (kertas PO murni pratinjau). Muncul saat ada perubahan belum
               disimpan ATAU tanggal terpilih belum pernah disimpan. */}
           {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
+            /* Pengingat Simpan gaya STRUK THERMAL — X nongol di pojok kanan
+               atas membuka pilihan Batal / Buang Perubahan / Simpan. */
             <div style={{ position: "sticky", bottom: 10, marginTop: 14, zIndex: 5 }}>
-              <div className="flex items-center gap-3" style={{ background: "#FFF4DA", border: `1.5px solid ${t.primary}`, borderRadius: 16, padding: "14px 14px", boxShadow: "0 8px 24px rgba(47,42,36,.18)" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>Menu {serviceDateLabel(tanggal)} · {aktifCount} item</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: t.amberText, marginTop: 2 }}>
+              <div style={{ position: "relative", maxWidth: 330, margin: "0 auto", filter: "drop-shadow(0 8px 22px rgba(47,42,36,.28))" }}>
+                <div style={{ background: t.surface, padding: "18px 16px 16px", textAlign: "center",
+                  fontFamily: "ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace",
+                  fontWeight: 600, clipPath: STRUK_ZIGZAG }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: ".02em" }}>
+                    {serviceDateLabel(tanggal).toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
+                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: t.amberText, lineHeight: 1.5 }}>
                     {snapshot === null
                       ? "Belum pernah disimpan — ortu belum melihat menu tanggal ini"
                       : "Belum disimpan — ortu masih melihat versi lama"}
                   </div>
+                  <button onClick={() => setConfirmSave(true)}
+                    style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15.5, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    Simpan
+                  </button>
                 </div>
                 {dailyDirty && (
                   <button onClick={() => setDiscardSheet(true)}
                     title="Tutup pengingat" aria-label="Tutup pengingat"
-                    style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                    <X size={20} />
+                    style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+                    <X size={19} />
                   </button>
                 )}
-                <button onClick={() => setConfirmSave(true)}
-                  style={{ height: 52, padding: "0 20px", borderRadius: 13, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", flex: "none" }}>
-                  Simpan
-                </button>
               </div>
             </div>
           )}
@@ -469,7 +480,7 @@ export default function MasterMenu({
             </button>
             <button onClick={() => setDiscardSheet(false)}
               style={{ width: "100%", height: 54, borderRadius: 13, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              Kembali
+              Batal
             </button>
           </div>
         </div>

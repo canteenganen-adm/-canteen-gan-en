@@ -271,7 +271,7 @@ export default function PreOrderAdmin({
               /* Satu baris kecil, tanpa kotak — tidak mengganggu widget */
               <button onClick={() => setViewDate(serviceDate)}
                 style={{ display: "block", margin: "0 auto", background: "transparent", border: "none", minHeight: 34, padding: "2px 12px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                Ke Sesi · {serviceDateLabel(serviceDate)}
+                Kembali ke Hari Ini
               </button>
             )}
 
