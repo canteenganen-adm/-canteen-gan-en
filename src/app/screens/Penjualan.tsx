@@ -65,7 +65,15 @@ export default function Penjualan({
   const sourceMenus = pakaiSnapshot ? (snapTx as MenuItem[]) : menus;
 
   const sales = useMemo(() => sourceMenus.filter((m) => m.channels.sales), [sourceMenus]);
-  const cats = useMemo(() => ["Semua", ...Array.from(new Set(sales.map((m) => m.category)))], [sales]);
+  // "Semua" tetap di atas; sisanya A-Z supaya gampang dicari di rail panjang
+  const cats = useMemo(
+    () => ["Semua", ...Array.from(new Set(sales.map((m) => m.category))).sort((a, b) => a.localeCompare(b, "id"))],
+    [sales]
+  );
+  /** Label singkat KHUSUS tampilan rail (data kategori asli tidak berubah,
+   * filter tetap mencocokkan m.category) — "Nasi Goreng" kepanjangan dan
+   * jadi dua baris di kolom sempit. */
+  const railLabel = (c: string) => (c === "Nasi Goreng" ? "Nasgor" : c);
 
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -308,11 +316,11 @@ export default function Penjualan({
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 8px 14px 11px", background: on ? t.primaryLight : "transparent",
+                  style={{ display: "block", width: "100%", padding: "14px 8px 14px 20px", background: on ? t.primaryLight : "transparent",
                     border: "none", borderLeft: `3px solid ${on ? t.primary : "transparent"}`,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit", overflowWrap: "break-word" }}>
-                  {c}
+                  {railLabel(c)}
                 </button>
               );
             })}

@@ -65,12 +65,12 @@ export function autoClosedNow(serviceDate: string, autoCloseTime: string): boole
   return wibDate === serviceDate && wibTime >= autoCloseTime;
 }
 
-/** cth. "Senin, 13 Juli 2026 • 06.39 WIB" — dipakai di pesan WA tagihan. */
+/** cth. "Senin, 13 Juli 2026 • 06:39" — dipakai di pesan WA tagihan. */
 export function fmtWaDate(iso: string): string {
   const d = new Date(iso);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${HARI_PANJANG[d.getDay()]}, ${d.getDate()} ${BULAN_PANJANG[d.getMonth()]} ${d.getFullYear()} • ${hh}.${mm} WIB`;
+  return `${HARI_PANJANG[d.getDay()]}, ${d.getDate()} ${BULAN_PANJANG[d.getMonth()]} ${d.getFullYear()} • ${hh}:${mm}`;
 }
 
 /** true jika pembukaan sementara ("Buka Lagi") masih berlaku. */

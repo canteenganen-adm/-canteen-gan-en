@@ -307,7 +307,9 @@ export default function Tagihan({
       `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
     ).join("\n\n--------------------\n\n");
     const total = gs.reduce((s, g) => s + g.total, 0);
-    return `${settings.waOpening}\n\n${sections}\nTotal Pembayaran: ${rupiah(total)}\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
+    // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
+    // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
+    return `${settings.waOpening}\n\n${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
