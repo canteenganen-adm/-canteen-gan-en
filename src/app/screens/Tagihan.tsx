@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar, ArrowUpDown,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
@@ -76,6 +76,19 @@ function unionGroups(txs: Transaction[]) {
 type Tab = "unpaid" | "riwayat" | "batal";
 type SourceFilter = "semua" | "preorder" | "penjualan";
 type DateFilter = "semua" | "hari" | "7" | "tanggal";
+type SortMode = "az" | "za" | "newest" | "oldest";
+const SORT_LABEL: Record<SortMode, string> = { az: "A–Z", za: "Z–A", newest: "Terbaru", oldest: "Terlama" };
+/** Satu fungsi urut dipakai kartu Belum Dibayar & Lunas/Dibatalkan supaya
+ * konsisten — "Terbaru/Terlama" memakai transaksi paling akhir per kartu. */
+function sortGroups<G extends { customer: Transaction["customer"]; newestAt: string }>(list: G[], mode: SortMode): G[] {
+  const byName = (a: G, b: G) => a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" });
+  const sorted = [...list];
+  if (mode === "az") sorted.sort(byName);
+  else if (mode === "za") sorted.sort((a, b) => byName(b, a));
+  else if (mode === "newest") sorted.sort((a, b) => b.newestAt.localeCompare(a.newestAt));
+  else sorted.sort((a, b) => a.newestAt.localeCompare(b.newestAt));
+  return sorted;
+}
 
 /** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
  * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
@@ -117,6 +130,12 @@ export default function Tagihan({
   const riwayatFilter: "lunas" | "batal" = tab === "batal" ? "batal" : "lunas";
   const [pickDate, setPickDate] = useState("");
   const [dateSheet, setDateSheet] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("az");
+  const [sortSheet, setSortSheet] = useState(false);
+  /** Chip "Belum Ditagih" — hanya di tab Belum Dibayar; kartu yang SEMUA
+   * transaksinya sudah ditagih (hijau) disembunyikan, supaya yang belum
+   * dihubungi tidak tenggelam di antara yang sudah beres. */
+  const [onlyUnbilled, setOnlyUnbilled] = useState(false);
 
   const fmtShort = (d: string) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "…");
   const dateChipLabel =
@@ -201,13 +220,14 @@ export default function Tagihan({
     [transactions, sourceFilter, dateFilter, pickDate]
   );
 
-  /* Grupkan Belum Dibayar per ANAK (aturan ganda unionGroups), urut A–Z */
+  /* Grupkan Belum Dibayar per ANAK (aturan ganda unionGroups), urut sesuai sortMode */
   const groups = useMemo(() => {
     const filtered = unpaid.filter((tx) => matchQuery(tx.customer.nama, tx.customer.kelas, tx.customer.wa));
-    return unionGroups(filtered)
+    const built = unionGroups(filtered)
       .map((g) => ({ customer: g.customer, txs: g.txs, newestAt: g.newestAt, total: g.txs.reduce((s, tx) => s + tx.total, 0) }))
-      .sort((a, b) => a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
-  }, [unpaid, q]);
+      .filter((g) => !onlyUnbilled || !g.txs.every((tx) => tx.billedAt));
+    return sortGroups(built, sortMode);
+  }, [unpaid, q, sortMode, onlyUnbilled]);
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
 
@@ -217,15 +237,14 @@ export default function Tagihan({
       (x) => (riwayatFilter === "lunas" ? (x.paid && !x.cancelledAt) : !!x.cancelledAt)
         && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
     );
-    return unionGroups(done)
-      .map((g) => ({
-        customer: g.customer, newestAt: g.newestAt,
-        txs: [...g.txs].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-        totalMasuk: g.txs.reduce((s, tx) => s + (tx.paid && !tx.cancelledAt ? tx.total : 0), 0),
-      }))
-      .sort((a, b) => a.customer.nama.localeCompare(b.customer.nama, "id", { sensitivity: "base" }));
+    const built = unionGroups(done).map((g) => ({
+      customer: g.customer, newestAt: g.newestAt,
+      txs: [...g.txs].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      totalMasuk: g.txs.reduce((s, tx) => s + (tx.paid && !tx.cancelledAt ? tx.total : 0), 0),
+    }));
+    return sortGroups(built, sortMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter]);
+  }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter, sortMode]);
 
   // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
   const historyMasuk = useMemo(
@@ -384,7 +403,19 @@ export default function Tagihan({
                 </button>
               );
             })}
+            {tab === "unpaid" && (
+              <button onClick={() => setOnlyUnbilled((v) => !v)}
+                style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: onlyUnbilled ? 700 : 600, cursor: "pointer",
+                  border: `1px solid ${onlyUnbilled ? t.primary : "transparent"}`, background: onlyUnbilled ? t.primaryLight : "transparent", color: onlyUnbilled ? t.amberText : t.text2 }}>
+                Belum Ditagih
+              </button>
+            )}
             <span style={{ flex: 1 }} />
+            <button onClick={() => setSortSheet(true)} aria-label="Urutkan"
+              style={{ flex: "none", width: 32, height: 32, borderRadius: 999, cursor: "pointer",
+                border: `1px solid ${sortMode !== "az" ? t.primary : t.border}`, background: sortMode !== "az" ? t.primaryLight : t.surface, color: sortMode !== "az" ? t.amberText : t.text2, display: "grid", placeItems: "center" }}>
+              <ArrowUpDown size={14} />
+            </button>
             <button onClick={() => setDateSheet(true)}
               className="flex items-center gap-1"
               style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: dateFilter !== "semua" ? 700 : 600, cursor: "pointer",
@@ -707,6 +738,31 @@ export default function Tagihan({
                 aria-label="Pilih tanggal"
                 style={{ width: "100%", height: 50, marginTop: 4, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Sheet Urutkan — sama pola dengan Filter Tanggal */}
+      {sortSheet && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setSortSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Urutkan</div>
+              <button onClick={() => setSortSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+            </div>
+            {(["az", "za", "newest", "oldest"] as const).map((val) => {
+              const on = sortMode === val;
+              return (
+                <button key={val}
+                  onClick={() => { setSortMode(val); setSortSheet(false); }}
+                  className="flex items-center justify-between"
+                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{SORT_LABEL[val]}</span>
+                  {on && <Check size={17} color={t.amberText} />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
