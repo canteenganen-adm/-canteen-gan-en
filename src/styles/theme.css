@@ -181,3 +181,15 @@
     line-height: 1.5;
   }
 }
+
+/* Sembunyikan scrollbar di semua strip yang bisa digeser (chip kategori/tingkat,
+   rail Penjualan, dst) — GLOBAL supaya konsisten di setiap halaman, bukan
+   ditempel per komponen. iOS Safari sudah menyembunyikannya sendiri; Chrome
+   Android menampilkan bar abu-abu tebal tanpa aturan ini. */
+.pos-scroll, .hscroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pos-scroll::-webkit-scrollbar, .hscroll::-webkit-scrollbar {
+  display: none;
+}

@@ -548,7 +548,7 @@ export default function Pengaturan({
               Dipakai sebagai pilihan Kelas di form orang tua — orang tua tidak bisa mengetik sendiri.
             </div>
 
-            <div className="flex gap-2" style={{ overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
+            <div className="flex gap-2 hscroll" style={{ overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
               {KELAS_TINGKAT.map((tg) => {
                 const on = tg === tingkatFilter;
                 return (

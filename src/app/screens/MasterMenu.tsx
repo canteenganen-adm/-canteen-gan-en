@@ -245,7 +245,7 @@ export default function MasterMenu({
               </div>
 
               {/* Category filter */}
-              <div className="flex gap-2" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
+              <div className="flex gap-2 hscroll" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
                 {categories.map((c) => {
                   const on = c === cat;
                   return (

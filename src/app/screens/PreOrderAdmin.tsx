@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Calendar, Eye, Clock, CookingPot, Printer,
+  Calendar, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Share2, Copy,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
@@ -106,7 +106,22 @@ export default function PreOrderAdmin({
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState("Semua");
-  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const poLink = `${window.location.origin}/pesan`;
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(poLink).catch(() => {});
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+  const handleShareLinkWA = () => {
+    const text = encodeURIComponent(
+      open
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En 🙏🏻`
+        : "Pre-order untuk tanggal ini sudah ditutup."
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
   const [nowTick, setNowTick] = useState(0);
   const [showLateOnly, setShowLateOnly] = useState(false);
   const [packedFilter, setPackedFilter] = useState<"semua" | "sudah" | "belum">("semua");
@@ -307,9 +322,9 @@ export default function PreOrderAdmin({
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
           </div>
 
-          {/* Actions — Bagikan Link pindah ke Pengaturan; Lihat Menu = pratinjau di tab Menu */}
+          {/* Actions */}
           <div className="flex gap-2" style={{ marginTop: 12 }}>
-            <Action icon={<Eye size={20} />} label="Lihat Menu" onClick={onLihatMenu} />
+            <Action icon={<Share2 size={20} />} label="Bagikan Link" onClick={() => setSheet("bagikan")} />
             <Action icon={<CookingPot size={20} />} label="Rekap Masak" onClick={() => setSheet("rekap")} />
             <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
           </div>
@@ -323,7 +338,7 @@ export default function PreOrderAdmin({
           </div>
 
           {/* Filter Tingkat */}
-          <div className="flex gap-2" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+          <div className="flex gap-2 hscroll" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
               {tingkats.map((tg) => {
                 const on = tg === tingkatFilter;
                 const bgColor = on && tg !== "Semua" ? tingkatColor(tg) : undefined;
@@ -458,6 +473,24 @@ export default function PreOrderAdmin({
               </button>
             </div>
           )}
+        </Sheet>
+      )}
+      {sheet === "bagikan" && (
+        <Sheet title="Bagikan Link Pemesanan" onClose={() => setSheet(null)}>
+          <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
+            Link untuk {serviceDateLabel(serviceDate)}. {open ? "Pre-order sedang dibuka." : "Saat ini ditutup."}
+          </div>
+          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 13.5, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
+          <div className="flex gap-2">
+            <button onClick={handleCopyLink} className="flex items-center justify-center gap-2"
+              style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              {linkCopied ? <Check size={18} /> : <Copy size={18} />} {linkCopied ? "Tersalin!" : "Salin Link"}
+            </button>
+            <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
+              style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              <Share2 size={18} /> WhatsApp
+            </button>
+          </div>
         </Sheet>
       )}
       {sheet === "rekap" && (
