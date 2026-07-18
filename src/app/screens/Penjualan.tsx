@@ -275,11 +275,14 @@ export default function Penjualan({
           </div>
 
           {/* Satu baris: tanggal transaksi (input OTS susulan) + cari.
+              Chip tanggal MENTOK KIRI (margin negatif menutup padding header)
+              supaya sejajar tepat dengan tepi kiri rail kategori di
+              bawahnya — bukan dengan judul/pencarian di atasnya.
               Seluruh area tanggal diketuk via input date overlay inset:0 */}
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 42, padding: "0 12px", borderRadius: 11, cursor: "pointer",
-                background: isBackdate ? "#FFF4DA" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}` }}>
+              style={{ position: "relative", flex: "none", height: 42, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 11px 11px 0", cursor: "pointer",
+                background: isBackdate ? "#FFF4DA" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
                 {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
@@ -311,15 +314,16 @@ export default function Penjualan({
 
         {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
-          <div className="pos-scroll" style={{ width: 88, flex: "none", overflowY: "auto", scrollbarWidth: "none", borderRight: `1px solid ${t.divider}`, paddingBottom: 110 }}>
+          <div className="pos-scroll" style={{ width: 100, flex: "none", overflowY: "auto", scrollbarWidth: "none", borderRight: `1px solid ${t.divider}`, paddingBottom: 110 }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 8px 14px 20px", background: on ? t.primaryLight : "transparent",
+                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 20px", background: on ? t.primaryLight : "transparent",
                     border: "none", borderLeft: `3px solid ${on ? t.primary : "transparent"}`,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
-                    textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit", overflowWrap: "break-word" }}>
+                    textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {railLabel(c)}
                 </button>
               );
