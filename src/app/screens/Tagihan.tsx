@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar, ArrowUpDown,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar, SlidersHorizontal,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
@@ -129,20 +129,16 @@ export default function Tagihan({
   /** Tab Dibatalkan berdiri sendiri; kode grup riwayat dipakai bersama. */
   const riwayatFilter: "lunas" | "batal" = tab === "batal" ? "batal" : "lunas";
   const [pickDate, setPickDate] = useState("");
-  const [dateSheet, setDateSheet] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("az");
-  const [sortSheet, setSortSheet] = useState(false);
-  /** Chip "Belum Ditagih" — hanya di tab Belum Dibayar; kartu yang SEMUA
-   * transaksinya sudah ditagih (hijau) disembunyikan, supaya yang belum
-   * dihubungi tidak tenggelam di antara yang sudah beres. */
+  /** Kartu yang SEMUA transaksinya sudah ditagih (hijau) disembunyikan —
+   * hanya berlaku di tab Belum Dibayar, supaya yang belum dihubungi tidak
+   * tenggelam di antara yang sudah beres. */
   const [onlyUnbilled, setOnlyUnbilled] = useState(false);
+  /** Urutkan, Belum Ditagih, dan Tanggal digabung SATU sheet "Filter" —
+   * baris chip tetap satu baris (tidak melebar jadi dua baris). */
+  const [filterSheet, setFilterSheet] = useState(false);
+  const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled;
 
-  const fmtShort = (d: string) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "…");
-  const dateChipLabel =
-    dateFilter === "semua" ? "Tanggal"
-      : dateFilter === "hari" ? "Hari Ini"
-      : dateFilter === "7" ? "7 Hari"
-      : pickDate ? fmtShort(pickDate) : "Pilih Tanggal";
   const [q, setQ] = useState("");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -390,9 +386,10 @@ export default function Tagihan({
             {q && <X size={17} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
           </div>
 
-          {/* SATU baris filter: chip sumber (senyap saat nonaktif) + satu
-              tombol tanggal yang membuka sheet — bukan dua deret chip */}
-          <div className="flex items-center gap-1" style={{ marginTop: 8, flexWrap: "wrap", rowGap: 6 }}>
+          {/* SATU baris filter, TIDAK PERNAH melebar dua baris: chip sumber
+              (senyap saat nonaktif) + satu tombol Filter yang membuka sheet
+              gabungan Urutkan + Belum Ditagih + Tanggal */}
+          <div className="flex items-center gap-1" style={{ marginTop: 8 }}>
             {([["semua", "Semua"], ["preorder", "PO"], ["penjualan", "Penjualan"]] as const).map(([val, label]) => {
               const on = sourceFilter === val;
               return (
@@ -403,24 +400,15 @@ export default function Tagihan({
                 </button>
               );
             })}
-            {tab === "unpaid" && (
-              <button onClick={() => setOnlyUnbilled((v) => !v)}
-                style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: onlyUnbilled ? 700 : 600, cursor: "pointer",
-                  border: `1px solid ${onlyUnbilled ? t.primary : "transparent"}`, background: onlyUnbilled ? t.primaryLight : "transparent", color: onlyUnbilled ? t.amberText : t.text2 }}>
-                Belum Ditagih
-              </button>
-            )}
             <span style={{ flex: 1 }} />
-            <button onClick={() => setSortSheet(true)} aria-label="Urutkan"
-              style={{ flex: "none", width: 32, height: 32, borderRadius: 999, cursor: "pointer",
-                border: `1px solid ${sortMode !== "az" ? t.primary : t.border}`, background: sortMode !== "az" ? t.primaryLight : t.surface, color: sortMode !== "az" ? t.amberText : t.text2, display: "grid", placeItems: "center" }}>
-              <ArrowUpDown size={14} />
-            </button>
-            <button onClick={() => setDateSheet(true)}
+            <button onClick={() => setFilterSheet(true)}
               className="flex items-center gap-1"
-              style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: dateFilter !== "semua" ? 700 : 600, cursor: "pointer",
-                border: `1px solid ${dateFilter !== "semua" ? t.primary : t.border}`, background: dateFilter !== "semua" ? t.primaryLight : t.surface, color: dateFilter !== "semua" ? t.amberText : t.text2 }}>
-              <Calendar size={13} /> {dateChipLabel} <ChevronDown size={13} />
+              style={{ position: "relative", flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
+                border: `1px solid ${filterActive ? t.primary : t.border}`, background: filterActive ? t.primaryLight : t.surface, color: filterActive ? t.amberText : t.text2 }}>
+              <SlidersHorizontal size={13} /> Filter
+              {filterActive && (
+                <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
+              )}
             </button>
           </div>
         </div>
@@ -710,21 +698,49 @@ export default function Tagihan({
         </div>
       )}
 
-      {/* Sheet Filter Tanggal — pilihan langsung berlaku; rentang custom
-          punya dua picker di dalam sheet */}
-      {dateSheet && (
+      {/* Sheet Filter GABUNGAN — Urutkan + (Belum Ditagih) + Tanggal, satu
+          tempat, supaya baris chip di atas tidak pernah melebar dua baris */}
+      {filterSheet && (
         <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setDateSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>Filter Tanggal</div>
-              <button onClick={() => setDateSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+          <div onClick={() => setFilterSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Filter</div>
+              <button onClick={() => setFilterSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
+
+            <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Urutkan</div>
+            <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 20 }}>
+              {(["az", "za", "newest", "oldest"] as const).map((val) => {
+                const on = sortMode === val;
+                return (
+                  <button key={val} onClick={() => setSortMode(val)}
+                    style={{ flex: "none", height: 42, padding: "0 16px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: "pointer",
+                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                    {SORT_LABEL[val]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {tab === "unpaid" && (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Tampilkan</div>
+                <button onClick={() => setOnlyUnbilled((v) => !v)}
+                  className="flex items-center justify-between"
+                  style={{ width: "100%", height: 50, marginBottom: 20, borderRadius: 12, border: `1.5px solid ${onlyUnbilled ? t.primary : t.border}`, background: onlyUnbilled ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: onlyUnbilled ? t.amberText : t.text }}>Hanya Belum Ditagih</span>
+                  {onlyUnbilled && <Check size={17} color={t.amberText} />}
+                </button>
+              </>
+            )}
+
+            <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Tanggal</div>
             {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["tanggal", "Pilih Tanggal"]] as const).map(([val, label]) => {
               const on = dateFilter === val;
               return (
                 <button key={val}
-                  onClick={() => { setDateFilter(val); if (val !== "tanggal") setDateSheet(false); }}
+                  onClick={() => setDateFilter(val)}
                   className="flex items-center justify-between"
                   style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{label}</span>
@@ -734,35 +750,15 @@ export default function Tagihan({
             })}
             {dateFilter === "tanggal" && (
               <input type="date" value={pickDate}
-                onChange={(e) => { setPickDate(e.target.value); if (e.target.value) setDateSheet(false); }}
+                onChange={(e) => setPickDate(e.target.value)}
                 aria-label="Pilih tanggal"
-                style={{ width: "100%", height: 50, marginTop: 4, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
+                style={{ width: "100%", height: 50, marginTop: 4, marginBottom: 8, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
             )}
-          </div>
-        </div>
-      )}
 
-      {/* Sheet Urutkan — sama pola dengan Filter Tanggal */}
-      {sortSheet && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setSortSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>Urutkan</div>
-              <button onClick={() => setSortSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
-            </div>
-            {(["az", "za", "newest", "oldest"] as const).map((val) => {
-              const on = sortMode === val;
-              return (
-                <button key={val}
-                  onClick={() => { setSortMode(val); setSortSheet(false); }}
-                  className="flex items-center justify-between"
-                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{SORT_LABEL[val]}</span>
-                  {on && <Check size={17} color={t.amberText} />}
-                </button>
-              );
-            })}
+            <button onClick={() => setFilterSheet(false)}
+              style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              Terapkan
+            </button>
           </div>
         </div>
       )}
