@@ -50,7 +50,8 @@ create table if not exists app_state (
   pickup_presets jsonb not null default '["Istirahat 1","Istirahat 2","Istirahat 3","Pulang Sekolah"]'::jsonb,
   nama_kantin text not null default 'Kantin Gan En',
   whatsapp text not null default '',
-  printer_connected boolean not null default false
+  printer_connected boolean not null default false,
+  reopen_until timestamptz                             -- "Buka Lagi" sementara setelah tutup otomatis (migration_7)
 );
 
 insert into app_state (id) values (1) on conflict (id) do nothing;
@@ -129,7 +130,10 @@ begin
   wib_today := wib_now::date;
   wib_time := wib_now::time;
 
-  if wib_today = st.service_date and wib_time >= st.auto_close_time then
+  -- reopen_until (migration_7): "Buka Lagi" sementara mengabaikan tutup
+  -- otomatis selama masih berlaku.
+  if wib_today = st.service_date and wib_time >= st.auto_close_time
+     and (st.reopen_until is null or now() >= st.reopen_until) then
     raise exception 'Pre-order untuk tanggal ini sudah ditutup otomatis (lewat jam %).', to_char(st.auto_close_time, 'HH24:MI') using errcode = 'P0001';
   end if;
 
