@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Share2, Copy,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, reopenActiveNow, wibClock } from "../../lib/format";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock } from "../../lib/format";
 import { TINGKAT_LIST, tingkatColor } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
 
@@ -199,9 +199,14 @@ export default function PreOrderAdmin({
   const rawUtama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
   const rawBeda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
 
-  // Deteksi telat: Belum Dikemas + jam WIB sekarang > jam waktu ambil untuk tingkat tsb.
+  // Deteksi telat: HANYA untuk pesanan hari ini (viewDate = tanggal WIB
+  // sekarang) + Belum Dikemas + jam WIB sekarang > jam waktu ambil untuk
+  // tingkat tsb. Tanpa penjaga tanggal ini, pesanan sesi BESOK yang dilihat
+  // sore/malam ini bisa salah ditandai "telat" — jam ambilnya memang sudah
+  // lewat dibanding jam SEKARANG, tapi pesanannya untuk hari lain.
   // Guru/Karyawan hanya dianggap telat jika byTingkat diisi secara eksplisit.
   const isGroupLate = (g: MergedGroup): boolean => {
+    if (viewDate !== wibTodayISO()) return false;
     if (g.allPacked || !schedules.length) return false;
     const sched = schedules.find(s => s.name === g.ambil);
     if (!sched) return false;

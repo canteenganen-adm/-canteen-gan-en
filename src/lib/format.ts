@@ -92,6 +92,14 @@ export function wibTimeHHMM(): string {
   }).format(new Date());
 }
 
+/** Tanggal WIB hari ini "YYYY-MM-DD" — dipasangkan dengan wibTimeHHMM() supaya
+ * deteksi "Lewat Waktu Ambil" hanya berlaku untuk pesanan hari ini, bukan
+ * pesanan sesi besok yang kebetulan jam ambilnya sudah lewat kalau dilihat
+ * dari jam SEKARANG. */
+export function wibTodayISO(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
+}
+
 export function priceLabel(m: MenuItem) {
   if (m.variants.length > 0) {
     const ps = m.variants.map((v) => v.price).filter((x) => x != null);
