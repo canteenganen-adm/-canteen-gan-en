@@ -4,7 +4,7 @@ import {
   Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { priceLabel, uid, serviceDateLabel, todayISO } from "../../lib/format";
+import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import type { MenuItem, Variant } from "../../types";
@@ -395,7 +395,7 @@ export default function MasterMenu({
                                 {/* Hybrid: nama menu (yang paling lama ditatap saat
                                     proofread) pakai font standar app; kerangka struk
                                     (judul/garis/harga) tetap monospace */}
-                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Plus Jakarta Sans', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{m.name}</span>
+                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Plus Jakarta Sans', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{toTitleCase(m.name)}</span>
                                 <span style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
@@ -517,7 +517,7 @@ function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; on
       <div className="flex items-start justify-between" style={{ gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <div className="flex items-center gap-2">
-            <div style={{ fontSize: 17, fontWeight: 700 }}>{m.name}</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>{toTitleCase(m.name)}</div>
             {m.variants.length > 0 && (
               <span className="flex items-center gap-1" title={`${m.variants.length} varian`}
                 style={{ fontSize: 11, fontWeight: 700, color: t.amberText, background: t.primaryLight, padding: "2px 8px", borderRadius: 999 }}>

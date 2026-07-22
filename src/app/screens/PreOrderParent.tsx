@@ -4,7 +4,7 @@ import {
   Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search, HelpCircle,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import { rupiah, orderNo, serviceDateLabel } from "../../lib/format";
+import { rupiah, orderNo, serviceDateLabel, toTitleCase } from "../../lib/format";
 import { fetchAppState, fetchMenuHarian } from "../../lib/canteenApi";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER } from "../../lib/constants";
 import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
@@ -306,7 +306,7 @@ export default function PreOrderParent({
               {receipt.items.map((it, i) => (
                 <div key={i} style={{ marginBottom: 8 }}>
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 14.5 }}>{it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
+                    <span style={{ fontSize: 14.5 }}>{toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
                     <span style={{ fontSize: 14.5, fontWeight: 700 }}>{rupiah(it.price * it.qty)}</span>
                   </div>
                   {it.note && <div style={{ fontSize: 12, color: t.text2, fontStyle: "italic" }}>&ldquo;{it.note}&rdquo;</div>}
@@ -361,7 +361,7 @@ export default function PreOrderParent({
               {lines.map((l) => (
                 <div key={keyOf(l)} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{l.menu.name}{l.variant ? ` (${l.variant.name})` : ""}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{toTitleCase(l.menu.name)}{l.variant ? ` (${l.variant.name})` : ""}</div>
                     <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah((l.variant ? l.variant.price : l.menu.price ?? 0) * l.qty)}</div>
                   </div>
                   <div className="flex items-center gap-2" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3 }}>
@@ -578,7 +578,7 @@ export default function PreOrderParent({
               const inCart = qtyOf(m.id);
               return (
                 <div key={m.id} style={{ background: t.surface, border: `1px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{m.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{toTitleCase(m.name)}</div>
                   <div style={{ fontSize: 12, color: t.text2, marginBottom: 10 }}>
                     {m.variants.length
                       ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`

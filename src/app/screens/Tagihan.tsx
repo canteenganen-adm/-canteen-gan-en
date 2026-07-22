@@ -292,7 +292,7 @@ export default function Tagihan({
   const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[]) => {
     const txBlocksOf = (g: (typeof gs)[number]) => g.txs.map((tx) => {
       const itemLines = tx.items
-        .map((it) => `• ${it.name.trim()}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
+        .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
       // Tanggal di tagihan = TANGGAL LAYANAN; entri susulan tanpa jam input
       const op = opDate(tx);
@@ -444,12 +444,16 @@ export default function Tagihan({
                     </div>
                   </button>
 
-                  {/* Daftar transaksi (hanya kalau expanded) */}
+                  {/* Daftar transaksi (hanya kalau expanded) — SELURUH baris
+                      bisa diketuk untuk lihat detail, bukan cuma tanggalnya;
+                      biar ketukan tak sengaja tetap langsung kelihatan "ini
+                      transaksi apa" bukan cuma dead-tap. Tombol aksi pakai
+                      stopPropagation supaya tidak ikut membuka detail. */}
                   {expanded && g.txs.map((tx) => (
-                    <div key={tx.id}
+                    <div key={tx.id} onClick={() => setDetailTx(tx)}
                       style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`,
                         background: tx.id === highlightedTxId ? "#FFF4DA" : t.surfaceSoft,
-                        transition: "background 0.4s ease" }}>
+                        transition: "background 0.4s ease", cursor: "pointer" }}>
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
                           <SourceTag source={tx.source} />
@@ -460,7 +464,7 @@ export default function Tagihan({
                       <div style={{ marginBottom: 12 }}>
                         {tx.items.map((it, i) => (
                           <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, fontFamily: MONO }}>
-                            {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+                            {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                           </div>
                         ))}
                         {tx.waktuAmbil && (
@@ -468,11 +472,11 @@ export default function Tagihan({
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => markPaid(tx)} className="flex items-center justify-center gap-1.5"
+                        <button onClick={(e) => { e.stopPropagation(); markPaid(tx); }} className="flex items-center justify-center gap-1.5"
                           style={{ flex: 1, height: 44, borderRadius: 11, border: "none", background: t.success, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
                           <Check size={17} /> Tandai Lunas
                         </button>
-                        <button onClick={() => cancel(tx)}
+                        <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
                           style={{ width: 48, height: 44, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}
                           title="Batalkan">
                           <Trash2 size={18} />
@@ -545,7 +549,7 @@ export default function Tagihan({
                 {g.txs.map((tx) => {
                   const cancelled = !!tx.cancelledAt;
                   return (
-                    <div key={tx.id} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.82 : 1 }}>
+                    <div key={tx.id} onClick={() => setDetailTx(tx)} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.82 : 1, cursor: "pointer" }}>
                       <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
                         <StatusTag ok={!cancelled} />
                         <SourceTag source={tx.source} />
@@ -556,17 +560,17 @@ export default function Tagihan({
                       </div>
                       {tx.items.map((it, i) => (
                         <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
-                          {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+                          {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                         </div>
                       ))}
                       {cancelled ? (
                         <div className="flex gap-2" style={{ marginTop: 10 }}>
-                          <button onClick={() => pulihkan(tx)}
+                          <button onClick={(e) => { e.stopPropagation(); pulihkan(tx); }}
                             className="flex items-center justify-center gap-1.5"
                             style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                             <RotateCcw size={13} /> Pulihkan
                           </button>
-                          <button onClick={() => setTrashConfirmTx(tx)}
+                          <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
                             className="flex items-center justify-center gap-1.5"
                             style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                             <Trash2 size={13} /> Hapus
@@ -578,12 +582,12 @@ export default function Tagihan({
                            tetap tampil dengan badge Dibatalkan; Pulihkan mengembalikan
                            ke Lunas karena status paid tidak diubah. */
                         <div className="flex gap-2" style={{ marginTop: 10 }}>
-                          <button onClick={() => cancel(tx)}
+                          <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
                             className="flex items-center justify-center gap-1.5"
                             style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                             <Ban size={13} /> Batalkan
                           </button>
-                          <button onClick={() => setTrashConfirmTx(tx)}
+                          <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
                             className="flex items-center justify-center gap-1.5"
                             style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                             <Trash2 size={13} /> Hapus
@@ -634,7 +638,7 @@ export default function Tagihan({
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
               {detailTx.items.map((it, i) => (
                 <div key={i} className="flex justify-between" style={{ fontSize: 13, lineHeight: 1.7, gap: 8 }}>
-                  <span>{it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
+                  <span>{toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
                   <span style={{ flex: "none" }}>{rupiah(it.price * it.qty)}</span>
                 </div>
               ))}

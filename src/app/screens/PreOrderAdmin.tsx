@@ -594,10 +594,13 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
-  const cardBorder = late ? t.error : g.allPacked ? "#D8E6D4" : t.border;
+  // Satu aksen saja untuk "telat" — garis kiri merah tipis, border sisi
+  // lain tetap netral. Border merah PENUH + garis kiri tebal sekaligus
+  // (sebelumnya) bikin kartu kelihatan berat/tidak rapi.
+  const cardBorder = g.allPacked ? "#D8E6D4" : t.border;
   return (
     <div onClick={onTap}
-      style={{ background: t.surface, border: `1.5px solid ${cardBorder}`, borderLeft: late ? `4px solid ${t.error}` : `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
+      style={{ background: t.surface, border: `1.5px solid ${cardBorder}`, borderLeft: late ? `3px solid ${t.error}` : `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
       <div className="flex items-center gap-3">
         <div style={{ flex: "none", width: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
           <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
@@ -629,7 +632,7 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
         {g.perOrder.length <= 1 ? (
           g.flatItems.map((it, i) => (
             <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
-              {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+              {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
             </div>
           ))
         ) : (
@@ -640,7 +643,7 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
               <div style={{ fontSize: 11, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
               {items.map((it, i) => (
                 <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
-                  {it.name}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
+                  {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                 </div>
               ))}
             </div>
@@ -684,7 +687,8 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
         <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center justify-between">
           <div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div>
-          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Tutup"
+            style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(47,42,36,.1)" }}><X size={18} /></button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>

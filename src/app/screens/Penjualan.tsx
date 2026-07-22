@@ -4,7 +4,7 @@ import {
   Layers, ChevronRight, Wallet, Settings, Trash2, Undo2, Calendar,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel } from "../../lib/format";
+import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel, toTitleCase } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
@@ -241,7 +241,7 @@ export default function Penjualan({
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.text, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
-        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.name}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{toTitleCase(m.name)}</div>
         <div className="flex items-center gap-1">
           {m.variants.length > 0 && <Layers size={13} color={t.amberText} />}
           <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
@@ -387,7 +387,7 @@ export default function Penjualan({
           {cart.map((l) => (
             <div key={l.key} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{l.name}{l.variant ? ` · ${l.variant}` : ""}</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
                 <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah(l.price)}</div>
               </div>
               {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
