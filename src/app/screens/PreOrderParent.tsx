@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, orderNo, serviceDateLabel } from "../../lib/format";
-import { fetchAppState } from "../../lib/canteenApi";
+import { fetchAppState, fetchMenuHarian } from "../../lib/canteenApi";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, KATEGORI_ORTU_EMOJI, KATEGORI_ORTU_ORDER } from "../../lib/constants";
 import type { MenuItem, Variant, Kelas, Transaction } from "../../types";
 
@@ -132,6 +132,36 @@ export default function PreOrderParent({
   );
   const paketItems = useMemo(() => pre.filter((m) => katOf(m) === "Paket"), [pre]);
 
+  /** Keranjang WAJIB dibersihkan otomatis begitu suatu menu tidak lagi
+   * tersedia (admin mematikan Pre-order-nya) — kalau tidak, HP orang tua
+   * yang tab-nya lama tidak aktif (koneksi realtime tertunda) bisa terus
+   * menampilkan item yang sudah dimatikan, lalu tetap terkirim. `pre`
+   * mengikuti `menus` yang disegarkan realtime, jadi ini sudah menutup
+   * celah untuk kasus umum; submit() masih memeriksa ulang sekali lagi
+   * langsung ke server sebagai jaring pengaman terakhir. */
+  const [unavailNotice, setUnavailNotice] = useState<string[] | null>(null);
+  useEffect(() => {
+    const availIds = new Set(pre.map((m) => m.id));
+    setCart((c) => {
+      const dropped: string[] = [];
+      const next: Record<string, CartLine> = {};
+      for (const [key, line] of Object.entries(c)) {
+        const menu = pre.find((m) => m.id === line.menu.id);
+        const variantStillThere = !line.variant || menu?.variants.some((v) => v.id === line.variant!.id);
+        if (availIds.has(line.menu.id) && variantStillThere) next[key] = line;
+        else dropped.push(line.menu.name + (line.variant ? ` (${line.variant.name})` : ""));
+      }
+      if (dropped.length) setUnavailNotice(dropped);
+      return dropped.length ? next : c;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pre]);
+  useEffect(() => {
+    if (!unavailNotice) return;
+    const id = setTimeout(() => setUnavailNotice(null), 5000);
+    return () => clearTimeout(id);
+  }, [unavailNotice]);
+
   const keyOf = (l: CartLine) => l.menu.id + (l.variant ? ":" + l.variant.id : "");
   const add = (menu: MenuItem, variant?: Variant) => {
     const key = menu.id + (variant ? ":" + variant.id : "");
@@ -172,6 +202,35 @@ export default function PreOrderParent({
         setSubmitError("Pre-order sudah ditutup. Silakan hubungi kantin.");
         setSubmitting(false);
         return;
+      }
+      // Jaring pengaman TERAKHIR: ambil langsung snapshot menu tersimpan
+      // untuk tanggal sesi dari server (bukan state lokal yang bisa basi
+      // kalau realtime sempat putus/tab lama tidak aktif) — tolak kirim
+      // kalau ternyata ada item di keranjang yang sudah tidak tersedia.
+      try {
+        const snap = await fetchMenuHarian([fresh.serviceDate]);
+        const freshMenus = snap[fresh.serviceDate];
+        if (freshMenus) {
+          const freshAvail = new Map(freshMenus.filter((m) => m.channels.preorder).map((m) => [m.id, m]));
+          const stale = lines.filter((l) => {
+            const m = freshAvail.get(l.menu.id);
+            return !m || (l.variant && !m.variants.some((v) => v.id === l.variant!.id));
+          });
+          if (stale.length) {
+            setCart((c) => {
+              const next = { ...c };
+              stale.forEach((l) => { delete next[keyOf(l)]; });
+              return next;
+            });
+            setUnavailNotice(stale.map((l) => l.menu.name + (l.variant ? ` (${l.variant.name})` : "")));
+            setSubmitError("Sebagian menu di keranjang sudah tidak tersedia — sudah dihapus otomatis. Silakan periksa keranjang lagi.");
+            setSubmitting(false);
+            return;
+          }
+        }
+      } catch {
+        // Snapshot gagal diambil (migration_9 belum jalan / jaringan) —
+        // jangan blokir pemesanan hanya karena pemeriksaan ekstra ini gagal.
       }
       const kelasLbl = kelasNeeded ? `${form.tingkat} · ${form.kelas}` : form.tingkat;
       const r: PreOrderReceipt = {
@@ -289,7 +348,7 @@ export default function PreOrderParent({
   /* ---------- KONFIRMASI PESANAN (checkout) ---------- */
   if (step === "checkout") {
     return (
-      <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
+      <Screen onHelp={() => setShowHelp(true)} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)} unavailNotice={unavailNotice}>
         <Top title="Konfirmasi Pesanan" onBack={() => setStep("menu")} />
         <div style={{ padding: "4px 20px 20px" }}>
           <SectionLabel>Pesanan</SectionLabel>
@@ -439,7 +498,7 @@ export default function PreOrderParent({
   });
 
   return (
-    <Screen showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
+    <Screen showHelp={showHelp} onCloseHelp={() => setShowHelp(false)} unavailNotice={unavailNotice}>
       <style>{`.catscroll::-webkit-scrollbar{display:none}`}</style>
 
       {/* Header sticky: brand + tombol bantuan; tanggal teks polos tanpa chip */}
@@ -591,17 +650,28 @@ export default function PreOrderParent({
 }
 
 /* ---- shared sub-components ---- */
-function Screen({ children, onHelp, showHelp, onCloseHelp }: {
+function Screen({ children, onHelp, showHelp, onCloseHelp, unavailNotice }: {
   children: React.ReactNode;
   onHelp?: () => void;
   showHelp?: boolean;
   onCloseHelp?: () => void;
+  /** Nama menu yang baru saja dihapus otomatis dari keranjang karena sudah
+   * tidak tersedia (admin mematikan/menghabiskannya). */
+  unavailNotice?: string[] | null;
 }) {
   return (
     <>
       <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
         <div style={{ maxWidth: 460, margin: "0 auto", paddingBottom: 96, position: "relative" }}>{children}</div>
       </div>
+      {unavailNotice && unavailNotice.length > 0 && (
+        <div style={{ position: "fixed", left: 16, right: 16, bottom: 20, zIndex: 60, display: "flex", justifyContent: "center" }}>
+          <div className="flex items-start gap-2" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "13px 16px", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+            <AlertCircle size={17} style={{ flex: "none", marginTop: 1 }} />
+            <span>{unavailNotice.join(", ")} sudah tidak tersedia dan dihapus dari keranjang.</span>
+          </div>
+        </div>
+      )}
       {onHelp && (
         <button onClick={onHelp} aria-label="Panduan pemesanan"
           style={{ position: "fixed", right: 16, top: 16, zIndex: 10, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(47,42,36,.16)", flexShrink: 0 }}
