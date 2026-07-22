@@ -3,6 +3,12 @@ import type { MenuItem } from "../types";
 export const rupiah = (n: number | null | undefined) =>
   n == null ? "—" : "Rp" + n.toLocaleString("id-ID");
 
+/** Kapital di awal tiap kata — dipakai menampilkan nama menu/pelanggan yang
+ * diketik manual (mis. semua huruf kecil) supaya tetap rapi tanpa merepotkan
+ * pengguna lanjut usia untuk mengetik Title Case sendiri. Tidak mengubah
+ * data tersimpan, murni tampilan. */
+export const toTitleCase = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+
 export const uid = () => Math.random().toString(36).slice(2, 9);
 export const orderNo = () => "PO-" + Math.random().toString(36).slice(2, 8).toUpperCase();
 

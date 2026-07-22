@@ -4,8 +4,8 @@ import {
   Box, Check, X, Search, Power, AlertCircle, Settings,
   ChevronLeft, ChevronRight, Share2, Copy,
 } from "lucide-react";
-import { t } from "../../lib/theme";
-import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock } from "../../lib/format";
+import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
+import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
 import { TINGKAT_LIST, tingkatColor } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
 
@@ -107,6 +107,26 @@ export default function PreOrderAdmin({
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState("Semua");
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  /** Struk rincian per-item Rekap Masak: ketuk nama menu -> siapa saja yang
+   * pesan + jumlahnya (menjawab "siapa yang pesan Bakwan?" tanpa buka
+   * satu-satu kartu pesanan). Digabung per anak (nama+kelas) supaya pesanan
+   * susulan/dobel tidak tampil sebagai baris terpisah. */
+  const [menuDetail, setMenuDetail] = useState<{ name: string; buyers: { nama: string; kelas: string; qty: number }[]; total: number } | null>(null);
+  const openMenuDetail = (itemKey: string) => {
+    const map = new Map<string, { nama: string; kelas: string; qty: number }>();
+    orders.forEach((o) => {
+      o.items.forEach((it) => {
+        const key = it.name + (it.variant ? " " + it.variant : "");
+        if (key !== itemKey) return;
+        const buyerKey = `${o.nama.trim().toLowerCase()}|${o.kelas.trim().toLowerCase()}`;
+        const existing = map.get(buyerKey);
+        if (existing) existing.qty += it.qty;
+        else map.set(buyerKey, { nama: o.nama, kelas: o.kelas || o.tingkat, qty: it.qty });
+      });
+    });
+    const buyers = Array.from(map.values()).sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+    setMenuDetail({ name: itemKey, buyers, total: buyers.reduce((s, b) => s + b.qty, 0) });
+  };
   const [linkCopied, setLinkCopied] = useState(false);
   const poLink = `${window.location.origin}/pesan`;
   const handleCopyLink = () => {
@@ -507,13 +527,14 @@ export default function PreOrderAdmin({
               return acc;
             }, {})
           ).sort((a, b) => a[0].localeCompare(b[0], "id")).map(([name, qty]) => (
-            <div key={name} className="flex items-center justify-between" style={{ padding: "13px 0", borderBottom: `1px solid ${t.divider}` }}>
-              <span style={{ fontSize: 15, fontWeight: 600 }}>{name}</span>
+            <button key={name} onClick={() => openMenuDetail(name)}
+              className="flex items-center justify-between" style={{ width: "100%", padding: "13px 0", borderBottom: `1px solid ${t.divider}`, background: "transparent", border: "none", borderBottomWidth: 1, borderBottomStyle: "solid", borderBottomColor: t.divider, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 15, fontWeight: 600 }}>{toTitleCase(name)}</span>
               <span style={{ fontSize: 20, fontWeight: 800 }}>{qty}</span>
-            </div>
+            </button>
           ))}
           {orders.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>Belum ada pesanan.</div>}
-          <div style={{ fontSize: 12.5, color: t.text2, marginTop: 14 }}>Cukup angka untuk dapur — tanpa nama murid.</div>
+          <div style={{ fontSize: 12.5, color: t.text2, marginTop: 14 }}>Ketuk nama menu untuk melihat siapa saja yang pesan.</div>
         </Sheet>
       )}
       {sheet === "cetak" && (
@@ -525,6 +546,36 @@ export default function PreOrderAdmin({
           ))}
           <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 6 }}>Cetak thermal — segera hadir.</div>
         </Sheet>
+      )}
+
+      {/* Popup struk RINCIAN PER-MENU (dari Rekap Masak) — siapa saja yang
+          pesan menu ini + jumlahnya. Melayang di tengah seperti struk lain. */}
+      {menuDetail && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
+          <div onClick={() => setMenuDetail(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
+            <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", fontFamily: STRUK_MONO, fontWeight: 600 }}>
+              <div style={{ textAlign: "center", fontSize: 15, fontWeight: 800 }}>{toTitleCase(menuDetail.name)}</div>
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              {menuDetail.buyers.length === 0 ? (
+                <div style={{ textAlign: "center", fontSize: 13, color: t.text2, padding: "8px 0" }}>Belum ada yang pesan.</div>
+              ) : menuDetail.buyers.map((b, i) => (
+                <div key={i} className="flex justify-between" style={{ fontSize: 13, lineHeight: 1.85, gap: 8 }}>
+                  <span>{b.nama} {b.kelas}</span>
+                  <span style={{ flex: "none" }}>({b.qty})</span>
+                </div>
+              ))}
+              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
+              <div className="flex justify-between" style={{ fontSize: 14, fontWeight: 800 }}>
+                <span>TOTAL</span><span>{menuDetail.total}</span>
+              </div>
+            </div>
+            <button onClick={() => setMenuDetail(null)} aria-label="Tutup rincian menu"
+              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
+              <X size={19} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
