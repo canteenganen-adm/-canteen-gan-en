@@ -665,7 +665,10 @@ function Screen({ children, onHelp, showHelp, onCloseHelp, unavailNotice }: {
         <div style={{ maxWidth: 460, margin: "0 auto", paddingBottom: 96, position: "relative" }}>{children}</div>
       </div>
       {unavailNotice && unavailNotice.length > 0 && (
-        <div style={{ position: "fixed", left: 16, right: 16, bottom: 20, zIndex: 60, display: "flex", justifyContent: "center" }}>
+        /* Di ATAS, bukan bawah — laman ini punya kolom isian (Nama/WA);
+           toast bawah bisa ketutup keyboard pas orang tua sedang mengetik.
+           top:74 memberi jarak dari tombol bantuan (?) di pojok kanan atas. */
+        <div style={{ position: "fixed", left: 16, right: 16, top: 74, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-start gap-2" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "13px 16px", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <AlertCircle size={17} style={{ flex: "none", marginTop: 1 }} />
             <span>{unavailNotice.join(", ")} sudah tidak tersedia dan dihapus dari keranjang.</span>
