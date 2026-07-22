@@ -228,16 +228,20 @@ export default function Penjualan({
     commit(false, { ...form, kelas: kelasNeeded ? form.kelas : "" });
   };
 
-  // Kartu menu — style TIDAK berubah, hanya posisi filter kategori yang pindah.
+  // Kartu menu — rasio 1:1 (persegi) supaya grid 2 kolom rapi rata,
+  // bukan lagi tinggi berbeda-beda mengikuti panjang nama. Nama dibatasi
+  // 3 baris (line-clamp) supaya tidak meluber keluar kotak persegi.
   const menuCard = (m: MenuItem) => {
     const inCart = qtyOf(m.id);
     return (
-      <button key={m.id} onClick={() => tapMenu(m)} style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, minHeight: 92 }}>
+      <button key={m.id} onClick={() => tapMenu(m)}
+        className="flex flex-col justify-between"
+        style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, aspectRatio: "1 / 1" }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.text, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
-        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{m.name}</div>
-        <div className="flex items-center gap-1" style={{ marginTop: 6 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.name}</div>
+        <div className="flex items-center gap-1">
           {m.variants.length > 0 && <Layers size={13} color={t.amberText} />}
           <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
         </div>
