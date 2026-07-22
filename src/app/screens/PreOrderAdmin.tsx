@@ -29,6 +29,7 @@ type AdminOrder = {
   kelas: string;
   ambil: string;
   packed: boolean;
+  packedAt: string | null;
   items: Transaction["items"];
   total: number;
 };
@@ -42,6 +43,10 @@ type MergedGroup = {
   ambil: string;
   allPacked: boolean;
   somePacked: boolean;
+  /** Jam kemas TERBARU di antara pesanan dalam grup ini — tercatat otomatis
+   * oleh sistem, bukan diketik admin, jadi jadi bukti objektif jam berapa
+   * sebenarnya dikemas (mis. Papa/Mama bisa saling cek siapa lambat). */
+  packedAt: string | null;
   flatItems: Transaction["items"];
   /** Daftar item PER PESANAN — pesanan dobel tampil sebagai 2 daftar
    * terpisah (bukan digabung), supaya ketahuan kalau ortu tak sengaja
@@ -56,11 +61,12 @@ function mergeOrders(list: AdminOrder[]): MergedGroup[] {
     // Nama dinormalkan (spasi ganda/ujung) supaya pesanan anak yang sama
     // tidak pecah jadi dua kartu hanya karena beda ketikan spasi
     const key = `${o.nama.trim().replace(/\s+/g, " ").toLowerCase()}|${o.kelas.trim().toLowerCase()}`;
-    if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, flatItems: [], perOrder: [], total: 0, _orders: [] });
+    if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, packedAt: null, flatItems: [], perOrder: [], total: 0, _orders: [] });
     const g = map.get(key)!;
     g.ids.push(o.id);
     g.allPacked = g.allPacked && o.packed;
     g.somePacked = g.somePacked || o.packed;
+    if (o.packedAt && (!g.packedAt || o.packedAt > g.packedAt)) g.packedAt = o.packedAt;
     g.flatItems = [...g.flatItems, ...o.items];
     g.perOrder.push(o.items);
     g.total += o.total;
@@ -200,6 +206,7 @@ export default function PreOrderAdmin({
           kelas: tx.customer.kelas,
           ambil: tx.waktuAmbil || defaultAmbil,
           packed: !!tx.packed,
+          packedAt: tx.packedAt ?? null,
           items: tx.items,
           total: tx.total,
         })),
@@ -592,11 +599,18 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
     <div onClick={onTap}
       style={{ background: t.surface, border: `1.5px solid ${cardBorder}`, borderLeft: late ? `4px solid ${t.error}` : `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
       <div className="flex items-center gap-3">
-        <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-          background: checkBg, border: `2px solid ${checkBorder}`, color: "#fff" }}>
-          {g.allPacked && <Check size={18} />}
-          {partial && <span style={{ width: 12, height: 2, background: t.text, borderRadius: 2, display: "block" }} />}
-        </span>
+        <div style={{ flex: "none", width: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
+            background: checkBg, border: `2px solid ${checkBorder}`, color: "#fff" }}>
+            {g.allPacked && <Check size={18} />}
+            {partial && <span style={{ width: 12, height: 2, background: t.text, borderRadius: 2, display: "block" }} />}
+          </span>
+          {/* Jam kemas — tercatat OTOMATIS oleh sistem (bukan diketik admin),
+              bukti objektif kapan sebenarnya dikemas; mutlak tidak bisa diubah manual. */}
+          {g.allPacked && g.packedAt && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: t.text2, whiteSpace: "nowrap" }}>{wibClock(g.packedAt)}</span>
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
             <span style={{ fontSize: 18, fontWeight: 800, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</span>

@@ -309,11 +309,17 @@ function useCanteenStore() {
       reportError("loadTrash", e);
     }
   }, []);
+  /** Jam kemas TERCATAT OTOMATIS oleh sistem (bukan diketik admin) — bukti
+   * objektif kapan sebenarnya dikemas, tidak bisa diakali. Dikosongkan lagi
+   * kalau ditandai ulang Belum Dikemas (bukan status "sudah pernah", tapi
+   * status SAAT INI). */
   const togglePacked = (id: string) => {
     setTransactions((prev) => {
-      const next = prev.map((tx) => (tx.id === id ? { ...tx, packed: !tx.packed } : tx));
+      const next = prev.map((tx) =>
+        tx.id === id ? { ...tx, packed: !tx.packed, packedAt: !tx.packed ? new Date().toISOString() : null } : tx
+      );
       const updated = next.find((tx) => tx.id === id);
-      if (updated) updateTransaction(id, { packed: updated.packed }).catch((e) => reportError("togglePacked", e));
+      if (updated) updateTransaction(id, { packed: updated.packed, packedAt: updated.packedAt }).catch((e) => reportError("togglePacked", e));
       return next;
     });
   };

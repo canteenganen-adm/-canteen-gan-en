@@ -264,7 +264,7 @@ export default function PreOrderParent({
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
           <div style={{ width: 84, height: 84, borderRadius: 24, background: t.primaryLight, display: "grid", placeItems: "center", margin: "0 auto 18px", fontSize: 46 }}>🪷</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{kantin}</div>
-          <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, fontStyle: "italic" }}>Sehangat pelukan Ibu</div>
+          <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, fontStyle: "italic" }}>Masakan sehangat pelukan Ibu</div>
           <div className="flex items-center justify-center gap-2" style={{ marginTop: 12, color: t.text2, fontSize: 14.5 }}><Calendar size={16} /> {serviceDate}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: closed ? t.errorBg : t.successBg, color: closed ? t.error : t.successText }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: closed ? t.error : t.success }} /> Pre-order {closed ? "Ditutup" : "Dibuka"}
@@ -728,13 +728,21 @@ function HelpModal({ onClose }: { onClose: () => void }) {
               ["Pemesanan ditutup otomatis pukul 08.00 pada hari makan.", "Agar tidak terlewat, kami menyarankan melakukan pemesanan pada malam sebelumnya."],
               ["Pesanan yang sudah dikirim tidak dapat diubah melalui aplikasi.", "Mohon pastikan kembali menu dan jumlah pesanan sebelum menekan Kirim Pesanan."],
               ["Mohon menitipkan kotak bekal Ananda (beserta wadah tambahan untuk menu berkuah bila diperlukan) di pos satpam sebelum jam masuk sekolah.", "Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil di lemari pengambilan bekal di lobby. Kantin tidak menyediakan wadah maupun alat makan."],
-              ["Pembayaran tunai atau transfer:", "BCA 7347028990 a.n. Roswinarti"],
+              ["Pembayaran dapat dilakukan secara tunai atau transfer ke rekening berikut.", ""],
             ].map(([bold, rest], i) => (
               <div key={i} style={{ fontSize: 14.5, lineHeight: 1.55, marginBottom: 10, paddingLeft: 14, borderLeft: `3px solid ${t.border}` }}>
-                <span style={{ fontWeight: 700, color: t.text }}>{bold}</span>{" "}
+                <span style={{ fontWeight: 700, color: t.text }}>{bold}</span>{rest && " "}
                 <span style={{ color: t.text2 }}>{rest}</span>
               </div>
             ))}
+            {/* Rekening — frame TERPISAH dari bullet supaya tidak "kayak
+                list", langsung kebaca sebagai satu kartu pembayaran */}
+            <div style={{ background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.amberText, marginBottom: 5 }}>Transfer ke</div>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>BCA 7347028990</div>
+              <div style={{ fontSize: 15, color: t.text2, marginTop: 2 }}>a.n. Roswinarti</div>
+            </div>
+            <div style={{ fontSize: 14, color: t.text2, marginTop: 14 }}>Apabila ada pertanyaan, Papa/Mama dapat menghubungi kantin melalui WhatsApp.</div>
           </div>
 
           {/* FAQ */}
@@ -744,7 +752,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
               ["Apakah link pemesanan berbeda setiap hari?", "Tidak. Link selalu sama. Tanggal layanan ditentukan otomatis oleh kantin."],
               ["Memesan untuk 2 anak atau 2 waktu istirahat?", "Buat pesanan terpisah. Setelah pesanan pertama terkirim, tekan Buat Pesanan Lagi — data tidak perlu diisi ulang."],
               ["Bolehkah memesan lebih dari satu menu?", "Boleh. Papa/Mama dapat memilih beberapa menu sekaligus dalam satu pesanan."],
-              ["Tombol \"Salin Bukti Pesanan\" menyalin apa?", "Menyalin teks bukti pesanan — bisa langsung ditempel ke WhatsApp atau catatan."],
+              ["Tombol \"Salin Bukti Pesanan\" menyalin apa?", "Menyalin teks bukti pesanan — bisa langsung ditempel (paste) ke chat WhatsApp, atau ke aplikasi Catatan/Notes di HP Papa/Mama untuk disimpan."],
             ].map(([q, a], i) => (
               <div key={i} style={{ marginBottom: i < 3 ? 12 : 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: t.text, marginBottom: 3 }}>{q}</div>

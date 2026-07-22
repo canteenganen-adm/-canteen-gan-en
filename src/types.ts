@@ -63,6 +63,10 @@ export interface Transaction {
   waktuAmbil?: string;
   /** Hanya untuk source:'preorder' — status kemas di sisi admin. */
   packed?: boolean;
+  /** Jam server saat DITANDAI Sudah Dikemas — dicatat OTOMATIS oleh sistem
+   * (bukan diketik admin), jadi jadi bukti objektif kapan sebenarnya
+   * dikemas. Dikosongkan lagi kalau ditandai ulang Belum Dikemas. */
+  packedAt?: string | null;
   /** No. Pesanan tampil di Bukti Pesanan (PO-XXXXXX). Hanya source:'preorder'. */
   orderNo?: string;
   /** Diisi saat "Batalkan Transaksi" — soft-delete, transaksi TETAP ada untuk

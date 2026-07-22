@@ -37,6 +37,7 @@ interface TransaksiRow {
   service_date: string | null;
   waktu_ambil: string | null;
   packed: boolean | null;
+  packed_at?: string | null;
   order_no: string | null;
   cancelled_at: string | null;
   deleted_at: string | null;
@@ -104,6 +105,7 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   serviceDate: r.service_date ?? undefined,
   waktuAmbil: r.waktu_ambil ?? undefined,
   packed: r.packed ?? undefined,
+  packedAt: r.packed_at ?? undefined,
   orderNo: r.order_no ?? undefined,
   cancelledAt: r.cancelled_at ?? undefined,
   deletedAt: r.deleted_at ?? undefined,
@@ -321,6 +323,7 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   const row: Record<string, unknown> = {};
   if (patch.paid !== undefined) row.paid = patch.paid;
   if (patch.packed !== undefined) row.packed = patch.packed;
+  if (patch.packedAt !== undefined) row.packed_at = patch.packedAt;
   if (patch.cancelledAt !== undefined) row.cancelled_at = patch.cancelledAt;
   if (patch.serviceDate !== undefined) row.service_date = patch.serviceDate;
   if (patch.billedAt !== undefined) row.billed_at = patch.billedAt;
