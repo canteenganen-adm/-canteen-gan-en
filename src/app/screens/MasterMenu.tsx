@@ -225,10 +225,13 @@ export default function MasterMenu({
             </div>
           </div>
 
-          {/* Dua "kertas" ala tab Chrome: Tampilan Ortu (pratinjau) · Menu (daftar semula) */}
+          {/* Dua "kertas" ala tab Chrome: Buku Menu (kelola, id tetap "menu"
+              untuk kompatibilitas state) · Preview PO (baca saja). Label
+              "Menu" dulu dobel dengan judul halaman "Menu" -- bikin bingung
+              tab mana yang dimaksud. */}
           <div style={{ marginTop: 16 }}>
             <PaperTabs
-              tabs={[{ id: "menu", label: "Menu" }, { id: "po", label: "PO" }]}
+              tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
               value={view}
               onChange={onViewChange}
             />
@@ -328,7 +331,7 @@ export default function MasterMenu({
                       menu tanggal itu" padahal belum. */}
                   {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
                     <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4DA", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
-                      <RefreshCw size={13} /> Pratinjau — belum disimpan untuk tanggal ini, memakai menu yang aktif sekarang
+                      <RefreshCw size={13} /> Hanya preview. Menu PO belum disimpan untuk tanggal ini, memakai menu yang aktif sekarang
                     </div>
                   )}
                 </div>
