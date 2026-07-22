@@ -319,6 +319,18 @@ export default function MasterMenu({
                       <Lock size={13} /> Mode Lihat Riwayat — data tanggal ini terkunci
                     </div>
                   )}
+                  {/* Tanggal ke depan yang BELUM PERNAH disimpan: struk di
+                      bawah cuma pratinjau (ikut toggle Pre-order yang aktif
+                      SEKARANG di kertas Menu) — bukan komitmen untuk tanggal
+                      ini. Orang tua tidak pernah melihat tanggal ini kecuali
+                      admin benar-benar menekan Simpan saat sesi PO pindah
+                      ke sini. Tanpa banner ini gampang dikira "sudah jadi
+                      menu tanggal itu" padahal belum. */}
+                  {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4DA", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
+                      <RefreshCw size={13} /> Pratinjau — belum disimpan untuk tanggal ini, memakai menu yang aktif sekarang
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ background: "#FFF4DA", border: "1px solid #F1DFB0", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
