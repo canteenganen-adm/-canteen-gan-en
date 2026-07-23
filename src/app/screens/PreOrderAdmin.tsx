@@ -594,44 +594,36 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
-  // Satu aksen saja untuk "telat" — garis kiri merah tipis, border sisi
-  // lain tetap netral. Border merah PENUH + garis kiri tebal sekaligus
-  // (sebelumnya) bikin kartu kelihatan berat/tidak rapi.
-  const cardBorder = g.allPacked ? "#D8E6D4" : t.border;
   return (
     <div onClick={onTap}
-      style={{ background: t.surface, border: `1.5px solid ${cardBorder}`, borderLeft: late ? `3px solid ${t.error}` : `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
-      <div className="flex items-center gap-3">
-        <div style={{ flex: "none", width: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-            background: checkBg, border: `2px solid ${checkBorder}`, color: "#fff" }}>
-            {g.allPacked && <Check size={18} />}
-            {partial && <span style={{ width: 12, height: 2, background: t.text, borderRadius: 2, display: "block" }} />}
-          </span>
-          {/* Jam kemas — tercatat OTOMATIS oleh sistem (bukan diketik admin),
-              bukti objektif kapan sebenarnya dikemas; mutlak tidak bisa diubah manual. */}
-          {g.allPacked && g.packedAt && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: t.text2, whiteSpace: "nowrap" }}>{wibClock(g.packedAt)}</span>
-          )}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
-            <span style={{ fontSize: 18, fontWeight: 800, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</span>
-            <span style={{ background: tingkatColor(g.tingkat), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800 }}>
-              {g.kelas || g.tingkat}
-            </span>
-            {g.ids.length > 1 && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: t.amberText, background: t.primaryLight, border: `1px solid #F1DFB0`, padding: "2px 8px", borderRadius: 999 }}>{g.ids.length} pesanan</span>
-            )}
-            {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />{g.ambil}</span>}
-            {late && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.error, background: t.errorBg, border: `1px solid #E8B9B9`, padding: "2px 8px", borderRadius: 999 }}><Clock size={11} />Lewat {g.ambil}</span>}
-          </div>
-        </div>
+      style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
+      {/* Telat — SATU penanda saja: titik bulat merah pojok kanan atas,
+          ikon jam tanpa tulisan. Tidak ada pil/label lain untuk status ini. */}
+      {late && (
+        <span style={{ position: "absolute", top: -7, right: -7, width: 24, height: 24, borderRadius: "50%", background: t.error, color: "#fff", display: "grid", placeItems: "center", boxShadow: "0 2px 5px rgba(217,93,93,.45)" }}>
+          <Clock size={12} />
+        </span>
+      )}
+      <div className="flex items-baseline gap-2" style={{ flexWrap: "wrap" }}>
+        <span style={{ width: 22, height: 22, borderRadius: 7, flex: "none", display: "inline-grid", placeItems: "center",
+          background: checkBg, border: `1.5px solid ${checkBorder}`, color: "#fff", verticalAlign: "middle" }}>
+          {g.allPacked && <Check size={14} />}
+          {partial && <span style={{ width: 10, height: 2, background: t.text, borderRadius: 2, display: "block" }} />}
+        </span>
+        <span style={{ fontSize: 17, fontWeight: 800, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.tingkat, g.kelas) }}>{g.kelas || g.tingkat}</span>
+        {g.ids.length > 1 && <span style={{ fontSize: 11, fontWeight: 700, color: t.text2 }}>· {g.ids.length} pesanan</span>}
+        {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.text2, marginLeft: "auto" }}><Clock size={11} />{g.ambil}</span>}
       </div>
-      <div style={{ marginTop: 10, paddingLeft: 42 }}>
+      {/* Jam kemas — tercatat OTOMATIS oleh sistem (bukan diketik admin),
+          bukti objektif kapan sebenarnya dikemas; mutlak tidak bisa diubah manual. */}
+      {g.allPacked && g.packedAt && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: t.text2, paddingLeft: 30, marginTop: 2 }}>Dikemas {wibClock(g.packedAt)}</div>
+      )}
+      <div style={{ marginTop: 8, paddingLeft: 30 }}>
         {g.perOrder.length <= 1 ? (
           g.flatItems.map((it, i) => (
-            <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
+            <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, fontFamily: STRUK_MONO }}>
               {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
             </div>
           ))
@@ -642,7 +634,7 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
             <div key={oi} style={{ borderLeft: `3px solid ${t.primary}`, paddingLeft: 10, marginBottom: oi < g.perOrder.length - 1 ? 10 : 0 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
               {items.map((it, i) => (
-                <div key={i} style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.5 }}>
+                <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8, fontFamily: STRUK_MONO }}>
                   {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
                 </div>
               ))}
