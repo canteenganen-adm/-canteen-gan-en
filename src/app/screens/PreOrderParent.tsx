@@ -233,10 +233,14 @@ export default function PreOrderParent({
         // jangan blokir pemesanan hanya karena pemeriksaan ekstra ini gagal.
       }
       const kelasLbl = kelasNeeded ? `${form.tingkat} · ${form.kelas}` : form.tingkat;
+      // toLocaleString("id-ID") default menulis jam pakai titik (15.06.28) —
+      // disamakan ke titik dua (15:06:28) seperti konvensi jam di seluruh app.
+      const now = new Date();
+      const jamColon = [now.getHours(), now.getMinutes(), now.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":");
       const r: PreOrderReceipt = {
         no: orderNo(), nama: form.nama, tingkat: form.tingkat, kelas: kelasNeeded ? form.kelas : "",
         kelasLabel: kelasLbl, wa: waDigits, ambil: form.ambil, serviceDate,
-        submittedAt: new Date().toLocaleString("id-ID"),
+        submittedAt: `${now.toLocaleDateString("id-ID")}, ${jamColon}`,
         items: lines.map((l) => ({ name: l.menu.name, variant: l.variant?.name || null, price: l.variant ? l.variant.price : l.menu.price ?? 0, qty: l.qty, note: l.note || "" })),
         total,
       };
@@ -334,7 +338,7 @@ export default function PreOrderParent({
           </button>
 
           <div style={{ textAlign: "center", fontSize: 14, color: t.text2, margin: "18px 8px", lineHeight: 1.6 }}>
-            Mohon menitipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Untuk KB, TK, dan SD Kelas 1–2, pesanan akan diantarkan ke kelas. Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil di lemari pengambilan bekal di lobby.
+            Jangan lupa titipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Untuk menu berkuah, mohon sertakan wadah tambahan. Kantin tidak menyediakan wadah maupun alat makan.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
           </div>
           <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>

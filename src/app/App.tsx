@@ -591,7 +591,11 @@ function MainShell({ store }: { store: CanteenStore }) {
             onOpenSettings={openSettings}
           />
         )}
-        {tab === "tagihan" && (
+        {/* Tetap mounted (display:none saat tidak aktif) — bukan
+            unmount/remount seperti tab lain, supaya filter/urutan/pencarian
+            yang sedang dipakai tidak diam-diam balik ke default cuma
+            karena pindah tab sebentar lalu balik lagi. */}
+        <div style={{ display: tab === "tagihan" ? "block" : "none", height: "100%" }}>
           <Tagihan
             transactions={store.transactions}
             settings={store.settings}
@@ -604,7 +608,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onMarkBilled={store.markBilled}
             onOpenSettings={openSettings}
           />
-        )}
+        </div>
         {tab === "menu" && (
           <MasterMenu
             menus={store.menus}
