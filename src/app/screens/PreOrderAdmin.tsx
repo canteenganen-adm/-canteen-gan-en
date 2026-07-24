@@ -597,11 +597,16 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
   return (
     <div onClick={onTap}
       style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
-      {/* Telat — SATU penanda saja: titik bulat merah pojok kanan atas,
-          ikon jam tanpa tulisan. Tidak ada pil/label lain untuk status ini. */}
+      {/* Telat — SATU penanda saja, pojok kanan atas. Ditulis "Telat" jelas
+          (bukan ikon polos) supaya tidak ada yang penasaran ketuk buat cek
+          artinya apa — badge ini SENGAJA bukan tombol (stopPropagation),
+          menyentuhnya tidak boleh ikut men-toggle Sudah Dikemas kartu. */}
       {late && (
-        <span style={{ position: "absolute", top: -7, right: -7, width: 24, height: 24, borderRadius: "50%", background: t.error, color: "#fff", display: "grid", placeItems: "center", boxShadow: "0 2px 5px rgba(217,93,93,.45)" }}>
-          <Clock size={12} />
+        <span
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1"
+          style={{ position: "absolute", top: -9, right: -8, height: 24, padding: "0 9px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: ".02em", boxShadow: "0 2px 5px rgba(217,93,93,.45)" }}>
+          <Clock size={12} /> Telat
         </span>
       )}
       <div className="flex items-baseline gap-2" style={{ flexWrap: "wrap" }}>

@@ -712,7 +712,7 @@ export default function Tagihan({
           <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 18, fontWeight: 800 }}>Filter</div>
-              <button onClick={() => setFilterSheet(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+              <button onClick={() => setFilterSheet(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Urutkan</div>
@@ -800,7 +800,7 @@ export default function Tagihan({
           <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "80vh", overflowY: "auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 18, fontWeight: 800 }}>Pratinjau WhatsApp</div>
-              <button onClick={() => setWaDraft(null)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+              <button onClick={() => setWaDraft(null)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
             <div style={{ fontSize: 12.5, color: t.text2, marginBottom: 10 }}>Periksa & edit sebelum dikirim.</div>
             {waDraft.siblings.length > 0 && (
@@ -808,16 +808,15 @@ export default function Tagihan({
                  supaya ortu tidak menerima tagihan dua kali */
               <button onClick={toggleMergeWa} className="flex items-center gap-3"
                 style={{ width: "100%", marginBottom: 10, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                  border: `1.5px solid ${waDraft.merged ? t.primary : t.border}`,
-                  background: waDraft.merged ? t.primaryLight : t.surfaceSoft }}>
+                  border: `1.5px solid ${t.primary}`, background: t.primaryLight }}>
                 <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center",
-                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${waDraft.merged ? t.primary : t.border}`, color: t.text }}>
+                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primary}`, color: t.text }}>
                   {waDraft.merged && <Check size={16} />}
                 </span>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: waDraft.merged ? t.amberText : t.text, lineHeight: 1.45 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: t.amberText, lineHeight: 1.45 }}>
                   {waDraft.merged
                     ? `Tagihan digabung (${1 + waDraft.siblings.length} anak, satu pesan)`
-                    : `Nomor ini juga punya tagihan: ${waDraft.siblings.map((s) => `${toTitleCase(s.customer.nama)} (${s.customer.kelas || s.customer.tingkat})`).join(", ")} — ketuk untuk gabungkan`}
+                    : `Nomor ini juga punya tagihan lain: ${waDraft.siblings.map((s) => `${toTitleCase(s.customer.nama)} (${s.customer.kelas || s.customer.tingkat})`).join(", ")} — ketuk untuk gabungkan`}
                 </span>
               </button>
             )}

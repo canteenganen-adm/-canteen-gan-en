@@ -531,7 +531,7 @@ function Sheet({ title, children, onClose, leftIcon, onLeft }: {
         <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center gap-2">
           {leftIcon && <button onClick={onLeft} style={{ border: "none", background: "transparent", cursor: "pointer", color: t.text, display: "grid", placeItems: "center" }}>{leftIcon}</button>}
           <div style={{ fontSize: 18, fontWeight: 800, flex: 1 }}>{title}</div>
-          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>

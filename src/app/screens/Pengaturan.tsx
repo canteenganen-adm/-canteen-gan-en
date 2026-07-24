@@ -330,8 +330,8 @@ export default function Pengaturan({
             <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "70vh", overflowY: "auto", padding: 20 }}>
               <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>Pilih Kelas · {eTingkat}</div>
-                <button onClick={() => setShowKelasSheet(false)}
-                  style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}>
+                <button onClick={() => setShowKelasSheet(false)} aria-label="Tutup"
+                  style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 18 }}>
                   ×
                 </button>
               </div>
@@ -856,7 +856,7 @@ export default function Pengaturan({
           <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 18, fontWeight: 800 }}>Bagikan Link Pemesanan</div>
-              <button onClick={() => setLinkOpen(false)} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+              <button onClick={() => setLinkOpen(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
             <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
               Link untuk {serviceDateLabel(serviceDate)}. {preorderOpen ? "Pre-order sedang dibuka." : "Saat ini ditutup."}

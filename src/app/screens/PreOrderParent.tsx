@@ -701,7 +701,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             <span style={{ fontSize: 20 }}>🪷</span>
             <div style={{ fontSize: 18, fontWeight: 800 }}>Panduan Pemesanan</div>
           </div>
-          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}>
+          <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}>
             <X size={18} />
           </button>
         </div>
@@ -807,7 +807,7 @@ function BottomSheet({ title, children, onClose }: { title: string; children: Re
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "80vh", overflowY: "auto", padding: 20 }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div>
-          <button onClick={onClose} style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text2, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+          <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
         </div>
         {children}
       </div>
