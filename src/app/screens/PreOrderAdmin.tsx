@@ -618,9 +618,11 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
               <Clock size={11} /> Telat
             </span>
           )}
+          {/* Tanpa ikon centang — checkbox kiri sudah mencentang, dobel
+              centang malah aneh. Pil hijau + jam saja sudah jelas. */}
           {g.allPacked && g.packedAt && (
-            <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
-              <Check size={11} /> {wibClock(g.packedAt)}
+            <span style={{ display: "inline-flex", alignItems: "center", height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
+              {wibClock(g.packedAt)}
             </span>
           )}
         </span>
