@@ -98,7 +98,10 @@ const isoShift = (days: number) => {
   d.setDate(d.getDate() - days);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-type UndoAction = { type: "paid"; tx: Transaction } | { type: "cancel"; tx: Transaction };
+type UndoAction =
+  | { type: "paid"; tx: Transaction }
+  | { type: "unpaid"; tx: Transaction }
+  | { type: "cancel"; tx: Transaction };
 
 export default function Tagihan({
   transactions,
@@ -258,15 +261,25 @@ export default function Tagihan({
   );
 
   const markPaid = (tx: Transaction) => { onMarkPaid(tx.id); setUndo({ type: "paid", tx }); };
+  /** Kebalikan Tandai Lunas — jalan keluar untuk salah pencet Lunas yang
+   * baru ketahuan SETELAH jendela Urungkan lewat. Sebelumnya tidak ada
+   * jalannya sama sekali: "Batalkan" di tab Lunas membatalkan TRANSAKSI
+   * (soft-delete), dan Pulihkan mengembalikannya ke Lunas lagi (paid tak
+   * pernah disentuh) — celah yang ditemukan Papa. */
+  const unpay = (tx: Transaction) => { onUnmarkPaid(tx.id); setUndo({ type: "unpaid", tx }); };
   const cancel = (tx: Transaction) => { onCancel(tx.id); setUndo({ type: "cancel", tx }); };
   const pulihkan = (tx: Transaction) => {
     onRestore(tx);
     if (undo?.type === "cancel" && undo.tx.id === tx.id) setUndo(null);
-    setToast(`Dipulihkan — ${tx.customer.nama} kembali ke Belum Dibayar`);
+    // Pulihkan TIDAK menyentuh status bayar: transaksi kembali ke tab
+    // sesuai statusnya semula — jangan menjanjikan "Belum Dibayar" untuk
+    // transaksi yang sebenarnya Lunas.
+    setToast(`Dipulihkan — ${tx.customer.nama} kembali ke ${tx.paid ? "Lunas" : "Belum Dibayar"}`);
   };
   const doUndo = () => {
     if (!undo) return;
     if (undo.type === "paid") onUnmarkPaid(undo.tx.id);
+    else if (undo.type === "unpaid") onMarkPaid(undo.tx.id);
     else onRestore(undo.tx);
     setUndo(null);
   };
@@ -577,20 +590,26 @@ export default function Tagihan({
                           </button>
                         </div>
                       ) : (
-                        /* Transaksi Lunas: bisa Dibatalkan (dengan Urungkan) atau
-                           langsung ke Tong Sampah. Batal = keluar dari total Masuk,
-                           tetap tampil dengan badge Dibatalkan; Pulihkan mengembalikan
-                           ke Lunas karena status paid tidak diubah. */
+                        /* Transaksi Lunas — aksi UTAMA: Tandai Belum Dibayar
+                           (kebalikan salah pencet Lunas; celah temuan Papa —
+                           "Batalkan" ternyata membatalkan TRANSAKSI, dan
+                           Pulihkan mengembalikannya ke Lunas lagi karena paid
+                           tak pernah disentuh). Batalkan/Hapus jadi ikon. */
                         <div className="flex gap-2" style={{ marginTop: 10 }}>
-                          <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
+                          <button onClick={(e) => { e.stopPropagation(); unpay(tx); }}
                             className="flex items-center justify-center gap-1.5"
-                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                            <Ban size={13} /> Batalkan
+                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                            <Undo2 size={13} /> Tandai Belum Dibayar
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
+                            title="Batalkan transaksi" aria-label="Batalkan transaksi"
+                            style={{ width: 40, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                            <Ban size={14} />
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
-                            className="flex items-center justify-center gap-1.5"
-                            style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                            <Trash2 size={13} /> Hapus
+                            title="Hapus (Tong Sampah)" aria-label="Hapus (Tong Sampah)"
+                            style={{ width: 40, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       )}
@@ -608,7 +627,9 @@ export default function Tagihan({
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
-              {undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}` : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
+              {undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
+                : undo.type === "unpaid" ? `Dikembalikan ke Belum Dibayar — ${undo.tx.customer.nama}`
+                : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
               style={{ background: "transparent", border: "none", color: t.primary, fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>

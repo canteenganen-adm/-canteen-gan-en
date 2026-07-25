@@ -99,7 +99,7 @@ Tiga tab kertas: **Belum Dibayar · Lunas · Dibatalkan**. Angka kanan atas meng
 - **Lunaskan** (kuning) = melunaskan SEMUA transaksi anak itu sekaligus — muncul struk konfirmasi **Ya / Tidak** dulu.
 
 ### Tab Lunas & Dibatalkan
-- **Lunas**: bisa **Batalkan** (keluar dari total masuk, pindah ke tab Dibatalkan) atau **Hapus** (→ Tong Sampah).
+- **Lunas**: aksi utama **Tandai Belum Dibayar** (mengembalikan salah pencet Lunas ke tab Belum Dibayar). Ikon lingkaran-dicoret = **Batalkan transaksi** (keluar dari total masuk, pindah ke tab Dibatalkan); ikon tong sampah = **Hapus** (→ Tong Sampah).
 - **Dibatalkan**: bisa **Pulihkan** (kembali seperti semula) atau **Hapus** (→ Tong Sampah).
 
 ---
@@ -157,7 +157,7 @@ Tekan share dari anak mana pun — aplikasi sendiri yang menawarkan *"ketuk untu
 Lihat tombol share tiap kartu: masih ikon = **belum**; hijau "Ditagih 17/07" = **sudah**, lengkap dengan tanggal kirim.
 
 **Salah Tandai Lunas:**
-Langsung: tekan **Urungkan** di bar hitam bawah (±5 detik). Kelewat: tab **Lunas → Batalkan** → lalu di tab Dibatalkan tekan **Pulihkan** → kembali ke Belum Dibayar.
+Langsung: tekan **Urungkan** di bar hitam bawah (±5 detik). Kelewat: tab **Lunas → Tandai Belum Dibayar** — transaksi kembali ke tab Belum Dibayar seperti semula. (Jangan pakai Batalkan untuk ini: Batalkan = membatalkan transaksinya, bukan status lunasnya.)
 
 **Terhapus tak sengaja:**
 **Pengaturan → Tong Sampah** — semua yang dihapus tersimpan 30 hari, tinggal Pulihkan.
