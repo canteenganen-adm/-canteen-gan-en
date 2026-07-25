@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
-  ChevronLeft, ChevronRight, Share2, Copy,
+  ChevronLeft, ChevronRight, Share2, Copy, Smile,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
@@ -618,11 +618,11 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
               <Clock size={11} /> Telat
             </span>
           )}
-          {/* Tanpa ikon centang — checkbox kiri sudah mencentang, dobel
-              centang malah aneh. Pil hijau + jam saja sudah jelas. */}
+          {/* Ikon smiley (pilihan pemilik) — bukan centang, supaya tidak
+              dobel dengan checkbox kiri yang sudah mencentang. */}
           {g.allPacked && g.packedAt && (
-            <span style={{ display: "inline-flex", alignItems: "center", height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
-              {wibClock(g.packedAt)}
+            <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
+              <Smile size={11} /> {wibClock(g.packedAt)}
             </span>
           )}
         </span>
