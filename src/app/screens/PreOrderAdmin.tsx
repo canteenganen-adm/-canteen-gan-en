@@ -597,19 +597,7 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
   return (
     <div onClick={onTap}
       style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 9, cursor: "pointer" }}>
-      {/* Telat — SATU penanda saja, pojok kanan atas. Ditulis "Telat" jelas
-          (bukan ikon polos) supaya tidak ada yang penasaran ketuk buat cek
-          artinya apa — badge ini SENGAJA bukan tombol (stopPropagation),
-          menyentuhnya tidak boleh ikut men-toggle Sudah Dikemas kartu. */}
-      {late && (
-        <span
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1"
-          style={{ position: "absolute", top: -9, right: -8, height: 24, padding: "0 9px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: ".02em", boxShadow: "0 2px 5px rgba(217,93,93,.45)" }}>
-          <Clock size={12} /> Telat
-        </span>
-      )}
-      <div className="flex items-baseline gap-2" style={{ flexWrap: "wrap" }}>
+      <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
         <span style={{ width: 22, height: 22, borderRadius: 7, flex: "none", display: "inline-grid", placeItems: "center",
           background: checkBg, border: `1.5px solid ${checkBorder}`, color: "#fff", verticalAlign: "middle" }}>
           {g.allPacked && <Check size={14} />}
@@ -618,13 +606,25 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
         <span style={{ fontSize: 17, fontWeight: 800, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.tingkat, g.kelas) }}>{g.kelas || g.tingkat}</span>
         {g.ids.length > 1 && <span style={{ fontSize: 11, fontWeight: 700, color: t.text2 }}>· {g.ids.length} pesanan</span>}
-        {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.text2, marginLeft: "auto" }}><Clock size={11} />{g.ambil}</span>}
+        {/* Status di KANAN ATAS — ikut alur baris (bukan absolute), jadi
+            tidak pernah nabrak border & tidak bisa tak sengaja men-toggle
+            kartu (stopPropagation). Telat = pil merah huruf putih; jam
+            kemas = pil hijau berisi jam SERVER otomatis (bukti objektif,
+            tidak bisa diketik/diubah manual). */}
+        <span className="flex items-center gap-1.5" style={{ marginLeft: "auto", flex: "none" }} onClick={(e) => e.stopPropagation()}>
+          {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.text2 }}><Clock size={11} />{g.ambil}</span>}
+          {late && (
+            <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: ".02em" }}>
+              <Clock size={11} /> Telat
+            </span>
+          )}
+          {g.allPacked && g.packedAt && (
+            <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
+              <Check size={11} /> {wibClock(g.packedAt)}
+            </span>
+          )}
+        </span>
       </div>
-      {/* Jam kemas — tercatat OTOMATIS oleh sistem (bukan diketik admin),
-          bukti objektif kapan sebenarnya dikemas; mutlak tidak bisa diubah manual. */}
-      {g.allPacked && g.packedAt && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: t.text2, paddingLeft: 30, marginTop: 2 }}>Dikemas {wibClock(g.packedAt)}</div>
-      )}
       <div style={{ marginTop: 8, paddingLeft: 30 }}>
         {g.perOrder.length <= 1 ? (
           g.flatItems.map((it, i) => (
