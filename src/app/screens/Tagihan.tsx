@@ -595,21 +595,23 @@ export default function Tagihan({
                            "Batalkan" ternyata membatalkan TRANSAKSI, dan
                            Pulihkan mengembalikannya ke Lunas lagi karena paid
                            tak pernah disentuh). Batalkan/Hapus jadi ikon. */
+                        /* Tiga tombol SEMUA bertulisan — ikon polos susah
+                           ditebak artinya untuk Papa/Mama; bagi rata 3. */
                         <div className="flex gap-2" style={{ marginTop: 10 }}>
                           <button onClick={(e) => { e.stopPropagation(); unpay(tx); }}
-                            className="flex items-center justify-center gap-1.5"
-                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                            <Undo2 size={13} /> Tandai Belum Dibayar
+                            className="flex items-center justify-center gap-1"
+                            style={{ flex: 1.3, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                            <Undo2 size={13} style={{ flex: "none" }} /> Belum Dibayar
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
-                            title="Batalkan transaksi" aria-label="Batalkan transaksi"
-                            style={{ width: 40, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                            <Ban size={14} />
+                            className="flex items-center justify-center gap-1"
+                            style={{ flex: 1, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                            <Ban size={13} style={{ flex: "none" }} /> Batalkan
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
-                            title="Hapus (Tong Sampah)" aria-label="Hapus (Tong Sampah)"
-                            style={{ width: 40, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                            <Trash2 size={14} />
+                            className="flex items-center justify-center gap-1"
+                            style={{ flex: 1, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                            <Trash2 size={13} style={{ flex: "none" }} /> Hapus
                           </button>
                         </div>
                       )}
