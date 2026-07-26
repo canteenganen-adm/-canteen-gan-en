@@ -442,7 +442,7 @@ export default function Tagihan({
                     <div className="flex items-center justify-between" style={{ gap: 10 }}>
                       <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
                         <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
-                        <span style={{ background: tingkatColor(g.customer.tingkat, g.customer.kelas), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.customer.tingkat, g.customer.kelas), flex: "none" }}>
                           {g.customer.kelas || g.customer.tingkat}
                         </span>
                       </div>
@@ -548,7 +548,7 @@ export default function Tagihan({
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
                       <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama}</span>
-                      <span style={{ background: tingkatColor(g.customer.tingkat, g.customer.kelas), color: "#FFFCF7", padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800, flex: "none" }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.customer.tingkat, g.customer.kelas), flex: "none" }}>
                         {g.customer.kelas || g.customer.tingkat}
                       </span>
                     </div>
