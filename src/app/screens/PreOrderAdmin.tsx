@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, Clock, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
-  ChevronLeft, ChevronRight, Share2, Copy, Smile,
+  ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
@@ -613,9 +613,10 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
             tidak bisa diketik/diubah manual). */}
         <span className="flex items-center gap-1.5" style={{ marginLeft: "auto", flex: "none" }} onClick={(e) => e.stopPropagation()}>
           {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.text2 }}><Clock size={11} />{g.ambil}</span>}
+          {/* "Reward" telat: wajah cemberut (pasangan Smile di pil kemas) */}
           {late && (
             <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: ".02em" }}>
-              <Clock size={11} /> Telat
+              <Frown size={11} /> Telat
             </span>
           )}
           {/* Ikon smiley (pilihan pemilik) — bukan centang, supaya tidak
