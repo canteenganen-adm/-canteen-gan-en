@@ -226,22 +226,40 @@ export default function PreOrderAdmin({
   const rawUtama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
   const rawBeda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
 
-  // Deteksi telat: HANYA untuk pesanan hari ini (viewDate = tanggal WIB
-  // sekarang) + Belum Dikemas + jam WIB sekarang > jam waktu ambil untuk
-  // tingkat tsb. Tanpa penjaga tanggal ini, pesanan sesi BESOK yang dilihat
-  // sore/malam ini bisa salah ditandai "telat" — jam ambilnya memang sudah
-  // lewat dibanding jam SEKARANG, tapi pesanannya untuk hari lain.
-  // Guru/Karyawan hanya dianggap telat jika byTingkat diisi secara eksplisit.
-  const isGroupLate = (g: MergedGroup): boolean => {
-    if (viewDate !== wibTodayISO()) return false;
-    if (g.allPacked || !schedules.length) return false;
+  // Jam waktu ambil (HH:MM) untuk grup ini — Guru/Karyawan hanya dicek
+  // jika byTingkat diisi eksplisit.
+  const jamAmbilFor = (g: MergedGroup): string | null => {
+    if (!schedules.length) return null;
     const sched = schedules.find(s => s.name === g.ambil);
-    if (!sched) return false;
+    if (!sched) return null;
     const time = g.tingkat === "Guru/Karyawan"
       ? sched.byTingkat?.[g.tingkat]
       : (sched.byTingkat?.[g.tingkat] || sched.defaultTime);
+    return time || null;
+  };
+  // Deteksi telat (BELUM dikemas): HANYA untuk pesanan hari ini (viewDate =
+  // tanggal WIB sekarang) + jam WIB sekarang > jam waktu ambil. Tanpa
+  // penjaga tanggal ini, pesanan sesi BESOK yang dilihat sore/malam ini
+  // bisa salah ditandai "telat".
+  const isGroupLate = (g: MergedGroup): boolean => {
+    if (viewDate !== wibTodayISO()) return false;
+    if (g.allPacked) return false;
+    const time = jamAmbilFor(g);
+    return !!time && currentWIBTime > time;
+  };
+  /** Telat tetap telat: SUDAH dikemas tapi jam kemasnya (jam server, tak
+   * bisa diubah) lewat dari jam ambil pada tanggal layanannya → pil merah
+   * berisi jam. Berlaku juga saat menengok riwayat hari lain, karena
+   * dihitung dari data tersimpan, bukan jam sekarang. Dikemas H-1
+   * (disiapkan lebih awal) TIDAK dihitung telat. */
+  const isPackedLate = (g: MergedGroup): boolean => {
+    if (!g.allPacked || !g.packedAt) return false;
+    const time = jamAmbilFor(g);
     if (!time) return false;
-    return currentWIBTime > time;
+    const packedDateWib = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date(g.packedAt));
+    if (packedDateWib < viewDate) return false;
+    if (packedDateWib > viewDate) return true;
+    return wibClock(g.packedAt) > time;
   };
 
   const sortLateFirst = (list: MergedGroup[]) => {
@@ -415,7 +433,7 @@ export default function PreOrderAdmin({
           </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
-          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} />)}
+          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} />)}
 
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
@@ -425,7 +443,7 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
-              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil isLate={isGroupLate(g)} />)}
+              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil isLate={isGroupLate(g)} packedLate={isPackedLate(g)} />)}
             </>
           )}
         </div>
@@ -589,7 +607,7 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean; isLate?: boolean }) {
+function MergedOrderCard({ g, onTap, showAmbil, isLate, packedLate }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean; isLate?: boolean; packedLate?: boolean }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
@@ -619,11 +637,17 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate }: { g: MergedGroup; onTa
               <Frown size={11} /> Telat
             </span>
           )}
-          {/* Ikon smiley (pilihan pemilik) — bukan centang, supaya tidak
-              dobel dengan checkbox kiri yang sudah mencentang. */}
+          {/* Ikon smiley/cemberut (pilihan pemilik) — bukan centang, supaya
+              tidak dobel dengan checkbox kiri. TELAT TETAP TELAT: dikemas
+              lewat jam ambil → pil merah lembut + cemberut, gaya sama
+              seperti pil hijau tepat waktu. */}
           {g.allPacked && g.packedAt && (
-            <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.successBg, border: "1px solid #D8E6D4", color: t.successText, fontSize: 11, fontWeight: 800 }}>
-              <Smile size={11} /> {wibClock(g.packedAt)}
+            <span className="flex items-center gap-1"
+              style={{ height: 22, padding: "0 9px", borderRadius: 999, fontSize: 11, fontWeight: 800,
+                background: packedLate ? t.errorBg : t.successBg,
+                border: `1px solid ${packedLate ? "#F3C9C9" : "#D8E6D4"}`,
+                color: packedLate ? t.error : t.successText }}>
+              {packedLate ? <Frown size={11} /> : <Smile size={11} />} {wibClock(g.packedAt)}
             </span>
           )}
         </span>
