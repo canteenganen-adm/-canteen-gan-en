@@ -113,6 +113,10 @@ export default function PreOrderAdmin({
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState("Semua");
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
+   * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
+   * konfirmasi jelas dulu, tidak langsung commit begitu tanggal diketuk. */
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
   /** Struk rincian per-item Rekap Masak: ketuk nama menu -> siapa saja yang
    * pesan + jumlahnya (menjawab "siapa yang pesan Bakwan?" tanpa buka
    * satu-satu kartu pesanan). Digabung per anak (nama+kelas) supaya pesanan
@@ -237,15 +241,19 @@ export default function PreOrderAdmin({
       : (sched.byTingkat?.[g.tingkat] || sched.defaultTime);
     return time || null;
   };
-  // Deteksi telat (BELUM dikemas): HANYA untuk pesanan hari ini (viewDate =
-  // tanggal WIB sekarang) + jam WIB sekarang > jam waktu ambil. Tanpa
-  // penjaga tanggal ini, pesanan sesi BESOK yang dilihat sore/malam ini
-  // bisa salah ditandai "telat".
+  // Deteksi telat (BELUM dikemas): berdasarkan TANGGAL LAYANAN yang sedang
+  // dilihat, bukan disamaratakan jadi "hanya hari ini". Sesi BESOK (viewDate
+  // > hari ini) belum bisa telat. Sesi yang tanggalnya sudah LEWAT (viewDate
+  // < hari ini) otomatis telat kalau belum dikemas — harinya sudah berakhir.
+  // Sesi HARI INI dibandingkan jam WIB sekarang vs jam waktu ambil.
   const isGroupLate = (g: MergedGroup): boolean => {
-    if (viewDate !== wibTodayISO()) return false;
     if (g.allPacked) return false;
     const time = jamAmbilFor(g);
-    return !!time && currentWIBTime > time;
+    if (!time) return false;
+    const today = wibTodayISO();
+    if (viewDate > today) return false;
+    if (viewDate < today) return true;
+    return currentWIBTime > time;
   };
   /** Telat tetap telat: SUDAH dikemas tapi jam kemasnya (jam server, tak
    * bisa diubah) lewat dari jam ambil pada tanggal layanannya → pil merah
@@ -285,8 +293,12 @@ export default function PreOrderAdmin({
 
   const dateLabel = useMemo(() => serviceDateLabel(serviceDate), [serviceDate]);
 
-  const pickNextSchoolDay = () => {
-    onServiceDateChange(nextSchoolDayISO());
+  const pickNextSchoolDay = () => setPendingDate(nextSchoolDayISO());
+
+  const confirmPendingDate = () => {
+    if (!pendingDate) return;
+    onServiceDateChange(pendingDate);
+    setPendingDate(null);
     setSheet(null);
   };
 
@@ -433,7 +445,7 @@ export default function PreOrderAdmin({
           </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
-          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} />)}
+          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />)}
 
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
@@ -443,7 +455,7 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
-              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil isLate={isGroupLate(g)} packedLate={isPackedLate(g)} />)}
+              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} showAmbil isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />)}
             </>
           )}
         </div>
@@ -451,30 +463,65 @@ export default function PreOrderAdmin({
 
       {/* Sheets */}
       {sheet === "gantiTanggal" && (
-        <Sheet title="Ganti Tanggal" onClose={() => setSheet(null)}>
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
-          <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
-            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-            <Calendar size={18} /> Hari Sekolah Berikutnya
-          </button>
-          <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, margin: "12px 0" }}>atau</div>
-          {/* Pola wajib CLAUDE.md: input date overlay inset:0 MENERIMA ketukan
-              langsung (bukan pointerEvents:none + skrip pembuka yang gagal
-              senyap di HP). showPicker di onClick = pemanis desktop. */}
-          <div className="flex items-center gap-3"
-            style={{ position: "relative", height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
-            <Calendar size={18} color={t.amberText} />
-            <span style={{ fontWeight: 700, fontSize: 15 }}>Pilih tanggal lain</span>
-            <input
-              ref={gantiTanggalRef}
-              type="date"
-              value={serviceDate}
-              onChange={(e) => { if (e.target.value) { onServiceDateChange(e.target.value); setSheet(null); } }}
-              onClick={() => { try { gantiTanggalRef.current?.showPicker?.(); } catch { /* native fallback */ } }}
-              aria-label="Pilih tanggal lain"
-              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
-            />
-          </div>
+        <Sheet title="Ganti Tanggal" onClose={() => { setSheet(null); setPendingDate(null); }}>
+          {pendingDate ? (
+            /* Konfirmasi wajib: pindah sesi = aksi nyata, ortu bisa langsung
+               pesan di tanggal baru. Jelaskan juga status buka/tutup yang
+               akan berlaku, supaya tidak "kebuka sendiri" tanpa disadari. */
+            <div>
+              <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 4 }}>
+                Pindahkan sesi Pre-order ke
+              </div>
+              <div style={{ fontSize: 21, fontWeight: 800, color: t.amberText, marginBottom: 12 }}>
+                {serviceDateLabel(pendingDate)}?
+              </div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6, color: t.text2, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                {!open
+                  ? "Status sesi masih Ditutup — ortu belum bisa pesan sampai kamu ketuk \"Dibuka\"."
+                  : autoClosedNow(pendingDate, autoCloseTime) && !reopenNow
+                  ? "Sudah lewat jam tutup otomatis untuk tanggal ini — ortu tetap belum bisa pesan."
+                  : "Sesi akan langsung TERBUKA — ortu bisa langsung pesan untuk tanggal ini."}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setPendingDate(null)}
+                  style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Batal
+                </button>
+                <button onClick={confirmPendingDate}
+                  style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  Ya, Pindahkan
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
+              <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
+                style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                <Calendar size={18} /> Hari Sekolah Berikutnya
+              </button>
+              <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, margin: "12px 0" }}>atau</div>
+              {/* Pola wajib CLAUDE.md: input date overlay inset:0 MENERIMA ketukan
+                  langsung (bukan pointerEvents:none + skrip pembuka yang gagal
+                  senyap di HP). showPicker di onClick = pemanis desktop. Memilih
+                  tanggal di sini TIDAK langsung commit — lihat langkah konfirmasi
+                  di atas, supaya tidak ada sesi yang "kebuka sendiri" tanpa sadar. */}
+              <div className="flex items-center gap-3"
+                style={{ position: "relative", height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
+                <Calendar size={18} color={t.amberText} />
+                <span style={{ fontWeight: 700, fontSize: 15 }}>Pilih tanggal lain</span>
+                <input
+                  ref={gantiTanggalRef}
+                  type="date"
+                  value={serviceDate}
+                  onChange={(e) => { if (e.target.value) setPendingDate(e.target.value); }}
+                  onClick={() => { try { gantiTanggalRef.current?.showPicker?.(); } catch { /* native fallback */ } }}
+                  aria-label="Pilih tanggal lain"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                />
+              </div>
+            </>
+          )}
         </Sheet>
       )}
       {sheet === "jamTutup" && (
@@ -607,7 +654,7 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-function MergedOrderCard({ g, onTap, showAmbil, isLate, packedLate }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean; isLate?: boolean; packedLate?: boolean }) {
+function MergedOrderCard({ g, onTap, showAmbil, isLate, packedLate, lateTime }: { g: MergedGroup; onTap: () => void; showAmbil?: boolean; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
@@ -631,10 +678,12 @@ function MergedOrderCard({ g, onTap, showAmbil, isLate, packedLate }: { g: Merge
             tidak bisa diketik/diubah manual). */}
         <span className="flex items-center gap-1.5" style={{ marginLeft: "auto", flex: "none" }} onClick={(e) => e.stopPropagation()}>
           {showAmbil && <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: t.text2 }}><Clock size={11} />{g.ambil}</span>}
-          {/* "Reward" telat: wajah cemberut (pasangan Smile di pil kemas) */}
+          {/* "Reward" telat: wajah cemberut (pasangan Smile di pil kemas).
+              Jam yang ditampilkan = jam waktu ambil terjadwal (batas telat),
+              supaya jelas walau sedang menengok tanggal layanan lain. */}
           {late && (
             <span className="flex items-center gap-1" style={{ height: 22, padding: "0 9px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: ".02em" }}>
-              <Frown size={11} /> Telat
+              <Frown size={11} /> Telat{lateTime ? ` · lewat ${lateTime}` : ""}
             </span>
           )}
           {/* Ikon smiley/cemberut (pilihan pemilik) — bukan centang, supaya

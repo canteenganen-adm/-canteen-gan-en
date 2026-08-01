@@ -111,7 +111,9 @@ export default function MasterMenu({
       const on = new Set(snapshot.filter((s) => s.channels.preorder).map((s) => s.id));
       menusRef.current.forEach((m) => { base[m.id] = on.has(m.id); });
     } else {
-      menusRef.current.forEach((m) => { base[m.id] = m.channels.preorder; });
+      // Tanggal belum pernah disimpan → mulai KOSONG, bukan meniru toggle
+      // hari lain. Tiap tanggal keputusan sendiri; tidak ada warisan menu.
+      menusRef.current.forEach((m) => { base[m.id] = false; });
     }
     setDraft(base);
     setSeed(base);
@@ -322,16 +324,14 @@ export default function MasterMenu({
                       <Lock size={13} /> Mode Lihat Riwayat — data tanggal ini terkunci
                     </div>
                   )}
-                  {/* Tanggal ke depan yang BELUM PERNAH disimpan: struk di
-                      bawah cuma pratinjau (ikut toggle Pre-order yang aktif
-                      SEKARANG di kertas Menu) — bukan komitmen untuk tanggal
-                      ini. Orang tua tidak pernah melihat tanggal ini kecuali
-                      admin benar-benar menekan Simpan saat sesi PO pindah
-                      ke sini. Tanpa banner ini gampang dikira "sudah jadi
-                      menu tanggal itu" padahal belum. */}
+                  {/* Tanggal ke depan yang BELUM PERNAH disimpan: mulai KOSONG
+                      (tidak mewarisi toggle hari lain) — admin pilih sendiri
+                      lalu tekan Simpan baru ortu bisa lihat. Tanpa banner ini
+                      gampang dikira "sudah jadi menu tanggal itu" padahal
+                      belum, atau dikira kosong itu bug. */}
                   {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
                     <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4DA", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
-                      <RefreshCw size={13} /> Hanya preview. Menu PO belum disimpan untuk tanggal ini, memakai menu yang aktif sekarang
+                      <RefreshCw size={13} /> Menu untuk tanggal ini belum disimpan — mulai kosong, pilih menu lalu tekan Simpan
                     </div>
                   )}
                 </div>
