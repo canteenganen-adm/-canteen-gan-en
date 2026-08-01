@@ -89,10 +89,9 @@ export default function MasterMenu({
   const [tanggal, setTanggal] = useState(serviceDate);
   useEffect(() => { setTanggal(serviceDate); }, [serviceDate]);
   const dateRef = useRef<HTMLInputElement>(null);
-  /** Dua jalan pintas TAMBAHAN ke `tanggal` yang sama, langsung dari tab
+  /** Jalan pintas TAMBAHAN ke `tanggal` yang sama, langsung dari tab
    * Buku Menu — supaya tidak perlu lompat ke Preview PO dulu cuma buat
    * ganti tanggal yang sedang diatur. */
-  const pilihMenuRef = useRef<HTMLInputElement>(null);
   const ubahTanggalRef = useRef<HTMLInputElement>(null);
   const isPast = tanggal < todayISO();
   const snapshot = menuHarian[tanggal]; // undefined = belum di-fetch
@@ -246,52 +245,36 @@ export default function MasterMenu({
 
           {view === "menu" && (
             <>
-              {/* Search + Pilih Menu (ganti tanggal yang sedang diatur, tanpa
-                  pindah ke tab Preview PO) */}
-              <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
-                <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-                  <Search size={20} color={t.text2} />
-                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-                    style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
-                  {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
-                </div>
-                {menuHarianReady && (
-                  <div className="flex items-center gap-1.5"
-                    style={{ position: "relative", flex: "none", height: 48, padding: "0 14px", borderRadius: 12, whiteSpace: "nowrap",
-                      border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 13.5 }}>
-                    <Calendar size={17} /> Pilih Menu
-                    <input ref={pilihMenuRef} type="date" value={tanggal} min={todayISO()}
-                      onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                      onClick={() => { try { pilihMenuRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                      aria-label="Pilih tanggal untuk atur menu"
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-                  </div>
-                )}
+              {/* Search */}
+              <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
+                <Search size={20} color={t.text2} />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
+                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
+                {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
               </div>
 
               {/* Konteks tanggal yang sedang diatur — SELALU kelihatan di Buku
-                  Menu, supaya jelas ikon Pre-order di bawah ini berlaku untuk
-                  tanggal apa. Tidak menyentuh sesi Pre-order (buka/tutup +
-                  tanggal aktif ortu) sama sekali — murni menyiapkan menu. */}
+                  Menu (netral, bukan blok amber — amber cukup di ikon + link
+                  "Ubah" saja), supaya jelas ikon Pre-order di bawah ini
+                  berlaku untuk tanggal apa. "Ubah" = satu-satunya jalan pintas
+                  ganti tanggal, tanpa perlu pindah ke tab Preview PO. Tidak
+                  menyentuh sesi Pre-order (buka/tutup + tanggal aktif ortu)
+                  sama sekali — murni menyiapkan menu. */}
               {menuHarianReady && (
-                <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.primaryLight, border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "10px 12px" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: t.primary, color: t.text, display: "grid", placeItems: "center", flex: "none" }}>
-                    <Calendar size={16} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.amberText }}>Mengatur menu untuk</div>
-                    <div style={{ fontSize: 14.5, fontWeight: 800, color: t.text }}>{serviceDateLabel(tanggal)}</div>
-                  </div>
+                <div className="flex items-center gap-2" style={{ marginTop: 10, padding: "8px 2px" }}>
+                  <Calendar size={15} color={t.amberText} style={{ flex: "none" }} />
+                  <span style={{ fontSize: 13, color: t.text2 }}>Menu untuk</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: t.text }}>{serviceDateLabel(tanggal)}</span>
                   <button
                     onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                    style={{ position: "relative", height: 28, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.primary}`, background: t.surface, color: t.amberText, fontWeight: 800, fontSize: 12, cursor: "pointer", flex: "none" }}>
+                    style={{ position: "relative", background: "transparent", border: "none", color: t.amberText, fontWeight: 800, fontSize: 13, cursor: "pointer", padding: 0 }}>
                     Ubah
                     <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
                       onChange={(e) => e.target.value && setTanggal(e.target.value)}
                       aria-label="Ubah tanggal yang diatur"
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+                      style={{ position: "absolute", inset: "-6px -10px", opacity: 0, cursor: "pointer" }} />
                   </button>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: t.text2, flex: "none" }}>{aktifCount} item</span>
+                  <span style={{ fontSize: 12, color: t.text2, marginLeft: "auto", flex: "none" }}>{aktifCount} item</span>
                 </div>
               )}
 
