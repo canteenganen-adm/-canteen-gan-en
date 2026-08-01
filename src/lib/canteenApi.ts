@@ -253,16 +253,28 @@ export async function saveMenuHarianSnapshot(tanggal: string, items: MenuItem[])
 /* ---------------- Transaksi ---------------- */
 
 export async function fetchTransactions(): Promise<Transaction[]> {
-  const { data, error } = await supabase
-    .from("transaksi")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
+  // PostgREST membatasi 1 request maks 1000 baris (default project). Tabel
+  // transaksi SUDAH melewati itu — tanpa paging, transaksi lama diam-diam
+  // hilang dari semua layar (bukan error, cuma tidak pernah termuat).
+  // Paging eksplisit di sini supaya SEMUA transaksi selalu termuat, berapa
+  // pun jumlahnya.
+  const PAGE_SIZE = 1000;
+  const rows: TransaksiRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transaksi")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data as TransaksiRow[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
   // Filter di JS agar resilient terhadap kolom deleted_at yang belum ada di DB
   // (kolom ditambah via migration_4_tong_sampah.sql yang perlu dijalankan manual).
   // Sebelum migration: r.deleted_at undefined → tx.deletedAt undefined → lolos filter (benar).
   // Setelah migration: baris di tong sampah punya deletedAt terisi → dibuang (benar).
-  return (data as TransaksiRow[]).map(txRowToTransaction).filter((tx) => !tx.deletedAt);
+  return rows.map(txRowToTransaction).filter((tx) => !tx.deletedAt);
 }
 
 export async function fetchTrashedTransactions(): Promise<Transaction[]> {

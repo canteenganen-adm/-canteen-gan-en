@@ -295,8 +295,13 @@ export default function PreOrderAdmin({
 
   const pickNextSchoolDay = () => setPendingDate(nextSchoolDayISO());
 
+  /** Pindah tanggal TIDAK PERNAH ikut membuka sesi — buka/tutup murni
+   * manual, terpisah dari tanggal. Kalau sesi sedang Dibuka, paksa Tutup
+   * dulu saat tanggal pindah; admin wajib ketuk "Dibuka" sendiri lagi
+   * untuk tanggal barunya. Mencegah sesi "kebuka sendiri" tanpa disadari. */
   const confirmPendingDate = () => {
     if (!pendingDate) return;
+    if (open) onToggleOpen();
     onServiceDateChange(pendingDate);
     setPendingDate(null);
     setSheet(null);
@@ -476,11 +481,7 @@ export default function PreOrderAdmin({
                 {serviceDateLabel(pendingDate)}?
               </div>
               <div style={{ fontSize: 13.5, lineHeight: 1.6, color: t.text2, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
-                {!open
-                  ? "Status sesi masih Ditutup — ortu belum bisa pesan sampai kamu ketuk \"Dibuka\"."
-                  : autoClosedNow(pendingDate, autoCloseTime) && !reopenNow
-                  ? "Sudah lewat jam tutup otomatis untuk tanggal ini — ortu tetap belum bisa pesan."
-                  : "Sesi akan langsung TERBUKA — ortu bisa langsung pesan untuk tanggal ini."}
+                Sesi akan tetap <b style={{ color: t.text }}>Tertutup</b> — buka/tutup selalu manual, tidak pernah ikut pindah tanggal. Ketuk "Dibuka" sendiri kalau sudah siap menerima pesanan untuk tanggal ini.
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setPendingDate(null)}
