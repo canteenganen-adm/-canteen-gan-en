@@ -400,13 +400,12 @@ export default function PreOrderAdmin({
               onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
             <Stat n={belum} label="Belum Dikemas" tone="warn" active={packedFilter === "belum"}
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
+            <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak"
+              style={{ flex: 1, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "12px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit", color: t.text, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <CookingPot size={24} color={t.amberText} />
+              <span style={{ fontSize: 11.5, color: t.text2, lineHeight: 1.2 }}>Rekap Masak</span>
+            </button>
           </div>
-
-          {/* Rekap Masak */}
-          <button onClick={() => setSheet("rekap")} className="flex items-center"
-            style={{ gap: 8, marginTop: 6, height: 44, padding: 0, border: "none", background: "none", fontWeight: 700, fontSize: 15.5, color: t.text, cursor: "pointer", fontFamily: "inherit" }}>
-            <CookingPot size={20} color={t.amberText} /> Rekap Masak <ChevronRight size={17} color={t.text2} style={{ marginLeft: -3 }} />
-          </button>
 
           {/* Cari */}
           {searchOpen && <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 50 }}>
