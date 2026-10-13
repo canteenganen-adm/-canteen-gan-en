@@ -734,7 +734,7 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
 /** Garis pemisah antar pesanan (putus-putus ala struk), lebih tegas dari
  * border kartu supaya item satu anak tidak terbaca milik anak berikutnya. */
 function Liner() {
-  return <div aria-hidden="true" style={{ margin: "16px 6px", borderTop: "2.5px dashed #A39D84" }} />;
+  return <div aria-hidden="true" style={{ margin: "16px 6px", borderTop: `2.5px dashed ${t.borderStrong}` }} />;
 }
 
 function ItemLines({ items }: { items: Transaction["items"] }) {
@@ -755,7 +755,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14 }}>
+    <div style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 14, padding: 14 }}>
       <div className="flex" style={{ gap: 12 }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
