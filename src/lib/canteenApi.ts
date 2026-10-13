@@ -252,18 +252,30 @@ export async function saveMenuHarianSnapshot(tanggal: string, items: MenuItem[])
 
 /* ---------------- Transaksi ---------------- */
 
+/** Jendela data "hidup" di aplikasi harian: transaksi 30 hari terakhir +
+ * SEMUA yang masih Belum Dibayar (tagihan lama tidak boleh hilang dari
+ * layar). Data yang lebih lama tetap aman di database dan dibaca lewat
+ * Laporan. Ini yang menjaga pemuatan tetap ringan dan kuota bandwidth
+ * tidak habis (tabel sudah >7.000 baris dan terus bertambah). */
+export const LIVE_DAYS = 30;
+const liveCutoffISO = () => new Date(Date.now() - LIVE_DAYS * 86_400_000).toISOString();
+
+/** Apakah baris (dari realtime) layak masuk jendela data hidup? */
+export function inLiveWindow(tx: Transaction): boolean {
+  return tx.createdAt >= liveCutoffISO() || (!tx.paid && !tx.cancelledAt);
+}
+
 export async function fetchTransactions(): Promise<Transaction[]> {
-  // PostgREST membatasi 1 request maks 1000 baris (default project). Tabel
-  // transaksi SUDAH melewati itu — tanpa paging, transaksi lama diam-diam
-  // hilang dari semua layar (bukan error, cuma tidak pernah termuat).
-  // Paging eksplisit di sini supaya SEMUA transaksi selalu termuat, berapa
-  // pun jumlahnya.
+  // PostgREST membatasi 1 request maks 1000 baris (default project) — wajib
+  // paging eksplisit, kalau tidak sisanya diam-diam tidak pernah termuat.
   const PAGE_SIZE = 1000;
+  const cutoff = liveCutoffISO();
   const rows: TransaksiRow[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("transaksi")
       .select("*")
+      .or(`created_at.gte.${cutoff},and(paid.eq.false,cancelled_at.is.null)`)
       .order("created_at", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
@@ -407,14 +419,34 @@ export async function deleteKelas(id: string): Promise<void> {
 /** Berlangganan perubahan menu/transaksi/app_state, panggil `onChange` tiap
  * ada INSERT/UPDATE/DELETE supaya semua device (admin & orang tua) sinkron
  * tanpa refresh manual. Return unsubscribe function. */
-export function subscribeToCanteenChanges(onChange: () => void): () => void {
+/** Perubahan realtime. Untuk `transaksi`, isi barisnya ikut dibawa sehingga
+ * layar cukup MENAMBAL satu baris — tidak perlu menarik ulang ribuan baris
+ * tiap ada satu pesanan masuk atau satu centang dikemas (pemborosan terbesar
+ * sebelumnya). Tabel lain tetap memicu muat ulang ringan (menu/pengaturan). */
+export type CanteenChange =
+  | { table: "transaksi"; kind: "upsert"; tx: Transaction }
+  | { table: "transaksi"; kind: "delete"; id: string }
+  | { table: "other" };
+
+export function subscribeToCanteenChanges(onChange: (c: CanteenChange) => void): () => void {
+  const other = () => onChange({ table: "other" });
   const channel = supabase
     .channel("canteen-changes")
-    .on("postgres_changes", { event: "*", schema: "public", table: "menu" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "transaksi" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "app_state" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "kelas" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "menu_harian" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "menu" }, other)
+    .on("postgres_changes", { event: "*", schema: "public", table: "transaksi" }, (p) => {
+      if (p.eventType === "DELETE") {
+        const id = (p.old as { id?: string } | null)?.id;
+        if (id) onChange({ table: "transaksi", kind: "delete", id });
+        return;
+      }
+      const row = p.new as TransaksiRow | null;
+      // Baris tanpa kolom wajib (mis. payload terpotong) → jatuh ke muat ulang.
+      if (!row || !row.id || !row.customer || !row.items) { onChange({ table: "other" }); return; }
+      onChange({ table: "transaksi", kind: "upsert", tx: txRowToTransaction(row) });
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "app_state" }, other)
+    .on("postgres_changes", { event: "*", schema: "public", table: "kelas" }, other)
+    .on("postgres_changes", { event: "*", schema: "public", table: "menu_harian" }, other)
     .subscribe();
 
   return () => {

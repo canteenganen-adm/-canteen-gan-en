@@ -7,6 +7,7 @@ import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
 import { tingkatColor } from "../../lib/constants";
+import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
 
 /* ============================================================
@@ -533,6 +534,12 @@ export default function Tagihan({
         {/* ---- Tab: Lunas & Dibatalkan (render sama, isi beda) ---- */}
         {tab !== "unpaid" && (
           <div style={{ padding: "4px 20px" }}>
+            {/* Aplikasi harian hanya memuat 30 hari terakhir (supaya cepat dan
+                hemat kuota). Yang lebih lama TIDAK hilang — disebut jelas agar
+                tidak disangka transaksi lenyap. */}
+            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: t.text2, margin: "2px 2px 12px" }}>
+              Menampilkan {LIVE_DAYS} hari terakhir. Transaksi yang lebih lama tetap tersimpan aman di database.
+            </div>
             {riwayatGroups.length === 0 ? (
               <div style={{ textAlign: "center", padding: "56px 20px" }}>
                 <div style={{ width: 60, height: 60, borderRadius: 16, background: t.surfaceSoft, color: t.text2, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>

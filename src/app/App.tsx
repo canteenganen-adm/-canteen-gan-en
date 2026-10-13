@@ -5,7 +5,7 @@ import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
-  fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges,
+  fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
   upsertMenuItem, deleteMenuItem,
   insertTransaction, updateTransaction,
   submitPreOrderTransaction,
@@ -123,11 +123,13 @@ function useCanteenStore() {
     return txs.map((tx) => (!tx.billedAt && map[tx.id] ? { ...tx, billedAt: map[tx.id] } : tx));
   }, []);
 
-  const loadAll = useCallback(async () => {
+  /** `skipTx` = lewati penarikan transaksi (ribuan baris). Dipakai untuk muat
+   * ulang ringan saat yang berubah cuma menu/pengaturan/kelas. */
+  const loadAll = useCallback(async (opts?: { skipTx?: boolean }) => {
     try {
       const [menusData, txData, appState, kelasData] = await Promise.all([
         fetchMenus(),
-        fetchTransactions(),
+        opts?.skipTx ? Promise.resolve(null) : fetchTransactions(),
         fetchAppState(),
         fetchKelas(),
       ]);
@@ -135,7 +137,7 @@ function useCanteenStore() {
       // (pengguna sedang mengetik di editor) — data server masih versi
       // lama dan akan MENGHAPUS ketikan yang belum tersimpan.
       if (menuWriteTimers.current.size === 0) setMenus(menusData);
-      setTransactions(applyBilledLocal(txData));
+      if (txData) setTransactions(applyBilledLocal(txData));
       setKelasList(kelasData);
       setPreorderOpenLocal(appState.preorderOpen);
       setServiceDateLocal(appState.serviceDate);
@@ -166,19 +168,43 @@ function useCanteenStore() {
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     loadAll();
-    // Realtime: perubahan dari device/tab lain (mis. pesanan baru dari /pesan)
-    // memicu reload penuh. Reload di-debounce 800ms supaya rentetan event
-    // beruntun (mis. beberapa save berdekatan) jadi SATU fetch, bukan badai.
+    // Realtime: perubahan TRANSAKSI dari device/tab lain (mis. pesanan baru
+    // dari /pesan, centang dikemas) cukup MENAMBAL satu baris di layar —
+    // tidak lagi menarik ulang ribuan baris tiap kali (pemborosan kuota
+    // terbesar). Perubahan menu/pengaturan/kelas memicu muat ulang ringan
+    // tanpa transaksi, di-debounce 800ms supaya rentetan event jadi SATU fetch.
     let reloadTimer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = subscribeToCanteenChanges(() => {
+    const unsubscribe = subscribeToCanteenChanges((c) => {
       if (!loadedOnce.current) return;
+      if (c.table === "transaksi") {
+        if (c.kind === "delete") {
+          setTransactions((prev) => prev.filter((t) => t.id !== c.id));
+          return;
+        }
+        const tx = c.tx;
+        setTransactions((prev) => {
+          const exists = prev.some((t) => t.id === tx.id);
+          if (tx.deletedAt) return exists ? prev.filter((t) => t.id !== tx.id) : prev;
+          const merged = applyBilledLocal([tx])[0];
+          if (exists) return prev.map((t) => (t.id === tx.id ? merged : t));
+          if (!inLiveWindow(tx)) return prev;
+          return [merged, ...prev];
+        });
+        return;
+      }
       if (reloadTimer) clearTimeout(reloadTimer);
-      reloadTimer = setTimeout(loadAll, 800);
+      reloadTimer = setTimeout(() => loadAll({ skipTx: true }), 800);
     });
     // HP yang lama di background: Safari/Chrome mematikan koneksi realtime,
     // jadi data bisa basi tanpa terasa (kasus dua gadget beda angka).
-    // Setiap aplikasi kembali terlihat → ambil ulang semua dari server.
-    const onVisible = () => { if (document.visibilityState === "visible") loadAll(); };
+    // Kembali terlihat → menu/pengaturan selalu disegarkan; transaksi hanya
+    // ditarik ulang kalau lama di latar (>60 detik, saat realtime mungkin putus).
+    let hiddenAt = 0;
+    const onVisible = () => {
+      if (document.visibilityState === "hidden") { hiddenAt = Date.now(); return; }
+      const lama = hiddenAt > 0 && Date.now() - hiddenAt > 60_000;
+      loadAll({ skipTx: !lama });
+    };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (reloadTimer) clearTimeout(reloadTimer);
