@@ -361,7 +361,10 @@ Gan En 🙏🏻`
           {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
           <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
             <div className="flex items-center justify-between">
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Sesi Pre-order</span>
+              <button onClick={() => setSheet("bagikan")} className="flex items-center"
+                style={{ gap: 8, height: 40, padding: "0 4px 0 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text }}>
+                <Share2 size={19} color={t.amberText} /> Bagikan Link
+              </button>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 32, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 700, fontSize: 12.5, border: "none",
                   background: isAutoClosed ? t.primaryLight : open ? t.successBg : t.errorBg,
@@ -412,29 +415,16 @@ Gan En 🙏🏻`
               </button>
             </div>
 
-            {/* Bagikan Link — tombol bertulisan jelas, bukan ikon saja */}
-            <button onClick={() => setSheet("bagikan")} className="flex items-center"
-              style={{ gap: 10, width: "100%", minHeight: 48, marginTop: 8, padding: "0 4px", border: "none", borderTop: `1px solid ${t.divider}`, background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text, textAlign: "left" }}>
-              <Share2 size={19} color={t.amberText} />
-              <span style={{ flex: 1 }}>Bagikan Link Pemesanan</span>
-              <ChevronRight size={18} color={t.text2} />
-            </button>
-
           </div>
 
           {/* Ringkasan hari ini — bisa diketuk sebagai filter daftar */}
-          <div className="flex gap-2" style={{ marginTop: 12 }}>
+          <div className="flex gap-2" style={{ marginTop: 14 }}>
             <Stat n={orders.length} label="Pesanan" active={packedFilter === "semua"}
               onClick={() => setPackedFilter("semua")} />
             <Stat n={packed} label="Sudah Dikemas" tone="ok" active={packedFilter === "sudah"}
               onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
             <Stat n={belum} label="Belum Dikemas" tone="warn" active={packedFilter === "belum"}
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
-            <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak"
-              style={{ flex: 1, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "12px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit", color: t.text, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <CookingPot size={24} color={t.amberText} />
-              <span style={{ fontSize: 11.5, color: t.text2, lineHeight: 1.2 }}>Rekap Masak</span>
-            </button>
           </div>
 
           {/* Cari */}
@@ -472,8 +462,14 @@ Gan En 🙏🏻`
             </button>
           )}
 
-          <div style={{ fontSize: 13, fontWeight: 800, color: t.text, margin: "8px 2px 10px" }}>
-            {lihatSesi ? "Pesanan Hari Ini" : `Pesanan ${serviceDateLabel(viewDate)}`}
+          <div className="flex items-center justify-between" style={{ margin: "14px 2px 6px" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: t.text }}>
+              {lihatSesi ? "Pesanan Hari Ini" : `Pesanan ${serviceDateLabel(viewDate)}`}
+            </div>
+            <button onClick={() => setSheet("rekap")} className="flex items-center"
+              style={{ gap: 7, height: 44, padding: "0 2px 0 8px", marginRight: -2, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
+              <CookingPot size={19} color={t.amberText} /> Rekap Masak <ChevronRight size={17} color={t.text2} style={{ marginLeft: -3 }} />
+            </button>
           </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
