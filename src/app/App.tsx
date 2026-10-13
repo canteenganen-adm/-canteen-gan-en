@@ -730,7 +730,7 @@ function MainShell({ store }: { store: CanteenStore }) {
                 width: 40, height: 32, borderRadius: 12, display: "grid", placeItems: "center",
                 background: active ? t.primary : "transparent",
               }}>
-                <Icon size={19} color={active ? t.text : t.textDis} strokeWidth={active ? 2.25 : 1.75} />
+                <Icon size={19} color={active ? t.onPrimary : t.textDis} strokeWidth={active ? 2.25 : 1.75} />
               </span>
               {!!badge && (
                 <span style={{ position: "absolute", top: 2, right: "22%", minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 10, fontWeight: 800, display: "grid", placeItems: "center" }}>

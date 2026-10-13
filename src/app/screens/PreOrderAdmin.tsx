@@ -60,7 +60,7 @@ function mergeOrders(list: AdminOrder[]): MergedGroup[] {
   for (const o of list) {
     // Nama dinormalkan (spasi ganda/ujung) supaya pesanan anak yang sama
     // tidak pecah jadi dua kartu hanya karena beda ketikan spasi
-    const key = `${o.nama.trim().replace(/\s+/g, " ").toLowerCase()}|${o.kelas.trim().toLowerCase()}`;
+    const key = `${o.nama.trim().replace(/\s+/g, " ").toLowerCase()}|${o.kelas.trim().toLowerCase()}|${o.ambil.trim().toLowerCase()}`;
     if (!map.has(key)) map.set(key, { key, ids: [], nama: o.nama, tingkat: o.tingkat, kelas: o.kelas, ambil: o.ambil, allPacked: true, somePacked: false, packedAt: null, flatItems: [], perOrder: [], total: 0, _orders: [] });
     const g = map.get(key)!;
     g.ids.push(o.id);
@@ -142,7 +142,6 @@ export default function PreOrderAdmin({
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
@@ -179,14 +178,7 @@ export default function PreOrderAdmin({
   const handleShareLinkWA = () => {
     const text = encodeURIComponent(
       open
-        ? `Halo Papa/Mama,
-
-Pre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.
-
-Silakan melakukan pemesanan melalui tautan berikut:
-${poLink}
-
-Gan En 🙏🏻`
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En`
         : "Pre-order untuk tanggal ini sudah ditutup."
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
@@ -352,7 +344,6 @@ Gan En 🙏🏻`
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
             <div className="flex" style={{ marginRight: -10 }}>
-              <button onClick={() => { if (searchOpen) setQ(""); setSearchOpen((v) => !v); }} aria-label="Cari nama murid" aria-pressed={searchOpen} style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Search size={22} /></button>
               <button onClick={() => setSheet("cetak")} aria-label="Cetak" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Printer size={22} /></button>
               <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Settings size={22} /></button>
             </div>
@@ -428,12 +419,6 @@ Gan En 🙏🏻`
           </div>
 
           {/* Cari */}
-          {searchOpen && <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 50 }}>
-            <Search size={20} color={t.text2} />
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama murid…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
-          </div>}
 
           {/* Filter Tingkat */}
           <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
@@ -445,7 +430,7 @@ Gan En 🙏🏻`
           {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
           {menuBelumDisimpan && (
             <button onClick={onLihatMenu} className="flex items-center gap-2"
-              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4DA", border: "1.5px solid #F1DFB0", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFEBD0", border: "1.5px solid #F0D3A6", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <AlertCircle size={16} style={{ flex: "none" }} />
               <span style={{ flex: 1 }}>Menu untuk {dateLabel} belum disimpan — ortu belum bisa melihat menu. Ketuk untuk mengatur & Simpan.</span>
             </button>
@@ -462,13 +447,18 @@ Gan En 🙏🏻`
             </button>
           )}
 
-          <div className="flex items-center justify-between" style={{ margin: "14px 2px 6px" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: t.text }}>
-              {lihatSesi ? "Pesanan Hari Ini" : `Pesanan ${serviceDateLabel(viewDate)}`}
+          {/* Cari murid + Rekap Masak sebaris. Tanggal yang dilihat sudah
+              terbaca di kartu sesi di atas. */}
+          <div className="flex items-center gap-2" style={{ margin: "14px 0 10px" }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
+              <Search size={19} color={t.text2} style={{ flex: "none" }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
             <button onClick={() => setSheet("rekap")} className="flex items-center"
-              style={{ gap: 7, height: 44, padding: "0 2px 0 8px", marginRight: -2, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
-              <CookingPot size={19} color={t.amberText} /> Rekap Masak <ChevronRight size={17} color={t.text2} style={{ marginLeft: -3 }} />
+              style={{ gap: 7, flex: "none", height: 48, padding: "0 12px", border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, background: t.surface, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
+              <CookingPot size={19} color={t.text} /> Rekap Masak
             </button>
           </div>
           {utama.length === 0 ? (
@@ -512,7 +502,7 @@ Gan En 🙏🏻`
                   Batal
                 </button>
                 <button onClick={confirmPendingDate}
-                  style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                  style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                   Ya, Pindahkan
                 </button>
               </div>
@@ -521,7 +511,7 @@ Gan En 🙏🏻`
             <>
               <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
               <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
-                style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                 <Calendar size={18} /> Hari Sekolah Berikutnya
               </button>
               <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, margin: "12px 0" }}>atau</div>
@@ -608,7 +598,7 @@ Gan En 🙏🏻`
               {linkCopied ? <Check size={18} /> : <Copy size={18} />} {linkCopied ? "Tersalin!" : "Salin Link"}
             </button>
             <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
-              style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
               <Share2 size={18} /> WhatsApp
             </button>
           </div>
@@ -708,8 +698,8 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
             <button key={k.id} onClick={() => onChange(k.id)}
               style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                 border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
-                background: on ? (k.warna ?? t.primaryLight) : t.surface,
-                color: on ? (k.warna ? "#FFFCF7" : t.amberText) : t.text2 }}>
+                background: on ? (k.warna ?? t.primary) : t.surface,
+                color: on ? "#FFFFFF" : t.text2 }}>
               {k.label}
             </button>
           );
@@ -749,7 +739,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 9 }}>
+    <div style={{ position: "relative", background: t.surface, border: `2px solid ${late ? t.error : g.allPacked ? t.success : t.borderStrong}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
       <div className="flex" style={{ gap: 12 }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
@@ -809,14 +799,15 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
   );
 }
 function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
-  const col = tone === "ok" ? t.successText : tone === "warn" ? t.error : t.text;
+  const col = tone === "ok" ? t.successText : tone === "warn" ? t.warnText : t.text;
+  const bg = tone === "ok" ? t.successBg : tone === "warn" ? t.warnBg : t.surface;
   return (
     <button onClick={onClick}
-      style={{ flex: 1, background: active ? t.primaryLight : t.surface,
-        border: active ? `1.5px solid ${t.primary}` : `1px solid ${t.border}`,
+      style={{ flex: 1, background: bg,
+        border: active ? `2px solid ${t.primary}` : `1.5px solid ${tone ? "transparent" : t.borderStrong}`,
         borderRadius: 14, padding: "12px 8px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 24, fontWeight: 800, color: col, lineHeight: 1 }}>{n}</div>
-      <div style={{ fontSize: 11.5, color: active ? t.amberText : t.text2, fontWeight: active ? 700 : 400, marginTop: 5 }}>{label}</div>
+      <div style={{ fontSize: 12, color: col, fontWeight: 700, marginTop: 5 }}>{label}</div>
     </button>
   );
 }

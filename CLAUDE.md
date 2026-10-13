@@ -15,16 +15,19 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 - **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
-  - Background `#FAF6EE` · Surface `#FFFCF7` · Surface lembut `#FFF8EE`
-  - Primary `#FDB833` · Primary hover `#F9A03F` · Primary light `#FFF1CC` · Teks amber `#8a5c00`
-  - Success `#6FA76D` / bg `#EAF5E6` / teks `#3F6B43`
-  - Error `#D95D5D` / bg `#FBEAEA` · Warning bg `#FFF4DA`
-  - Teks `#2F2A24` · Teks redup `#756B5D` · Border `#E8E0D2` · Divider `#F1EBE0`
+  - Palet "Taman" (krem hangat + kartu putih). **Satu warna = satu tugas**: tinta = aksi/dipilih · hijau = Sudah · jingga = Belum · merah = Telat. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
+  - Background `#F8F5EC` · Surface `#FFFFFF` · Surface lembut `#FBF9F2`
+  - Primary (tinta) `#2A2820` · Primary hover `#443F33` · Primary light `#ECE8DA` · Teks di atas primary `#FFFFFF`
+  - Success (Sudah) `#3F8A3A` / bg `#DDEFD3` / teks `#2F6B2C`
+  - Warn (Belum) `#D9822B` / bg `#FFE6C7` / teks `#A85A0C`
+  - Error (Telat) `#C63E2B` / bg `#FBE7E3`
+  - Teks `#2A2820` · Teks redup `#6B6859` · Border `#E2DDCB` · Border tegas `#CBC5AE` (pembatas kartu daftar) · Divider `#EFEBDD`
+  - Kuning/amber sudah TIDAK dipakai. Tulisan di atas tombol primer selalu putih (`t.onPrimary`).
 - **Bentuk:** kartu radius 16–18px; tombol radius 12–14px; pil radius 999. Border 1–1.5px, bukan shadow berat.
 - **Ukuran:** target sentuh ≥48px; teks penting besar & tebal (pengguna 50–60 th): judul 17–23px w800, isi ≥15px.
 - **Ikon:** Lucide saja.
 - **Emoji:** DILARANG di UI admin. Pengecualian: tile kategori halaman parent (map tetap di kode) + branding 🪷.
-- **Rasa:** kalem ala Apple/Notion/Linear. Satu aksen amber. Bukan dashboard POS ramai, bukan Material warna-warni.
+- **Rasa:** kalem ala Apple/Notion/Linear. Satu warna = satu tugas (lihat palet). Bukan dashboard POS ramai, bukan Material warna-warni.
 - **Interaksi:** hindari dialog konfirmasi → pakai Undo. Picker tanggal/jam wajib bisa diketuk di SELURUH area (input overlay inset:0), uji di Safari iOS.
 
 ## ISTILAH TERKUNCI

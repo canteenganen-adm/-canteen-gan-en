@@ -323,7 +323,7 @@ export default function Tagihan({
     const total = gs.reduce((s, g) => s + g.total, 0);
     // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
     // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
-    return `${settings.waOpening}\n\n${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En 🙏🏻`;
+    return `${settings.waOpening}\n\n${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En`;
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
@@ -466,7 +466,7 @@ export default function Tagihan({
                   {expanded && g.txs.map((tx) => (
                     <div key={tx.id} onClick={() => setDetailTx(tx)}
                       style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`,
-                        background: tx.id === highlightedTxId ? "#FFF4DA" : t.surfaceSoft,
+                        background: tx.id === highlightedTxId ? "#FFEBD0" : t.surfaceSoft,
                         transition: "background 0.4s ease", cursor: "pointer" }}>
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
@@ -521,7 +521,7 @@ export default function Tagihan({
                       </button>
                     )}
                     <button onClick={() => setConfirmLunas(g)}
-                      style={{ height: 44, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.text, cursor: "pointer", fontWeight: 800, fontSize: 14, flex: "none" }}>
+                      style={{ height: 44, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14, flex: "none" }}>
                       Lunaskan
                     </button>
                   </div>
@@ -792,7 +792,7 @@ export default function Tagihan({
             )}
 
             <button onClick={() => setFilterSheet(false)}
-              style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
               Terapkan
             </button>
           </div>
@@ -840,7 +840,7 @@ export default function Tagihan({
                 style={{ width: "100%", marginBottom: 10, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
                   border: `1.5px solid ${t.primary}`, background: t.primaryLight }}>
                 <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center",
-                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primary}`, color: t.text }}>
+                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primary}`, color: t.onPrimary }}>
                   {waDraft.merged && <Check size={16} />}
                 </span>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: t.amberText, lineHeight: 1.45 }}>
@@ -880,7 +880,7 @@ function SourceTag({ source }: { source: Transaction["source"] }) {
     <span title={pre ? "Pre-order" : "Penjualan"}
       style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", flex: "none",
         background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText,
-        border: `1px solid ${pre ? "#F1DFB0" : "#D8E6D4"}` }}>
+        border: `1px solid ${pre ? "#F0D3A6" : "#D8E6D4"}` }}>
       {pre ? <Utensils size={14} /> : <ShoppingCart size={14} />}
     </span>
   );

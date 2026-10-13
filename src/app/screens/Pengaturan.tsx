@@ -90,7 +90,7 @@ export default function Pengaturan({
   const handleShareLinkWA = () => {
     const text = encodeURIComponent(
       preorderOpen
-        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En 🙏🏻`
+        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En`
         : "Pre-order untuk tanggal ini sudah ditutup."
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
@@ -317,7 +317,7 @@ export default function Pengaturan({
             )}
 
             <button onClick={saveEdit}
-              style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
+              style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
               Simpan Perubahan
             </button>
           </div>
@@ -450,7 +450,7 @@ export default function Pengaturan({
                 onKeyDown={(e) => e.key === "Enter" && addPreset()}
                 placeholder="Tambah waktu ambil baru…"
                 style={{ ...inp, flex: 1, height: 48 }} />
-              <button onClick={addPreset} style={iconBtn(t.primary, t.text)}><Plus size={17} /></button>
+              <button onClick={addPreset} style={iconBtn(t.primary, t.onPrimary)}><Plus size={17} /></button>
             </div>
           </div>
         </div>
@@ -592,7 +592,7 @@ export default function Pengaturan({
                 onKeyDown={(e) => e.key === "Enter" && addKelas()}
                 placeholder={`Kelas baru untuk ${tingkatFilter}…`}
                 style={{ ...inp, flex: 1, height: 48 }} />
-              <button onClick={addKelas} style={iconBtn(t.primary, t.text)}><Plus size={17} /></button>
+              <button onClick={addKelas} style={iconBtn(t.primary, t.onPrimary)}><Plus size={17} /></button>
             </div>
           </div>
         </div>
@@ -636,7 +636,7 @@ export default function Pengaturan({
                     <div>
                       <div style={{ fontSize: 15.5, fontWeight: 800 }}>{tx.customer.nama}</div>
                       {kelasParts && (
-                        <span style={{ background: tingkatColor(tx.customer.tingkat, tx.customer.kelas), color: "#FFFCF7", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
+                        <span style={{ background: tingkatColor(tx.customer.tingkat, tx.customer.kelas), color: "#FFFFFF", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
                           {kelasParts}
                         </span>
                       )}
@@ -843,7 +843,7 @@ export default function Pengaturan({
             </div>
           </Group>
 
-          <div style={{ textAlign: "center", fontSize: 12, color: t.textDis, marginTop: 24 }}>
+          <div style={{ textAlign: "center", fontSize: 13, color: t.text2, marginTop: 24 }}>
             Status Pre-order & Tanggal Layanan ada di halaman Pre-order, bukan di sini.
           </div>
         </div>
@@ -868,7 +868,7 @@ export default function Pengaturan({
                 {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Tersalin!" : "Salin Link"}
               </button>
               <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
-                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                 <Share2 size={18} /> WhatsApp
               </button>
             </div>

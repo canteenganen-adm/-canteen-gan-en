@@ -239,7 +239,7 @@ export default function Penjualan({
         className="flex flex-col justify-between"
         style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
         {inCart > 0 && (
-          <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.text, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
+          <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
         <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{toTitleCase(m.name)}</div>
         <div className="flex items-center gap-1">
@@ -287,7 +287,7 @@ export default function Penjualan({
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 42, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 11px 11px 0", cursor: "pointer",
-                background: isBackdate ? "#FFF4DA" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}`, borderLeft: "none" }}>
+                background: isBackdate ? "#FFEBD0" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
                 {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
@@ -360,7 +360,7 @@ export default function Penjualan({
       {count > 0 && view === "shop" && (
         <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT, padding: "12px 20px 18px", background: "linear-gradient(transparent, " + t.bg + " 22%)" }}>
           <div style={{ maxWidth: 460, margin: "0 auto" }} className="flex items-center gap-3">
-            <button onClick={() => setView("summary")} className="flex items-center justify-between" style={{ flex: 1, height: 58, borderRadius: 16, border: "none", cursor: "pointer", background: t.primary, color: t.text, padding: "0 18px", boxShadow: "0 6px 20px rgba(253,184,51,.4)" }}>
+            <button onClick={() => setView("summary")} className="flex items-center justify-between" style={{ flex: 1, height: 58, borderRadius: 16, border: "none", cursor: "pointer", background: t.primary, color: t.onPrimary, padding: "0 18px", boxShadow: "0 6px 20px rgba(42,40,32,.4)" }}>
               <span className="flex items-center gap-2" style={{ fontWeight: 700, fontSize: 15 }}><ShoppingCart size={20} /> {count} item</span>
               <span className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 18 }}>{rupiah(total)} <ChevronRight size={20} /></span>
             </button>
@@ -411,7 +411,7 @@ export default function Penjualan({
             <button onClick={() => setBilling(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
               <Receipt size={20} /> Masuk Tagihan
             </button>
-            <button onClick={() => commit(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+            <button onClick={() => commit(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
               <Wallet size={20} /> Dibayar
             </button>
           </div>
@@ -435,7 +435,7 @@ export default function Penjualan({
                     style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left" }}>
                     <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{c.nama}</span>
                     {c.kelas && (
-                      <span style={{ fontSize: 11, fontWeight: 800, color: "#FFFCF7", background: tingkatColor(c.tingkat, c.kelas), padding: "1px 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#FFFFFF", background: tingkatColor(c.tingkat, c.kelas), padding: "1px 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
                     )}
                     <span style={{ marginLeft: "auto", textAlign: "right", flex: "none" }}>
                       <span style={{ display: "block", fontSize: 12, color: t.text2 }}>{c.wa || "tanpa WA"}</span>
@@ -485,7 +485,7 @@ export default function Penjualan({
           <Field label="WhatsApp">
             <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inputStyle(false)} />
           </Field>
-          <button onClick={submitTagihan} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
+          <button onClick={submitTagihan} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
             <Check size={20} /> Simpan ke Tagihan · {rupiah(total)}
           </button>
         </Sheet>
@@ -509,7 +509,7 @@ export default function Penjualan({
       {toast && !cartUndo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
-            <span style={{ width: 26, height: 26, borderRadius: "50%", background: toast.ok ? t.success : t.primary, display: "grid", placeItems: "center", flex: "none", color: toast.ok ? "#fff" : t.text }}>
+            <span style={{ width: 26, height: 26, borderRadius: "50%", background: toast.ok ? t.success : t.primary, display: "grid", placeItems: "center", flex: "none", color: "#fff" }}>
               {toast.ok ? <Check size={16} /> : <Receipt size={15} />}
             </span>
             <span style={{ fontSize: 14.5, fontWeight: 600 }}>{toast.msg}</span>

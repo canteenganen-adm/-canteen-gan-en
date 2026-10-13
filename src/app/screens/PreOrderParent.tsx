@@ -284,7 +284,7 @@ export default function PreOrderParent({
           </div>
           <div style={{ marginTop: 36 }}>
             {!closed ? (
-              <button onClick={() => setStep("menu")} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+              <button onClick={() => setStep("menu")} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
                 <ShoppingBag size={22} /> Mulai Memesan
               </button>
             ) : (
@@ -350,7 +350,7 @@ export default function PreOrderParent({
             Jangan lupa titipkan kotak bekal Ananda di pos satpam sebelum jam masuk sekolah. Untuk menu berkuah, mohon sertakan wadah tambahan. Kantin tidak menyediakan wadah maupun alat makan.
             <div style={{ marginTop: 10, fontWeight: 600, color: t.text }}>🪷 感恩 Gan En 🙏🏻✨</div>
           </div>
-          <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+          <button onClick={resetAll} style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
             Selesai
           </button>
         </div>
@@ -473,7 +473,7 @@ export default function PreOrderParent({
           )}
 
           <button onClick={submit} disabled={submitting} className="flex items-center justify-center gap-2"
-            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 16, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.6 : 1 }}>
+            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.6 : 1 }}>
             <Check size={20} /> {submitting ? "Mengirim…" : "Kirim Pesanan"}
           </button>
         </div>
@@ -526,7 +526,7 @@ export default function PreOrderParent({
             <span style={{ fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kantin}</span>
           </div>
           <button onClick={() => setShowHelp(true)} aria-label="Panduan pemesanan"
-            style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, border: "none", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 14, color: t.text, cursor: "pointer", flex: "none" }}>
+            style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, border: "none", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 14, color: t.onPrimary, cursor: "pointer", flex: "none" }}>
             ?
           </button>
         </div>
@@ -616,7 +616,7 @@ export default function PreOrderParent({
                     </div>
                   ) : (
                     <button onClick={() => tap(m)} disabled={penuh}
-                      style={{ width: "100%", height: 34, borderRadius: 9, background: penuh ? t.divider : t.primary, border: "none", fontWeight: 800, fontSize: 12, color: penuh ? t.textDis : t.text, cursor: penuh ? "default" : "pointer" }}>
+                      style={{ width: "100%", height: 34, borderRadius: 9, background: penuh ? t.divider : t.primary, border: "none", fontWeight: 800, fontSize: 12, color: penuh ? t.textDis : t.onPrimary, cursor: penuh ? "default" : "pointer" }}>
                       {m.variants.length ? "Pilih" : "+ Tambah"}
                     </button>
                   )}
@@ -664,7 +664,7 @@ export default function PreOrderParent({
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, padding: "12px 20px 18px", background: `linear-gradient(transparent,${t.bg} 22%)` }}>
           <div style={{ maxWidth: 460, margin: "0 auto" }}>
             <button onClick={() => setStep("checkout")} className="flex items-center justify-between"
-              style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.text, padding: "0 18px", cursor: "pointer", boxShadow: "0 6px 20px rgba(253,184,51,.4)" }}>
+              style={{ width: "100%", height: 58, borderRadius: 16, border: "none", background: t.primary, color: t.onPrimary, padding: "0 18px", cursor: "pointer", boxShadow: "0 6px 20px rgba(42,40,32,.4)" }}>
               <span style={{ fontWeight: 700 }}>{count} item · {rupiah(total)}</span>
               <span className="flex items-center gap-1" style={{ fontWeight: 800 }}>Lanjut <ChevronRight size={20} /></span>
             </button>
@@ -703,8 +703,8 @@ function Screen({ children, onHelp, showHelp, onCloseHelp, unavailNotice }: {
       )}
       {onHelp && (
         <button onClick={onHelp} aria-label="Panduan pemesanan"
-          style={{ position: "fixed", right: 16, top: 16, zIndex: 10, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(47,42,36,.16)", flexShrink: 0 }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#F9A03F")}
+          style={{ position: "fixed", right: 16, top: 16, zIndex: 10, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(47,42,36,.16)", flexShrink: 0 }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = t.primaryHover)}
           onMouseLeave={(e) => (e.currentTarget.style.background = t.primary)}>
           <HelpCircle size={24} strokeWidth={2.2} />
         </button>
@@ -739,7 +739,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             ["Kirim pesanan", "Setelah semua data benar, tekan Kirim Pesanan. Jika muncul halaman hijau \"Pesanan Berhasil Dikirim\", pesanan telah kami terima. Tekan Salin Bukti Pesanan untuk menyimpan arsip."],
           ].map(([judul, isi], i) => (
             <div key={i} className="flex gap-3" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, color: t.text, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 16, flex: "none" }}>{i + 1}</div>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.primary, color: t.onPrimary, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 16, flex: "none" }}>{i + 1}</div>
               <div>
                 <div style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 4 }}>{judul}</div>
                 <div style={{ fontSize: 14.5, color: t.text2, lineHeight: 1.55 }}>{isi}</div>

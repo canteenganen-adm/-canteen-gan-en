@@ -315,7 +315,7 @@ export default function MasterMenu({
               </button>
               <button onClick={addMenu}
                 className="flex items-center gap-2"
-                style={{ background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, height: 44, padding: "0 16px", borderRadius: 12, border: "none", cursor: "pointer" }}>
+                style={{ background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, height: 44, padding: "0 16px", borderRadius: 12, border: "none", cursor: "pointer" }}>
                 <Plus size={20} /> Tambah
               </button>
             </div>
@@ -411,7 +411,7 @@ export default function MasterMenu({
             <button onClick={() => setShowUncategorized((v) => !v)}
               className="flex items-center gap-2"
               style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${showUncategorized ? t.primary : "#F1DFB0"}`, background: "#FFF4DA", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
+                border: `1.5px solid ${showUncategorized ? t.primary : "#F0D3A6"}`, background: "#FFEBD0", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
               <Tag size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showUncategorized
@@ -464,13 +464,13 @@ export default function MasterMenu({
                       gampang dikira "sudah jadi menu tanggal itu" padahal
                       belum, atau dikira kosong itu bug. */}
                   {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
-                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4DA", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFEBD0", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
                       <RefreshCw size={13} /> Menu untuk tanggal ini belum disimpan — mulai kosong, pilih menu lalu tekan Simpan
                     </div>
                   )}
                 </div>
               ) : (
-                <div style={{ background: "#FFF4DA", border: "1px solid #F1DFB0", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
+                <div style={{ background: "#FFEBD0", border: "1px solid #F0D3A6", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
                   Riwayat menu per tanggal butuh <b>migration_9_menu_harian.sql</b> dijalankan di Supabase dulu. Sementara itu toggle di bawah masih langsung tersimpan (perilaku lama).
                 </div>
               )}
@@ -594,7 +594,7 @@ export default function MasterMenu({
                       </button>
                     )}
                     <button onClick={doSave} disabled={saving}
-                      style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                      style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
                       {saving ? "Menyimpan…" : "Simpan"}
                     </button>
                   </div>
@@ -642,7 +642,7 @@ export default function MasterMenu({
                 </div>
               )}
               <button onClick={() => stokVal !== "" && simpanStok(parseInt(stokVal, 10))} disabled={stokSaving || stokVal === ""}
-                style={{ marginTop: 14, width: "100%", height: 54, borderRadius: 14, border: "none", background: stokVal === "" ? t.divider : t.primary, color: stokVal === "" ? t.textDis : t.text, fontWeight: 800, fontSize: 16, cursor: stokVal === "" ? "default" : "pointer", fontFamily: "inherit" }}>
+                style={{ marginTop: 14, width: "100%", height: 54, borderRadius: 14, border: "none", background: stokVal === "" ? t.divider : t.primary, color: stokVal === "" ? t.textDis : t.onPrimary, fontWeight: 800, fontSize: 16, cursor: stokVal === "" ? "default" : "pointer", fontFamily: "inherit" }}>
                 {stokSaving ? "Menyimpan…" : "Simpan stok"}
               </button>
               <button onClick={() => simpanStok(null)} disabled={stokSaving}
@@ -676,7 +676,7 @@ export default function MasterMenu({
                     {awalMatch.missing.length > 0 && <> Tidak ketemu: {awalMatch.missing.join(", ")}. Bisa ditandai sendiri di daftar bawah.</>}
                   </div>
                   <button onClick={() => onMenuTetap(awalMatch.found.map((m) => m.id), true)}
-                    style={{ marginTop: 10, width: "100%", height: 48, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                    style={{ marginTop: 10, width: "100%", height: 48, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
                     Tandai {awalMatch.found.length} menu ini
                   </button>
                 </div>
@@ -882,7 +882,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
             <button
               onClick={isNew ? (canSaveNew ? onSaveNew : undefined) : onClose}
               className="flex items-center gap-2"
-              style={{ background: t.primary, color: t.text, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: isNew && !canSaveNew ? 0.45 : 1 }}>
+              style={{ background: t.primary, color: t.onPrimary, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: isNew && !canSaveNew ? 0.45 : 1 }}>
               <Check size={18} /> {isNew ? "Simpan" : "Selesai"}
             </button>
           </div>
@@ -920,7 +920,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                   onKeyDown={(e) => e.key === "Enter" && applyNewCat()}
                   placeholder="Nama kategori baru…" style={{ ...inputStyle, flex: 1, height: 48 }} />
                 <button onClick={applyNewCat}
-                  style={{ flex: "none", width: 48, height: 48, borderRadius: 10, border: "none", background: t.primary, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  style={{ flex: "none", width: 48, height: 48, borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center" }}>
                   <Check size={18} />
                 </button>
               </div>
