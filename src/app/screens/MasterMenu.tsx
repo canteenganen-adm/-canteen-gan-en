@@ -199,12 +199,18 @@ export default function MasterMenu({
   const tetapSet = useMemo(() => new Set(menuTetap), [menuTetap]);
   const tetapMenus = useMemo(() => menus.filter((m) => tetapSet.has(m.id)), [menus, tetapSet]);
   const pakaiMenuTetap = () => {
+    // Hanya yang BELUM aktif yang berubah; yang sudah aktif dibiarkan.
+    const baru = tetapMenus.filter((m) => !draft[m.id]);
+    if (baru.length === 0) {
+      setToast("Semua " + tetapMenus.length + " menu tetap sudah ada di menu tanggal ini. Tidak ada yang berubah.");
+      return;
+    }
     setDraft((prev) => {
       const next = { ...prev };
-      tetapMenus.forEach((m) => { next[m.id] = true; });
+      baru.forEach((m) => { next[m.id] = true; });
       return next;
     });
-    setToast(tetapMenus.length + " menu tetap dipilih. Ketuk Simpan supaya berlaku.");
+    setToast(baru.length + " menu tetap ditambahkan. Ketuk Simpan supaya berlaku.");
   };
   /** Daftar awal dari pemilik; dicocokkan ke menu yang sudah ada lewat nama
    * (tanpa peduli huruf besar/kecil dan spasi). Yang tidak ketemu dilaporkan,
