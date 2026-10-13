@@ -335,24 +335,19 @@ export default function PreOrderAdmin({
     setSheet(null);
   };
 
-  /* ---- Tombol sesi (satu tombol, status terbaca dari warna + tulisan) ---- */
+  /* ---- Saklar sesi: dua sisi Tutup | Buka. Sisi yang AKTIF terisi warna
+     (status), mengetuk sisi satunya = mengganti. Tidak ada tombol yang
+     menulis aksi sehingga tidak terbaca ganda sebagai status. ---- */
   const reopenActive = open && reopenNow && !!reopenUntil && autoClosedNow(serviceDate, autoCloseTime);
-  const sessBtn = (() => {
-    if (!lihatSesi) return { label: "Hari ini", color: t.text, onClick: () => setViewDate(serviceDate) };
-    if (isAutoClosed) return { label: "Buka lagi", color: LATE, onClick: () => setSheet("bukaLagi") };
-    if (!open) return {
-      label: "Buka", color: LATE,
-      onClick: () => { onToggleOpen(); showToast("Sesi dibuka", () => onToggleOpen()); },
-    };
-    if (reopenActive) return {
-      label: "Tutup", color: t.successText,
-      onClick: () => { const prev = reopenUntil; onReopenUntilChange(null); showToast("Sesi ditutup", () => onReopenUntilChange(prev)); },
-    };
-    return {
-      label: "Tutup", color: t.successText,
-      onClick: () => { onToggleOpen(); showToast("Sesi ditutup", () => onToggleOpen()); },
-    };
-  })();
+  const isOpenNow = open && !isAutoClosed;
+  const goOpen = () => {
+    if (isAutoClosed) { setSheet("bukaLagi"); return; }
+    onToggleOpen(); showToast("Sesi dibuka", () => onToggleOpen());
+  };
+  const goClose = () => {
+    if (reopenActive) { const prev = reopenUntil; onReopenUntilChange(null); showToast("Sesi ditutup", () => onReopenUntilChange(prev)); return; }
+    onToggleOpen(); showToast("Sesi ditutup", () => onToggleOpen());
+  };
 
   /* ---- Hari lain yang pernah ada pesanannya (untuk lembar "Pilih hari") ---- */
   const recentDays = useMemo(() => {
@@ -420,10 +415,26 @@ export default function PreOrderAdmin({
             style={{ gap: 6, minHeight: 44, border: "none", background: "none", padding: 0, cursor: "pointer", fontSize: 18, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, whiteSpace: "nowrap", fontFamily: "inherit" }}>
             {dayShort(viewDate)} <ChevronDown size={18} color={t.text2} />
           </button>
-          <button onClick={sessBtn.onClick}
-            style={{ marginLeft: "auto", flex: "none", height: 44, padding: "0 18px", borderRadius: 8, background: t.surface, border: `1.5px solid ${sessBtn.color}`, color: sessBtn.color, fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" }}>
-            {sessBtn.label}
-          </button>
+          {lihatSesi ? (
+            <div role="group" aria-label="Status sesi Pre-order"
+              style={{ marginLeft: "auto", flex: "none", display: "flex", height: 46, padding: 3, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.border}` }}>
+              {([["Tutup", false, LATE, goClose], ["Buka", true, t.successText, goOpen]] as const).map(([label, val, color, fn]) => {
+                const on = isOpenNow === val;
+                return (
+                  <button key={label} onClick={on ? undefined : fn} aria-pressed={on}
+                    style={{ minWidth: 68, padding: "0 14px", border: "none", borderRadius: 9, fontWeight: 800, fontSize: 15, fontFamily: "inherit",
+                      background: on ? color : "transparent", color: on ? "#fff" : t.text2, cursor: on ? "default" : "pointer" }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <button onClick={() => setViewDate(serviceDate)}
+              style={{ marginLeft: "auto", flex: "none", height: 44, padding: "0 18px", borderRadius: 8, background: t.surface, border: `1.5px solid ${t.text}`, color: t.text, fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" }}>
+              Hari ini
+            </button>
+          )}
         </div>
 
         {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
