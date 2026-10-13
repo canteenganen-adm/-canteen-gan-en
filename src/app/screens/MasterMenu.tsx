@@ -3,7 +3,7 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package,
 } from "lucide-react";
-import { t, NAV_HEIGHT } from "../../lib/theme";
+import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
@@ -483,7 +483,7 @@ export default function MasterMenu({
                 <>
                   {/* STRUK THERMAL — proofread menu ala cetakan kasir. Data &
                       urutan SAMA dengan halaman ortu; tanpa tombol/keranjang.
-                      Satu-satunya tempat di app yang memakai huruf monospace
+                      Salah satu tempat bergaya struk (DM Mono, sama dengan Transaksi dan Pre-order)
                       (pengecualian gaya yang disengaja, pilihan pemilik). */}
                   {(() => {
                     const tampil = previewMenus.filter((m) => m.channels.preorder);
@@ -513,7 +513,7 @@ export default function MasterMenu({
                     const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
                       <div style={{ background: t.surface, margin: "0 6px", padding: "18px 16px 22px",
-                        fontFamily: "ui-monospace, 'Cascadia Mono', 'Courier New', monospace",
+                        fontFamily: STRUK_MONO,
                         fontSize: 13, fontWeight: 600, lineHeight: 1.85, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PO</div>
