@@ -16,12 +16,12 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
   - Palet "Satu hero madu" (ala myBCA: SATU warna utama, sisanya netral). Mama: warna penuh/solid yang banyak melelahkan; hitam, biru, dan hijau-di-mana-mana DITOLAK. **Hijau HANYA untuk tulisan/pil "Dibuka" (dan penanda Sudah), dibuat agak terang.** Papa melihat dengan SATU mata → pemisahan antar kartu harus jelas lewat selisih terang-gelap. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru).
-  - Background `#FAF6EE` · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Surface selang-seling `#E6ECF1` (kartu pesanan genap, tanpa garis putus-putus)
+  - Background `#FAF6EE` · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Surface selang-seling `#D8E7D0` (kartu pesanan genap, sage pucat; tanpa garis putus-putus)
   - Hero (kuning madu) `#F2B53C` · hover `#E0A12E` · light `#FFF1CC` · tulisan di atas hero GELAP `#2A2820` — dipakai untuk chip/tab terpilih, tombol utama, garis kotak aktif
   - Pil Dibuka (hijau terang, satu-satunya hijau besar): bg `#D4F2CA` · garis `#7FD06F` · teks `#17702B`
-  - Kotak ringkasan Pesanan/Sudah/Belum NETRAL (krem terang); makna dibaca dari tulisan/ikon, bukan warna
+  - Kotak ringkasan Pesanan/Sudah/Belum NETRAL (krem terang); hanya ANGKA berwarna: Sudah hijau `#17702B`, Belum merah `#B5352A`, Pesanan gelap (permintaan Mama)
   - Warna lain hanya untuk peringatan: Telat/Ditutup `#B5352A` (bg `#FBE7E3`) · Tutup otomatis jingga `#8F4E08` (bg `#FFE9CC`)
-  - Teks `#2A2820` · Teks redup `#6B6859` · Border `#DCD6C2` · Border tegas `#C4BDA3` (kartu daftar) · Divider `#E6E1CF`
+  - Teks `#2A2820` · Teks redup `#5F5C4D` · Border `#DCD6C2` · Border tegas `#C4BDA3` (kartu daftar) · Divider `#E6E1CF`
   - Tulisan di atas tombol/chip hero SELALU gelap (`t.onPrimary`). Jangan pakai kuning untuk teks.
 - **Bentuk:** kartu radius 16–18px; tombol radius 12–14px; pil radius 999. Border 1–1.5px, bukan shadow berat.
 - **Ukuran:** target sentuh ≥48px; teks penting besar & tebal (pengguna 50–60 th): judul 17–23px w800, isi ≥15px.

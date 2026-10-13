@@ -803,13 +803,15 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
     </div>
   );
 }
-function Stat({ n, label, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
+function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
+  // Kotak netral; hanya ANGKA yang berwarna: Sudah hijau, Belum merah (seperti dulu).
+  const col = tone === "ok" ? t.successText : tone === "warn" ? t.error : t.text;
   return (
     <button onClick={onClick} aria-pressed={active}
       style={{ flex: 1, background: t.surface, color: t.text,
         border: active ? `2.5px solid ${t.primary}` : `1.5px solid ${t.border}`,
         borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{n}</div>
+      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1, color: col }}>{n}</div>
       <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5, color: t.text2 }}>{label}</div>
     </button>
   );

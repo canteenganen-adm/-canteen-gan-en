@@ -9,9 +9,9 @@ export const t = {
   bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
-  surfaceAlt: "#E6ECF1", // kartu pesanan selang-seling (biru abu lembut) supaya pesanan bersebelahan terbedakan
+  surfaceAlt: "#D8E7D0", // kartu pesanan selang-seling (biru abu lembut) supaya pesanan bersebelahan terbedakan
   text: "#2A2820",
-  text2: "#6B6859",
+  text2: "#5F5C4D",
   textDis: "#B3AF9F",
   success: "#3F8A3A",
   successBg: "#DDEFD3",
