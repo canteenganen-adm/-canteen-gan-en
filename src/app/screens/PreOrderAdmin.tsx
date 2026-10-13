@@ -416,20 +416,7 @@ export default function PreOrderAdmin({
           </div>}
 
           {/* Filter Tingkat */}
-          <div className="flex gap-2 hscroll" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
-              {KELAS_TABS.map((k) => {
-                const on = k.id === tingkatFilter;
-                return (
-                  <button key={k.id} onClick={() => setTingkatFilter(k.id)}
-                    style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                      border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
-                      background: on ? (k.warna ?? t.primaryLight) : t.surface,
-                      color: on ? (k.warna ? "#FFFCF7" : t.amberText) : t.text2 }}>
-                    {k.label}
-                  </button>
-                );
-              })}
-            </div>
+          <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
         </div>
 
         {/* Daftar utama — preset pertama, TANPA label */}
@@ -647,6 +634,49 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
+/** Baris chip kelas yang bisa digeser. Tanda ">" redup di kanan muncul selama
+ * masih ada chip di luar layar (SMA, Guru/Karyawan), hilang di ujung. Ketuk
+ * tanda itu = geser lebih jauh. */
+function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: KelasGroup) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  const update = () => {
+    const el = ref.current; if (!el) return;
+    setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const mask = more ? "linear-gradient(90deg, #000 calc(100% - 44px), transparent 100%)" : undefined;
+  return (
+    <div style={{ position: "relative", marginTop: 10 }}>
+      <div ref={ref} onScroll={update} className="flex gap-2 hscroll"
+        style={{ overflowX: "auto", paddingBottom: 2, WebkitMaskImage: mask, maskImage: mask }}>
+        {KELAS_TABS.map((k) => {
+          const on = k.id === value;
+          return (
+            <button key={k.id} onClick={() => onChange(k.id)}
+              style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
+                background: on ? (k.warna ?? t.primaryLight) : t.surface,
+                color: on ? (k.warna ? "#FFFCF7" : t.amberText) : t.text2 }}>
+              {k.label}
+            </button>
+          );
+        })}
+      </div>
+      {more && (
+        <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser untuk melihat kelas lain"
+          style={{ position: "absolute", right: -4, top: 0, width: 36, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text, opacity: 0.4 }}>
+          <ChevronRight size={22} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ItemLines({ items }: { items: Transaction["items"] }) {
   return (
     <>
