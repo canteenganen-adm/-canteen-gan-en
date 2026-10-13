@@ -6,11 +6,12 @@ export const t = {
   primaryHover: "#443F33",
   primaryLight: "#ECE8DA",
   onPrimary: "#FFFFFF",
-  bg: "#E7E2CF",
+  bg: "#F1EDDF",
   surface: "#FBF8EF",
-  surfaceSoft: "#F3EFE1",
+  surfaceSoft: "#F6F2E6",
+  surfaceAlt: "#E6ECF1", // kartu pesanan selang-seling (biru abu lembut) supaya pesanan bersebelahan terbedakan
   text: "#2A2820",
-  text2: "#5F5C4D",
+  text2: "#6B6859",
   textDis: "#B3AF9F",
   success: "#3F8A3A",
   successBg: "#DDEFD3",
@@ -20,9 +21,9 @@ export const t = {
   warnText: "#8F4E08",
   error: "#C63E2B",
   errorBg: "#FBE7E3",
-  border: "#CFC8AF",
-  borderStrong: "#B9B197",
-  divider: "#DDD8C3",
+  border: "#DCD6C2",
+  borderStrong: "#C4BDA3",
+  divider: "#E6E1CF",
   amberText: "#2A2820",
 } as const;
 

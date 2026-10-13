@@ -16,12 +16,12 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
   - Palet "Taman" (krem hangat + kartu putih). **Satu warna = satu tugas**: tinta = aksi/dipilih · hijau = Sudah · jingga = Belum · merah = Telat. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
-  - Background `#E7E2CF` (latar lebih dalam supaya mata tidak menatap bidang terang luas) · Surface (kartu) `#FBF8EF` — JANGAN putih murni · Surface lembut `#F3EFE1`
+  - Background `#F1EDDF` (pilihan Mama; yang lebih gelap sudah dicoba dan ditolak) · Surface (kartu) `#FBF8EF` — JANGAN putih murni · Surface lembut `#F6F2E6` · Surface selang-seling `#E6ECF1` (kartu pesanan genap — TANPA garis putus-putus, permintaan Mama)
   - Primary (tinta) `#2A2820` · Primary hover `#443F33` · Primary light `#ECE8DA` · Teks di atas primary `#FFFFFF`
   - Success (Sudah) `#3F8A3A` / bg `#DDEFD3` / teks `#2F6B2C`
   - Warn (Belum) `#D9822B` / bg `#FFE6C7` / teks `#8F4E08`
   - Error (Telat) `#C63E2B` / bg `#FBE7E3`
-  - Teks `#2A2820` · Teks redup `#5F5C4D` · Border `#CFC8AF` · Border tegas `#B9B197` (kartu daftar + garis pemisah putus-putus) · Divider `#DDD8C3`
+  - Teks `#2A2820` · Teks redup `#6B6859` · Border `#DCD6C2` · Border tegas `#C4BDA3` (kartu daftar) · Divider `#E6E1CF`
   - Kuning/amber sudah TIDAK dipakai. Tulisan di atas tombol primer selalu putih (`t.onPrimary`).
 - **Bentuk:** kartu radius 16–18px; tombol radius 12–14px; pil radius 999. Border 1–1.5px, bukan shadow berat.
 - **Ukuran:** target sentuh ≥48px; teks penting besar & tebal (pengguna 50–60 th): judul 17–23px w800, isi ≥15px.
