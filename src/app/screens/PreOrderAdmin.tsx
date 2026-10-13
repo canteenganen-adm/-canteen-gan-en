@@ -463,7 +463,12 @@ export default function PreOrderAdmin({
           </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
-          ) : utama.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />)}
+          ) : utama.map((g, i) => (
+            <div key={g.key}>
+              {i > 0 && <Liner />}
+              <MergedOrderCard g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
+            </div>
+          ))}
 
           {/* Ambil beda waktu — hanya kalau ada */}
           {beda.length > 0 && (
@@ -473,7 +478,12 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
-              {beda.map((g) => <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />)}
+              {beda.map((g, i) => (
+            <div key={g.key}>
+              {i > 0 && <Liner />}
+              <MergedOrderCard g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
+            </div>
+          ))}
             </>
           )}
         </div>
@@ -721,6 +731,12 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
   );
 }
 
+/** Garis pemisah antar pesanan (putus-putus ala struk), lebih tegas dari
+ * border kartu supaya item satu anak tidak terbaca milik anak berikutnya. */
+function Liner() {
+  return <div aria-hidden="true" style={{ margin: "16px 6px", borderTop: "2.5px dashed #A39D84" }} />;
+}
+
 function ItemLines({ items }: { items: Transaction["items"] }) {
   return (
     <>
@@ -739,7 +755,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: t.surface, border: `2px solid ${late ? t.error : g.allPacked ? t.success : t.borderStrong}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+    <div style={{ position: "relative", background: t.surface, border: `2px solid ${late ? t.error : g.allPacked ? t.success : t.borderStrong}`, borderRadius: 14, padding: 14 }}>
       <div className="flex" style={{ gap: 12 }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
