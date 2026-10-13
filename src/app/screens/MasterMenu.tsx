@@ -636,14 +636,6 @@ export default function MasterMenu({
                 onChange={(e) => setStokVal(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Contoh: 20"
                 style={{ width: "100%", height: 60, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, fontSize: 28, fontWeight: 800, textAlign: "center", color: t.text, fontFamily: "inherit", outline: "none" }} />
-              <div className="flex gap-2" style={{ marginTop: 10 }}>
-                {[5, 10, 20].map((n) => (
-                  <button key={n} onClick={() => setStokVal(String((parseInt(stokVal || "0", 10) || 0) + n))}
-                    style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
-                    +{n}
-                  </button>
-                ))}
-              </div>
               {stokMap?.[stokFor.id] && stokVal !== "" && parseInt(stokVal, 10) < stokMap[stokFor.id].terpakai && (
                 <div style={{ fontSize: 13.5, color: t.error, marginTop: 10, lineHeight: 1.5 }}>
                   Sudah dipesan {stokMap[stokFor.id].terpakai}, lebih banyak dari angka ini. Menu langsung tampil Habis untuk ortu.
