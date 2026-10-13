@@ -358,8 +358,8 @@ export default function PreOrderAdmin({
               </button>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? t.warnFill : open ? "#D3ECCA" : t.errorBg,
-                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? "#8FC784" : "#E7A79C"}`,
+                  background: isAutoClosed ? t.warnFill : open ? "#D4F2CA" : t.errorBg,
+                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? "#7FD06F" : "#E7A79C"}`,
                   color: isAutoClosed ? t.warnText : open ? t.successText : t.error }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
@@ -704,7 +704,7 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
               style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                 border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
                 background: on ? (k.warna ?? t.primary) : t.surface,
-                color: on ? "#FFFFFF" : t.text2 }}>
+                color: on ? (k.warna ? "#FFFFFF" : t.onPrimary) : t.text2 }}>
               {k.label}
             </button>
           );
@@ -744,7 +744,7 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: alt ? t.surfaceAlt : t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+    <div style={{ position: "relative", background: alt ? t.surfaceAlt : t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
       <div className="flex" style={{ gap: 12 }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
@@ -803,15 +803,14 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
     </div>
   );
 }
-function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
-  const bg = tone === "ok" ? t.successFill : tone === "warn" ? t.warnFill : t.infoFill;
+function Stat({ n, label, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active}
-      style={{ flex: 1, background: bg, color: t.text,
-        border: active ? `2.5px solid ${t.primary}` : "2.5px solid transparent",
+      style={{ flex: 1, background: t.surface, color: t.text,
+        border: active ? `2.5px solid ${t.primary}` : `1.5px solid ${t.border}`,
         borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{n}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5 }}>{label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5, color: t.text2 }}>{label}</div>
     </button>
   );
 }

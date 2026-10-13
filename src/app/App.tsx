@@ -775,7 +775,7 @@ function MainShell({ store }: { store: CanteenStore }) {
           scroll-ke-atas yang menyertai refresh */}
       {refreshedToast && (
         <div style={{ position: "fixed", left: 20, right: 20, top: 18, zIndex: 75, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
-          <div style={{ background: t.primaryHover, color: "#FBF7EF", borderRadius: 12, padding: "10px 16px", fontSize: 13.5, fontWeight: 700, boxShadow: "0 8px 24px rgba(47,42,36,.25)" }}>
+          <div style={{ background: t.primary, color: t.onPrimary, borderRadius: 12, padding: "10px 16px", fontSize: 13.5, fontWeight: 700, boxShadow: "0 8px 24px rgba(47,42,36,.25)" }}>
             Data diperbarui
           </div>
         </div>

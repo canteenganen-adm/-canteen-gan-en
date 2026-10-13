@@ -634,14 +634,14 @@ export default function Tagihan({
       {/* Undo bar */}
       {undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primaryHover, color: "#FBF7EF", borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
               {undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
                 : undo.type === "unpaid" ? `Dikembalikan ke Belum Dibayar — ${undo.tx.customer.nama}`
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
-              style={{ background: "transparent", border: "none", color: "#FBF7EF", textDecoration: "underline", fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
+              style={{ background: "transparent", border: "none", color: t.onPrimary, textDecoration: "underline", fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>
@@ -649,7 +649,7 @@ export default function Tagihan({
       )}
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div style={{ maxWidth: 420, width: "100%", background: t.primaryHover, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+          <div style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
         </div>
       )}
 

@@ -1,11 +1,11 @@
 // Palet Final — Decision Lock §10. Satu sumber token warna untuk semua layar.
 export const t = {
   // Palet "Taman" (N2): krem hangat + kartu putih. Satu warna = satu tugas:
-  //   biru redup = aksi/dipilih (BUKAN hitam/cokelat gelap, BUKAN warna penuh yang menyilaukan) · hijau = Sudah · jingga = Belum · merah = Telat.
-  primary: "#4F6FA5",
-  primaryHover: "#425E8E",
-  primaryLight: "#E1EAF6",
-  onPrimary: "#FFFFFF",
+  //   kuning madu = satu warna hero (aksi/dipilih), tulisan di atasnya GELAP. Hijau HANYA untuk status Dibuka/Sudah (permintaan Mama). BUKAN hitam, BUKAN biru · hijau = Sudah · jingga = Belum · merah = Telat.
+  primary: "#F2B53C",
+  primaryHover: "#E0A12E",
+  primaryLight: "#FFF1CC",
+  onPrimary: "#2A2820",
   bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
@@ -15,7 +15,7 @@ export const t = {
   textDis: "#B3AF9F",
   success: "#3F8A3A",
   successBg: "#DDEFD3",
-  successText: "#2F6B2C",
+  successText: "#17702B",
   // isi solid cerah untuk kotak ringkasan (tulisan gelap di atasnya)
   successFill: "#DCEFD3",
   warnFill: "#FFE9CC",
