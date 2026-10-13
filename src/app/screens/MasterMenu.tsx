@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw,
+  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
@@ -40,6 +40,9 @@ export default function MasterMenu({
   menuHarianReady,
   onLoadDate,
   onSaveDaily,
+  menuTetap,
+  menuTetapReady,
+  onMenuTetap,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -58,6 +61,11 @@ export default function MasterMenu({
   menuHarianReady: boolean;
   onLoadDate: (tanggal: string) => void;
   onSaveDaily: (tanggal: string, items: MenuItem[]) => Promise<void>;
+  /** Id item Menu Tetap (daftar menu yang sering dipakai). */
+  menuTetap: string[];
+  /** false = migration_12 belum dijalankan → fitur disembunyikan. */
+  menuTetapReady: boolean;
+  onMenuTetap: (ids: string[], on: boolean) => void;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -182,6 +190,45 @@ export default function MasterMenu({
     }
   };
 
+  /* ============ Menu Tetap ============
+     "Pakai Menu Tetap" hanya mengisi DRAFT (menambah centang Pre-order untuk
+     semua menu tetap) — tidak mengurangi pilihan lain, dan baru berlaku
+     setelah Simpan. Menu tetap TIDAK otomatis dijual. */
+  const [tetapSheet, setTetapSheet] = useState(false);
+  const [tetapQ, setTetapQ] = useState("");
+  const tetapSet = useMemo(() => new Set(menuTetap), [menuTetap]);
+  const tetapMenus = useMemo(() => menus.filter((m) => tetapSet.has(m.id)), [menus, tetapSet]);
+  const pakaiMenuTetap = () => {
+    setDraft((prev) => {
+      const next = { ...prev };
+      tetapMenus.forEach((m) => { next[m.id] = true; });
+      return next;
+    });
+    setToast(tetapMenus.length + " menu tetap dipilih. Ketuk Simpan supaya berlaku.");
+  };
+  /** Daftar awal dari pemilik; dicocokkan ke menu yang sudah ada lewat nama
+   * (tanpa peduli huruf besar/kecil dan spasi). Yang tidak ketemu dilaporkan,
+   * tidak dibuatkan menu baru diam-diam. */
+  // [nama dari pemilik, ...nama yang dipakai di Buku Menu bila beda ejaan]
+  const DAFTAR_AWAL: string[][] = [
+    ["Nasi putih"], ["Enoki goreng", "Enoki Krispi"], ["Cheese ball"], ["Nasi goreng kecap"],
+    ["Hongkong", "Nasi Goreng Hongkong"], ["Telur"], ["Telur ceplok matang"], ["Telur ceplok setengah matang"],
+    ["Telur dadar garam"], ["Telur dadar kecap", "Telur Dadar Kecap Manis"], ["Mi goreng", "Mie Goreng"],
+  ];
+  const awalMatch = useMemo(() => {
+    const norm = (x: string) => x.toLowerCase().replace(/\s+/g, "");
+    const byName = new Map(menus.map((m) => [norm(m.name), m]));
+    const found: MenuItem[] = [];
+    const missing: string[] = [];
+    DAFTAR_AWAL.forEach((names) => { const m = names.map((n) => byName.get(norm(n))).find(Boolean); if (m) found.push(m); else missing.push(names[0]); });
+    return { found, missing };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menus]);
+  const tetapList = useMemo(
+    () => menus.filter((m) => m.name.toLowerCase().includes(tetapQ.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, "id")),
+    [menus, tetapQ]
+  );
+
   const editing = menus.find((m) => m.id === editingId) || null;
 
   // --- mutations (semua auto-save: langsung ubah state) ---
@@ -275,6 +322,21 @@ export default function MasterMenu({
                       style={{ position: "absolute", inset: "-6px -10px", opacity: 0, cursor: "pointer" }} />
                   </button>
                   <span style={{ fontSize: 12, color: t.text2, marginLeft: "auto", flex: "none" }}>{aktifCount} item</span>
+                </div>
+              )}
+
+              {/* Menu Tetap — hanya saat menyusun tanggal ke depan. */}
+              {menuHarianReady && menuTetapReady && !isPast && (
+                <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
+                  <button onClick={pakaiMenuTetap} disabled={tetapMenus.length === 0}
+                    className="flex items-center justify-center gap-2"
+                    style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: tetapMenus.length ? t.text : t.textDis, fontWeight: 700, fontSize: 15, cursor: tetapMenus.length ? "pointer" : "default", fontFamily: "inherit" }}>
+                    <Pin size={17} color={tetapMenus.length ? t.amberText : t.textDis} /> Pakai Menu Tetap{tetapMenus.length ? " (" + tetapMenus.length + ")" : ""}
+                  </button>
+                  <button onClick={() => setTetapSheet(true)}
+                    style={{ height: 48, padding: "0 16px", borderRadius: 12, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                    Atur
+                  </button>
                 </div>
               )}
 
@@ -504,6 +566,57 @@ export default function MasterMenu({
           )}
         </div>
       </div>
+
+      {/* Atur Menu Tetap */}
+      {tetapSheet && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setTetapSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", height: "86vh", display: "flex", flexDirection: "column", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Menu Tetap</div>
+                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{tetapMenus.length} menu ditandai. Ketuk untuk menandai atau melepas.</div>
+              </div>
+              <button onClick={() => setTetapSheet(false)} aria-label="Tutup"
+                style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none" }}><X size={19} /></button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "12px 20px 24px" }}>
+              {tetapMenus.length === 0 && awalMatch.found.length > 0 && (
+                <div style={{ border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 14, background: t.surfaceSoft }}>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>Isi daftar awal</div>
+                  <div style={{ fontSize: 14, color: t.text2, marginTop: 4, lineHeight: 1.5 }}>
+                    {awalMatch.found.length} dari {DAFTAR_AWAL.length} menu ditemukan di Buku Menu: {awalMatch.found.map((m) => toTitleCase(m.name)).join(", ")}.
+                    {awalMatch.missing.length > 0 && <> Tidak ketemu: {awalMatch.missing.join(", ")}. Bisa ditandai sendiri di daftar bawah.</>}
+                  </div>
+                  <button onClick={() => onMenuTetap(awalMatch.found.map((m) => m.id), true)}
+                    style={{ marginTop: 10, width: "100%", height: 48, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                    Tandai {awalMatch.found.length} menu ini
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2" style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48, marginBottom: 6 }}>
+                <Search size={20} color={t.text2} />
+                <input value={tetapQ} onChange={(e) => setTetapQ(e.target.value)} placeholder="Cari menu…"
+                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
+                {tetapQ && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setTetapQ("")} />}
+              </div>
+              {tetapList.map((m) => {
+                const on = tetapSet.has(m.id);
+                return (
+                  <button key={m.id} onClick={() => onMenuTetap([m.id], !on)} aria-pressed={on}
+                    className="flex items-center" style={{ gap: 14, width: "100%", minHeight: 52, padding: "6px 2px", border: "none", borderBottom: `1px solid ${t.divider}`, background: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+                    <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", border: `2px solid ${on ? t.success : t.text2}`, background: on ? t.success : "transparent", color: "#fff" }}>
+                      {on && <Check size={16} strokeWidth={3} />}
+                    </span>
+                    <span style={{ flex: 1, fontSize: 16, fontWeight: on ? 800 : 600 }}>{toTitleCase(m.name)}</span>
+                  </button>
+                );
+              })}
+              {tetapList.length === 0 && <div style={{ textAlign: "center", color: t.text2, padding: "28px 0", fontSize: 15 }}>Tidak ada menu yang cocok.</div>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast hasil simpan */}
       {toast && (

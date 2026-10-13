@@ -180,6 +180,27 @@ export async function deleteMenuItem(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/* ---------------- Menu Tetap (daftar menu yang sering dipakai) ---------------- */
+
+/** Id item yang ditandai Menu Tetap. Melempar error kalau tabel belum ada
+ * (migration_12 belum dijalankan) — pemanggil menyembunyikan fitur ini. */
+export async function fetchMenuTetap(): Promise<string[]> {
+  const { data, error } = await supabase.from("menu_tetap").select("item_id");
+  if (error) throw error;
+  return (data as { item_id: string }[]).map((r) => r.item_id);
+}
+
+export async function setMenuTetapItems(ids: string[], on: boolean): Promise<void> {
+  if (ids.length === 0) return;
+  if (on) {
+    const { error } = await supabase.from("menu_tetap").upsert(ids.map((item_id) => ({ item_id })), { onConflict: "item_id" });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("menu_tetap").delete().in("item_id", ids);
+    if (error) throw error;
+  }
+}
+
 /* ---------------- Menu Harian (snapshot per tanggal + history) ---------------- */
 
 interface MenuHarianRow {

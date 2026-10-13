@@ -5,7 +5,7 @@ import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
-  fetchMenus, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
+  fetchMenus, fetchMenuTetap, setMenuTetapItems, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
   upsertMenuItem, deleteMenuItem,
   insertTransaction, updateTransaction,
   submitPreOrderTransaction,
@@ -103,6 +103,10 @@ function useCanteenStore() {
   /** false = tabel menu_harian belum ada (migration_9 belum jalan) → semua
    * layar fallback ke perilaku lama (baca channels di master menu). */
   const [menuHarianReady, setMenuHarianReady] = useState(false);
+  /** Menu Tetap: id item favorit. menuTetapReady=false → tabel belum ada
+   * (migration_12) → fitur disembunyikan, sisanya normal. */
+  const [menuTetap, setMenuTetapLocal] = useState<string[]>([]);
+  const [menuTetapReady, setMenuTetapReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -155,6 +159,12 @@ function useCanteenStore() {
         setMenuHarianReady(true);
       } catch {
         setMenuHarianReady(false);
+      }
+      try {
+        setMenuTetapLocal(await fetchMenuTetap());
+        setMenuTetapReady(true);
+      } catch {
+        setMenuTetapReady(false);
       }
       setError(null);
     } catch (e) {
@@ -399,6 +409,13 @@ function useCanteenStore() {
     setMenuHarianLocal((prev) => ({ ...prev, [tanggal]: aktif.length ? aktif : null }));
   };
 
+  /** Tandai / lepas Menu Tetap (satu atau banyak item). Optimistic; gagal
+   * simpan dilaporkan lewat reportError seperti tulisan lain. */
+  const setMenuTetap = (ids: string[], on: boolean) => {
+    setMenuTetapLocal((prev) => on ? Array.from(new Set([...prev, ...ids])) : prev.filter((x) => !ids.includes(x)));
+    setMenuTetapItems(ids, on).catch((e) => reportError("setMenuTetap", e));
+  };
+
   /* ---- Kelas (per Tingkat, dikelola admin) ---- */
   const addKelas = (k: Kelas) => {
     setKelasList((prev) => [...prev, k]);
@@ -461,6 +478,7 @@ function useCanteenStore() {
   return {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
+    menuTetap, menuTetapReady, setMenuTetap,
     transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate, markBilled,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
@@ -650,6 +668,9 @@ function MainShell({ store }: { store: CanteenStore }) {
             menuHarianReady={store.menuHarianReady}
             onLoadDate={store.loadMenuHarianDate}
             onSaveDaily={store.saveDailyMenu}
+            menuTetap={store.menuTetap}
+            menuTetapReady={store.menuTetapReady}
+            onMenuTetap={store.setMenuTetap}
           />
         )}
       </div>
