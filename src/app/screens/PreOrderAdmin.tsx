@@ -4,9 +4,9 @@ import {
   Box, Check, X, Search, Power, AlertCircle, Settings,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
-import { t, STRUK_ZIGZAG } from "../../lib/theme";
+import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
-import { TINGKAT_LIST, tingkatColor } from "../../lib/constants";
+import { tingkatColor } from "../../lib/constants";
 import type { Transaction, PickupSchedule } from "../../types";
 
 
@@ -75,6 +75,37 @@ function mergeOrders(list: AdminOrder[]): MergedGroup[] {
   return Array.from(map.values());
 }
 
+/* ---- Filter kelas: SD dipecah SD 1–2 / SD 3–6 (beda cara pengambilan) ---- */
+type KelasGroup = "all" | "kb" | "tk" | "sd12" | "sd36" | "smp" | "sma" | "guru";
+const KELAS_TABS: { id: KelasGroup; label: string; warna: string | null }[] = [
+  { id: "all", label: "Semua", warna: null },
+  { id: "kb", label: "KB", warna: tingkatColor("KB") },
+  { id: "tk", label: "TK", warna: tingkatColor("TK A") },
+  { id: "sd12", label: "SD 1–2", warna: tingkatColor("SD") },
+  { id: "sd36", label: "SD 3–6", warna: tingkatColor("SD") },
+  { id: "smp", label: "SMP", warna: tingkatColor("SMP") },
+  { id: "sma", label: "SMA", warna: tingkatColor("SMA") },
+  { id: "guru", label: "Guru/Karyawan", warna: tingkatColor("Guru/Karyawan") },
+];
+/** Kelompok dari data tersimpan (tingkat + kode kelas, mis. "1A", "TK B1",
+ * "KB AI"). Data lama tanpa tingkat ditebak dari angka kelas. */
+function kelasGroupOf(tingkat: string, kelas: string): Exclude<KelasGroup, "all"> | null {
+  const tg = (tingkat || "").trim();
+  const k = (kelas || "").trim().toUpperCase();
+  if (tg === "Guru/Karyawan") return "guru";
+  if (tg.startsWith("KB") || k.startsWith("KB")) return "kb";
+  if (tg.startsWith("TK") || k.startsWith("TK")) return "tk";
+  const n = parseInt(k, 10);
+  if (tg === "SMP") return "smp";
+  if (tg === "SMA") return "sma";
+  if (tg === "SD") return n >= 1 && n <= 2 ? "sd12" : "sd36";
+  if (n >= 1 && n <= 2) return "sd12";
+  if (n >= 3 && n <= 6) return "sd36";
+  if (n >= 7 && n <= 9) return "smp";
+  if (n >= 10 && n <= 12) return "sma";
+  return null;
+}
+
 export default function PreOrderAdmin({
   serviceDate,
   onServiceDateChange,
@@ -111,7 +142,7 @@ export default function PreOrderAdmin({
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
-  const [tingkatFilter, setTingkatFilter] = useState("Semua");
+  const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
@@ -220,12 +251,10 @@ export default function PreOrderAdmin({
   const packed = orders.filter((o) => o.packed).length;
   const belum = orders.length - packed;
 
-  const tingkats = ["Semua", ...TINGKAT_LIST];
-
   const ql = q.toLowerCase().trim();
   const match = (o: AdminOrder) =>
     `${o.nama} ${o.tingkat} ${o.kelas}`.toLowerCase().includes(ql) &&
-    (tingkatFilter === "Semua" || o.tingkat === tingkatFilter);
+    (tingkatFilter === "all" || kelasGroupOf(o.tingkat, o.kelas) === tingkatFilter);
 
   const rawUtama = mergeOrders(orders.filter((o) => o.ambil === defaultAmbil && match(o)));
   const rawBeda = mergeOrders(orders.filter((o) => o.ambil !== defaultAmbil && match(o)));
@@ -406,16 +435,15 @@ export default function PreOrderAdmin({
 
           {/* Filter Tingkat */}
           <div className="flex gap-2 hscroll" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
-              {tingkats.map((tg) => {
-                const on = tg === tingkatFilter;
-                const bgColor = on && tg !== "Semua" ? tingkatColor(tg) : undefined;
+              {KELAS_TABS.map((k) => {
+                const on = k.id === tingkatFilter;
                 return (
-                  <button key={tg} onClick={() => setTingkatFilter(tg)}
-                    style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                      border: `1.5px solid ${on ? (tg === "Semua" ? t.primary : bgColor!) : t.border}`,
-                      background: on ? (tg === "Semua" ? t.primaryLight : bgColor!) : t.surface,
-                      color: on ? (tg === "Semua" ? t.amberText : "#FFFCF7") : t.text2 }}>
-                    {tg}
+                  <button key={k.id} onClick={() => setTingkatFilter(k.id)}
+                    style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
+                      background: on ? (k.warna ?? t.primaryLight) : t.surface,
+                      color: on ? (k.warna ? "#FFFCF7" : t.amberText) : t.text2 }}>
+                    {k.label}
                   </button>
                 );
               })}
@@ -655,6 +683,20 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
+function ItemLines({ items }: { items: Transaction["items"] }) {
+  return (
+    <>
+      {items.map((it, i) => (
+        <div key={i} className="flex items-baseline" style={{ gap: 6, fontFamily: STRUK_MONO, fontWeight: 500, fontSize: 14.5, lineHeight: 1.9, color: "#3A352C" }}>
+          <span>{toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""}</span>
+          <i style={{ flex: 1, minWidth: 12, borderBottom: "1.5px dotted #BDB6A6", transform: "translateY(-4px)" }} />
+          <b style={{ fontWeight: 500, color: t.text, flex: "none" }}>×{it.qty}</b>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: MergedGroup; onTap: () => void; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
@@ -673,54 +715,49 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
             {partial && <span style={{ width: 12, height: 2.5, background: t.text, borderRadius: 2, display: "block" }} />}
           </span>
         </button>
-        {/* Detail murid: nama, lalu SATU baris "kelas · waktu ambil" dengan
-            gaya yang sama untuk semua kartu. */}
+        {/* Nama murid: SELALU tampil utuh — turun ke baris berikutnya kalau
+            panjang, tidak pernah dipotong "...". */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25, textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25, overflowWrap: "break-word", textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</div>
           <div style={{ marginTop: 3, fontSize: 15, fontWeight: 600, color: t.text2, lineHeight: 1.4 }}>
-            {g.kelas || g.tingkat} · {g.ambil}{g.ids.length > 1 ? ` · ${g.ids.length} pesanan` : ""}
+            <span style={{ fontFamily: STRUK_MONO, fontWeight: 500, color: t.text }}>{g.kelas || g.tingkat}</span> · {g.ambil}{g.ids.length > 1 ? ` · ${g.ids.length} pesanan` : ""}
           </div>
-          {/* Telat = pil merah (jam = batas waktu ambil). Dikemas = jam SERVER
-              otomatis (bukti objektif, tidak bisa diketik/diubah): hijau
-              Smile bila tepat waktu, merah Frown bila telat. */}
-          {(late || (g.allPacked && g.packedAt)) && (
-            <div className="flex items-center gap-1.5" style={{ marginTop: 7, flexWrap: "wrap" }}>
-              {late && (
-                <span className="flex items-center gap-1" style={{ height: 24, padding: "0 10px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13, fontWeight: 800 }}>
-                  <Frown size={13} /> Telat{lateTime ? ` · lewat ${lateTime}` : ""}
-                </span>
-              )}
-              {g.allPacked && g.packedAt && (
-                <span className="flex items-center gap-1"
-                  style={{ height: 24, padding: "0 10px", borderRadius: 999, fontSize: 13, fontWeight: 800,
-                    background: packedLate ? t.errorBg : t.successBg,
-                    border: `1px solid ${packedLate ? "#F3C9C9" : "#D8E6D4"}`,
-                    color: packedLate ? t.error : t.successText }}>
-                  {packedLate ? <Frown size={13} /> : <Smile size={13} />} {wibClock(g.packedAt)}
-                </span>
-              )}
-            </div>
-          )}
         </div>
+        {/* Kanan atas, ringkas (ikon + jam) supaya nama tetap lega.
+            Telat = merah, jam = batas waktu ambil. Dikemas = jam SERVER
+            otomatis (bukti objektif): hijau Smile tepat waktu, merah Frown
+            bila telat. */}
+        {(late || (g.allPacked && g.packedAt)) && (
+          <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            {late && (
+              <span className="flex items-center gap-1" aria-label={`Telat, lewat ${lateTime ?? ""}`}
+                style={{ height: 26, padding: "0 10px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13.5, fontWeight: 800 }}>
+                <Frown size={14} />{lateTime ? <span style={{ fontFamily: STRUK_MONO, fontWeight: 500 }}>{lateTime}</span> : " Telat"}
+              </span>
+            )}
+            {g.allPacked && g.packedAt && (
+              <span className="flex items-center gap-1" aria-label={`Dikemas ${wibClock(g.packedAt)}${packedLate ? ", telat" : ""}`}
+                style={{ height: 26, padding: "0 10px", borderRadius: 999, fontSize: 13.5, fontWeight: 800,
+                  background: packedLate ? t.errorBg : t.successBg,
+                  border: `1px solid ${packedLate ? "#F3C9C9" : "#D8E6D4"}`,
+                  color: packedLate ? t.error : t.successText }}>
+                {packedLate ? <Frown size={14} /> : <Smile size={14} />}
+                <span style={{ fontFamily: STRUK_MONO, fontWeight: 500 }}>{wibClock(g.packedAt)}</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      <div style={{ marginTop: 8, paddingLeft: 48 }}>
+      <div style={{ marginTop: 10, marginLeft: 48, paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primary : t.border}` }}>
         {g.perOrder.length <= 1 ? (
-          g.flatItems.map((it, i) => (
-            <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8 }}>
-              {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
-            </div>
-          ))
+          <ItemLines items={g.flatItems} />
         ) : (
           /* Pesanan dobel/tripel: daftar per pesanan DIPISAH, tidak digabung —
              supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
           g.perOrder.map((items, oi) => (
-            <div key={oi} style={{ borderLeft: `3px solid ${t.primary}`, paddingLeft: 10, marginBottom: oi < g.perOrder.length - 1 ? 10 : 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
-              {items.map((it, i) => (
-                <div key={i} style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.8 }}>
-                  {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
-                </div>
-              ))}
+            <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 8 : 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
+              <ItemLines items={items} />
             </div>
           ))
         )}
