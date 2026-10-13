@@ -15,13 +15,12 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 - **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
-  - Palet "Taman" (krem hangat + kartu putih). **Satu warna = satu tugas**: cokelat-abu lembut (taupe) = aksi/dipilih — JANGAN hitam, Mama bilang jelek · hijau = Sudah · jingga = Belum · merah = Telat. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
-  - Background `#FAF6EE` (sama seperti dulu, pilihan Mama; yang lebih gelap sudah dicoba dan ditolak) · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Surface selang-seling `#E6ECF1` (kartu pesanan genap — TANPA garis putus-putus, permintaan Mama)
-  - Primary (taupe) `#7A6F58` · Primary hover `#665C48` (juga latar toast) · Primary light `#E6E0CB` · Teks di atas primary `#FFFFFF`
-  - Success (Sudah) `#3F8A3A` / bg `#DDEFD3` / teks `#2F6B2C`
-  - Warn (Belum) `#D9822B` / bg `#FFE6C7` / teks `#8F4E08`
-  - Error (Telat) `#C63E2B` / bg `#FBE7E3`
-  - Teks `#2A2820` · Teks redup `#6B6859` · Border `#DCD6C2` · Border tegas `#C4BDA3` (kartu daftar) · Divider `#E6E1CF`
+  - Palet "Lembut": latar krem hangat, kartu krem terang, warna PUCAT dengan tulisan gelap. Mama: "lembut tapi tidak membuat mata lelah" — warna penuh/solid terlalu melelahkan, hitam jelek. **Satu warna = satu tugas**: biru redup = aksi/dipilih · hijau = Sudah/Dibuka · jingga = Belum · merah = Telat/Ditutup. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
+  - Background `#FAF6EE` · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Surface selang-seling `#E6ECF1` (kartu pesanan genap — tanpa garis putus-putus)
+  - Primary (biru redup) `#4F6FA5` · hover `#425E8E` · light `#E1EAF6` · tulisan di atas primary `#FFFFFF`
+  - Kotak ringkasan (isi pucat, tulisan gelap): Pesanan `#E1EAF6` · Sudah `#DCEFD3` · Belum `#FFE9CC`
+  - Pil status pucat + garis tipis: Dibuka `#D3ECCA`/teks `#2F6B2C` · Ditutup `#FBE7E3`/teks `#B5352A` · Tutup otomatis `#FFE9CC`/teks `#8F4E08`
+  - Error/Telat `#B5352A` · Teks `#2A2820` · Teks redup `#6B6859` · Border `#DCD6C2` · Border tegas `#C4BDA3` (kartu daftar) · Divider `#E6E1CF`
   - Kuning/amber sudah TIDAK dipakai. Tulisan di atas tombol primer selalu putih (`t.onPrimary`).
 - **Bentuk:** kartu radius 16–18px; tombol radius 12–14px; pil radius 999. Border 1–1.5px, bukan shadow berat.
 - **Ukuran:** target sentuh ≥48px; teks penting besar & tebal (pengguna 50–60 th): judul 17–23px w800, isi ≥15px.

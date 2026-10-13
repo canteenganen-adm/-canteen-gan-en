@@ -357,9 +357,10 @@ export default function PreOrderAdmin({
                 <Share2 size={19} color={t.amberText} /> Bagikan Link
               </button>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
-                style={{ height: 32, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 700, fontSize: 12.5, border: "none",
-                  background: isAutoClosed ? t.primaryLight : open ? t.successBg : t.errorBg,
-                  color: isAutoClosed ? t.amberText : open ? t.successText : t.error }}>
+                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
+                  background: isAutoClosed ? t.warnFill : open ? "#D3ECCA" : t.errorBg,
+                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? "#8FC784" : "#E7A79C"}`,
+                  color: isAutoClosed ? t.warnText : open ? t.successText : t.error }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
@@ -439,7 +440,7 @@ export default function PreOrderAdmin({
           {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
           {lateCount > 0 && (
             <button onClick={() => setShowLateOnly(v => !v)} className="flex items-center gap-2"
-              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "11px 14px", marginBottom: 10, background: t.error, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "11px 14px", marginBottom: 10, background: t.errorBg, color: t.error, border: "1.5px solid #E7A79C", borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
               <AlertCircle size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showLateOnly ? "← Semua pesanan" : `${lateCount} pesanan lewat waktu ambil`}
@@ -803,15 +804,14 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
   );
 }
 function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
-  const col = tone === "ok" ? t.successText : tone === "warn" ? t.warnText : t.text;
-  const bg = tone === "ok" ? t.successBg : tone === "warn" ? t.warnBg : t.surface;
+  const bg = tone === "ok" ? t.successFill : tone === "warn" ? t.warnFill : t.infoFill;
   return (
-    <button onClick={onClick}
-      style={{ flex: 1, background: bg,
-        border: active ? `2px solid ${t.primary}` : `1.5px solid ${tone ? "transparent" : t.borderStrong}`,
-        borderRadius: 14, padding: "12px 8px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color: col, lineHeight: 1 }}>{n}</div>
-      <div style={{ fontSize: 12, color: col, fontWeight: 700, marginTop: 5 }}>{label}</div>
+    <button onClick={onClick} aria-pressed={active}
+      style={{ flex: 1, background: bg, color: t.text,
+        border: active ? `2.5px solid ${t.primary}` : "2.5px solid transparent",
+        borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
+      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{n}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5 }}>{label}</div>
     </button>
   );
 }
