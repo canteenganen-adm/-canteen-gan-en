@@ -424,7 +424,7 @@ export default function MasterMenu({
                                 {/* Hybrid: nama menu (yang paling lama ditatap saat
                                     proofread) pakai font standar app; kerangka struk
                                     (judul/garis/harga) tetap monospace */}
-                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Plus Jakarta Sans', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{toTitleCase(m.name)}</span>
+                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Onest', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{toTitleCase(m.name)}</span>
                                 <span style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
@@ -471,7 +471,7 @@ export default function MasterMenu({
             <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "grid", placeItems: "center", padding: 20, pointerEvents: "none" }}>
               <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))", pointerEvents: "auto" }}>
                 <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
-                  fontFamily: "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
+                  fontFamily: "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".01em" }}>KONFIRMASI PERUBAHAN MENU</div>
                   <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
                   <div className="flex items-center justify-center gap-1.5" style={{ fontSize: 13 }}>
@@ -479,7 +479,7 @@ export default function MasterMenu({
                     {serviceDateLabel(tanggal).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
                     {dailyDirty && (
                       <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }} disabled={saving}
                         style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>

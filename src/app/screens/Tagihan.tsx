@@ -18,9 +18,9 @@ import type { Transaction, CanteenSettings } from "../../types";
 
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 /** Rincian transaksi (tanggal · item · harga) pakai font thermal/mono
- * seperti struk PO — kontras dengan Jakarta Sans di kartu info anak,
+ * seperti struk PO — kontras dengan Onest di kartu info anak,
  * supaya fokus tidak terbagi. */
-const MONO = "'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
+const MONO = "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 /* Tepi zigzag struk thermal — dipakai popup rincian & konfirmasi Lunaskan */
 const ZIGZAG = "polygon(0 4px, 4% 0, 8% 4px, 12% 0, 16% 4px, 20% 0, 24% 4px, 28% 0, 32% 4px, 36% 0, 40% 4px, 44% 0, 48% 4px, 52% 0, 56% 4px, 60% 0, 64% 4px, 68% 0, 72% 4px, 76% 0, 80% 4px, 84% 0, 88% 4px, 92% 0, 96% 4px, 100% 0, 100% calc(100% - 4px), 96% 100%, 92% calc(100% - 4px), 88% 100%, 84% calc(100% - 4px), 80% 100%, 76% calc(100% - 4px), 72% 100%, 68% calc(100% - 4px), 64% 100%, 60% calc(100% - 4px), 56% 100%, 52% calc(100% - 4px), 48% 100%, 44% calc(100% - 4px), 40% 100%, 36% calc(100% - 4px), 32% 100%, 28% calc(100% - 4px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 4px), 8% 100%, 4% calc(100% - 4px), 0 100%)";
 /** Label transaksi memakai TANGGAL OPERASIONAL (Tanggal Layanan), bukan
@@ -682,7 +682,7 @@ export default function Tagihan({
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
-              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
+              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Onest', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
                 <Calendar size={16} /> Ubah Tanggal Layanan
                 <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
                   onChange={(e) => {
@@ -715,7 +715,7 @@ export default function Tagihan({
               <div style={{ fontSize: 13, lineHeight: 1.7 }}>{confirmLunas.customer.nama}</div>
               <div style={{ fontSize: 12, color: t.text2 }}>{confirmLunas.txs.length} transaksi</div>
               <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4 }}>{rupiah(confirmLunas.total)}</div>
-              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
                 <button onClick={() => setConfirmLunas(null)}
                   style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                   Tidak

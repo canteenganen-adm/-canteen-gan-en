@@ -13,7 +13,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
-- **Font:** 'Plus Jakarta Sans' untuk SEMUA teks (import Google Fonts). Tanpa font display/kartun.
+- **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
   - Background `#FAF6EE` · Surface `#FFFCF7` · Surface lembut `#FFF8EE`
   - Primary `#FDB833` · Primary hover `#F9A03F` · Primary light `#FFF1CC` · Teks amber `#8a5c00`

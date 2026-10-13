@@ -127,7 +127,8 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Plus Jakarta Sans", sans-serif;
+    font-family: "Onest", sans-serif;
+    font-synthesis-weight: none;
   }
 
   /**
