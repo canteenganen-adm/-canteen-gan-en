@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, CookingPot, Printer,
   Box, Check, X, Search, Power, AlertCircle, Settings,
-  ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
+  ChevronLeft, ChevronRight, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
@@ -142,8 +142,9 @@ export default function PreOrderAdmin({
   onOpenSettings: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
-  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
    * konfirmasi jelas dulu, tidak langsung commit begitu tanggal diketuk. */
@@ -167,21 +168,6 @@ export default function PreOrderAdmin({
     });
     const buyers = Array.from(map.values()).sort((a, b) => a.nama.localeCompare(b.nama, "id"));
     setMenuDetail({ name: itemKey, buyers, total: buyers.reduce((s, b) => s + b.qty, 0) });
-  };
-  const [linkCopied, setLinkCopied] = useState(false);
-  const poLink = `${window.location.origin}/pesan`;
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(poLink).catch(() => {});
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
-  };
-  const handleShareLinkWA = () => {
-    const text = encodeURIComponent(
-      open
-        ? `Halo Papa/Mama,\n\nPre-order Kantin Gan En untuk ${serviceDateLabel(serviceDate)} telah dibuka.\n\nSilakan melakukan pemesanan melalui tautan berikut:\n${poLink}\n\nGan En 🙏🏻`
-        : "Pre-order untuk tanggal ini sudah ditutup."
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
   };
   const [nowTick, setNowTick] = useState(0);
   const [showLateOnly, setShowLateOnly] = useState(false);
@@ -343,13 +329,11 @@ export default function PreOrderAdmin({
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
-            <button
-              onClick={onOpenSettings}
-              aria-label="Pengaturan"
-              style={{ width: 38, height: 38, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
-            >
-              <Settings size={17} />
-            </button>
+            <div className="flex" style={{ marginRight: -10 }}>
+              <button onClick={() => { if (searchOpen) setQ(""); setSearchOpen((v) => !v); }} aria-label="Cari nama murid" aria-pressed={searchOpen} style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Search size={22} /></button>
+              <button onClick={() => setSheet("cetak")} aria-label="Cetak" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Printer size={22} /></button>
+              <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Settings size={22} /></button>
+            </div>
           </div>
 
           {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
@@ -418,20 +402,19 @@ export default function PreOrderAdmin({
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2" style={{ marginTop: 12 }}>
-            <Action icon={<Share2 size={20} />} label="Bagikan Link" onClick={() => setSheet("bagikan")} />
-            <Action icon={<CookingPot size={20} />} label="Rekap Masak" onClick={() => setSheet("rekap")} />
-            <Action icon={<Printer size={20} />} label="Cetak" onClick={() => setSheet("cetak")} />
-          </div>
+          {/* Rekap Masak */}
+          <button onClick={() => setSheet("rekap")} className="flex items-center"
+            style={{ gap: 8, marginTop: 6, height: 44, padding: 0, border: "none", background: "none", fontWeight: 700, fontSize: 15.5, color: t.text, cursor: "pointer", fontFamily: "inherit" }}>
+            <CookingPot size={20} color={t.amberText} /> Rekap Masak <ChevronRight size={17} color={t.text2} style={{ marginLeft: -3 }} />
+          </button>
 
           {/* Cari */}
-          <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 50 }}>
+          {searchOpen && <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 50 }}>
             <Search size={20} color={t.text2} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama murid…"
+            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama murid…"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
             {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
-          </div>
+          </div>}
 
           {/* Filter Tingkat */}
           <div className="flex gap-2 hscroll" style={{ marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
@@ -601,24 +584,6 @@ export default function PreOrderAdmin({
           )}
         </Sheet>
       )}
-      {sheet === "bagikan" && (
-        <Sheet title="Bagikan Link Pemesanan" onClose={() => setSheet(null)}>
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
-            Link untuk {serviceDateLabel(serviceDate)}. {open ? "Pre-order sedang dibuka." : "Saat ini ditutup."}
-          </div>
-          <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 13.5, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
-          <div className="flex gap-2">
-            <button onClick={handleCopyLink} className="flex items-center justify-center gap-2"
-              style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              {linkCopied ? <Check size={18} /> : <Copy size={18} />} {linkCopied ? "Tersalin!" : "Salin Link"}
-            </button>
-            <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
-              style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              <Share2 size={18} /> WhatsApp
-            </button>
-          </div>
-        </Sheet>
-      )}
       {sheet === "rekap" && (
         <Sheet title="Rekap Masak" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>{serviceDateLabel(viewDate)} · semua pesanan</div>
@@ -687,10 +652,8 @@ function ItemLines({ items }: { items: Transaction["items"] }) {
   return (
     <>
       {items.map((it, i) => (
-        <div key={i} className="flex items-baseline" style={{ gap: 6, fontFamily: STRUK_MONO, fontWeight: 500, fontSize: 14.5, lineHeight: 1.9, color: "#3A352C" }}>
-          <span>{toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""}</span>
-          <i style={{ flex: 1, minWidth: 12, borderBottom: "1.5px dotted #BDB6A6", transform: "translateY(-4px)" }} />
-          <b style={{ fontWeight: 500, color: t.text, flex: "none" }}>×{it.qty}</b>
+        <div key={i} style={{ fontFamily: STRUK_MONO, fontWeight: 500, fontSize: 14.5, lineHeight: 1.9, color: "#3A352C" }}>
+          {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
         </div>
       ))}
     </>
@@ -728,20 +691,17 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
             otomatis (bukti objektif): hijau Smile tepat waktu, merah Frown
             bila telat. */}
         {(late || (g.allPacked && g.packedAt)) && (
-          <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, paddingTop: 2 }}>
             {late && (
               <span className="flex items-center gap-1" aria-label={`Telat, lewat ${lateTime ?? ""}`}
-                style={{ height: 26, padding: "0 10px", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13.5, fontWeight: 800 }}>
-                <Frown size={14} />{lateTime ? <span style={{ fontFamily: STRUK_MONO, fontWeight: 500 }}>{lateTime}</span> : " Telat"}
+                style={{ color: t.error, fontSize: 15, fontWeight: 700 }}>
+                <Frown size={16} />{lateTime ? <span style={{ fontFamily: STRUK_MONO, fontWeight: 500 }}>{lateTime}</span> : " Telat"}
               </span>
             )}
             {g.allPacked && g.packedAt && (
               <span className="flex items-center gap-1" aria-label={`Dikemas ${wibClock(g.packedAt)}${packedLate ? ", telat" : ""}`}
-                style={{ height: 26, padding: "0 10px", borderRadius: 999, fontSize: 13.5, fontWeight: 800,
-                  background: packedLate ? t.errorBg : t.successBg,
-                  border: `1px solid ${packedLate ? "#F3C9C9" : "#D8E6D4"}`,
-                  color: packedLate ? t.error : t.successText }}>
-                {packedLate ? <Frown size={14} /> : <Smile size={14} />}
+                style={{ color: packedLate ? t.error : t.successText, fontSize: 15, fontWeight: 700 }}>
+                {packedLate ? <Frown size={16} /> : <Smile size={16} />}
                 <span style={{ fontFamily: STRUK_MONO, fontWeight: 500 }}>{wibClock(g.packedAt)}</span>
               </span>
             )}
@@ -774,14 +734,6 @@ function Stat({ n, label, tone, active, onClick }: { n: number; label: string; t
         borderRadius: 14, padding: "12px 8px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 24, fontWeight: 800, color: col, lineHeight: 1 }}>{n}</div>
       <div style={{ fontSize: 11.5, color: active ? t.amberText : t.text2, fontWeight: active ? 700 : 400, marginTop: 5 }}>{label}</div>
-    </button>
-  );
-}
-function Action({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-2" style={{ flex: 1, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, padding: "12px 4px", cursor: "pointer", color: t.text }}>
-      <span style={{ color: t.amberText }}>{icon}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
     </button>
   );
 }
