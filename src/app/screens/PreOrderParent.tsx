@@ -64,6 +64,8 @@ export default function PreOrderParent({
   kelasList,
   pickupOptions,
   onSubmit,
+  stokMap,
+  onStokRefresh,
 }: {
   kantin: string;
   serviceDate: string;
@@ -72,6 +74,10 @@ export default function PreOrderParent({
   kelasList: Kelas[];
   pickupOptions: string[];
   onSubmit: (r: PreOrderReceipt) => Promise<Transaction>;
+  /** Sisa stok per id menu (hanya menu yang diberi stok). undefined = fitur
+   * stok belum aktif. Server tetap yang menegakkan; ini untuk tampilan. */
+  stokMap?: Record<string, { stok: number; terpakai: number; sisa: number }>;
+  onStokRefresh?: () => void;
 }) {
   const defaultPickup = pickupOptions[0] || DEFAULT_PICKUP_FALLBACK;
   const [step, setStep] = useState<"landing" | "menu" | "checkout" | "done">("landing");
@@ -165,6 +171,8 @@ export default function PreOrderParent({
   const keyOf = (l: CartLine) => l.menu.id + (l.variant ? ":" + l.variant.id : "");
   const add = (menu: MenuItem, variant?: Variant) => {
     const key = menu.id + (variant ? ":" + variant.id : "");
+    const batas = stokMap?.[menu.id]?.sisa;
+    if (batas !== undefined && Object.values(cart).filter((l) => l.menu.id === menu.id).reduce((s, l) => s + l.qty, 0) >= batas) return;
     setCart((c) => ({ ...c, [key]: { menu, variant: variant || null, qty: (c[key]?.qty || 0) + 1, note: c[key]?.note || "" } }));
   };
   const dec = (key: string) => setCart((c) => {
@@ -250,6 +258,7 @@ export default function PreOrderParent({
       setStep("done");
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Gagal mengirim pesanan. Coba lagi.");
+      onStokRefresh?.();
     } finally {
       setSubmitting(false);
     }
@@ -580,6 +589,9 @@ export default function PreOrderParent({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {byCatMap[k].map((m) => {
               const inCart = qtyOf(m.id);
+              const sisa = stokMap?.[m.id]?.sisa;
+              const habis = sisa !== undefined && sisa <= 0;
+              const penuh = sisa !== undefined && !habis && inCart >= sisa;
               return (
                 <div key={m.id} style={{ background: t.surface, border: `1px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{toTitleCase(m.name)}</div>
@@ -588,13 +600,23 @@ export default function PreOrderParent({
                       ? `mulai ${rupiah(Math.min(...m.variants.map((v) => v.price)))}`
                       : rupiah(m.price)}
                   </div>
-                  {inCart > 0 && !m.variants.length ? (
+                  {sisa !== undefined && (
+                    <div style={{ fontSize: 12.5, fontWeight: 800, marginTop: -6, marginBottom: 8, color: habis ? t.error : sisa <= 5 ? t.amberText : t.text2 }}>
+                      {habis ? "Habis" : "Sisa " + sisa}
+                    </div>
+                  )}
+                  {habis ? (
+                    <button disabled
+                      style={{ width: "100%", height: 34, borderRadius: 9, background: t.divider, border: "none", fontWeight: 800, fontSize: 12, color: t.textDis, cursor: "default" }}>
+                      Habis
+                    </button>
+                  ) : inCart > 0 && !m.variants.length ? (
                     <div className="flex" style={{ justifyContent: "center" }}>
                       <Stepper val={inCart} onMinus={() => dec(m.id)} onPlus={() => add(m)} />
                     </div>
                   ) : (
-                    <button onClick={() => tap(m)}
-                      style={{ width: "100%", height: 34, borderRadius: 9, background: t.primary, border: "none", fontWeight: 800, fontSize: 12, color: t.text, cursor: "pointer" }}>
+                    <button onClick={() => tap(m)} disabled={penuh}
+                      style={{ width: "100%", height: 34, borderRadius: 9, background: penuh ? t.divider : t.primary, border: "none", fontWeight: 800, fontSize: 12, color: penuh ? t.textDis : t.text, cursor: penuh ? "default" : "pointer" }}>
                       {m.variants.length ? "Pilih" : "+ Tambah"}
                     </button>
                   )}

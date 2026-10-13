@@ -5,7 +5,7 @@ import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
-  fetchMenus, fetchMenuTetap, setMenuTetapItems, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
+  fetchMenus, fetchMenuTetap, setMenuTetapItems, fetchStokSisa, setMenuStok, type StokInfo, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
   upsertMenuItem, deleteMenuItem,
   insertTransaction, updateTransaction,
   submitPreOrderTransaction,
@@ -107,6 +107,10 @@ function useCanteenStore() {
    * (migration_12) → fitur disembunyikan, sisanya normal. */
   const [menuTetap, setMenuTetapLocal] = useState<string[]>([]);
   const [menuTetapReady, setMenuTetapReady] = useState(false);
+  /** Stok per tanggal: { tanggal: { item_id: {stok, terpakai, sisa} } }. stokReady=false
+   * → migration_13 belum jalan → fitur stok disembunyikan. */
+  const [stokByDate, setStokByDate] = useState<Record<string, Record<string, StokInfo>>>({});
+  const [stokReady, setStokReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -165,6 +169,13 @@ function useCanteenStore() {
         setMenuTetapReady(true);
       } catch {
         setMenuTetapReady(false);
+      }
+      try {
+        const sm = await fetchStokSisa(appState.serviceDate);
+        setStokByDate((prev) => ({ ...prev, [appState.serviceDate]: sm }));
+        setStokReady(true);
+      } catch {
+        setStokReady(false);
       }
       setError(null);
     } catch (e) {
@@ -416,6 +427,22 @@ function useCanteenStore() {
     setMenuTetapItems(ids, on).catch((e) => reportError("setMenuTetap", e));
   };
 
+  /** Muat ulang sisa stok satu tanggal (dipanggil berkala di halaman ortu,
+   * setelah pesanan gagal karena stok, dan saat Mama mengubah stok). */
+  const loadStokDate = useCallback(async (tanggal: string) => {
+    try {
+      const sm = await fetchStokSisa(tanggal);
+      setStokByDate((prev) => ({ ...prev, [tanggal]: sm }));
+      setStokReady(true);
+    } catch { /* migration_13 belum jalan: abaikan */ }
+  }, []);
+  /** Isi/hapus stok. TIDAK optimistic: tunggu server lalu baca ulang sisa,
+   * supaya angka "sisa" yang tampil selalu jujur. */
+  const setStok = async (tanggal: string, itemId: string, stok: number | null) => {
+    await setMenuStok(tanggal, itemId, stok);
+    await loadStokDate(tanggal);
+  };
+
   /* ---- Kelas (per Tingkat, dikelola admin) ---- */
   const addKelas = (k: Kelas) => {
     setKelasList((prev) => [...prev, k]);
@@ -479,6 +506,7 @@ function useCanteenStore() {
     menus, addMenuItem, patchMenuItem, toggleMenuChannel, removeMenuItem,
     menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
     menuTetap, menuTetapReady, setMenuTetap,
+    stokByDate, stokReady, loadStokDate, setStok,
     transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate, markBilled,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
@@ -505,6 +533,11 @@ function ParentRoute({ store }: { store: CanteenStore }) {
     return () => clearInterval(id);
   }, []);
   void nowTick;
+  // Sisa stok disegarkan tiap 30 detik (angka kecil, tanpa data pembeli)
+  const { stokReady, loadStokDate } = store;
+  useEffect(() => {
+    if (stokReady) loadStokDate(store.serviceDate);
+  }, [nowTick, stokReady, loadStokDate, store.serviceDate]);
   const effectiveOpen = store.preorderOpen &&
     (!autoClosedNow(store.serviceDate, store.autoCloseTime) || reopenActiveNow(store.reopenUntil));
 
@@ -525,6 +558,8 @@ function ParentRoute({ store }: { store: CanteenStore }) {
       kelasList={store.kelasList}
       pickupOptions={store.pickupPresets}
       onSubmit={store.submitPreOrder}
+      stokMap={store.stokReady ? store.stokByDate[store.serviceDate] : undefined}
+      onStokRefresh={() => store.loadStokDate(store.serviceDate)}
     />
   );
 }
@@ -671,6 +706,10 @@ function MainShell({ store }: { store: CanteenStore }) {
             menuTetap={store.menuTetap}
             menuTetapReady={store.menuTetapReady}
             onMenuTetap={store.setMenuTetap}
+            stokReady={store.stokReady}
+            stokByDate={store.stokByDate}
+            onLoadStok={store.loadStokDate}
+            onSetStok={store.setStok}
           />
         )}
       </div>

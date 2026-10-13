@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin,
+  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
@@ -43,6 +43,10 @@ export default function MasterMenu({
   menuTetap,
   menuTetapReady,
   onMenuTetap,
+  stokReady,
+  stokByDate,
+  onLoadStok,
+  onSetStok,
 }: {
   menus: MenuItem[];
   onAdd: (item: MenuItem) => void;
@@ -66,6 +70,11 @@ export default function MasterMenu({
   /** false = migration_12 belum dijalankan → fitur disembunyikan. */
   menuTetapReady: boolean;
   onMenuTetap: (ids: string[], on: boolean) => void;
+  /** false = migration_13 belum dijalankan → fitur stok disembunyikan. */
+  stokReady: boolean;
+  stokByDate: Record<string, Record<string, { stok: number; terpakai: number; sisa: number }>>;
+  onLoadStok: (tanggal: string) => void;
+  onSetStok: (tanggal: string, itemId: string, stok: number | null) => Promise<void>;
 }) {
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
@@ -234,6 +243,34 @@ export default function MasterMenu({
     () => menus.filter((m) => m.name.toLowerCase().includes(tetapQ.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, "id")),
     [menus, tetapQ]
   );
+
+  /* ============ Stok per menu (untuk tanggal yang sedang diatur) ============
+     Kosong = tanpa batas. Tersimpan LANGSUNG (bukan draft): stok sering
+     ditambah di tengah hari saat ada yang masak lagi. */
+  const stokMap = stokByDate[tanggal];
+  useEffect(() => {
+    if (stokReady && !isPast && stokMap === undefined) onLoadStok(tanggal);
+  }, [stokReady, isPast, tanggal, stokMap, onLoadStok]);
+  const [stokFor, setStokFor] = useState<MenuItem | null>(null);
+  const [stokVal, setStokVal] = useState("");
+  const [stokSaving, setStokSaving] = useState(false);
+  const openStok = (m: MenuItem) => {
+    setStokFor(m);
+    setStokVal(stokMap?.[m.id] ? String(stokMap[m.id].stok) : "");
+  };
+  const simpanStok = async (nilai: number | null) => {
+    if (!stokFor) return;
+    setStokSaving(true);
+    try {
+      await onSetStok(tanggal, stokFor.id, nilai);
+      setToast(nilai == null ? toTitleCase(stokFor.name) + ": tanpa batas" : "Stok " + toTitleCase(stokFor.name) + " " + nilai + " porsi disimpan");
+      setStokFor(null);
+    } catch {
+      setToast("Gagal menyimpan stok. Periksa koneksi internet, lalu coba lagi.");
+    } finally {
+      setStokSaving(false);
+    }
+  };
 
   const editing = menus.find((m) => m.id === editingId) || null;
 
@@ -524,6 +561,8 @@ export default function MasterMenu({
               // Ikon Utensils = "jual di PO tanggal terpilih" (draft, disahkan
               // lewat Simpan); ikon ShoppingCart tetap ketersediaan Penjualan.
               <MenuCard key={m.id} m={{ ...m, channels: { ...m.channels, preorder: poOn(m) } }}
+                stok={stokReady && !isPast && poOn(m) ? (stokMap?.[m.id] ?? null) : undefined}
+                onStok={stokReady && !isPast && poOn(m) ? () => openStok(m) : undefined}
                 onEdit={() => setEditingId(m.id)}
                 onToggle={(k) => k === "preorder" ? poToggle(m, !poOn(m)) : toggleChannel(m.id, k)} />
             ))
@@ -572,6 +611,56 @@ export default function MasterMenu({
           )}
         </div>
       </div>
+
+      {/* Isi stok satu menu */}
+      {stokFor && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => !stokSaving && setStokFor(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Stok {toTitleCase(stokFor.name)}</div>
+                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{serviceDateLabel(tanggal)}</div>
+              </div>
+              <button onClick={() => setStokFor(null)} aria-label="Tutup"
+                style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none" }}><X size={19} /></button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {stokMap?.[stokFor.id] && (
+                <div style={{ fontSize: 15, color: t.text2, marginBottom: 12 }}>
+                  Sudah dipesan <b style={{ color: t.text }}>{stokMap[stokFor.id].terpakai}</b>, sisa <b style={{ color: t.text }}>{stokMap[stokFor.id].sisa}</b>.
+                </div>
+              )}
+              <div style={{ fontSize: 14, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Jumlah porsi yang dibuat</div>
+              <input type="number" inputMode="numeric" min={0} value={stokVal} autoFocus
+                onChange={(e) => setStokVal(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="Contoh: 20"
+                style={{ width: "100%", height: 60, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, fontSize: 28, fontWeight: 800, textAlign: "center", color: t.text, fontFamily: "inherit", outline: "none" }} />
+              <div className="flex gap-2" style={{ marginTop: 10 }}>
+                {[5, 10, 20].map((n) => (
+                  <button key={n} onClick={() => setStokVal(String((parseInt(stokVal || "0", 10) || 0) + n))}
+                    style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                    +{n}
+                  </button>
+                ))}
+              </div>
+              {stokMap?.[stokFor.id] && stokVal !== "" && parseInt(stokVal, 10) < stokMap[stokFor.id].terpakai && (
+                <div style={{ fontSize: 13.5, color: t.error, marginTop: 10, lineHeight: 1.5 }}>
+                  Sudah dipesan {stokMap[stokFor.id].terpakai}, lebih banyak dari angka ini. Menu langsung tampil Habis untuk ortu.
+                </div>
+              )}
+              <button onClick={() => stokVal !== "" && simpanStok(parseInt(stokVal, 10))} disabled={stokSaving || stokVal === ""}
+                style={{ marginTop: 14, width: "100%", height: 54, borderRadius: 14, border: "none", background: stokVal === "" ? t.divider : t.primary, color: stokVal === "" ? t.textDis : t.text, fontWeight: 800, fontSize: 16, cursor: stokVal === "" ? "default" : "pointer", fontFamily: "inherit" }}>
+                {stokSaving ? "Menyimpan…" : "Simpan stok"}
+              </button>
+              <button onClick={() => simpanStok(null)} disabled={stokSaving}
+                style={{ marginTop: 8, width: "100%", height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                Tanpa batas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Atur Menu Tetap */}
       {tetapSheet && (
@@ -657,7 +746,12 @@ export default function MasterMenu({
 }
 
 /* ---------------- Menu Card ---------------- */
-function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; onToggle: (k: keyof MenuItem["channels"]) => void }) {
+function MenuCard({ m, onEdit, onToggle, stok, onStok }: {
+  m: MenuItem; onEdit: () => void; onToggle: (k: keyof MenuItem["channels"]) => void;
+  /** undefined = baris stok disembunyikan; null = tanpa batas; objek = ada stok. */
+  stok?: { stok: number; terpakai: number; sisa: number } | null;
+  onStok?: () => void;
+}) {
   return (
     // Seluruh kartu tappable = buka form edit; ikon toggle stopPropagation.
     <div onClick={onEdit}
@@ -692,6 +786,17 @@ function MenuCard({ m, onEdit, onToggle }: { m: MenuItem; onEdit: () => void; on
           </ChannelIcon>
         </div>
       </div>
+      {/* Stok untuk tanggal yang diatur — hanya menu yang sedang tersedia di Pre-order */}
+      {onStok && stok !== undefined && (
+        <button onClick={(e) => { e.stopPropagation(); onStok(); }}
+          className="flex items-center gap-2"
+          style={{ marginTop: 10, padding: "0 12px", minHeight: 40, borderRadius: 10, border: `1.5px solid ${stok && stok.sisa <= 0 ? t.error : t.border}`, background: t.surfaceSoft, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: stok && stok.sisa <= 0 ? t.error : t.text2 }}>
+          <Package size={16} color={stok ? (stok.sisa <= 0 ? t.error : t.amberText) : t.textDis} />
+          {stok
+            ? (stok.sisa <= 0 ? "Habis" : "Sisa " + stok.sisa) + " dari " + stok.stok
+            : "Stok: tanpa batas"}
+        </button>
+      )}
     </div>
   );
 }

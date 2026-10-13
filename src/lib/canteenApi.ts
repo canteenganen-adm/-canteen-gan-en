@@ -201,6 +201,37 @@ export async function setMenuTetapItems(ids: string[], on: boolean): Promise<voi
   }
 }
 
+/* ---------------- Stok per menu per tanggal ---------------- */
+
+export interface StokInfo { stok: number; terpakai: number; sisa: number }
+
+/** Sisa stok semua menu yang diberi stok untuk satu tanggal (menu tanpa baris =
+ * tanpa batas). Dihitung di server dari pesanan Pre-order yang belum dibatalkan.
+ * Melempar error kalau migration_13 belum dijalankan — pemanggil menyembunyikan
+ * fitur stok. */
+export async function fetchStokSisa(tanggal: string): Promise<Record<string, StokInfo>> {
+  const { data, error } = await supabase.rpc("get_stok_sisa", { p_tanggal: tanggal });
+  if (error) throw error;
+  const map: Record<string, StokInfo> = {};
+  (data as { item_id: string; stok: number; terpakai: number; sisa: number }[]).forEach((r) => {
+    map[r.item_id] = { stok: r.stok, terpakai: r.terpakai, sisa: r.sisa };
+  });
+  return map;
+}
+
+/** Isi stok (angka >= 0) atau hapus batas (null = tanpa batas). */
+export async function setMenuStok(tanggal: string, itemId: string, stok: number | null): Promise<void> {
+  if (stok == null) {
+    const { error } = await supabase.from("menu_stok").delete().eq("tanggal", tanggal).eq("item_id", itemId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("menu_stok").upsert(
+      { tanggal, item_id: itemId, stok: Math.max(0, Math.floor(stok)), updated_at: new Date().toISOString() },
+      { onConflict: "tanggal,item_id" });
+    if (error) throw error;
+  }
+}
+
 /* ---------------- Menu Harian (snapshot per tanggal + history) ---------------- */
 
 interface MenuHarianRow {
