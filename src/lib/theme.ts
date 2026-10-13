@@ -1,14 +1,14 @@
 // Palet Final — Decision Lock §10. Satu sumber token warna untuk semua layar.
 export const t = {
   // Palet "Taman" (N2): krem hangat + kartu putih. Satu warna = satu tugas:
-  //   tinta = aksi/dipilih · hijau = Sudah · jingga = Belum · merah = Telat.
-  primary: "#2A2820",
-  primaryHover: "#443F33",
-  primaryLight: "#ECE8DA",
+  //   cokelat-abu lembut (taupe, BUKAN hitam) = aksi/dipilih · hijau = Sudah · jingga = Belum · merah = Telat.
+  primary: "#7A6F58",
+  primaryHover: "#665C48",
+  primaryLight: "#E6E0CB",
   onPrimary: "#FFFFFF",
-  bg: "#F1EDDF",
-  surface: "#FBF8EF",
-  surfaceSoft: "#F6F2E6",
+  bg: "#FAF6EE",
+  surface: "#FFFCF7",
+  surfaceSoft: "#FFF8EE",
   surfaceAlt: "#E6ECF1", // kartu pesanan selang-seling (biru abu lembut) supaya pesanan bersebelahan terbedakan
   text: "#2A2820",
   text2: "#6B6859",

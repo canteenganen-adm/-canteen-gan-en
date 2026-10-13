@@ -494,11 +494,11 @@ export default function Penjualan({
       {/* Undo keranjang (hapus item / kosongkan semua) */}
       {cartUndo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primaryHover, color: "#FBF7EF", borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
               {cartUndo.type === "line" ? `${cartUndo.line.name} dihapus` : "Keranjang dikosongkan"}
             </span>
-            <button onClick={undoCart} className="flex items-center gap-1" style={{ background: "transparent", border: "none", color: t.primary, fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
+            <button onClick={undoCart} className="flex items-center gap-1" style={{ background: "transparent", border: "none", color: "#FBF7EF", textDecoration: "underline", fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>
@@ -508,7 +508,7 @@ export default function Penjualan({
       {/* Toast */}
       {toast && !cartUndo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primaryHover, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ width: 26, height: 26, borderRadius: "50%", background: toast.ok ? t.success : t.primary, display: "grid", placeItems: "center", flex: "none", color: "#fff" }}>
               {toast.ok ? <Check size={16} /> : <Receipt size={15} />}
             </span>

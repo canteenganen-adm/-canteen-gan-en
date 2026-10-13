@@ -949,7 +949,7 @@ function EField({ label, children, req, err }: { label: string; children: React.
 function Toast({ msg }: { msg: string }) {
   return (
     <div style={{ position: "fixed", left: 20, right: 20, bottom: 24, display: "flex", justifyContent: "center", zIndex: 90 }}>
-      <div className="flex items-center gap-2" style={{ maxWidth: 380, width: "100%", background: t.text, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>
+      <div className="flex items-center gap-2" style={{ maxWidth: 380, width: "100%", background: t.primaryHover, color: "#FBF7EF", borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>
         <Check size={18} color={t.success} /> {msg}
       </div>
     </div>

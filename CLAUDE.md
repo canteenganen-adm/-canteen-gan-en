@@ -15,9 +15,9 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 - **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
-  - Palet "Taman" (krem hangat + kartu putih). **Satu warna = satu tugas**: tinta = aksi/dipilih · hijau = Sudah · jingga = Belum · merah = Telat. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
-  - Background `#F1EDDF` (pilihan Mama; yang lebih gelap sudah dicoba dan ditolak) · Surface (kartu) `#FBF8EF` — JANGAN putih murni · Surface lembut `#F6F2E6` · Surface selang-seling `#E6ECF1` (kartu pesanan genap — TANPA garis putus-putus, permintaan Mama)
-  - Primary (tinta) `#2A2820` · Primary hover `#443F33` · Primary light `#ECE8DA` · Teks di atas primary `#FFFFFF`
+  - Palet "Taman" (krem hangat + kartu putih). **Satu warna = satu tugas**: cokelat-abu lembut (taupe) = aksi/dipilih — JANGAN hitam, Mama bilang jelek · hijau = Sudah · jingga = Belum · merah = Telat. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru di layar).
+  - Background `#FAF6EE` (sama seperti dulu, pilihan Mama; yang lebih gelap sudah dicoba dan ditolak) · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Surface selang-seling `#E6ECF1` (kartu pesanan genap — TANPA garis putus-putus, permintaan Mama)
+  - Primary (taupe) `#7A6F58` · Primary hover `#665C48` (juga latar toast) · Primary light `#E6E0CB` · Teks di atas primary `#FFFFFF`
   - Success (Sudah) `#3F8A3A` / bg `#DDEFD3` / teks `#2F6B2C`
   - Warn (Belum) `#D9822B` / bg `#FFE6C7` / teks `#8F4E08`
   - Error (Telat) `#C63E2B` / bg `#FBE7E3`
