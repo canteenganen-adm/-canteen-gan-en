@@ -634,22 +634,26 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-/** Baris chip kelas yang bisa digeser. Tanda ">" redup di kanan muncul selama
- * masih ada chip di luar layar (SMA, Guru/Karyawan), hilang di ujung. Ketuk
- * tanda itu = geser lebih jauh. */
+/** Baris chip kelas yang bisa digeser. Tanda ">" / "<" redup muncul di sisi
+ * yang masih menyimpan chip di luar layar, hilang di ujungnya. Ketuk tanda
+ * itu = geser lebih jauh. */
 function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: KelasGroup) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState(false);
+  const [before, setBefore] = useState(false);
   const update = () => {
     const el = ref.current; if (!el) return;
     setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    setBefore(el.scrollLeft > 4);
   };
   useEffect(() => {
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  const mask = more ? "linear-gradient(90deg, #000 calc(100% - 44px), transparent 100%)" : undefined;
+  const mask = (more || before)
+    ? `linear-gradient(90deg, ${before ? "transparent 0, #000 44px" : "#000 0"}, ${more ? "#000 calc(100% - 44px), transparent 100%" : "#000 100%"})`
+    : undefined;
   return (
     <div style={{ position: "relative", marginTop: 10 }}>
       <div ref={ref} onScroll={update} className="flex gap-2 hscroll"
@@ -667,6 +671,12 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
           );
         })}
       </div>
+      {before && (
+        <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser kembali ke kelas sebelumnya"
+          style={{ position: "absolute", left: -4, top: 0, width: 36, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text, opacity: 0.4 }}>
+          <ChevronLeft size={22} />
+        </button>
+      )}
       {more && (
         <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser untuk melihat kelas lain"
           style={{ position: "absolute", right: -4, top: 0, width: 36, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text, opacity: 0.4 }}>
