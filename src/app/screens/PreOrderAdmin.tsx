@@ -755,7 +755,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: t.surface, border: `2px solid ${late ? t.error : g.allPacked ? t.success : t.borderStrong}`, borderRadius: 14, padding: 14 }}>
+    <div style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14 }}>
       <div className="flex" style={{ gap: 12 }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
