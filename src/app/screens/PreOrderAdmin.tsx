@@ -781,6 +781,8 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
           </div>
         )}
       </div>
+      {/* Pemisah tipis antara kepala dan isi (pengganti pita yang sudah tidak ada) */}
+      <div aria-hidden="true" style={{ height: 1, background: t.borderStrong, margin: "0 12px" }} />
       {/* BADAN: hanya isi pesanan */}
       <div style={{ padding: "10px 12px 12px" }}>
         <div style={{ paddingLeft: g.perOrder.length > 1 ? 19 : 32 }}>
