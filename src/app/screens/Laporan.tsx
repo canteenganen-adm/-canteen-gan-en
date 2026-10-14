@@ -340,14 +340,13 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
 
   const jumlahHari = new Date(ym.y, ym.m + 1, 0).getDate();
   const ymd = (d: number) => `${ym.y}-${pad2(ym.m + 1)}-${pad2(d)}`;
-  const awalBulan = ymd(1), akhirBulan = ymd(jumlahHari);
+  const awalBulan = ymd(1);
   const adaBerikut = ym.y * 12 + ym.m < nowY * 12 + nowM;
   const geser = (d: number) => setYm(({ y, m }) => { const v = y * 12 + m + d; return { y: Math.floor(v / 12), m: v % 12 }; });
 
   // Tanggal terpilih: hari ini kalau bulan berjalan; bulan lalu = hari terakhir yang ada transaksinya.
   const hariAktif = dipilih ?? (ym.y === nowY && ym.m === nowM ? todayYmd : r && r.hari.length ? r.hari[r.hari.length - 1][0] : awalBulan);
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
-  const stepHari = (d: number) => { const n = idxAktif + d; if (n >= 0 && n < jumlahHari) setDipilih(ymd(n + 1)); };
 
   const [busy2, setBusy2] = useState(false);
   const download = async (jenis: "xlsx" | "pdf") => {
@@ -427,17 +426,17 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              {/* Pilih tanggal: kuning, seluruh area bisa diketuk */}
-              <div className="flex items-center justify-between" style={{ margin: "14px 0" }}>
-                <button onClick={() => stepHari(-1)} aria-label="Hari sebelumnya" disabled={idxAktif <= 0} style={navBtn(idxAktif > 0, 44)}><ChevronLeft size={20} /></button>
-                <div style={{ position: "relative", height: 44, padding: "0 18px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800 }}>
+              {/* Tanggal terpilih (kuning) — pemilihnya HANYA kalender di atas; badge kembali ke hari ini */}
+              <div className="flex items-center justify-between gap-2" style={{ margin: "14px 0" }}>
+                <div style={{ height: 44, padding: "0 18px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800 }}>
                   <Calendar size={18} /> {labelHari(hariAktif)}
-                  <input type="date" value={hariAktif} min={awalBulan} max={akhirBulan} aria-label="Pilih tanggal"
-                    onChange={(e) => e.target.value && setDipilih(e.target.value)}
-                    onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker?.(); } catch { /* fallback bawaan */ } }}
-                    style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer" }} />
                 </div>
-                <button onClick={() => stepHari(1)} aria-label="Hari berikutnya" disabled={idxAktif >= jumlahHari - 1} style={navBtn(idxAktif < jumlahHari - 1, 44)}><ChevronRight size={20} /></button>
+                {ym.y === nowY && ym.m === nowM && hariAktif !== todayYmd && (
+                  <button onClick={() => setDipilih(todayYmd)}
+                    style={{ height: 44, padding: "0 16px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                    Kembali ke hari ini
+                  </button>
+                )}
               </div>
 
               {!hariIni ? (
