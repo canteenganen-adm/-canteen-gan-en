@@ -12,7 +12,8 @@ export const t = {
   bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
-  surfaceAlt: "#F4E6C3", // kartu pesanan genap (sage) supaya pesanan bersebelahan terbedakan
+  band: "#E4E0DA", // pita atas kartu pesanan (abu hangat), SAMA untuk semua kartu
+  bandLine: "#CFC9C0",
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",

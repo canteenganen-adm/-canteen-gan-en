@@ -457,7 +457,7 @@ export default function PreOrderAdmin({
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
           ) : utama.map((g, i) => (
-            <MergedOrderCard key={g.key} g={g} alt={i % 2 === 1} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
+            <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
           ))}
 
           {/* Ambil beda waktu — hanya kalau ada */}
@@ -469,7 +469,7 @@ export default function PreOrderAdmin({
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
               </div>
               {beda.map((g, i) => (
-            <MergedOrderCard key={g.key} g={g} alt={i % 2 === 1} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
+            <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
           ))}
             </>
           )}
@@ -730,36 +730,34 @@ function ItemLines({ items }: { items: Transaction["items"] }) {
   );
 }
 
-function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: MergedGroup; onTap: () => void; alt?: boolean; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
+function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: MergedGroup; onTap: () => void; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ position: "relative", background: alt ? t.surfaceAlt : t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
-      <div className="flex" style={{ gap: 12 }}>
+    <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+      {/* PITA ATAS (abu hangat, sama untuk semua kartu): centang + nama + kelas/waktu ambil
+          + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
+      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: t.band, borderBottom: `1.5px solid ${t.bandLine}`, alignItems: "flex-start" }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}
-          style={{ width: 44, height: 44, margin: "-8px 0 -8px -8px", border: "none", background: "none", display: "grid", placeItems: "center", padding: 0, flex: "none", cursor: "pointer" }}>
+          style={{ width: 44, height: 44, margin: "-8px 0 -8px -10px", border: "none", background: "none", display: "grid", placeItems: "center", padding: 0, flex: "none", cursor: "pointer" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, display: "grid", placeItems: "center",
-            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : "#A59B80"}`, color: "#fff" }}>
+            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : "#8F8568"}`, color: "#fff" }}>
             {g.allPacked && <Check size={17} strokeWidth={3} />}
             {partial && <span style={{ width: 12, height: 2.5, background: t.text, borderRadius: 2, display: "block" }} />}
           </span>
         </button>
-        {/* Nama murid: SELALU tampil utuh — turun ke baris berikutnya kalau
-            panjang, tidak pernah dipotong "...". */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25, overflowWrap: "break-word", textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</div>
-          <div style={{ marginTop: 3, fontSize: 15, fontWeight: 600, color: t.text2, lineHeight: 1.4 }}>
+          <div style={{ marginTop: 3, fontSize: 14.5, fontWeight: 600, color: t.text2, lineHeight: 1.4 }}>
             <span style={{ fontFamily: STRUK_MONO, fontWeight: 500, color: t.text }}>{g.kelas || g.tingkat}</span> · {g.ambil}{g.ids.length > 1 ? ` · ${g.ids.length} pesanan` : ""}
           </div>
         </div>
-        {/* Kanan atas, ringkas (ikon + jam) supaya nama tetap lega.
-            Telat = merah, jam = batas waktu ambil. Dikemas = jam SERVER
-            otomatis (bukti objektif): hijau Smile tepat waktu, merah Frown
-            bila telat. */}
+        {/* Telat = merah (jam = batas waktu ambil). Dikemas = jam SERVER otomatis
+            (bukti objektif): hijau Smile tepat waktu, merah Frown bila telat. */}
         {(late || (g.allPacked && g.packedAt)) && (
           <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, paddingTop: 2 }}>
             {late && (
@@ -778,19 +776,22 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
           </div>
         )}
       </div>
-      <div style={{ marginTop: 10, marginLeft: 48, paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primaryLine : t.border}` }}>
-        {g.perOrder.length <= 1 ? (
-          <ItemLines items={g.flatItems} />
-        ) : (
-          /* Pesanan dobel/tripel: daftar per pesanan DIPISAH, tidak digabung —
-             supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
-          g.perOrder.map((items, oi) => (
-            <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 8 : 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
-              <ItemLines items={items} />
-            </div>
-          ))
-        )}
+      {/* BADAN: hanya isi pesanan */}
+      <div style={{ padding: "10px 12px 12px" }}>
+        <div style={{ paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primaryLine : t.border}` }}>
+          {g.perOrder.length <= 1 ? (
+            <ItemLines items={g.flatItems} />
+          ) : (
+            /* Pesanan dobel/tripel: daftar per pesanan DIPISAH, tidak digabung —
+               supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
+            g.perOrder.map((items, oi) => (
+              <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 8 : 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
+                <ItemLines items={items} />
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
