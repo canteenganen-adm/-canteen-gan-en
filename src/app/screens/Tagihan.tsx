@@ -394,9 +394,9 @@ export default function Tagihan({
             onChange={setTab}
           />
 
-          {/* Cari — SAMA dengan Pre-order/Menu: tinggi 48, sudut 12, garis 1.5px, latar kartu */}
-          <div className="flex items-center gap-2" style={{ marginTop: 12, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 14px", height: 48, boxSizing: "border-box" }}>
-            <Search size={19} color={t.text2} style={{ flex: "none" }} />
+          {/* Cari — SAMA dengan Pre-order/Menu: tinggi 44, sudut 12, garis 1.5px, latar kartu */}
+          <div className="flex items-center gap-2" style={{ marginTop: 12, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+            <Search size={18} color={t.text2} style={{ flex: "none" }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kelas, WA…"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
             {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}

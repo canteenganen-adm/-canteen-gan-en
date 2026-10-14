@@ -351,10 +351,10 @@ export default function MasterMenu({
               diketuk — input tanggal menutupi chip (inset 0). */}
           {menuHarianReady && (
             <div className="flex items-center" style={{ gap: 8, marginTop: 8 }}>
-            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", width: "fit-content", maxWidth: "100%" }}>
+            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", flex: 1, minWidth: 0 }}>
               <Calendar size={19} />
-              <span style={{ fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap" }}>{tglParts(tanggal)[0]} {tglSingkat(tanggal)}</span>
-              <ChevronDown size={17} color={t.text2} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)}</span>
+              <ChevronDown size={17} color={t.text2} style={{ flex: "none" }} />
               <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
                 onChange={(e) => e.target.value && setTanggal(e.target.value)}
                 onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
@@ -386,22 +386,22 @@ export default function MasterMenu({
               {/* Cari + tombol plus (membuka menu melayang: Tambah menu / Menu Tetap) */}
               <div style={{ position: "relative", marginTop: 14 }}>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 52 }}>
-                    <Search size={20} color={t.text2} style={{ flex: "none" }} />
+                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+                    <Search size={18} color={t.text2} style={{ flex: "none" }} />
                     <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
                       style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
                     {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
                   </div>
                   <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
-                    style={{ flex: "none", width: 52, height: 52, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, cursor: "pointer" }}>
-                    <Plus size={26} />
+                    style={{ flex: "none", width: 44, height: 44, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, cursor: "pointer" }}>
+                    <Plus size={22} />
                   </button>
                 </div>
                 {aksiMenu && (
                   <>
                     <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
                     <div onClick={() => setAksiMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
-                    <div role="menu" style={{ position: "absolute", top: 60, right: 0, zIndex: 45, width: "min(310px, 100%)", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                    <div role="menu" style={{ position: "absolute", top: 52, right: 0, zIndex: 45, width: "min(310px, 100%)", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
                       {([
                         { show: true, Ic: Plus, label: "Tambah menu baru", sub: "", on: () => { setAksiMenu(false); addMenu(); } },
                         { show: menuTetapReady && !isPast && tetapMenus.length > 0, Ic: Pin, label: "Pakai Menu Tetap", sub: tglSingkat(tanggal) + " · " + tetapMenus.length + " menu", on: () => { setAksiMenu(false); pakaiMenuTetap(); } },
