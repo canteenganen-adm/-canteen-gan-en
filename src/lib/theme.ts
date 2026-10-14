@@ -19,7 +19,7 @@ export const t = {
   textDis: "#B3AF9F",
   success: "#5BAF4E", // isi centang / garis (terlalu terang untuk tulisan)
   successBg: "#E9F5DB",
-  successText: "#4A5A2A", // angka/tulisan Sudah (olive tua, kontras >= 4.5)
+  successText: "#1F7A2E", // angka/tulisan Sudah (hijau murni, kontras >= 4.5 di krem dan di pita kuning)
   successPill: "#ECF39E", // pil Dibuka
   successPillLine: "#BFE35A",
   warnFill: "#FFE9CC",
