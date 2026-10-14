@@ -12,8 +12,8 @@ export const t = {
   bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
-  band: "#E4E0DA", // pita atas kartu pesanan (abu hangat), SAMA untuk semua kartu
-  bandLine: "#CFC9C0",
+  band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
+  bandLine: "#E8C84C",
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",

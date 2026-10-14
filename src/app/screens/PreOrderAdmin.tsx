@@ -307,8 +307,9 @@ export default function PreOrderAdmin({
   // Filter Sudah/Belum Dikemas dari kotak ringkasan (grup campuran dihitung Belum)
   const byPacked = (g: MergedGroup) =>
     packedFilter === "semua" || (packedFilter === "sudah" ? g.allPacked : !g.allPacked);
-  const utama = (showLateOnly ? rawUtama.filter(isGroupLate) : sortLateFirst(rawUtama)).filter(byPacked);
-  const beda = (showLateOnly ? rawBeda.filter(isGroupLate) : sortLateFirst(rawBeda)).filter(byPacked);
+  const urutAmbil = (g: MergedGroup) => { const i = presets.indexOf(g.ambil); return i < 0 ? 999 : i; };
+  const rawSemua = [...rawUtama, ...rawBeda].sort((a, b) => urutAmbil(a) - urutAmbil(b));
+  const utama = (showLateOnly ? rawSemua.filter(isGroupLate) : sortLateFirst(rawSemua)).filter(byPacked);
   const lateCount = [...rawUtama, ...rawBeda].filter(isGroupLate).length;
 
   const handleGroupTap = (g: MergedGroup) => {
@@ -419,6 +420,15 @@ export default function PreOrderAdmin({
           {/* Cari */}
 
           {/* Filter Tingkat */}
+          {/* Cari murid: satu baris penuh. */}
+          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
+              <Search size={19} color={t.text2} style={{ flex: "none" }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+            </div>
+          </div>
           <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
         </div>
 
@@ -445,34 +455,12 @@ export default function PreOrderAdmin({
             </button>
           )}
 
-          {/* Cari murid: satu baris penuh. */}
-          <div className="flex items-center gap-2" style={{ margin: "14px 0 10px" }}>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-              <Search size={19} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-            </div>
-          </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
           ) : utama.map((g, i) => (
             <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
           ))}
 
-          {/* Ambil beda waktu — hanya kalau ada */}
-          {beda.length > 0 && (
-            <>
-              <div className="flex items-center gap-2" style={{ margin: "20px 2px 10px", color: "#A32E2E" }}>
-                <AlertCircle size={16} />
-                <span style={{ fontSize: 13, fontWeight: 800 }}>Ambil beda waktu</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#A32E2E", background: "#FBEAEA", border: "1px solid #E8B9B9", padding: "1px 8px", borderRadius: 999 }}>{beda.length}</span>
-              </div>
-              {beda.map((g, i) => (
-            <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
-          ))}
-            </>
-          )}
         </div>
       </div>
 
@@ -786,7 +774,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
                supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
             g.perOrder.map((items, oi) => (
               <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 8 : 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: t.amberText, letterSpacing: ".04em" }}>PESANAN {oi + 1}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginTop: oi ? 4 : 0 }}>Pesanan {oi + 1}</div>
                 <ItemLines items={items} />
               </div>
             ))
