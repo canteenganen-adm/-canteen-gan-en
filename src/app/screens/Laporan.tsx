@@ -418,27 +418,29 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-center gap-2" style={{ marginTop: 12, fontSize: 12.5, color: t.text2, fontWeight: 600 }}>
-                  sedikit
-                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgba(255,201,51,.3)" }} />
-                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgba(255,201,51,.65)" }} />
-                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgb(255,201,51)" }} />
-                  banyak
-                </div>
-              </div>
-
-              {/* Satu kartu: tanggal terpilih (kuning) + badge kembali ke hari ini + rincian hari itu */}
-              <div style={{ ...card, marginTop: 14 }}>
-                <div className="flex items-center justify-between gap-2" style={{ marginBottom: 14 }}>
-                  <div style={{ height: 44, padding: "0 14px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", flex: "none" }}>
-                    <Calendar size={18} /> {labelHari(hariAktif)}
+                <div className="flex items-center justify-between gap-2" style={{ marginTop: 10, minHeight: 40, paddingLeft: 4 }}>
+                  <div className="flex items-center gap-2" style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>
+                    sedikit
+                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgba(255,201,51,.3)" }} />
+                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgba(255,201,51,.65)" }} />
+                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgb(255,201,51)" }} />
+                    banyak
                   </div>
                   {ym.y === nowY && ym.m === nowM && hariAktif !== todayYmd && (
                     <button onClick={() => setDipilih(todayYmd)}
-                      aria-label="Kembali ke hari ini" className="flex items-center gap-1.5" style={{ height: 44, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                      aria-label="Kembali ke hari ini" className="flex items-center gap-1.5" style={{ height: 40, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
                       <RotateCcw size={15} /> Hari ini
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* Satu kartu: tanggal terpilih (kuning) + rincian hari itu */}
+              <div style={{ ...card, marginTop: 14 }}>
+                <div className="flex items-center" style={{ marginBottom: 14 }}>
+                  <div style={{ height: 44, padding: "0 14px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", flex: "none" }}>
+                    <Calendar size={18} /> {labelHari(hariAktif)}
+                  </div>
                 </div>
                 {!hariIni ? (
                   <div style={{ textAlign: "center", color: t.text2, fontWeight: 600, padding: "6px 0 4px" }}>Tidak ada transaksi di tanggal ini.</div>
