@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, Settings, TrendingDown, TrendingUp } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -483,8 +483,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
                 <div className="flex flex-wrap items-center" style={{ gap: "8px 24px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                  <span className="flex items-center gap-2"><IkonKotak bg={t.primaryLight} line={t.chart[0]} warna={t.warnText}><Utensils size={17} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2"><IkonKotak bg={t.successBg} line={t.chart[1]} warna={t.successText}><ShoppingCart size={17} /></IkonKotak>{rpSingkat(r.masukPJ)}</span>
+                  <span className="flex items-center gap-2"><span style={{ width: 16, height: 16, borderRadius: 5, background: t.chart[0], flex: "none" }} aria-label="Pre-order" title="Pre-order" />{rpSingkat(r.masukPO)}</span>
+                  <span className="flex items-center gap-2"><span style={{ width: 16, height: 16, borderRadius: 5, background: t.chart[1], flex: "none" }} aria-label="Penjualan" title="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
               </div>
 
@@ -614,9 +614,6 @@ function rpSingkat(n: number): string {
   return `Rp${n}`;
 }
 
-function IkonKotak({ bg, line, warna, children }: { bg: string; line: string; warna: string; children: React.ReactNode }) {
-  return <span style={{ width: 32, height: 32, borderRadius: 10, background: bg, border: `1.5px solid ${line}`, color: warna, display: "grid", placeItems: "center", flex: "none", boxSizing: "border-box" }}>{children}</span>;
-}
 
 /** Donat 5 menu teratas (omzet): bulan di tengah, legenda = nama + persen. */
 function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: number }][]; bulan: string; tahun: number }) {
