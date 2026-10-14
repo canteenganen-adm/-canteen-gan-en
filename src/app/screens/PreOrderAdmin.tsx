@@ -356,8 +356,8 @@ export default function PreOrderAdmin({
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
-            <div className="flex" style={{ marginRight: -10 }}>
-              <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Settings size={22} /></button>
+            <div className="flex">
+              <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}><Settings size={19} /></button>
             </div>
           </div>
 

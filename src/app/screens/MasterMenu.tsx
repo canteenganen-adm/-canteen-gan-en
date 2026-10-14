@@ -315,7 +315,7 @@ export default function MasterMenu({
         {/* Yang MENEMPEL di atas hanya judul + tab (±110px). Cari, tanggal, Menu Tetap,
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
-        <div style={{ padding: "22px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5, boxShadow: "0 8px 8px -8px rgba(70,55,20,.22)" }}>
+        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5, boxShadow: "0 8px 8px -8px rgba(70,55,20,.22)" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">

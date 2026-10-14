@@ -364,7 +364,7 @@ export default function Tagihan({
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
             adalah memproses daftar transaksi, bukan dashboard keuangan */}
-        <div className="flex items-center justify-between" style={{ padding: "18px 20px 6px" }}>
+        <div className="flex items-center justify-between" style={{ padding: "20px 20px 6px" }}>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
           <div className="flex items-center gap-2">
             <div style={{ textAlign: "right" }}>
@@ -376,8 +376,8 @@ export default function Tagihan({
               </div>
             </div>
             <button onClick={onOpenSettings} aria-label="Pengaturan"
-              style={{ width: 36, height: 36, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-              <Settings size={16} />
+              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              <Settings size={19} />
             </button>
           </div>
         </div>

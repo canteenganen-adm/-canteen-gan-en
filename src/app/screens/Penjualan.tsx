@@ -272,9 +272,9 @@ export default function Penjualan({
               <button
                 onClick={onOpenSettings}
                 aria-label="Pengaturan"
-                style={{ width: 36, height: 36, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
+                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
               >
-                <Settings size={16} />
+                <Settings size={19} />
               </button>
             </div>
           </div>
