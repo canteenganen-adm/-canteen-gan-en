@@ -371,7 +371,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
     fetchMasukBulan(prevY, prevM).then((d) => { if (!batal) setPrev(d); }).catch(() => { /* perbandingan opsional */ });
     return () => { batal = true; };
   }, [prevY, prevM]);
-  const banding: Banding | null = prev ? { prevLabel: BULAN[prevM], prevMasuk: prev.masuk, berjalan: ym.y === nowY && ym.m === nowM } : null;
+  const banding: Banding | null = prev ? { prevLabel: "bulan lalu", prevMasuk: prev.masuk, berjalan: ym.y === nowY && ym.m === nowM } : null;
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
   const u = useMemo(() => (txs ? buildUlasan(txs, pickupSchedules.map((x) => x.name)) : null), [txs, pickupSchedules]);
@@ -498,7 +498,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     </div>
                   </div>
                   <div style={{ textAlign: "right", minWidth: 0 }}>
-                    <div style={{ fontSize: rHari.masuk >= 10_000_000 ? 22 : 28, fontWeight: 800, color: t.successText, lineHeight: 1.15, whiteSpace: "nowrap" }}>{rupiah(rHari.masuk)}</div>
+                    <div style={{ fontSize: rHari.masuk >= 10_000_000 ? 22 : 28, fontWeight: 800, color: t.text, lineHeight: 1.15, whiteSpace: "nowrap" }}>{rupiah(rHari.masuk)}</div>
                     <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 6 }}>{rHari.nMasuk} transaksi Lunas</div>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <>
                     <Baris label="Dari Pre-order" nilai={rupiah(rHari.masukPO)} />
                     <Baris label="Dari Penjualan" nilai={rupiah(rHari.masukPJ)} />
-                    <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} warna={rHari.belum > 0 ? t.error : undefined} />
+                    <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} />
                     {rHari.nBatal > 0 && <Baris label="Dibatalkan (tidak dihitung)" nilai={String(rHari.nBatal)} />}
                   </>
                 )}
@@ -546,11 +546,11 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   </>
                 )}
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: t.successText, marginTop: 2, lineHeight: 1.15 }}>{rupiah(r.masuk)}</div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: t.text, marginTop: 2, lineHeight: 1.15 }}>{rupiah(r.masuk)}</div>
                 {bandingPct !== null && banding && (
-                  <div className="flex items-center gap-1.5" style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: bandingPct >= 0 ? t.successText : t.error }}>
+                  <div className="flex items-center gap-1.5" style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: t.text }}>
                     {bandingPct >= 0 ? <TrendingUp size={19} /> : <TrendingDown size={19} />} {Math.abs(bandingPct)}%
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>vs {banding.prevLabel}{banding.berjalan ? " · belum penuh" : ""}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari bulan lalu{banding.berjalan ? " · belum penuh" : ""}</span>
                   </div>
                 )}
                 {/* Pre-order vs Penjualan */}
@@ -563,7 +563,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <span className="flex items-center gap-2" style={{ textAlign: "right" }}><span>{rpSingkat(r.masukPJ)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>Penjualan</span></span><IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
                 </div>
                 <div className="flex gap-2" style={{ marginTop: 14 }}>
-                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: r.belum > 0 ? t.errorBg : t.surfaceSoft, color: r.belum > 0 ? t.error : t.text2, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
+                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surfaceSoft, color: t.text, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
                     <Wallet size={18} style={{ flex: "none" }} />
                     <span style={{ minWidth: 0 }}>{rpSingkat(r.belum)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600 }}>belum dibayar · {r.nBelum}</span></span>
                   </div>
@@ -590,8 +590,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                       <Cincin pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>Packing Pre-order</div>
-                        <BarisPacking Ic={CircleCheck} warna={t.successText} nilai={pk.tepat.toLocaleString("id-ID")} teks="pesanan dikemas tepat waktu" />
-                        <BarisPacking Ic={AlarmClock} warna={t.error} nilai={pk.telat.toLocaleString("id-ID")} teks="pesanan telat dikemas" />
+                        <BarisPacking Ic={CircleCheck} warna={t.text} nilai={pk.tepat.toLocaleString("id-ID")} teks="pesanan dikemas tepat waktu" />
+                        <BarisPacking Ic={AlarmClock} warna={t.text} nilai={pk.telat.toLocaleString("id-ID")} teks="pesanan telat dikemas" />
                         {pk.rataMenit > 0 && <BarisPacking Ic={Timer} warna={t.text} nilai={`${pk.rataMenit} mnt`} teks="rata-rata telatnya" />}
                         {pk.belum > 0 && <BarisPacking Ic={CircleDashed} warna={t.text2} nilai={pk.belum.toLocaleString("id-ID")} teks="belum ditandai dikemas" />}
                       </div>
@@ -796,14 +796,14 @@ function BarisPacking({ Ic, warna, nilai, teks }: { Ic: React.ComponentType<{ si
   );
 }
 
-/** Cincin persen: hijau = tepat waktu, merah = telat. */
+/** Cincin persen: hijau = tepat waktu, kuning = telat (palet halaman: kuning + hijau saja). */
 function Cincin({ pct }: { pct: number }) {
   const R = 42, C = 2 * Math.PI * R, hijau = (pct / 100) * C;
   return (
     <div style={{ position: "relative", width: 104, height: 104, flex: "none" }}>
       <svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label={`${pct}% tepat waktu`}>
         <g transform="rotate(-90 52 52)">
-          <circle cx="52" cy="52" r={R} fill="none" stroke={t.error} strokeWidth="13" />
+          <circle cx="52" cy="52" r={R} fill="none" stroke={t.chart[0]} strokeWidth="13" />
           <circle cx="52" cy="52" r={R} fill="none" stroke={t.chart[1]} strokeWidth="13" strokeDasharray={`${hijau} ${C - hijau}`} />
         </g>
       </svg>
