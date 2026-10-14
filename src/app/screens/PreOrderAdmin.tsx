@@ -386,29 +386,37 @@ export default function PreOrderAdmin({
             </button>
           </div>
 
-          {/* Bagian atas — LEGA, tanpa kotak/garis (mata Mama & Papa sudah tua; permintaan pemilik):
-              tanggal = satu baris biasa (ketuk = kalender), "Tutup jam" di kanan; angka besar tanpa kotak;
-              Bagikan / Rekap / Cetak disimpan di tombol ⋯ (lembar "aksi"). */}
-          <div style={{ marginTop: 6 }}>
-            <div className="flex items-center justify-between" style={{ gap: 8 }}>
-              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal" className="flex items-center"
-                style={{ gap: 8, minHeight: 44, minWidth: 0, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: lihatSesi ? t.text : t.amberText }}>
-                <Calendar size={20} style={{ flex: "none" }} />
-                <span style={{ fontSize: 17, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</span>
+          {/* Bagian atas — padat, tanpa ruang kosong:
+              kiri: ‹ tanggal › dan di bawahnya "tutup jam" kecil (satu tumpukan)
+              kanan: pil status, tegak lurus di tengah tumpukan
+              lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
+          <div style={{ marginTop: 8 }}>
+            {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
+            <div className="flex items-center" style={{ gap: 6 }}>
+              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
+                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Calendar size={24} color={t.text} />
               </button>
-              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                style={{ flex: "none", gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 14, cursor: "pointer", padding: 0, minHeight: 44, fontFamily: "inherit" }}>
-                Tutup {hhmm(autoCloseTime)} <ChevronRight size={15} />
-              </button>
+              <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</div>
+                <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
+                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
+                </button>
+              </div>
             </div>
             {!lihatSesi && (
               <button onClick={() => setViewDate(serviceDate)}
-                style={{ display: "block", background: "transparent", border: "none", minHeight: 36, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                style={{ display: "block", background: "transparent", border: "none", minHeight: 30, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                 Kembali ke Hari Ini
               </button>
             )}
 
-            <div className="flex" style={{ marginTop: 14 }}>
+            {/* Divider super halus: memudar di kedua ujung */}
+            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: t.border }} />
+
+            {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
+            <div className="flex gap-1">
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
               <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
@@ -417,15 +425,12 @@ export default function PreOrderAdmin({
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
 
-            {/* Bagikan / Rekap / Cetak: tiga bulatan kuning pucat (t.primaryLight) + label, sejajar dengan kolom angka */}
-            <div className="flex" style={{ marginTop: 18 }}>
+            {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
+            <div className="flex justify-around">
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria}
-                  style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "center" }}>
-                  <span style={{ width: 54, height: 54, borderRadius: "50%", background: t.primaryLight, color: t.text, display: "grid", placeItems: "center", margin: "0 auto" }}>
-                    <Ic size={24} />
-                  </span>
-                  <span style={{ display: "block", marginTop: 6, fontSize: 14, fontWeight: 600, color: t.text2 }}>{label}</span>
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
+                  style={{ gap: 6, minHeight: 44, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                  <Ic size={18} /> {label}
                 </button>
               ))}
             </div>
@@ -812,9 +817,9 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
 function StatBox({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
-      style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", padding: "4px 0 0", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.05, color, letterSpacing: "-.03em" }}>{n}</div>
-      <div style={{ display: "inline-block", fontSize: 15, fontWeight: 600, color: t.text2, marginTop: 2, padding: "2px 0 4px", borderBottom: `4px solid ${active ? t.primaryLine : "transparent"}` }}>{label}</div>
+      style={{ flex: 1, minWidth: 0, background: active ? t.primaryLight : "transparent", border: "none", borderRadius: 14, padding: "8px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
+      <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.05, color }}>{n}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 2 }}>{label}</div>
     </button>
   );
 }
