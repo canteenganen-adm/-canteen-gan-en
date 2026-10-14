@@ -396,7 +396,7 @@ export default function PreOrderAdmin({
             )}
 
             {/* Divider super halus: memudar di kedua ujung */}
-            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
+            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: t.border }} />
 
             {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
             <div className="flex gap-1">
