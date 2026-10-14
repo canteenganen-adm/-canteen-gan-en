@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, RotateCcw } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -349,6 +349,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
 
   const [busy2, setBusy2] = useState(false);
+  const [menuUnduh, setMenuUnduh] = useState(false);
   const download = async (jenis: "xlsx" | "pdf") => {
     if (!txs) return;
     (jenis === "pdf" ? setBusy2 : setBusy)(true);
@@ -426,52 +427,78 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              {/* Tanggal terpilih (kuning) — pemilihnya HANYA kalender di atas; badge kembali ke hari ini */}
-              <div className="flex items-center justify-between gap-2" style={{ margin: "14px 0" }}>
-                <div style={{ height: 44, padding: "0 18px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800 }}>
-                  <Calendar size={18} /> {labelHari(hariAktif)}
-                </div>
-                {ym.y === nowY && ym.m === nowM && hariAktif !== todayYmd && (
-                  <button onClick={() => setDipilih(todayYmd)}
-                    style={{ height: 44, padding: "0 16px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                    Kembali ke hari ini
-                  </button>
-                )}
-              </div>
-
-              {!hariIni ? (
-                <div style={{ ...card, textAlign: "center", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di tanggal ini.</div>
-              ) : (
-                <div style={card}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: t.successText, marginTop: 2 }}>{rupiah(rHari.masuk)}</div>
-                  <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>{rHari.nMasuk} transaksi Lunas</div>
-                  <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
-                  <Baris label="Dari Pre-order" nilai={rupiah(rHari.masukPO)} />
-                  <Baris label="Dari Penjualan" nilai={rupiah(rHari.masukPJ)} />
-                  <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} warna={rHari.belum > 0 ? t.error : undefined} />
-                  {rHari.nBatal > 0 && <Baris label="Dibatalkan (tidak dihitung)" nilai={String(rHari.nBatal)} />}
-                  {rHari.menuList.length > 0 && (
-                    <>
-                      <div style={{ height: 1, background: t.divider, margin: "10px 0 12px" }} />
-                      <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Menu terjual</div>
-                      {rHari.menuList.slice(0, 5).map(([k, v]) => (
-                        <div key={k} className="flex items-center justify-between gap-3" style={{ padding: "5px 0" }}>
-                          <div style={{ fontSize: 15, fontWeight: 600, minWidth: 0 }}>{k}</div>
-                          <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{v.qty.toLocaleString("id-ID")}</div>
-                        </div>
-                      ))}
-                    </>
+              {/* Satu kartu: tanggal terpilih (kuning) + badge kembali ke hari ini + rincian hari itu */}
+              <div style={{ ...card, marginTop: 14 }}>
+                <div className="flex items-center justify-between gap-2" style={{ marginBottom: 14 }}>
+                  <div style={{ height: 44, padding: "0 14px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", flex: "none" }}>
+                    <Calendar size={18} /> {labelHari(hariAktif)}
+                  </div>
+                  {ym.y === nowY && ym.m === nowM && hariAktif !== todayYmd && (
+                    <button onClick={() => setDipilih(todayYmd)}
+                      aria-label="Kembali ke hari ini" className="flex items-center gap-1.5" style={{ height: 44, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                      <RotateCcw size={15} /> Hari ini
+                    </button>
                   )}
                 </div>
-              )}
+                {!hariIni ? (
+                  <div style={{ textAlign: "center", color: t.text2, fontWeight: 600, padding: "6px 0 4px" }}>Tidak ada transaksi di tanggal ini.</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: t.successText, marginTop: 2 }}>{rupiah(rHari.masuk)}</div>
+                    <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>{rHari.nMasuk} transaksi Lunas</div>
+                    <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
+                    <Baris label="Dari Pre-order" nilai={rupiah(rHari.masukPO)} />
+                    <Baris label="Dari Penjualan" nilai={rupiah(rHari.masukPJ)} />
+                    <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} warna={rHari.belum > 0 ? t.error : undefined} />
+                    {rHari.nBatal > 0 && <Baris label="Dibatalkan (tidak dihitung)" nilai={String(rHari.nBatal)} />}
+                    {rHari.menuList.length > 0 && (
+                      <>
+                        <div style={{ height: 1, background: t.divider, margin: "10px 0 12px" }} />
+                        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Menu terjual</div>
+                        {rHari.menuList.slice(0, 5).map(([k, v]) => (
+                          <div key={k} className="flex items-center justify-between gap-3" style={{ padding: "5px 0" }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, minWidth: 0 }}>{k}</div>
+                            <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{v.qty.toLocaleString("id-ID")}</div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
 
           {/* ===== TAB ULASAN: gambaran sebulan ===== */}
           {siap && tab === "ulasan" && (
             <div style={{ paddingTop: 16 }}>
-              <div style={{ ...card, marginBottom: 14 }}>
+              <div style={{ ...card, marginBottom: 14, position: "relative" }}>
+                <button onClick={() => setMenuUnduh((v) => !v)} aria-label="Unduh laporan" aria-expanded={menuUnduh}
+                  style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  <Ellipsis size={22} />
+                </button>
+                {menuUnduh && (
+                  <>
+                    <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
+                    <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
+                    <div role="menu" style={{ position: "absolute", top: 60, right: 10, zIndex: 45, width: "min(290px, calc(100% - 20px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                      {([
+                        { Ic: FileText, label: busy2 ? "Membuat PDF…" : "Unduh PDF", sub: "Ringkas, siap dibaca atau dikirim", on: () => { setMenuUnduh(false); download("pdf"); } },
+                        { Ic: FileSpreadsheet, label: busy ? "Membuat Excel…" : "Unduh Excel", sub: "Lengkap, bisa diolah", on: () => { setMenuUnduh(false); download("xlsx"); } },
+                      ]).map((o, i) => (
+                        <button key={o.label} role="menuitem" onClick={o.on} disabled={txs.length === 0} className="flex items-center"
+                          style={{ gap: 12, width: "100%", minHeight: 56, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, opacity: txs.length === 0 ? 0.5 : 1 }}>
+                          <o.Ic size={21} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 15.5, fontWeight: 700 }}>{o.label}</span>
+                            <span style={{ display: "block", fontSize: 12.5, color: t.text2, marginTop: 1 }}>{o.sub}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
                 <div style={{ fontSize: 30, fontWeight: 800, color: t.successText, marginTop: 2 }}>{rupiah(r.masuk)}</div>
                 <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>{r.nMasuk} transaksi</div>
@@ -530,26 +557,6 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                   )}
                 </>
               )}
-            </div>
-          )}
-
-          {siap && (
-            <div style={{ paddingTop: 18 }}>
-              <div className="flex gap-3">
-                <button onClick={() => download("pdf")} disabled={busy2 || txs.length === 0}
-                  className="flex items-center justify-center gap-2"
-                  style={{ flex: 1, height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontSize: 15.5, fontWeight: 800, cursor: busy2 ? "default" : "pointer", opacity: txs.length === 0 ? 0.5 : 1 }}>
-                  <Download size={19} /> {busy2 ? "Membuat…" : "Unduh PDF"}
-                </button>
-                <button onClick={() => download("xlsx")} disabled={busy || txs.length === 0}
-                  className="flex items-center justify-center gap-2"
-                  style={{ flex: 1, height: 54, borderRadius: 14, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 15.5, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: txs.length === 0 ? 0.5 : 1 }}>
-                  <Download size={19} /> {busy ? "Membuat…" : "Unduh Excel"}
-                </button>
-              </div>
-              <div style={{ fontSize: 12.5, color: t.text2, textAlign: "center", marginTop: 6 }}>
-                PDF: ringkas, siap dibaca, dicetak, atau dikirim. Excel: lengkap, bisa diolah.
-              </div>
             </div>
           )}
         </div>
