@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import BackToTop from "../components/BackToTop";
 import {
   Plus, Minus, ChevronRight, ChevronDown, ArrowLeft, Check, Clock, Trash2,
   Copy, Calendar, StickyNote, ShoppingBag, AlertCircle, X, Search, HelpCircle,
@@ -710,6 +711,7 @@ function Screen({ children, onHelp, showHelp, onCloseHelp, unavailNotice }: {
         </button>
       )}
       {showHelp && onCloseHelp && <HelpModal onClose={onCloseHelp} />}
+      <BackToTop bottom={104} />
     </>
   );
 }
