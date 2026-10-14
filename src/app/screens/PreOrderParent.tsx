@@ -342,7 +342,7 @@ export default function PreOrderParent({
           {/* Pesan lagi untuk anak lain / waktu ambil lain — data pemesan TETAP terisi */}
           <button onClick={() => { setCart({}); setTried(false); setReceipt(null); setStep("menu"); }}
             className="flex items-center justify-center gap-2"
-            style={{ width: "100%", height: 52, marginTop: 10, borderRadius: 14, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+            style={{ width: "100%", height: 52, marginTop: 10, borderRadius: 14, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
             <Plus size={18} /> Buat Pesanan Lagi
           </button>
 
@@ -404,7 +404,7 @@ export default function PreOrderParent({
                   return (
                     <button key={`${a.nama}|${a.kelas}`} onClick={() => pilihAnak(a)}
                       style={{ height: 44, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
                       {a.nama}{a.kelas ? ` · ${a.kelas}` : ""}
                     </button>
                   );
@@ -423,7 +423,7 @@ export default function PreOrderParent({
                 return (
                   <button key={tg} onClick={() => pickTingkat(tg)}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     {tg}
                   </button>
                 );
@@ -453,7 +453,7 @@ export default function PreOrderParent({
                 return (
                   <button key={p} onClick={() => setForm({ ...form, ambil: p })} className="flex items-center gap-1"
                     style={{ height: 46, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     <Clock size={14} /> {p}
                   </button>
                 );
@@ -486,7 +486,7 @@ export default function PreOrderParent({
               const on = k.nama === form.kelas;
               return (
                 <button key={k.id} onClick={() => { setForm({ ...form, kelas: k.nama }); setShowKelasSheet(false); }} className="flex items-center justify-between"
-                  style={{ width: "100%", height: 54, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  style={{ width: "100%", height: 54, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                   <span style={{ fontSize: 16, fontWeight: 700, color: on ? t.amberText : t.text }}>{k.nama}</span>
                   {on && <Check size={18} color={t.amberText} />}
                 </button>
@@ -549,7 +549,7 @@ export default function PreOrderParent({
           className="flex items-center gap-3"
           style={{ margin: "14px 16px 0", width: "calc(100% - 32px)", textAlign: "left", cursor: "pointer",
             background: `linear-gradient(135deg, ${t.primaryLight}, ${t.surfaceSoft})`,
-            border: `1px solid ${t.primary}`, borderRadius: 16, padding: 14 }}>
+            border: `1px solid ${t.primaryLine}`, borderRadius: 16, padding: 14 }}>
           <span style={{ fontSize: 28, flex: "none" }}>🍱</span>
           <span>
             <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: t.amberText }}>Paket Spesial Hari Ini</span>
@@ -567,7 +567,7 @@ export default function PreOrderParent({
             <button key={c} onClick={() => setMenuCat(on ? "Semua" : c)}
               className="flex flex-col items-center"
               style={{ flex: "none", scrollSnapAlign: "start", width: 64, gap: 5, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-              <span style={{ width: 52, height: 52, borderRadius: 16, background: on ? t.primaryLight : t.surface, border: `1.5px solid ${on ? t.primary : t.border}`, display: "grid", placeItems: "center", fontSize: 24 }}>
+              <span style={{ width: 52, height: 52, borderRadius: 16, background: on ? t.primaryLight : t.surface, border: `1.5px solid ${on ? t.primaryLine : t.border}`, display: "grid", placeItems: "center", fontSize: 24 }}>
                 {KAT_EMOJI[c]}
               </span>
               <span style={{ fontSize: 11, fontWeight: 700, color: on ? t.amberText : t.text2, textAlign: "center", lineHeight: 1.2 }}>{c}</span>
@@ -593,7 +593,7 @@ export default function PreOrderParent({
               const habis = sisa !== undefined && sisa <= 0;
               const penuh = sisa !== undefined && !habis && inCart >= sisa;
               return (
-                <div key={m.id} style={{ background: t.surface, border: `1px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14 }}>
+                <div key={m.id} style={{ background: t.surface, border: `1px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 5, minHeight: 34 }}>{toTitleCase(m.name)}</div>
                   <div style={{ fontSize: 12, color: t.text2, marginBottom: 10 }}>
                     {m.variants.length
@@ -763,7 +763,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             ))}
             {/* Rekening — frame TERPISAH dari bullet supaya tidak "kayak
                 list", langsung kebaca sebagai satu kartu pembayaran */}
-            <div style={{ background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 14, padding: "14px 16px" }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.amberText, marginBottom: 5 }}>Transfer ke</div>
               <div style={{ fontSize: 18, fontWeight: 800 }}>BCA 7347028990</div>
               <div style={{ fontSize: 15, color: t.text2, marginTop: 2 }}>a.n. Roswinarti</div>

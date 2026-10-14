@@ -411,7 +411,7 @@ export default function Tagihan({
               return (
                 <button key={val} onClick={() => setSourceFilter(val)}
                   style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: "pointer",
-                    border: `1px solid ${on ? t.primary : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
+                    border: `1px solid ${on ? t.primaryLine : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
                   {label}
                 </button>
               );
@@ -420,7 +420,7 @@ export default function Tagihan({
             <button onClick={() => setFilterSheet(true)}
               className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
-                border: `1px solid ${filterActive ? t.primary : t.border}`, background: filterActive ? t.primaryLight : t.surface, color: filterActive ? t.amberText : t.text2 }}>
+                border: `1px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primaryLight : t.surface, color: filterActive ? t.amberText : t.text2 }}>
               <SlidersHorizontal size={13} /> Filter
               {filterActive && (
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
@@ -682,7 +682,7 @@ export default function Tagihan({
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
-              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Onest', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
+              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Onest', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
                 <Calendar size={16} /> Ubah Tanggal Layanan
                 <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
                   onChange={(e) => {
@@ -752,7 +752,7 @@ export default function Tagihan({
                 return (
                   <button key={val} onClick={() => setSortMode(val)}
                     style={{ flex: "none", height: 42, padding: "0 16px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
                     {SORT_LABEL[val]}
                   </button>
                 );
@@ -764,7 +764,7 @@ export default function Tagihan({
                 <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Tampilkan</div>
                 <button onClick={() => setOnlyUnbilled((v) => !v)}
                   className="flex items-center justify-between"
-                  style={{ width: "100%", height: 50, marginBottom: 20, borderRadius: 12, border: `1.5px solid ${onlyUnbilled ? t.primary : t.border}`, background: onlyUnbilled ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  style={{ width: "100%", height: 50, marginBottom: 20, borderRadius: 12, border: `1.5px solid ${onlyUnbilled ? t.primaryLine : t.border}`, background: onlyUnbilled ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: onlyUnbilled ? t.amberText : t.text }}>Hanya Belum Ditagih</span>
                   {onlyUnbilled && <Check size={17} color={t.amberText} />}
                 </button>
@@ -778,7 +778,7 @@ export default function Tagihan({
                 <button key={val}
                   onClick={() => setDateFilter(val)}
                   className="flex items-center justify-between"
-                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{label}</span>
                   {on && <Check size={17} color={t.amberText} />}
                 </button>
@@ -788,7 +788,7 @@ export default function Tagihan({
               <input type="date" value={pickDate}
                 onChange={(e) => setPickDate(e.target.value)}
                 aria-label="Pilih tanggal"
-                style={{ width: "100%", height: 50, marginTop: 4, marginBottom: 8, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primary}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
+                style={{ width: "100%", height: 50, marginTop: 4, marginBottom: 8, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
             )}
 
             <button onClick={() => setFilterSheet(false)}
@@ -838,9 +838,9 @@ export default function Tagihan({
                  supaya ortu tidak menerima tagihan dua kali */
               <button onClick={toggleMergeWa} className="flex items-center gap-3"
                 style={{ width: "100%", marginBottom: 10, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                  border: `1.5px solid ${t.primary}`, background: t.primaryLight }}>
+                  border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight }}>
                 <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center",
-                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primary}`, color: t.onPrimary }}>
+                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primaryLine}`, color: t.onPrimary }}>
                   {waDraft.merged && <Check size={16} />}
                 </span>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: t.amberText, lineHeight: 1.45 }}>

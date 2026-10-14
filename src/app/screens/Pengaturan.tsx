@@ -270,7 +270,7 @@ export default function Pengaturan({
                   return (
                     <button key={tg} onClick={() => { setETingkat(tg); setEKelas(""); }}
                       style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                       {tg}
                     </button>
                   );
@@ -307,7 +307,7 @@ export default function Pengaturan({
                       <button key={p} onClick={() => setEAmbil(p)}
                         className="flex items-center gap-1"
                         style={{ height: 46, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                          border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                         <Clock size={14} /> {p}
                       </button>
                     );
@@ -342,7 +342,7 @@ export default function Pengaturan({
                 return (
                   <button key={k.id} onClick={() => { setEKelas(k.nama); setShowKelasSheet(false); }}
                     className="flex items-center justify-between"
-                    style={{ width: "100%", height: 52, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
+                    style={{ width: "100%", height: 52, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
                     <span style={{ fontSize: 15.5, fontWeight: 700, color: on ? t.amberText : t.text }}>{k.nama}</span>
                     {on && <Check size={18} color={t.amberText} />}
                   </button>
@@ -554,7 +554,7 @@ export default function Pengaturan({
                 return (
                   <button key={tg} onClick={() => setTingkatFilter(tg)}
                     style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     {tg}
                   </button>
                 );

@@ -118,6 +118,19 @@ function useCanteenStore() {
   /** Timer debounce tulis menu per-id — mengetik nama menu TIDAK boleh
    * jadi satu request per huruf (berat + memicu badai event realtime). */
   const menuWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  /** Penulisan menu yang SEDANG berjalan ke server + penanda "ada penulisan
+   * baru". Muat ulang yang dimulai SEBELUM sebuah penulisan bisa kembali dengan
+   * data lama dan menimpa huruf yang baru diketik (terasa seperti huruf hilang
+   * / teks melompat balik) — hasilnya dibuang bila ada penulisan sejak ia mulai. */
+  const menuWritesInFlight = useRef(0);
+  const menuWriteEpoch = useRef(0);
+  const writeMenuToServer = (item: MenuItem, label: string) => {
+    menuWriteEpoch.current++;
+    menuWritesInFlight.current++;
+    upsertMenuItem(item)
+      .catch((e) => reportError(label, e))
+      .finally(() => { menuWritesInFlight.current--; menuWriteEpoch.current++; });
+  };
 
   /** Cadangan LOKAL status "sudah ditagih" — supaya tombol hijau Ditagih
    * langsung berubah dan BERTAHAN walau data dimuat ulang (mis. balik dari
@@ -134,6 +147,7 @@ function useCanteenStore() {
   /** `skipTx` = lewati penarikan transaksi (ribuan baris). Dipakai untuk muat
    * ulang ringan saat yang berubah cuma menu/pengaturan/kelas. */
   const loadAll = useCallback(async (opts?: { skipTx?: boolean }) => {
+    const epochAtStart = menuWriteEpoch.current;
     try {
       const [menusData, txData, appState, kelasData] = await Promise.all([
         fetchMenus(),
@@ -144,7 +158,7 @@ function useCanteenStore() {
       // Jangan timpa menus saat masih ada tulisan menu yang tertunda
       // (pengguna sedang mengetik di editor) — data server masih versi
       // lama dan akan MENGHAPUS ketikan yang belum tersimpan.
-      if (menuWriteTimers.current.size === 0) setMenus(menusData);
+      if (menuWriteTimers.current.size === 0 && menuWritesInFlight.current === 0 && menuWriteEpoch.current === epochAtStart) setMenus(menusData);
       if (txData) setTransactions(applyBilledLocal(txData));
       setKelasList(kelasData);
       setPreorderOpenLocal(appState.preorderOpen);
@@ -262,7 +276,7 @@ function useCanteenStore() {
         if (existing) clearTimeout(existing);
         timers.set(id, setTimeout(() => {
           timers.delete(id);
-          upsertMenuItem(updated).catch((e) => reportError("patchMenuItem", e));
+          writeMenuToServer(updated, "patchMenuItem");
         }, 600));
       }
       return next;
@@ -274,7 +288,7 @@ function useCanteenStore() {
         m.id === id ? { ...m, channels: { ...m.channels, [key]: !m.channels[key] } } : m
       );
       const updated = next.find((m) => m.id === id);
-      if (updated) upsertMenuItem(updated).catch((e) => reportError("toggleMenuChannel", e));
+      if (updated) writeMenuToServer(updated, "toggleMenuChannel");
       return next;
     });
   };

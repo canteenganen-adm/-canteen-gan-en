@@ -568,11 +568,11 @@ export default function PreOrderAdmin({
               </div>
               <div className="flex gap-2">
                 <button onClick={() => { reopenFor(30); setSheet(null); }}
-                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
                   +30 menit
                 </button>
                 <button onClick={() => { reopenFor(60); setSheet(null); }}
-                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primary}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
                   +1 jam
                 </button>
               </div>
@@ -751,7 +751,7 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}
           style={{ width: 44, height: 44, margin: "-8px 0 -8px -8px", border: "none", background: "none", display: "grid", placeItems: "center", padding: 0, flex: "none", cursor: "pointer" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, display: "grid", placeItems: "center",
-            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : t.text2}`, color: "#fff" }}>
+            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : "#A59B80"}`, color: "#fff" }}>
             {g.allPacked && <Check size={17} strokeWidth={3} />}
             {partial && <span style={{ width: 12, height: 2.5, background: t.text, borderRadius: 2, display: "block" }} />}
           </span>
@@ -786,7 +786,7 @@ function MergedOrderCard({ g, onTap, alt, isLate, packedLate, lateTime }: { g: M
           </div>
         )}
       </div>
-      <div style={{ marginTop: 10, marginLeft: 48, paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primary : t.border}` }}>
+      <div style={{ marginTop: 10, marginLeft: 48, paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primaryLine : t.border}` }}>
         {g.perOrder.length <= 1 ? (
           <ItemLines items={g.flatItems} />
         ) : (
@@ -809,7 +809,7 @@ function Stat({ n, label, tone, active, onClick }: { n: number; label: string; t
   return (
     <button onClick={onClick} aria-pressed={active}
       style={{ flex: 1, background: t.surface, color: t.text,
-        border: active ? `2.5px solid ${t.successText}` : `1.5px solid ${t.border}`,
+        border: active ? `2.5px solid ${t.primaryLine}` : `1.5px solid ${t.border}`,
         borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1, color: col }}>{n}</div>
       <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5, color: t.text2 }}>{label}</div>

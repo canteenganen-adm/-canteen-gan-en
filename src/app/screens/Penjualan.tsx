@@ -237,7 +237,7 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primary : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
+        style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
@@ -287,7 +287,7 @@ export default function Penjualan({
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 42, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 11px 11px 0", cursor: "pointer",
-                background: isBackdate ? "#FFEBD0" : t.surface, border: `1px solid ${isBackdate ? t.primary : t.border}`, borderLeft: "none" }}>
+                background: isBackdate ? "#FFEBD0" : t.surface, border: `1px solid ${isBackdate ? t.primaryLine : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
                 {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
@@ -325,7 +325,7 @@ export default function Penjualan({
               return (
                 <button key={c} onClick={() => setCat(c)}
                   style={{ display: "block", width: "100%", padding: "14px 6px 14px 20px", background: on ? t.primaryLight : "transparent",
-                    border: "none", borderLeft: `3px solid ${on ? t.primary : "transparent"}`,
+                    border: "none", borderLeft: `3px solid ${on ? t.primaryLine : "transparent"}`,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -455,7 +455,7 @@ export default function Penjualan({
                 return (
                   <button key={tg} onClick={() => setForm({ ...form, tingkat: tg, kelas: "" })}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     {tg}
                   </button>
                 );
@@ -473,7 +473,7 @@ export default function Penjualan({
                     return (
                       <button key={k.id} onClick={() => setForm({ ...form, kelas: k.nama })}
                         style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                          border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                         {k.nama}
                       </button>
                     );

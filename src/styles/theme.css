@@ -3,7 +3,7 @@
 :root {
   --font-size: 16px;
   /* Palet Final — Decision Lock §10 */
-  --background: #FFF1DF;
+  --background: #FAF6EE;
   --foreground: #2F2A24;
   --card: #FFFCF7;
   --card-foreground: #2F2A24;
@@ -121,6 +121,12 @@
 }
 
 @layer base {
+  /* Safari iOS memperbesar layar otomatis bila huruf kolom ketik < 16px,
+     lalu layar melompat. Terasa seperti "susah mengetik". Paksa >= 16px. */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

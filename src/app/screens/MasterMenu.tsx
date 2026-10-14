@@ -391,7 +391,7 @@ export default function MasterMenu({
                     <button key={c} onClick={() => setCat(c)}
                       style={{
                         flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primary : t.border}`,
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`,
                         background: on ? t.primaryLight : t.surface,
                         color: on ? t.amberText : t.text2,
                       }}>
@@ -411,7 +411,7 @@ export default function MasterMenu({
             <button onClick={() => setShowUncategorized((v) => !v)}
               className="flex items-center gap-2"
               style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${showUncategorized ? t.primary : "#F0D3A6"}`, background: "#FFEBD0", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
+                border: `1.5px solid ${showUncategorized ? t.primaryLine : "#F0D3A6"}`, background: "#FFEBD0", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
               <Tag size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showUncategorized
@@ -440,7 +440,7 @@ export default function MasterMenu({
                       <button onClick={(e) => { e.stopPropagation(); doRefresh(); }}
                         title="Refresh" aria-label="Refresh pratinjau"
                         style={{ position: "relative", zIndex: 2, width: 40, height: 40, borderRadius: 11,
-                          border: `1.5px solid ${refreshing ? t.primary : t.border}`,
+                          border: `1.5px solid ${refreshing ? t.primaryLine : t.border}`,
                           background: refreshing ? t.primaryLight : t.surface,
                           color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
                         <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
@@ -799,7 +799,7 @@ function ChannelIcon({ on, label, onClick, children }: {
   return (
     <button onClick={onClick} title={label} aria-label={label} aria-pressed={on}
       style={{ width: 44, height: 44, borderRadius: 12, cursor: "pointer",
-        border: `1.5px solid ${on ? t.primary : t.border}`,
+        border: `1.5px solid ${on ? t.primaryLine : t.border}`,
         background: on ? t.primaryLight : t.surface,
         color: on ? t.amberText : t.textDis,
         display: "grid", placeItems: "center", flex: "none" }}>
@@ -814,7 +814,7 @@ function ChannelChip({ on, icon, label, onClick }: { on: boolean; icon: React.Re
       className="flex items-center gap-2"
       style={{
         flex: 1, height: 44, borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14, justifyContent: "center",
-        border: `1.5px solid ${on ? t.primary : t.border}`,
+        border: `1.5px solid ${on ? t.primaryLine : t.border}`,
         background: on ? t.primaryLight : t.surfaceSoft,
         color: on ? t.amberText : t.textDis,
       }}>
@@ -902,7 +902,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                 return (
                   <button key={c} onClick={() => pickCategory(c)}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
                     {c}
                   </button>
                 );
@@ -910,7 +910,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
               <button onClick={() => { setNewCatMode(true); setNewCat(""); }}
                 className="flex items-center gap-1"
                 style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  border: `1.5px dashed ${newCatMode ? t.primary : t.border}`, background: newCatMode ? t.primaryLight : t.surfaceSoft, color: t.amberText }}>
+                  border: `1.5px dashed ${newCatMode ? t.primaryLine : t.border}`, background: newCatMode ? t.primaryLight : t.surfaceSoft, color: t.amberText }}>
                 <Plus size={16} /> Lainnya
               </button>
             </div>
@@ -980,7 +980,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                 </div>
               ))}
               <button onClick={addVariant} className="flex items-center justify-center gap-2"
-                style={{ width: "100%", height: 46, borderRadius: 10, border: `1.5px dashed ${t.primary}`, background: t.surfaceSoft, color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 4 }}>
+                style={{ width: "100%", height: 46, borderRadius: 10, border: `1.5px dashed ${t.primaryLine}`, background: t.surfaceSoft, color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 4 }}>
                 <Plus size={18} /> Tambah Varian
               </button>
             </Field>

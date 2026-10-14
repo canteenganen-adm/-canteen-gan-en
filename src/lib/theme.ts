@@ -7,8 +7,9 @@ export const t = {
   primary: "#FFE66D",
   primaryHover: "#F2D84F",
   primaryLight: "#F4F0BB",
+  primaryLine: "#F2B53C", // garis/bingkai elemen terpilih (kuning madu, BUKAN gelap)
   onPrimary: "#2A2820",
-  bg: "#FFF1DF",
+  bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
   surfaceAlt: "#CFE1B9", // kartu pesanan genap (sage) supaya pesanan bersebelahan terbedakan
@@ -24,9 +25,9 @@ export const t = {
   warnText: "#8F4E08",
   error: "#A82F24",
   errorBg: "#FBE7E3",
-  border: "#DCD6C2",
-  borderStrong: "#C4BDA3",
-  divider: "#E6E1CF",
+  border: "#E8E0D2",
+  borderStrong: "#DDD4C0",
+  divider: "#F1EBE0",
   amberText: "#2A2820",
 } as const;
 
