@@ -350,8 +350,8 @@ export default function PreOrderAdmin({
 
           {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
           <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
-            <div className="flex items-center justify-between">
-              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Sesi Pre-order</span>
+            {/* Judul halaman sudah "Pre-order": tidak perlu label "Sesi Pre-order" lagi. */}
+            <div className="flex items-center">
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
                   background: isAutoClosed ? "#FFF4BF" : open ? "#D6F2B0" : "#FFDDD7",
