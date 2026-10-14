@@ -394,11 +394,12 @@ export default function PreOrderAdmin({
               kiri: ‹ tanggal › dan di bawahnya "tutup jam" kecil (satu tumpukan)
               kanan: pil status, tegak lurus di tengah tumpukan
               lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
-          <div style={{ marginTop: 8 }}>
+          {/* SATU bingkai luar untuk seluruh blok (tanggal + angka + tombol); elemen di dalamnya TANPA border sendiri (permintaan pemilik). */}
+          <div style={{ marginTop: 8, border: `1.5px solid ${t.border}`, borderRadius: 18, background: t.surface, padding: "10px 8px 4px" }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
             <div className="flex items-center" style={{ gap: 6 }}>
               <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
               <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
@@ -416,8 +417,7 @@ export default function PreOrderAdmin({
               </button>
             )}
 
-            {/* Divider super halus: memudar di kedua ujung */}
-            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: t.border }} />
+            <div style={{ height: 10 }} />
 
             {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
             <div className="flex gap-1">
