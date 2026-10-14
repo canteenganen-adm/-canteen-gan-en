@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, RotateCcw } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, Flag, RotateCcw, Trophy } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -513,15 +513,14 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
                     <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
                     <div role="menu" style={{ position: "absolute", top: 60, right: 10, zIndex: 45, width: "min(290px, calc(100% - 20px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
                       {([
-                        { Ic: FileText, label: busy2 ? "Membuat PDF…" : "Unduh PDF", sub: "Ringkas, siap dibaca atau dikirim", on: () => { setMenuUnduh(false); download("pdf"); } },
-                        { Ic: FileSpreadsheet, label: busy ? "Membuat Excel…" : "Unduh Excel", sub: "Lengkap, bisa diolah", on: () => { setMenuUnduh(false); download("xlsx"); } },
+                        { Ic: FileText, label: busy2 ? "Membuat PDF…" : "Unduh PDF", on: () => { setMenuUnduh(false); download("pdf"); } },
+                        { Ic: FileSpreadsheet, label: busy ? "Membuat Excel…" : "Unduh Excel", on: () => { setMenuUnduh(false); download("xlsx"); } },
                       ]).map((o, i) => (
                         <button key={o.label} role="menuitem" onClick={o.on} disabled={txs.length === 0} className="flex items-center"
-                          style={{ gap: 12, width: "100%", minHeight: 56, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, opacity: txs.length === 0 ? 0.5 : 1 }}>
+                          style={{ gap: 12, width: "100%", minHeight: 52, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, opacity: txs.length === 0 ? 0.5 : 1 }}>
                           <o.Ic size={21} />
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: "block", fontSize: 15.5, fontWeight: 700 }}>{o.label}</span>
-                            <span style={{ display: "block", fontSize: 12.5, color: t.text2, marginTop: 1 }}>{o.sub}</span>
                           </span>
                         </button>
                       ))}
@@ -573,7 +572,7 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
 
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Menu Terlaris · {BULAN[ym.m]} {ym.y}</div>
-                    <Donat data={menuOmzet(r)} />
+                    <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
 
                   <div style={{ ...card, marginBottom: 14 }}>
@@ -590,16 +589,8 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
 
                   {u.pemesan.length > 0 && (
                     <div style={card}>
-                      <div style={sectionTitle}>Pemesan Teratas</div>
-                      {u.pemesan.map((pm, i) => (
-                        <div key={pm.nama + pm.kelas} className="flex items-center gap-3" style={{ padding: "8px 0", borderTop: i ? `1px solid ${t.divider}` : "none" }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 15, fontWeight: 700 }}>{pm.nama}</div>
-                            <div style={{ fontSize: 12.5, color: t.text2 }}>{pm.kelas ? `${pm.kelas} · ` : ""}{pm.n} pesanan</div>
-                          </div>
-                          <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>{rupiah(pm.nilai)}</div>
-                        </div>
-                      ))}
+                      <div className="flex items-center gap-2" style={sectionTitle}><Trophy size={19} /> Balapan Pemesan</div>
+                      <Balapan rows={u.pemesan} />
                     </div>
                   )}
                 </>
@@ -645,13 +636,12 @@ function Batang({ rows }: { rows: { label: string; nilai: number; teks: string }
    supaya irisan bersebelahan tetap terpisah jelas). */
 const IRIS = t.chart;
 
-function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
+function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: number }][]; bulan: string; tahun: number }) {
   // Donat = 5 menu teratas menurut OMZET (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
   // kalau digabung jadi irisan "Lainnya", irisan itu mendominasi dan donat tidak informatif.
   const top = data.slice(0, 5);
   const total = top.reduce((n, [, v]) => n + v.nilai, 0);
   if (!total) return null;
-  const lainNilai = data.slice(5).reduce((n, [, v]) => n + v.nilai, 0);
   const baris = top.map(([k, v], i) => ({ k, qty: v.qty, nilai: v.nilai, warna: IRIS[i] }));
   const R = 52, SW = 24, C = 2 * Math.PI * R;
   let acc = 0;
@@ -672,8 +662,8 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
           </g>
         </svg>
         <div style={{ position: "absolute", textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.1 }}>Rp{(total / 1_000_000).toFixed(1).replace(".", ",")} jt</div>
-          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas</div>
+          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{bulan}</div>
+          <div style={{ fontSize: 14, color: t.text2, fontWeight: 700 }}>{tahun}</div>
         </div>
       </div>
       {baris.map((b) => (
@@ -684,11 +674,38 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
           <div style={{ width: 40, textAlign: "right", fontSize: 13.5, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((b.nilai / total) * 100)}%</div>
         </div>
       ))}
-      {lainNilai > 0 && (
-        <div style={{ fontSize: 13, color: t.text2, fontWeight: 600, marginTop: 8 }}>
-          Menu lainnya {rupiah(lainNilai)} · daftar lengkap ada di file Excel
-        </div>
-      )}
+    </div>
+  );
+}
+
+/** Peringkat pemesan ala balapan: lintasan tipis, pelari kuning di posisi sesuai belanjaan, bendera finis di ujung. */
+function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nilai: number }[] }) {
+  const max = Math.max(1, ...rows.map((x) => x.nilai));
+  return (
+    <div>
+      {rows.map((x, i) => {
+        const pct = Math.max(4, Math.round((x.nilai / max) * 100));
+        return (
+          <div key={x.nama + x.kelas} style={{ padding: "10px 0", borderTop: i ? `1px solid ${t.divider}` : "none" }}>
+            <div className="flex items-center gap-3">
+              <div style={{ width: 36, height: 36, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", fontSize: 16, fontWeight: 800,
+                background: i === 0 ? t.primary : "transparent", color: t.text, border: i === 0 ? "none" : `1.5px solid ${t.borderStrong}` }}>
+                {i === 0 ? <Trophy size={19} /> : i + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nama}</div>
+                <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>{x.kelas ? `${x.kelas} · ` : ""}{x.n} pesanan</div>
+              </div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>{rupiah(x.nilai)}</div>
+            </div>
+            <div style={{ position: "relative", height: 8, borderRadius: 999, background: t.divider, margin: "10px 22px 0 48px" }}>
+              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: t.primary }} />
+              <span style={{ position: "absolute", top: -3, left: `calc(${pct}% - 7px)`, width: 14, height: 14, borderRadius: "50%", background: t.primary, border: `2px solid ${t.text}`, boxSizing: "border-box" }} />
+              <Flag size={15} color={t.text2} style={{ position: "absolute", right: -20, top: -4 }} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
