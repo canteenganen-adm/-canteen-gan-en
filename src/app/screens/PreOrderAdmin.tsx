@@ -421,8 +421,8 @@ export default function PreOrderAdmin({
             <div className="flex" style={{ marginTop: 18 }}>
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
                 <button key={sh} onClick={() => setSheet(sh)} aria-label={aria}
-                  style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left" }}>
-                  <span style={{ width: 54, height: 54, borderRadius: "50%", background: t.primaryLight, color: t.text, display: "grid", placeItems: "center" }}>
+                  style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "center" }}>
+                  <span style={{ width: 54, height: 54, borderRadius: "50%", background: t.primaryLight, color: t.text, display: "grid", placeItems: "center", margin: "0 auto" }}>
                     <Ic size={24} />
                   </span>
                   <span style={{ display: "block", marginTop: 6, fontSize: 14, fontWeight: 600, color: t.text2 }}>{label}</span>
@@ -812,7 +812,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
 function StatBox({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
-      style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", padding: "4px 0 0", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+      style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", padding: "4px 0 0", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.05, color, letterSpacing: "-.03em" }}>{n}</div>
       <div style={{ display: "inline-block", fontSize: 15, fontWeight: 600, color: t.text2, marginTop: 2, padding: "2px 0 4px", borderBottom: `4px solid ${active ? t.primaryLine : "transparent"}` }}>{label}</div>
     </button>
