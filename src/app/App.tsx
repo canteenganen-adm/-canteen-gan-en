@@ -745,7 +745,7 @@ function MainShell({ store }: { store: CanteenStore }) {
       {/* Bottom nav — 4 tab, tanpa lebih. Teks/ikon gelap di atas amber. */}
       {showTop && (
         <button onClick={keAtas} aria-label="Kembali ke atas"
-          style={{ position: "fixed", right: 16, bottom: `calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`, zIndex: 30, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 16px rgba(60,48,20,.22)" }}>
+          style={{ position: "fixed", right: 16, bottom: `calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`, zIndex: 30, width: 48, height: 48, borderRadius: "50%", border: `2px solid ${t.primary}`, background: t.text, color: t.primary, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 16px rgba(42,40,32,.35)" }}>
           <ArrowUp size={22} strokeWidth={2.4} />
         </button>
       )}
