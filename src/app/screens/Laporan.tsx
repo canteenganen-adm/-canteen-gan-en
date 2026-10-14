@@ -494,7 +494,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 <>
                 {/* 2 · Kalender harian */}
                 <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 10 }}>Pemasukan per hari</div>
+                  <div style={{ ...judulKartu, marginBottom: 10 }}>Pemasukan per hari</div>
                   <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
                     {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
                       <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>
@@ -537,7 +537,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 
                 {/* 3 · Menu terlaris */}
                 <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 8 }}>Menu terlaris</div>
+                  <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
                   <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                 </div>
 
@@ -555,7 +555,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
               {tab === "rincian" && (
                 <>
                 <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 6 }}>Ringkasan</div>
+                  <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
                   <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
                   <BarisRincian a="Pre-order" b={rupiah(r.masukPO)} />
                   <BarisRincian a="Penjualan" b={rupiah(r.masukPJ)} />
@@ -564,7 +564,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 </div>
 
                 <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 6 }}>Per hari</div>
+                  <div style={{ ...judulKartu, marginBottom: 8 }}>Per hari</div>
                   <Tabel kolom="46px 34px minmax(0,1fr) minmax(0,1fr)" kepala={["Tgl", "Jml", "Lunas", "Belum"]}
                     baris={[
                       ...[...r.hari].reverse().map(([d, v]) => [`${Number(d.slice(8))} ${BLN_PENDEK[Number(d.slice(5, 7)) - 1]}`, String(v.n), rupiah(v.masuk), v.belum > 0 ? rupiah(v.belum) : "–"]),
@@ -573,14 +573,14 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 </div>
 
                 <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 6 }}>Per menu</div>
+                  <div style={{ ...judulKartu, marginBottom: 8 }}>Per menu</div>
                   <Tabel kolom="minmax(0,1fr) 54px 96px" kepala={["Menu", "Terjual", "Omzet"]}
                     baris={menuOmzet(r).map(([k, v]) => [k, v.qty.toLocaleString("id-ID"), rupiah(v.nilai)])} />
                 </div>
 
                 {u.tingkat.length > 0 && (
                   <div style={card}>
-                    <div style={{ ...kecil, marginBottom: 6 }}>Per tingkat</div>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Per tingkat</div>
                     <Tabel kolom="minmax(0,1fr) 62px 96px" kepala={["Tingkat", "Pesanan", "Nilai"]}
                       baris={u.tingkat.map(([k, v]) => [k, v.n.toLocaleString("id-ID"), rupiah(v.nilai)])} />
                   </div>
@@ -588,7 +588,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 
                 {pk && (pk.dikemas > 0 || pk.belum > 0) && (
                   <div style={card}>
-                    <div style={{ ...kecil, marginBottom: 6 }}>Packing Pre-order</div>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Packing Pre-order</div>
                     <BarisRincian a="Dikemas tepat waktu" b={pk.tepat.toLocaleString("id-ID")} />
                     <BarisRincian a="Telat dikemas" b={pk.telat.toLocaleString("id-ID")} />
                     {pk.rataMenit > 0 && <BarisRincian a="Rata-rata telat" b={`${pk.rataMenit} menit`} />}
@@ -606,6 +606,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 }
 
 const kecil: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: t.text2 };
+/** Judul kartu: LEBIH TEGAS daripada isinya (hierarki: judul > isi > kepala kolom). */
+const judulKartu: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-.01em" };
 
 /** Rupiah ringkas: Rp2,8 jt · Rp717 rb · Rp950 */
 function rpSingkat(n: number): string {
@@ -678,7 +680,7 @@ function BarisRincian({ a, b, tebal, kepala }: { a: string; b: string; tebal?: b
 }
 
 /** Tabel: baris judul + baris isi, kolom angka rata kanan. kolom = grid-template-columns. */
-function Tabel({ kolom, kepala, baris, totalAkhir }: { kolom: string; kepala: string[]; baris: string[][]; totalAkhir?: boolean }) {
+function Tabel({ kolom, kepala, baris, totalAkhir, lembut }: { kolom: string; kepala: string[]; baris: string[][]; totalAkhir?: boolean; lembut?: number[] }) {
   const sel = (i: number): React.CSSProperties => ({ textAlign: i === 0 ? "left" : "right", minWidth: 0, overflowWrap: "anywhere" });
   return (
     <div>
@@ -689,7 +691,7 @@ function Tabel({ kolom, kepala, baris, totalAkhir }: { kolom: string; kepala: st
         const total = totalAkhir && ri === baris.length - 1;
         return (
           <div key={ri} style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "8px 0", alignItems: "baseline", fontSize: 13.5, borderTop: ri ? `${total ? "1.5px" : "1px"} solid ${total ? t.borderStrong : t.divider}` : "none", fontWeight: total ? 700 : 500 }}>
-            {b.map((c, i) => <div key={i} style={{ ...sel(i), fontWeight: total ? 700 : 500 }}>{c}</div>)}
+            {b.map((c, i) => <div key={i} style={{ ...sel(i), fontWeight: total ? 700 : lembut?.includes(i) ? 400 : 500, color: !total && lembut?.includes(i) ? t.text2 : t.text }}>{c}</div>)}
           </div>
         );
       })}

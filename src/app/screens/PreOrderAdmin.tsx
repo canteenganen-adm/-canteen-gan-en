@@ -356,7 +356,15 @@ export default function PreOrderAdmin({
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
-            <div className="flex">
+            <div className="flex items-center" style={{ gap: 8 }}>
+              <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
+                style={{ flex: "none", height: 36, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
+                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
+                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
+                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
+                <Power size={12} strokeWidth={2.4} />
+                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
+              </button>
               <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}><Settings size={19} /></button>
             </div>
           </div>
@@ -373,20 +381,12 @@ export default function PreOrderAdmin({
                 <Calendar size={24} color={t.text} />
               </button>
               <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
-                <div style={{ fontSize: 19, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{tglPendekPO(viewDate)}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center"
                   style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
                   Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
-              <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", marginRight: 6, height: 32, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
-                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
-                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
-                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
-                <Power size={12} strokeWidth={2.4} />
-                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
-              </button>
             </div>
             {!lihatSesi && (
               <button onClick={() => setViewDate(serviceDate)}
@@ -402,9 +402,9 @@ export default function PreOrderAdmin({
             <div className="flex gap-1">
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
-              <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
+              <StatBox n={packed} label="Sudah" color={t.text} active={packedFilter === "sudah"}
                 onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
-              <StatBox n={belum} label="Belum" color={t.error} active={packedFilter === "belum"}
+              <StatBox n={belum} label="Belum" color={t.text} active={packedFilter === "belum"}
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
 
