@@ -391,12 +391,11 @@ export default function MasterMenu({
                     <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
                       style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
                     {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-                    {/* + di DALAM kolom cari (satu blok, bukan dua) */}
-                    <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
-                      style={{ flex: "none", width: 34, height: 34, marginRight: -6, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 10, border: "none", cursor: "pointer" }}>
-                      <Plus size={20} />
-                    </button>
                   </div>
+                  <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
+                    style={{ flex: "none", width: 44, height: 44, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, cursor: "pointer" }}>
+                    <Plus size={22} />
+                  </button>
                 </div>
                 {aksiMenu && (
                   <>
