@@ -353,54 +353,53 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Bagian atas (sesuai sketsa pemilik):
-              ‹ tanggal ›  ........ (status)
-                         tutup jam 08:00 (kecil)
-              ───── divider halus ─────
-              [ Pesanan ] [ Sudah ] [ Belum ]   +   baris tombol teks */}
-          <div style={{ marginTop: 14 }}>
+          {/* Bagian atas — padat, tanpa ruang kosong:
+              kiri: ‹ tanggal › dan di bawahnya "tutup jam" kecil (satu tumpukan)
+              kanan: pil status, tegak lurus di tengah tumpukan
+              lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
+          <div style={{ marginTop: 8 }}>
             <div className="flex items-center justify-between" style={{ gap: 8 }}>
-              <div className="flex items-center" style={{ minWidth: 0 }}>
-                <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
-                  style={{ width: 30, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                  <ChevronLeft size={22} />
-                </button>
-                <button onClick={() => setSheet("gantiTanggal")} className="flex items-center" aria-label="Ganti tanggal"
-                  style={{ gap: 6, minHeight: 44, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, whiteSpace: "nowrap" }}>
-                  <Calendar size={18} color={t.text} style={{ flex: "none" }} />
-                  <span style={{ fontSize: 17, fontWeight: 800, color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
-                </button>
-                <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
-                  style={{ width: 30, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                  <ChevronRight size={22} />
+              <div style={{ minWidth: 0 }}>
+                <div className="flex items-center">
+                  <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
+                    style={{ width: 30, height: 38, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                    <ChevronLeft size={22} />
+                  </button>
+                  <button onClick={() => setSheet("gantiTanggal")} className="flex items-center" aria-label="Ganti tanggal"
+                    style={{ gap: 6, minHeight: 38, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, whiteSpace: "nowrap" }}>
+                    <Calendar size={18} color={t.text} style={{ flex: "none" }} />
+                    <span style={{ fontSize: 17, fontWeight: 800, color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
+                  </button>
+                  <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
+                    style={{ width: 30, height: 38, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                    <ChevronRight size={22} />
+                  </button>
+                </div>
+                <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                  style={{ gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "0 0 0 30px", minHeight: 26, fontFamily: "inherit" }}>
+                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={14} />
                 </button>
               </div>
-              <button onClick={onToggleOpen} className="flex items-center gap-1.5" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", height: 36, padding: "0 11px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
+              <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
+                style={{ flex: "none", height: 38, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
                   border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
                   color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
             </div>
-            <div className="flex justify-end">
-              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                style={{ gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 0 4px 8px", fontFamily: "inherit" }}>
-                Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={15} />
-              </button>
-            </div>
             {!lihatSesi && (
               <button onClick={() => setViewDate(serviceDate)}
-                style={{ display: "block", background: "transparent", border: "none", minHeight: 34, padding: "2px 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                style={{ display: "block", background: "transparent", border: "none", minHeight: 30, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                 Kembali ke Hari Ini
               </button>
             )}
 
             {/* Divider super halus: memudar di kedua ujung */}
-            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 14px", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
+            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
 
-            {/* Tiga kotak angka (bintang utama); ketuk = saring daftar */}
-            <div className="flex gap-2">
+            {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
+            <div className="flex gap-1">
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
               <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
@@ -409,19 +408,19 @@ export default function PreOrderAdmin({
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
 
-            {/* Tombol: satu baris teks beriring ikon (semua tetap terlihat) */}
-            <div className="flex justify-around" style={{ marginTop: 4 }}>
+            {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
+            <div className="flex justify-around">
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
                 <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
-                  style={{ gap: 7, minHeight: 48, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14.5, fontWeight: 700, color: t.text }}>
-                  <Ic size={19} /> {label}
+                  style={{ gap: 6, minHeight: 44, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                  <Ic size={18} /> {label}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Cari murid: satu baris penuh. */}
-          <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
+          <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
             <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
               <Search size={19} color={t.text2} style={{ flex: "none" }} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
@@ -784,9 +783,9 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
 function StatBox({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
-      style={{ flex: 1, minWidth: 0, background: t.surface, border: active ? `2.5px solid ${t.primaryLine}` : `1.5px solid ${t.border}`, borderRadius: 14, padding: "10px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
+      style={{ flex: 1, minWidth: 0, background: active ? t.primaryLight : "transparent", border: "none", borderRadius: 14, padding: "8px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.05, color }}>{n}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 3 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 2 }}>{label}</div>
     </button>
   );
 }
