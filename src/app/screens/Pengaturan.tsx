@@ -604,7 +604,7 @@ export default function Pengaturan({
   }
 
   /* ===== VIEW: Laporan Bulanan ===== */
-  if (laporanOpen) return <Laporan onClose={() => setLaporanOpen(false)} />;
+  if (laporanOpen) return <Laporan onClose={() => setLaporanOpen(false)} pickupSchedules={pickupSchedules} />;
 
   /* ===== VIEW: Tong Sampah ===== */
   if (trashOpen) {

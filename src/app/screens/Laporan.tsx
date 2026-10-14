@@ -4,7 +4,7 @@ import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
 import PaperTabs from "../components/PaperTabs";
-import type { Transaction } from "../../types";
+import type { Transaction, PickupSchedule } from "../../types";
 
 /* ============================================================
    LAPORAN BULANAN — dibuka dari Pengaturan → Data.
@@ -290,11 +290,44 @@ function buildUlasan(txs: Transaction[]) {
   };
 }
 
+/** Packing Pre-order: tepat waktu vs telat dikemas. Aturan SAMA dengan halaman Pre-order: jam kemas = jam server
+ * (packedAt) dibanding jam Waktu Ambil (Pengaturan, per tingkat); dikemas H-1 tidak telat; dikemas setelah hari
+ * layanan = telat. Pesanan dihitung menurut TANGGAL LAYANAN yang jatuh di bulan itu. */
+function hitungPacking(txs: Transaction[], schedules: PickupSchedule[], year: number, month: number) {
+  const bulan = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const hariIniWib = wibTanggal(new Date().toISOString());
+  const toMin = (hhmm: string) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+  let dikemas = 0, tepat = 0, telat = 0, belum = 0, menitTotal = 0, nMenit = 0;
+  for (const tx of txs) {
+    if (tx.source !== "preorder" || tx.cancelledAt) continue;
+    const sd = tx.serviceDate ?? wibTanggal(tx.createdAt);
+    if (!sd.startsWith(bulan)) continue;
+    if (!tx.packed) { if (sd < hariIniWib) belum++; continue; }
+    if (!tx.packedAt) continue;
+    const sched = schedules.find((x) => x.name === tx.waktuAmbil);
+    const tk = tx.customer.tingkat ?? "";
+    const jam = sched ? (tk === "Guru/Karyawan" ? sched.byTingkat?.[tk] : (sched.byTingkat?.[tk] || sched.defaultTime)) : undefined;
+    if (!jam) continue;
+    dikemas++;
+    const pd = wibTanggal(tx.packedAt);
+    let isLate: boolean;
+    if (pd < sd) isLate = false;
+    else if (pd > sd) isLate = true;
+    else {
+      const jamKemas = wibJam(tx.packedAt);
+      isLate = jamKemas > jam;
+      if (isLate) { menitTotal += toMin(jamKemas) - toMin(jam); nMenit++; }
+    }
+    if (isLate) telat++; else tepat++;
+  }
+  return { dikemas, tepat, telat, belum, rataMenit: nMenit ? Math.round(menitTotal / nMenit) : 0 };
+}
+
 const card: React.CSSProperties = { background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: "16px 16px" };
 const sectionTitle: React.CSSProperties = { fontSize: 17, fontWeight: 800, marginBottom: 10 };
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export default function Laporan({ onClose }: { onClose: () => void }) {
+export default function Laporan({ onClose, pickupSchedules }: { onClose: () => void; pickupSchedules: PickupSchedule[] }) {
   const now = new Date(Date.now() + 7 * 3_600_000);
   const nowY = now.getUTCFullYear(), nowM = now.getUTCMonth();
   const todayYmd = `${nowY}-${pad2(nowM + 1)}-${pad2(now.getUTCDate())}`;
@@ -327,6 +360,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
   const u = useMemo(() => (txs ? buildUlasan(txs) : null), [txs]);
+  const pk = useMemo(() => (txs ? hitungPacking(txs, pickupSchedules, ym.y, ym.m) : null), [txs, pickupSchedules, ym]);
   const perHariMap = useMemo(() => new Map(r ? r.hari : []), [r]);
   const txPerHari = useMemo(() => {
     const m = new Map<string, Transaction[]>();
@@ -437,35 +471,28 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
 
               {/* Satu kartu: tanggal terpilih (kuning) + rincian hari itu */}
               <div style={{ ...card, marginTop: 14 }}>
-                <div className="flex items-center" style={{ marginBottom: 14 }}>
-                  <div style={{ height: 44, padding: "0 14px", borderRadius: 12, background: t.primary, color: t.onPrimary, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", flex: "none" }}>
-                    <Calendar size={18} /> {labelHari(hariAktif)}
+                {/* Kiri: label + tanggal kuning · Kanan: nominal besar + jumlah transaksi */}
+                <div className="flex items-start justify-between gap-3">
+                  <div style={{ flex: "none" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
+                    <div style={{ marginTop: 8, height: 34, padding: "0 11px", borderRadius: 10, background: t.primary, color: t.onPrimary, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>
+                      <Calendar size={16} /> {labelHari(hariAktif)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", minWidth: 0 }}>
+                    <div style={{ fontSize: rHari.masuk >= 10_000_000 ? 22 : 28, fontWeight: 800, color: t.successText, lineHeight: 1.15, whiteSpace: "nowrap" }}>{rupiah(rHari.masuk)}</div>
+                    <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 6 }}>{rHari.nMasuk} transaksi Lunas</div>
                   </div>
                 </div>
+                <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
                 {!hariIni ? (
                   <div style={{ textAlign: "center", color: t.text2, fontWeight: 600, padding: "6px 0 4px" }}>Tidak ada transaksi di tanggal ini.</div>
                 ) : (
                   <>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
-                    <div style={{ fontSize: 30, fontWeight: 800, color: t.successText, marginTop: 2 }}>{rupiah(rHari.masuk)}</div>
-                    <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>{rHari.nMasuk} transaksi Lunas</div>
-                    <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
                     <Baris label="Dari Pre-order" nilai={rupiah(rHari.masukPO)} />
                     <Baris label="Dari Penjualan" nilai={rupiah(rHari.masukPJ)} />
                     <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} warna={rHari.belum > 0 ? t.error : undefined} />
                     {rHari.nBatal > 0 && <Baris label="Dibatalkan (tidak dihitung)" nilai={String(rHari.nBatal)} />}
-                    {rHari.menuList.length > 0 && (
-                      <>
-                        <div style={{ height: 1, background: t.divider, margin: "10px 0 12px" }} />
-                        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Menu terjual</div>
-                        {rHari.menuList.slice(0, 5).map(([k, v]) => (
-                          <div key={k} className="flex items-center justify-between gap-3" style={{ padding: "5px 0" }}>
-                            <div style={{ fontSize: 15, fontWeight: 600, minWidth: 0 }}>{k}</div>
-                            <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{v.qty.toLocaleString("id-ID")}</div>
-                          </div>
-                        ))}
-                      </>
-                    )}
                   </>
                 )}
               </div>
@@ -525,6 +552,24 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                     <Baris label="Rata-rata masuk per hari" nilai={rupiah(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} />
                     <Baris label="Rata-rata per transaksi" nilai={rupiah(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} />
                   </div>
+
+                  {pk && (pk.dikemas > 0 || pk.belum > 0) && (
+                    <div style={{ ...card, marginBottom: 14 }}>
+                      <div style={sectionTitle}>Packing Pre-order</div>
+                      {pk.dikemas > 0 && (
+                        <>
+                          <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: t.divider, marginBottom: 10 }} role="img" aria-label="Tepat waktu dan telat dikemas">
+                            <div style={{ width: `${(pk.tepat / pk.dikemas) * 100}%`, background: t.success }} />
+                            <div style={{ width: `${(pk.telat / pk.dikemas) * 100}%`, background: t.error }} />
+                          </div>
+                          <Baris label="Tepat waktu" nilai={`${pk.tepat.toLocaleString("id-ID")} (${Math.round((pk.tepat / pk.dikemas) * 100)}%)`} warna={t.successText} />
+                          <Baris label="Telat dikemas" nilai={`${pk.telat.toLocaleString("id-ID")} (${Math.round((pk.telat / pk.dikemas) * 100)}%)`} warna={pk.telat > 0 ? t.error : undefined} />
+                          {pk.rataMenit > 0 && <Baris label="Rata-rata telat" nilai={`${pk.rataMenit} menit`} />}
+                        </>
+                      )}
+                      {pk.belum > 0 && <Baris label="Belum ditandai dikemas" nilai={pk.belum.toLocaleString("id-ID")} />}
+                    </div>
+                  )}
 
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Menu Terlaris · {BULAN[ym.m]} {ym.y}</div>
