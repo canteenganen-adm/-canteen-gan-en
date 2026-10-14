@@ -35,15 +35,15 @@ const itemLabel = (i: { name: string; variant?: string | null }) => toTitleCase(
 
 function buildReport(txs: Transaction[]) {
   let masuk = 0, nMasuk = 0, belum = 0, nBelum = 0, nBatal = 0, masukPO = 0, masukPJ = 0;
-  const perHari = new Map<string, { n: number; masuk: number; belum: number }>();
+  const perHari = new Map<string, { n: number; nMasuk: number; masuk: number; belum: number }>();
   const menu = new Map<string, { qty: number; nilai: number }>();
   for (const tx of txs) {
     const st = statusOf(tx);
     if (st === "Dibatalkan") { nBatal++; continue; }
-    const day = perHari.get(wibTanggal(tx.createdAt)) ?? { n: 0, masuk: 0, belum: 0 };
+    const day = perHari.get(wibTanggal(tx.createdAt)) ?? { n: 0, nMasuk: 0, masuk: 0, belum: 0 };
     day.n++;
     if (st === "Lunas") {
-      masuk += tx.total; nMasuk++; day.masuk += tx.total;
+      masuk += tx.total; nMasuk++; day.masuk += tx.total; day.nMasuk++;
       if (tx.source === "preorder") masukPO += tx.total; else masukPJ += tx.total;
     } else { belum += tx.total; nBelum++; day.belum += tx.total; }
     perHari.set(wibTanggal(tx.createdAt), day);
@@ -577,17 +577,32 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-between" style={{ gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
-                    <div style={kecil}>{hariData ? `${hariData.n} transaksi` : "Tidak ada transaksi"}</div>
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
+                  <div className="flex items-center justify-between" style={{ gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
+                      <div style={kecil}>Masuk (Lunas)</div>
+                    </div>
+                    {tglIni && hariAktif !== todayYmd && (
+                      <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
+                        style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                        <RotateCcw size={14} /> Hari ini
+                      </button>
+                    )}
                   </div>
-                  {tglIni && hariAktif !== todayYmd && (
-                    <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
-                      style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
-                      <RotateCcw size={14} /> Hari ini
-                    </button>
+                  {hariData && (
+                    <>
+                      <div style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "12px 0 8px" }} role="img" aria-label="Lunas dan belum dibayar hari ini">
+                        <div style={{ flex: hariData.masuk, background: t.chart[1] }} />
+                        <div style={{ flex: hariData.belum, background: t.chart[0], borderLeft: hariData.masuk && hariData.belum ? `2px solid ${t.surface}` : "none" }} />
+                      </div>
+                      <div className="flex flex-wrap" style={{ gap: "4px 18px", fontSize: 13.5, fontWeight: 600, color: t.text2 }}>
+                        <span className="flex items-center gap-1.5"><span style={{ width: 10, height: 10, borderRadius: 3, background: t.chart[1], flex: "none" }} />Lunas <b style={{ color: t.text, fontWeight: 800 }}>{hariData.nMasuk}</b></span>
+                        <span className="flex items-center gap-1.5"><span style={{ width: 10, height: 10, borderRadius: 3, background: t.chart[0], flex: "none" }} />Belum dibayar <b style={{ color: t.text, fontWeight: 800 }}>{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</b></span>
+                      </div>
+                    </>
                   )}
+                  {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
                 </div>
               </div>
 
