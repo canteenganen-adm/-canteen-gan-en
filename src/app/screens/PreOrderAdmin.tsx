@@ -350,21 +350,9 @@ export default function PreOrderAdmin({
 
           {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
           <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
-            {/* Judul halaman sudah "Pre-order": tidak perlu label "Sesi Pre-order" lagi. */}
-            <div className="flex items-center">
-              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
-                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? "#FFF4BF" : open ? "#D6F2B0" : "#FFDDD7",
-                  border: `2px solid ${isAutoClosed ? "#E8C84C" : open ? "#5DBB3F" : "#E0392B"}`,
-                  color: isAutoClosed ? t.onPrimary : open ? "#1E5E1A" : "#B3261E" }}>
-                <Power size={13} />
-                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
-              </button>
-            </div>
-
             {/* Tanggal Layanan: panah kiri/kanan = jelajah pesanan hari lain
                 (TANPA menyentuh sesi); ketuk tanggal di tengah = Ganti Tanggal. */}
-            <div className="flex items-center gap-1" style={{ marginTop: 10 }}>
+            <div className="flex items-center gap-1">
               <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
                 style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
                 <ChevronLeft size={22} />
@@ -390,16 +378,19 @@ export default function PreOrderAdmin({
               </button>
             )}
 
-            {/* Otomatis tutup jam — "Ubah" buka widget jam besar, seluruhnya bisa diketuk */}
-            <div className="flex items-center justify-between" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
-              <span style={{ fontSize: 13.5, color: t.text2 }}>
-                Otomatis tutup jam <b style={{ color: t.text }}>{hhmm(autoCloseTime)}</b>
-                {open && reopenNow && reopenUntil && autoClosedNow(serviceDate, autoCloseTime) && (
-                  <> · <b style={{ color: t.successText }}>dibuka lagi s/d {wibClock(reopenUntil)}</b></>
-                )}
-              </span>
-              <button onClick={() => setSheet("jamTutup")} style={{ background: "transparent", border: "none", color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", padding: "6px 4px" }}>
-                Ubah
+            {/* Status sesi (ketuk = buka/tutup) di kiri, jam tutup otomatis di kanan */}
+            <div className="flex items-center justify-between" style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
+                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
+                  background: isAutoClosed ? "#FFF4BF" : open ? "#D6F2B0" : "#FFDDD7",
+                  border: `2px solid ${isAutoClosed ? "#E8C84C" : open ? "#5DBB3F" : "#E0392B"}`,
+                  color: isAutoClosed ? t.onPrimary : open ? "#1E5E1A" : "#B3261E" }}>
+                <Power size={13} />
+                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
+              </button>
+              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                style={{ gap: 2, background: "transparent", border: "none", color: t.text, fontWeight: 700, fontSize: 14.5, cursor: "pointer", padding: "8px 0 8px 8px", fontFamily: "inherit" }}>
+                <span style={{ color: t.text2, fontWeight: 500 }}>Tutup jam&nbsp;</span>{hhmm(autoCloseTime)} <ChevronRight size={16} color={t.text2} />
               </button>
             </div>
 
@@ -446,7 +437,7 @@ export default function PreOrderAdmin({
           {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
           {lateCount > 0 && (
             <button onClick={() => setShowLateOnly(v => !v)} className="flex items-center gap-2"
-              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "11px 14px", marginBottom: 10, background: t.errorBg, color: t.error, border: "1.5px solid #E7A79C", borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "10px 2px", marginBottom: 6, background: t.bg, color: t.error, border: "none", fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
               <AlertCircle size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showLateOnly ? "← Semua pesanan" : `${lateCount} pesanan lewat waktu ambil`}
