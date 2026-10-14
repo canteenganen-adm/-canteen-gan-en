@@ -267,16 +267,23 @@ async function unduhPdf(txs: Transaction[], year: number, month: number, banding
 }
 
 /** Ulasan: per tingkat, waktu ambil, pemesan teratas (transaksi tidak dibatalkan). */
-function buildUlasan(txs: Transaction[]) {
+function buildUlasan(txs: Transaction[], urutAmbil: string[] = []) {
   const aktif = txs.filter((tx) => !tx.cancelledAt);
   const tingkat = new Map<string, { n: number; nilai: number }>();
   const ambil = new Map<string, number>();
+  const tingkatAmbil = new Map<string, Map<string, number>>();
   const pemesan = new Map<string, { nama: string; kelas: string; n: number; nilai: number }>();
   for (const tx of aktif) {
     const tk = tx.customer.tingkat || (tx.source === "penjualan" ? "Penjualan langsung" : "Lainnya");
     const a = tingkat.get(tk) ?? { n: 0, nilai: 0 };
     a.n++; a.nilai += tx.total; tingkat.set(tk, a);
-    if (tx.source === "preorder" && tx.waktuAmbil) ambil.set(tx.waktuAmbil, (ambil.get(tx.waktuAmbil) ?? 0) + 1);
+    if (tx.source === "preorder" && tx.waktuAmbil) {
+      ambil.set(tx.waktuAmbil, (ambil.get(tx.waktuAmbil) ?? 0) + 1);
+      const tkPO = tx.customer.tingkat || "Lainnya";
+      const m = tingkatAmbil.get(tkPO) ?? new Map<string, number>();
+      m.set(tx.waktuAmbil, (m.get(tx.waktuAmbil) ?? 0) + 1);
+      tingkatAmbil.set(tkPO, m);
+    }
     if (tx.source === "preorder" && tx.customer.nama) {
       const key = tx.customer.nama.trim().toLowerCase() + "|" + (tx.customer.kelas ?? "");
       const pm = pemesan.get(key) ?? { nama: toTitleCase(tx.customer.nama.trim()), kelas: [tx.customer.tingkat, tx.customer.kelas].filter(Boolean).join(" "), n: 0, nilai: 0 };
@@ -286,6 +293,14 @@ function buildUlasan(txs: Transaction[]) {
   return {
     tingkat: [...tingkat.entries()].sort((a, b) => b[1].nilai - a[1].nilai),
     ambil: [...ambil.entries()].sort((a, b) => b[1] - a[1]),
+    // Pre-order per tingkat, dipecah menurut Waktu Ambil (urutan Waktu Ambil mengikuti Pengaturan)
+    ambilUrut: [...ambil.keys()].sort((a, b) => {
+      const ia = urutAmbil.indexOf(a), ib = urutAmbil.indexOf(b);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || (ambil.get(b) ?? 0) - (ambil.get(a) ?? 0);
+    }),
+    tingkatAmbil: [...tingkatAmbil.entries()]
+      .map(([k, m]) => ({ tingkat: k, per: m, total: [...m.values()].reduce((x, y) => x + y, 0) }))
+      .sort((a, b) => b.total - a.total),
     pemesan: [...pemesan.values()].sort((a, b) => b.nilai - a.nilai).slice(0, 5),
   };
 }
@@ -359,7 +374,7 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
   const banding: Banding | null = prev ? { prevLabel: BULAN[prevM], prevMasuk: prev.masuk, berjalan: ym.y === nowY && ym.m === nowM } : null;
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
-  const u = useMemo(() => (txs ? buildUlasan(txs) : null), [txs]);
+  const u = useMemo(() => (txs ? buildUlasan(txs, pickupSchedules.map((x) => x.name)) : null), [txs, pickupSchedules]);
   const pk = useMemo(() => (txs ? hitungPacking(txs, pickupSchedules, ym.y, ym.m) : null), [txs, pickupSchedules, ym]);
   const perHariMap = useMemo(() => new Map(r ? r.hari : []), [r]);
   const txPerHari = useMemo(() => {
@@ -575,15 +590,10 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
                     <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
 
-                  <div style={{ ...card, marginBottom: 14 }}>
-                    <div style={sectionTitle}>Per Tingkat</div>
-                    <Batang rows={u.tingkat.map(([k, v]) => ({ label: k, nilai: v.nilai, teks: rupiah(v.nilai) }))} />
-                  </div>
-
-                  {u.ambil.length > 0 && (
+                  {u.tingkatAmbil.length > 0 && (
                     <div style={{ ...card, marginBottom: 14 }}>
-                      <div style={sectionTitle}>Waktu Ambil (Pre-order)</div>
-                      <Batang rows={u.ambil.map(([k, n]) => ({ label: k, nilai: n, teks: `${n.toLocaleString("id-ID")} pesanan` }))} />
+                      <div style={sectionTitle}>Pesanan per Tingkat</div>
+                      <Tumpuk baris={u.tingkatAmbil} kolom={u.ambilUrut} />
                     </div>
                   )}
 
@@ -706,6 +716,37 @@ function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nil
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** Satu chart: tiap tingkat = satu batang, dipecah warna menurut Waktu Ambil (jumlah pesanan Pre-order). */
+function Tumpuk({ baris, kolom }: { baris: { tingkat: string; per: Map<string, number>; total: number }[]; kolom: string[] }) {
+  const max = Math.max(1, ...baris.map((x) => x.total));
+  const warna = (i: number) => t.chart[i % t.chart.length];
+  return (
+    <div>
+      <div className="flex flex-wrap" style={{ gap: "6px 14px", marginBottom: 10 }}>
+        {kolom.map((k, i) => (
+          <span key={k} className="flex items-center gap-1.5" style={{ fontSize: 13, fontWeight: 700 }}>
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: warna(i), flex: "none" }} />{k}
+          </span>
+        ))}
+      </div>
+      {baris.map((x) => (
+        <div key={x.tingkat} className="flex items-center gap-2" style={{ padding: "6px 0" }}>
+          <div style={{ width: 112, flex: "none", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.tingkat}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", width: `${Math.max(6, (x.total / max) * 100)}%`, height: 24, borderRadius: 7, overflow: "hidden" }}>
+              {kolom.map((k, i) => {
+                const n = x.per.get(k) ?? 0;
+                return n ? <div key={k} title={`${k}: ${n}`} style={{ flex: n, background: warna(i), borderLeft: i ? `2px solid ${t.surface}` : "none" }} /> : null;
+              })}
+            </div>
+          </div>
+          <div style={{ width: 38, flex: "none", textAlign: "right", fontSize: 14, fontWeight: 800, fontFamily: STRUK_MONO }}>{x.total.toLocaleString("id-ID")}</div>
+        </div>
+      ))}
     </div>
   );
 }
