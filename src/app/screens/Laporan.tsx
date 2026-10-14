@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Ellipsis, Eye, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -425,7 +425,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
               </button>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.2 }}>Rincian laporan</div>
-                <div style={kecil}>{BULAN[ym.m]} {ym.y} · isi sama dengan PDF dan Excel</div>
+                <div style={kecil}>{BULAN[ym.m]} {ym.y}</div>
               </div>
             </div>
             <div className="flex flex-col" style={{ padding: "0 20px", gap: 12 }}>
@@ -440,24 +440,25 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
               </div>
 
               <div style={card}>
-                <div style={{ ...kecil, marginBottom: 6 }}>Per hari (terbaru dulu)</div>
-                <BarisRincian a="Tanggal" b="Masuk · Belum dibayar" kepala />
-                {[...r.hari].reverse().map(([d, v]) => (
-                  <BarisRincian key={d} a={`${labelHari(d)} · ${v.n}`} b={`${rupiah(v.masuk)}${v.belum > 0 ? " · " + rpSingkat(v.belum) : ""}`} />
-                ))}
+                <div style={{ ...kecil, marginBottom: 6 }}>Per hari · terbaru dulu</div>
+                <Tabel kolom="46px 34px minmax(0,1fr) minmax(0,1fr)" kepala={["Tgl", "Jml", "Lunas", "Belum"]}
+                  baris={[
+                    ...[...r.hari].reverse().map(([d, v]) => [`${Number(d.slice(8))} ${BLN_PENDEK[Number(d.slice(5, 7)) - 1]}`, String(v.n), rupiah(v.masuk), v.belum > 0 ? rupiah(v.belum) : "–"]),
+                    ["Total", String(r.nMasuk + r.nBelum), rupiah(r.masuk), rupiah(r.belum)],
+                  ]} totalAkhir />
               </div>
 
               <div style={card}>
-                <div style={{ ...kecil, marginBottom: 6 }}>Per menu (menurut omzet)</div>
-                <BarisRincian a="Menu · terjual" b="Omzet" kepala />
-                {menuOmzet(r).map(([k, v]) => <BarisRincian key={k} a={`${k} · ${v.qty.toLocaleString("id-ID")}`} b={rupiah(v.nilai)} />)}
+                <div style={{ ...kecil, marginBottom: 6 }}>Per menu · menurut omzet</div>
+                <Tabel kolom="minmax(0,1fr) 54px 96px" kepala={["Menu", "Terjual", "Omzet"]}
+                  baris={menuOmzet(r).map(([k, v]) => [k, v.qty.toLocaleString("id-ID"), rupiah(v.nilai)])} />
               </div>
 
               {u.tingkat.length > 0 && (
                 <div style={card}>
                   <div style={{ ...kecil, marginBottom: 6 }}>Per tingkat</div>
-                  <BarisRincian a="Tingkat · pesanan" b="Nilai" kepala />
-                  {u.tingkat.map(([k, v]) => <BarisRincian key={k} a={`${k} · ${v.n.toLocaleString("id-ID")}`} b={rupiah(v.nilai)} />)}
+                  <Tabel kolom="minmax(0,1fr) 62px 96px" kepala={["Tingkat", "Pesanan", "Nilai"]}
+                    baris={u.tingkat.map(([k, v]) => [k, v.n.toLocaleString("id-ID"), rupiah(v.nilai)])} />
                 </div>
               )}
 
@@ -471,11 +472,6 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 </div>
               )}
 
-              <div style={{ ...kecil, textAlign: "center", padding: "0 8px" }}>Daftar semua transaksi (nama, kelas, isi pesanan) ada di file Excel.</div>
-              <div className="flex" style={{ gap: 10 }}>
-                <button onClick={() => download("pdf")} style={{ flex: 1, height: 52, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontSize: 15.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{busyPdf ? "Membuat…" : "Unduh PDF"}</button>
-                <button onClick={() => download("xlsx")} style={{ flex: 1, height: 52, borderRadius: 14, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 15.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{busyXlsx ? "Membuat…" : "Unduh Excel"}</button>
-              </div>
             </div>
           </div>
         </div>
@@ -525,7 +521,6 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
                     <div role="menu" style={{ position: "absolute", top: 62, right: 12, zIndex: 45, width: "min(260px, calc(100% - 24px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
                       {([
-                        { Ic: Eye, label: "Lihat rincian", on: () => { setMenuUnduh(false); setRincian(true); } },
                         { Ic: FileText, label: busyPdf ? "Membuat PDF…" : "Unduh PDF", on: () => { setMenuUnduh(false); download("pdf"); } },
                         { Ic: FileSpreadsheet, label: busyXlsx ? "Membuat Excel…" : "Unduh Excel", on: () => { setMenuUnduh(false); download("xlsx"); } },
                       ]).map((o, i) => (
@@ -613,6 +608,12 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   {u.pemesanTotal > 0 && <Meter pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali memesan" cap={`${u.pemesanKembali.toLocaleString("id-ID")} dari ${u.pemesanTotal.toLocaleString("id-ID")} pemesan`} />}
                 </div>
               )}
+
+              {/* 5 · Rincian lengkap dalam aplikasi (tabel) — tanpa perlu unduh */}
+              <button onClick={() => setRincian(true)} className="flex items-center justify-between"
+                style={{ width: "100%", height: 54, padding: "0 18px", borderRadius: 14, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 15.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                Lihat rincian lengkap <ChevronRight size={20} />
+              </button>
             </div>
           )}
         </div>
@@ -692,6 +693,26 @@ function BarisRincian({ a, b, tebal, kepala }: { a: string; b: string; tebal?: b
     <div className="flex items-baseline justify-between" style={{ gap: 12, padding: "7px 0", borderTop: kepala ? "none" : `1px solid ${t.divider}`, fontSize: kepala ? 12.5 : 14.5, fontWeight: kepala ? 700 : tebal ? 800 : 600, color: kepala ? t.text2 : t.text }}>
       <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{a}</span>
       <span style={{ textAlign: "right", flex: "none", maxWidth: "62%", fontWeight: kepala ? 700 : 800 }}>{b}</span>
+    </div>
+  );
+}
+
+/** Tabel: baris judul + baris isi, kolom angka rata kanan. kolom = grid-template-columns. */
+function Tabel({ kolom, kepala, baris, totalAkhir }: { kolom: string; kepala: string[]; baris: string[][]; totalAkhir?: boolean }) {
+  const sel = (i: number): React.CSSProperties => ({ textAlign: i === 0 ? "left" : "right", minWidth: 0, overflowWrap: "anywhere" });
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "6px 0", fontSize: 12, fontWeight: 700, color: t.text2, borderBottom: `1.5px solid ${t.border}` }}>
+        {kepala.map((h, i) => <div key={i} style={sel(i)}>{h}</div>)}
+      </div>
+      {baris.map((b, ri) => {
+        const total = totalAkhir && ri === baris.length - 1;
+        return (
+          <div key={ri} style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "8px 0", alignItems: "baseline", fontSize: 13.5, borderTop: ri ? `${total ? "1.5px" : "1px"} solid ${total ? t.borderStrong : t.divider}` : "none", fontWeight: total ? 800 : 600 }}>
+            {b.map((c, i) => <div key={i} style={{ ...sel(i), fontWeight: total ? 800 : i === 0 ? 600 : 700 }}>{c}</div>)}
+          </div>
+        );
+      })}
     </div>
   );
 }
