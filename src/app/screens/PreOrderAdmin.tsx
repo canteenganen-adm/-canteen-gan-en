@@ -377,7 +377,7 @@ export default function PreOrderAdmin({
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
             <div className="flex items-center" style={{ gap: 6 }}>
               <button onClick={() => setSheet("gantiTanggal")} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
               <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>

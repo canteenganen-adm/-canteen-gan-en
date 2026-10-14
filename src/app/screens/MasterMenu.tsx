@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks,
-} from "lucide-react";
+  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase, wibTodayISO, wibTimeHHMM, nextSchoolDayISO, hhmm } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
@@ -333,7 +332,7 @@ export default function MasterMenu({
         {/* Yang MENEMPEL di atas hanya judul + tab (±110px). Cari, tanggal, Menu Tetap,
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
-        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5, boxShadow: "0 8px 8px -8px rgba(70,55,20,.22)" }}>
+        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">
@@ -350,8 +349,9 @@ export default function MasterMenu({
           {/* Tanggal menu yang sedang diatur: subjudul BESAR di bawah judul (pilihan pemilik "C", dibesarkan agar
               terlihat). Chip berbingkai, BUKAN kuning (tombol + di bawah sudah kuning). Seluruh chip bisa
               diketuk — input tanggal menutupi chip (inset 0). */}
-          {view === "menu" && menuHarianReady && (
-            <div className="flex items-center" style={{ position: "relative", marginTop: 8, height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", width: "fit-content", maxWidth: "100%" }}>
+          {menuHarianReady && (
+            <div className="flex items-center" style={{ gap: 8, marginTop: 8 }}>
+            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", width: "fit-content", maxWidth: "100%" }}>
               <Calendar size={19} />
               <span style={{ fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap" }}>{tglParts(tanggal)[0]} {tglSingkat(tanggal)}</span>
               <ChevronDown size={17} color={t.text2} />
@@ -360,6 +360,13 @@ export default function MasterMenu({
                 onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
                 aria-label="Ganti tanggal yang diatur"
                 style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+            </div>
+            {tanggal !== tanggalBawaan() && (
+              <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan" title="Kembali"
+                style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <RotateCcw size={18} />
+              </button>
+            )}
             </div>
           )}
 
@@ -452,36 +459,10 @@ export default function MasterMenu({
               {/* Selector tanggal — default: tanggal sesi PO berikutnya.
                   Boleh pilih tanggal lampau untuk lihat riwayat (read-only). */}
               {menuHarianReady ? (
+                (isPast || (snapLoaded && snapshot === null)) && (
                 <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 14, overflow: "hidden" }}>
-                  {/* Seluruh area bisa diketuk: input date overlay inset:0
-                      menerima ketukan langsung (pola wajib CLAUDE.md — fix
-                      "tidak merespon di HP"). showPicker = pemanis desktop. */}
-                  <div className="flex items-center gap-3"
-                    style={{ position: "relative", padding: "12px 14px", cursor: "pointer" }}>
-                    <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2 }}>Tanggal Layanan</div>
-                      <div style={{ fontSize: 16.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
-                    </div>
-                    {!isPast && (
-                      <button onClick={(e) => { e.stopPropagation(); doRefresh(); }}
-                        title="Refresh" aria-label="Refresh pratinjau"
-                        style={{ position: "relative", zIndex: 2, width: 40, height: 40, borderRadius: 11,
-                          border: `1.5px solid ${refreshing ? t.primaryLine : t.border}`,
-                          background: refreshing ? t.primaryLight : t.surface,
-                          color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                        <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
-                        <RefreshCw size={17} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
-                      </button>
-                    )}
-                    <input ref={dateRef} type="date" value={tanggal}
-                      onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                      onClick={() => { try { dateRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                      aria-label="Pilih tanggal menu"
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-                  </div>
                   {isPast && (
-                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, fontSize: 12.5, fontWeight: 700, color: t.text2 }}>
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", background: t.surfaceSoft, fontSize: 12.5, fontWeight: 700, color: t.text2 }}>
                       <Lock size={13} /> Mode Lihat Riwayat — data tanggal ini terkunci
                     </div>
                   )}
@@ -491,11 +472,12 @@ export default function MasterMenu({
                       gampang dikira "sudah jadi menu tanggal itu" padahal
                       belum, atau dikira kosong itu bug. */}
                   {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
-                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4BF", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", background: "#FFF4BF", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
                       <RefreshCw size={13} /> Menu untuk tanggal ini belum disimpan — mulai kosong, pilih menu lalu tekan Simpan
                     </div>
                   )}
                 </div>
+                )
               ) : (
                 <div style={{ background: "#FFF4BF", border: "1px solid #FFE66D", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
                   Riwayat menu per tanggal butuh <b>migration_9_menu_harian.sql</b> dijalankan di Supabase dulu. Sementara itu toggle di bawah masih langsung tersimpan (perilaku lama).
