@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, CookingPot, Printer,
-  Box, Check, X, Search, Power, AlertCircle,
+  Box, Check, X, Search, Power, AlertCircle, MoreHorizontal,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
@@ -149,7 +149,7 @@ export default function PreOrderAdmin({
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [cariBuka, setCariBuka] = useState(false);
   const [kalOffset, setKalOffset] = useState(0);
-  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan" | "aksi">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
    * konfirmasi jelas dulu, tidak langsung commit begitu tanggal diketuk. */
@@ -372,6 +372,11 @@ export default function PreOrderAdmin({
             {/* Status sesi: tombol ON/OFF bulat, HANYA warna + ikon power (tanpa tulisan).
                 Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
                 Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
+            <div className="flex items-center" style={{ flex: "none", gap: 4 }}>
+            <button onClick={() => setSheet("aksi")} aria-label="Bagikan, Rekap Masak, Cetak"
+              style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+              <MoreHorizontal size={24} />
+            </button>
             <button onClick={onToggleOpen}
               aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk membuka" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
@@ -384,39 +389,32 @@ export default function PreOrderAdmin({
                 <Power size={17} strokeWidth={2.6} />
               </span>
             </button>
+            </div>
           </div>
 
-          {/* Bagian atas — padat, tanpa ruang kosong:
-              kiri: ‹ tanggal › dan di bawahnya "tutup jam" kecil (satu tumpukan)
-              kanan: pil status, tegak lurus di tengah tumpukan
-              lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
-          <div style={{ marginTop: 8 }}>
-            {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
-            <div className="flex items-center" style={{ gap: 6 }}>
-              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <Calendar size={24} color={t.text} />
+          {/* Bagian atas — LEGA, tanpa kotak/garis (mata Mama & Papa sudah tua; permintaan pemilik):
+              tanggal = satu baris biasa (ketuk = kalender), "Tutup jam" di kanan; angka besar tanpa kotak;
+              Bagikan / Rekap / Cetak disimpan di tombol ⋯ (lembar "aksi"). */}
+          <div style={{ marginTop: 6 }}>
+            <div className="flex items-center justify-between" style={{ gap: 8 }}>
+              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal" className="flex items-center"
+                style={{ gap: 8, minHeight: 44, minWidth: 0, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: lihatSesi ? t.text : t.amberText }}>
+                <Calendar size={20} style={{ flex: "none" }} />
+                <span style={{ fontSize: 17, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</span>
               </button>
-              <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</div>
-                <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
-                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
-                </button>
-              </div>
+              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                style={{ flex: "none", gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 14, cursor: "pointer", padding: 0, minHeight: 44, fontFamily: "inherit" }}>
+                Tutup {hhmm(autoCloseTime)} <ChevronRight size={15} />
+              </button>
             </div>
             {!lihatSesi && (
               <button onClick={() => setViewDate(serviceDate)}
-                style={{ display: "block", background: "transparent", border: "none", minHeight: 30, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                style={{ display: "block", background: "transparent", border: "none", minHeight: 36, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                 Kembali ke Hari Ini
               </button>
             )}
 
-            {/* Divider super halus: memudar di kedua ujung */}
-            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 10px", background: t.border }} />
-
-            {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
-            <div className="flex gap-1">
+            <div className="flex" style={{ marginTop: 14 }}>
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
               <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
@@ -424,31 +422,21 @@ export default function PreOrderAdmin({
               <StatBox n={belum} label="Belum" color={t.error} active={packedFilter === "belum"}
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
-
-            {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
-            <div className="flex justify-around">
-              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
-                  style={{ gap: 6, minHeight: 44, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                  <Ic size={18} /> {label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Cari + kategori SATU baris: ikon cari di kiri, chip kelas menggulir di kanan.
               Ketuk ikon = kolom cari penuh (chip disembunyikan sementara); X = tutup. */}
           {cariBuka || q ? (
-            <div className="flex items-center gap-2" style={{ marginTop: 8, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+            <div className="flex items-center gap-2" style={{ marginTop: 16, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
               <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
               <X size={20} color={t.text2} style={{ cursor: "pointer", flex: "none" }} aria-label="Tutup pencarian" onClick={() => { setQ(""); setCariBuka(false); }} />
             </div>
           ) : (
-            <div className="flex items-center" style={{ marginTop: 8, gap: 6 }}>
+            <div className="flex items-center" style={{ marginTop: 16, gap: 4 }}>
               <button onClick={() => setCariBuka(true)} aria-label="Cari nama pemesan"
-                style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", marginLeft: -10 }}>
                 <Search size={19} />
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -552,6 +540,16 @@ export default function PreOrderAdmin({
               </div>
             </>
           )}
+        </Sheet>
+      )}
+      {sheet === "aksi" && (
+        <Sheet title="Lainnya" onClose={() => setSheet(null)}>
+          {([["Bagikan Link", Share2, "bagikan"], ["Rekap Masak", CookingPot, "rekap"], ["Cetak", Printer, "cetak"]] as const).map(([label, Ic, sh]) => (
+            <button key={sh} onClick={() => setSheet(sh)} className="flex items-center"
+              style={{ width: "100%", gap: 14, minHeight: 60, padding: "0 4px", border: "none", background: "transparent", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, color: t.text, textAlign: "left" }}>
+              <Ic size={22} color={t.text2} /> {label}
+            </button>
+          ))}
         </Sheet>
       )}
       {sheet === "jamTutup" && (
@@ -711,17 +709,15 @@ function KelasChips({ value, onChange, rapat }: { value: KelasGroup; onChange: (
           <ChevronLeft size={20} />
         </button>
       )}
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 6, padding: "2px 0" }}>
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 2, padding: "0" }}>
         {KELAS_TABS.map((k) => {
           const on = k.id === value;
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
-              style={{ flex: "none", height: 38, padding: on ? "0 11px" : "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit",
-                /* Semua chip hanya GARIS (tanpa isi). Tidak dipilih: garis tipis 1px. Dipilih: garis kuning 2px. */
-                border: on ? `3px solid ${t.primaryLine}` : `1px solid ${t.border}`,
-                background: "transparent",
+              style={{ flex: "none", height: 44, padding: "0 10px", border: "none", background: "transparent", fontSize: 16, fontWeight: on ? 800 : 500, cursor: "pointer", fontFamily: "inherit",
+                /* Teks polos; yang dipilih ditandai garis kuning tebal di bawahnya (tanpa kotak/pil). */
                 color: on ? t.text : t.text2 }}>
-              {k.label}
+              <span style={{ display: "inline-block", padding: "9px 0 3px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}`, lineHeight: 1.3 }}>{k.label}</span>
             </button>
           );
         })}
@@ -819,9 +815,9 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
 function StatBox({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
-      style={{ flex: 1, minWidth: 0, background: active ? t.primaryLight : "transparent", border: "none", borderRadius: 14, padding: "8px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.05, color }}>{n}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 2 }}>{label}</div>
+      style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", padding: "4px 0 0", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+      <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.05, color, letterSpacing: "-.03em" }}>{n}</div>
+      <div style={{ display: "inline-block", fontSize: 15, fontWeight: 600, color: t.text2, marginTop: 2, padding: "2px 0 4px", borderBottom: `4px solid ${active ? t.primaryLine : "transparent"}` }}>{label}</div>
     </button>
   );
 }
