@@ -481,8 +481,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
                 <div className="flex flex-wrap items-center justify-between" style={{ gap: "6px 12px", fontSize: 14, fontWeight: 800 }}>
-                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
+                  <span className="flex items-center gap-2"><IkonKotak bg={t.primaryLight} line={t.chart[0]} warna={t.warnText}><Utensils size={17} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
+                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak bg={t.successBg} line={t.chart[1]} warna={t.successText}><ShoppingCart size={17} /></IkonKotak></span>
                 </div>
               </div>
 
@@ -527,11 +527,12 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
               </div>
 
-              {/* 4 · Dua cincin (gaya sama dengan donat): packing tepat waktu + pemesan kembali */}
+              {/* 4 · Dua angka persen dengan batang tipis (bukan donat lagi) */}
               {(pk.dikemas > 0 || u.pemesanTotal > 0) && (
-                <div className="grid" style={{ ...card, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-                  {pk.dikemas > 0 && <Cincin pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} dari ${pk.dikemas.toLocaleString("id-ID")} pesanan`} />}
-                  {u.pemesanTotal > 0 && <Cincin pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} dari ${u.pemesanTotal.toLocaleString("id-ID")} pemesan`} />}
+                <div className="flex flex-col" style={{ ...card, gap: 16 }}>
+                  {pk.dikemas > 0 && <Meter pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} dari ${pk.dikemas.toLocaleString("id-ID")} pesanan`} />}
+                  {pk.dikemas > 0 && u.pemesanTotal > 0 && <div style={{ height: 1, background: t.divider }} />}
+                  {u.pemesanTotal > 0 && <Meter pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali memesan" cap={`${u.pemesanKembali.toLocaleString("id-ID")} dari ${u.pemesanTotal.toLocaleString("id-ID")} pemesan`} />}
                 </div>
               )}
             </div>
@@ -551,8 +552,8 @@ function rpSingkat(n: number): string {
   return `Rp${n}`;
 }
 
-function IkonKotak({ warna, children }: { warna: string; children: React.ReactNode }) {
-  return <span style={{ width: 24, height: 24, borderRadius: 7, background: warna, color: t.onPrimary, display: "grid", placeItems: "center", flex: "none" }}>{children}</span>;
+function IkonKotak({ bg, line, warna, children }: { bg: string; line: string; warna: string; children: React.ReactNode }) {
+  return <span style={{ width: 32, height: 32, borderRadius: 10, background: bg, border: `1.5px solid ${line}`, color: warna, display: "grid", placeItems: "center", flex: "none", boxSizing: "border-box" }}>{children}</span>;
 }
 
 /** Donat 5 menu teratas (omzet): bulan di tengah, legenda = nama + persen. */
@@ -591,22 +592,18 @@ function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: nu
   );
 }
 
-/** Cincin persen — gaya sama dengan donat menu: hijau = bagian yang dimaksud, kuning = sisanya. */
-function Cincin({ pct, judul, cap }: { pct: number; judul: string; cap: string }) {
-  const R = 52, SW = 24, C = 2 * Math.PI * R, hijau = (pct / 100) * C;
+/** Persen besar + satu batang tipis (hijau = bagian yang dimaksud, abu muda = sisanya). */
+function Meter({ pct, judul, cap }: { pct: number; judul: string; cap: string }) {
   return (
-    <div style={{ textAlign: "center", minWidth: 0 }}>
-      <div style={{ display: "grid", placeItems: "center", position: "relative" }}>
-        <svg width="112" height="112" viewBox="0 0 140 140" role="img" aria-label={`${judul} ${pct}%`}>
-          <g transform="rotate(-90 70 70)">
-            <circle cx="70" cy="70" r={R} fill="none" stroke={t.chart[0]} strokeWidth={SW} />
-            <circle cx="70" cy="70" r={R} fill="none" stroke={t.chart[1]} strokeWidth={SW} strokeDasharray={`${hijau} ${C - hijau}`} />
-          </g>
-        </svg>
-        <div style={{ position: "absolute", fontSize: 21, fontWeight: 800 }}>{pct}%</div>
+    <div className="flex items-center" style={{ gap: 14 }}>
+      <div style={{ width: 72, flex: "none", fontSize: 28, fontWeight: 800, lineHeight: 1 }}>{pct}%</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 800, lineHeight: 1.25 }}>{judul}</div>
+        <div style={{ height: 8, borderRadius: 999, background: t.divider, overflow: "hidden", margin: "6px 0 4px" }} role="img" aria-label={`${judul} ${pct}%`}>
+          <div style={{ width: `${pct}%`, height: "100%", background: t.chart[1] }} />
+        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: t.text2, lineHeight: 1.25 }}>{cap}</div>
       </div>
-      <div style={{ fontSize: 14.5, fontWeight: 800, marginTop: 8, lineHeight: 1.25 }}>{judul}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: t.text2, marginTop: 2, lineHeight: 1.25 }}>{cap}</div>
     </div>
   );
 }
