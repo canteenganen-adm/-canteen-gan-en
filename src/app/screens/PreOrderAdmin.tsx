@@ -419,11 +419,11 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Cari murid: satu baris penuh. */}
+          {/* Cari nama (murid atau guru/karyawan): satu baris penuh. */}
           <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
             <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
               <Search size={19} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
               {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>

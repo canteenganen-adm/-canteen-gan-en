@@ -488,7 +488,7 @@ export default function Pengaturan({
           <div style={{ padding: "0 20px" }}>
             {!searchQ.trim() && (
               <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "48px 10px" }}>
-                Ketik nama murid atau nomor WA untuk mencari pesanan.
+                Ketik nama atau nomor WA untuk mencari pesanan.
               </div>
             )}
             {searchQ.trim() && searchResults.length === 0 && (

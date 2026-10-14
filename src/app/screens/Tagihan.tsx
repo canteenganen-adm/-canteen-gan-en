@@ -327,7 +327,7 @@ export default function Tagihan({
   };
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
-    if (!wa) { setToast("Nomor WhatsApp belum ada untuk murid ini."); return; }
+    if (!wa) { setToast("Nomor WhatsApp belum ada untuk pemesan ini."); return; }
     // Anak lain (nama beda) yang nomor WA-nya sama → tawarkan gabung tagihan
     const meNama = g.customer.nama.trim().replace(/\s+/g, " ").toLowerCase();
     const siblings = groups.filter(
