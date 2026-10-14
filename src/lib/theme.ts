@@ -14,7 +14,7 @@ export const t = {
   surfaceSoft: "#FFF8EE",
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
-  bandAlt: "#E4EEC9", // ISI kartu pesanan genap: hijau krem (disetujui Mama); hijau bubble WhatsApp #D9FDD3 DITOLAK
+  bandAlt: "#DBEEB5", // ISI kartu pesanan genap: hijau krem agak dinaikkan (sebelumnya #E4EEC9 "too muted"); hijau bubble WhatsApp #D9FDD3 DITOLAK
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",
