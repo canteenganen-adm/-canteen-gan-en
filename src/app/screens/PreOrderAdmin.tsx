@@ -106,6 +106,10 @@ function kelasGroupOf(tingkat: string, kelas: string): Exclude<KelasGroup, "all"
   return null;
 }
 
+const BULAN_PENDEK_PO: Record<string, string> = { Januari: "Jan", Februari: "Feb", Maret: "Mar", April: "Apr", Mei: "Mei", Juni: "Jun", Juli: "Jul", Agustus: "Agu", September: "Sep", Oktober: "Okt", November: "Nov", Desember: "Des" };
+/** "Rabu, 14 Oktober 2026" -> "Rabu, 14 Okt" */
+const tglPendekPO = (iso: string) => { const w = serviceDateLabel(iso).split(" "); return w[0] + " " + w[1] + " " + (BULAN_PENDEK_PO[w[2]] ?? w[2]); };
+
 export default function PreOrderAdmin({
   serviceDate,
   onServiceDateChange,
@@ -349,75 +353,68 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* KARTU UTAMA (satu-satunya bidang besar): tanggal + status + angka + tombol.
-              Tanpa garis pemisah: bagian dibedakan lewat JARAK dan BENTUK (angka = teks, tombol = bulatan ikon). */}
-          <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: "16px 14px 18px" }}>
-            {/* Status di KANAN ATAS (ketuk pil = buka/tutup); jam tutup di kiri atas */}
-            <div className="flex items-center justify-between">
-              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                style={{ gap: 2, background: "transparent", border: "none", color: t.text, fontWeight: 700, fontSize: 14.5, cursor: "pointer", padding: "8px 0 8px 8px", fontFamily: "inherit" }}>
-                <span style={{ color: t.text2, fontWeight: 500 }}>Tutup jam&nbsp;</span>{hhmm(autoCloseTime)} <ChevronRight size={16} color={t.text2} />
-              </button>
-              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
-                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
+          {/* Bagian atas (sesuai sketsa pemilik):
+              ‹ tanggal ›  ........ (status)
+                         tutup jam 08:00 (kecil)
+              ───── divider halus ─────
+              [ Pesanan ] [ Sudah ] [ Belum ]   +   baris tombol teks */}
+          <div style={{ marginTop: 14 }}>
+            <div className="flex items-center justify-between" style={{ gap: 8 }}>
+              <div className="flex items-center" style={{ minWidth: 0 }}>
+                <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
+                  style={{ width: 30, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                  <ChevronLeft size={22} />
+                </button>
+                <button onClick={() => setSheet("gantiTanggal")} className="flex items-center" aria-label="Ganti tanggal"
+                  style={{ gap: 6, minHeight: 44, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, whiteSpace: "nowrap" }}>
+                  <Calendar size={18} color={t.text} style={{ flex: "none" }} />
+                  <span style={{ fontSize: 17, fontWeight: 800, color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
+                </button>
+                <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
+                  style={{ width: 30, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+              <button onClick={onToggleOpen} className="flex items-center gap-1.5" aria-label="Buka atau tutup sesi Pre-order"
+                style={{ flex: "none", height: 36, padding: "0 11px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
                   border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
                   color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
-                <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
             </div>
-
-            {/* Tanggal Layanan: panah kiri/kanan = jelajah pesanan hari lain
-                (TANPA menyentuh sesi); ketuk tanggal di tengah = Ganti Tanggal. */}
-            <div className="flex items-center gap-1" style={{ marginTop: 4 }}>
-              <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
-                style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                <ChevronLeft size={22} />
-              </button>
-              <button onClick={() => setSheet("gantiTanggal")}
-                className="flex items-center justify-center gap-2"
-                style={{ flex: 1, minHeight: 48, background: "transparent", border: "none", padding: 0, cursor: "pointer" }}>
-                <Calendar size={19} color={t.amberText} style={{ flex: "none" }} />
-                <span style={{ fontSize: 21, fontWeight: 800, color: lihatSesi ? t.text : t.amberText, textAlign: "center", lineHeight: 1.25 }}>
-                  {serviceDateLabel(viewDate)}
-                </span>
-              </button>
-              <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
-                style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                <ChevronRight size={22} />
+            <div className="flex justify-end">
+              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                style={{ gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 0 4px 8px", fontFamily: "inherit" }}>
+                Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={15} />
               </button>
             </div>
             {!lihatSesi && (
-              /* Satu baris kecil, tanpa kotak — tidak mengganggu widget */
               <button onClick={() => setViewDate(serviceDate)}
-                style={{ display: "block", margin: "0 auto", background: "transparent", border: "none", minHeight: 34, padding: "2px 12px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                style={{ display: "block", background: "transparent", border: "none", minHeight: 34, padding: "2px 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                 Kembali ke Hari Ini
               </button>
             )}
 
+            {/* Divider super halus: memudar di kedua ujung */}
+            <div aria-hidden="true" style={{ height: 1, margin: "8px 4px 14px", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
 
-
-            {/* Divider super halus: memudar di kedua ujung (bukan garis kaku) */}
-            <div aria-hidden="true" style={{ height: 1, margin: "10px 6px 0", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
-
-            {/* Angka: teks tanpa kotak; ketuk = saring daftar. Yang aktif: garis bawah kuning. */}
-            <div className="flex justify-around" style={{ marginTop: 18 }}>
-              <StatText n={orders.length} label="Pesanan" active={packedFilter === "semua"} color={t.text}
+            {/* Tiga kotak angka (bintang utama); ketuk = saring daftar */}
+            <div className="flex gap-2">
+              <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
-              <StatText n={packed} label="Sudah" active={packedFilter === "sudah"} color={t.successText}
+              <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
                 onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
-              <StatText n={belum} label="Belum" active={packedFilter === "belum"} color={t.error}
+              <StatBox n={belum} label="Belum" color={t.error} active={packedFilter === "belum"}
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
 
-            {/* Tombol: bulatan ikon berlabel (Bagikan Link · Rekap Masak · Cetak) */}
-            <div className="flex justify-around" style={{ marginTop: 22 }}>
+            {/* Tombol: satu baris teks beriring ikon (semua tetap terlihat) */}
+            <div className="flex justify-around" style={{ marginTop: 4 }}>
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 76, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, color: t.text }}>
-                  <span style={{ width: 52, height: 52, borderRadius: "50%", background: t.primaryLight, display: "grid", placeItems: "center" }}><Ic size={22} /></span>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{label}</span>
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
+                  style={{ gap: 7, minHeight: 48, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14.5, fontWeight: 700, color: t.text }}>
+                  <Ic size={19} /> {label}
                 </button>
               ))}
             </div>
@@ -784,11 +781,11 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
     </div>
   );
 }
-function StatText({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
+function StatBox({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
-      style={{ minWidth: 76, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", textAlign: "center" }}>
-      <div style={{ display: "inline-block", fontSize: 28, fontWeight: 800, lineHeight: 1.1, color, padding: "0 6px 2px", borderBottom: `3px solid ${active ? t.primaryLine : "transparent"}` }}>{n}</div>
+      style={{ flex: 1, minWidth: 0, background: t.surface, border: active ? `2.5px solid ${t.primaryLine}` : `1.5px solid ${t.border}`, borderRadius: 14, padding: "10px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
+      <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.05, color }}>{n}</div>
       <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 3 }}>{label}</div>
     </button>
   );
