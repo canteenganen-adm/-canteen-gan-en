@@ -718,6 +718,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             view={menuView}
             onViewChange={setMenuView}
             serviceDate={store.serviceDate}
+            pickupSchedules={store.pickupSchedules}
             menuHarian={store.menuHarian}
             menuHarianReady={store.menuHarianReady}
             onLoadDate={store.loadMenuHarianDate}

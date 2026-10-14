@@ -42,6 +42,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 ## KEPUTUSAN PRODUK TERKUNCI (ringkas)
 
+- **Tab Menu: tanggal bawaan otomatis** = tanggal sesi; setelah jam ambil TERAKHIR hari itu lewat (dari jadwal Waktu Ambil, cadangan 13:00) atau tanggal sesi sudah lewat → hari sekolah berikutnya (lewati Sabtu/Minggu). Jangan pindah di jam tutup 08:00 — orang tua kantin masih packing.
 - Satu sesi Pre-order aktif; ortu TIDAK pernah memilih tanggal; **Tanggal Layanan ditetapkan server** dari sesi aktif; auto-tutup (default 08:00) ditegakkan server (tolak pesanan).
 - Pre-order langsung masuk Transaksi sebagai **Belum Dibayar sejak submit** (packing ≠ tagihan).
 - Batalkan transaksi = **soft-delete** (tetap tampil di riwayat Lunas dengan badge).

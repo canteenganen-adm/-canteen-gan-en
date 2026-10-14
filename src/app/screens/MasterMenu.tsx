@@ -4,10 +4,10 @@ import {
   Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks,
 } from "lucide-react";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
-import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
+import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase, wibTodayISO, wibTimeHHMM, nextSchoolDayISO, hhmm } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
-import type { MenuItem, Variant } from "../../types";
+import type { MenuItem, Variant, PickupSchedule } from "../../types";
 
 /* ============================================================
    MENU (Master Menu) — Canteen Gan En
@@ -44,6 +44,7 @@ export default function MasterMenu({
   view,
   onViewChange,
   serviceDate,
+  pickupSchedules,
   menuHarian,
   menuHarianReady,
   onLoadDate,
@@ -66,6 +67,8 @@ export default function MasterMenu({
   onViewChange: (v: MenuView) => void;
   /** Tanggal sesi PO berikutnya — default selector tanggal di kertas PO. */
   serviceDate: string;
+  /** Jadwal Waktu Ambil — jam ambil TERAKHIR hari itu menentukan kapan tab Menu pindah ke besok. */
+  pickupSchedules?: PickupSchedule[];
   /** Snapshot menu_harian per tanggal: null = belum pernah disimpan,
    * key tidak ada = belum di-fetch. */
   menuHarian: Record<string, MenuItem[] | null>;
@@ -111,8 +114,23 @@ export default function MasterMenu({
      Toggle di kertas ini mengubah DRAFT di layar saja; baru tersimpan permanen
      ke menu_harian saat tombol "Simpan" ditekan (dengan konfirmasi). Tanggal
      lampau = read-only (riwayat). Sebelum migration_9: fallback toggle live. */
-  const [tanggal, setTanggal] = useState(serviceDate);
-  useEffect(() => { setTanggal(serviceDate); }, [serviceDate]);
+  /* Tanggal menu BAWAAN: setelah jam tutup sesi (08:00) orang tua masih packing sampai jam ambil
+     terakhir, jadi menu hari ini tetap tampil. BARU setelah jam ambil TERAKHIR hari itu lewat
+     (mis. Pulang Sekolah; cadangan 13:00 bila jadwal kosong) — atau tanggal sesi sudah lewat —
+     tab Menu otomatis membuka HARI SEKOLAH BERIKUTNYA (lewati Sabtu/Minggu) untuk menyusun
+     menu besok. Sesi yang sudah diatur ke tanggal depan dipakai apa adanya. */
+  const akhirHari = () => {
+    const semua = (pickupSchedules ?? []).flatMap((x) => [x.defaultTime, ...Object.values(x.byTingkat ?? {})]).filter((v): v is string => !!v).map(hhmm);
+    return semua.length ? semua.reduce((a, b) => (a > b ? a : b)) : "13:00";
+  };
+  const tanggalBawaan = () => {
+    const hariIni = wibTodayISO();
+    const lewat = serviceDate < hariIni || (serviceDate === hariIni && wibTimeHHMM() >= akhirHari());
+    return lewat ? nextSchoolDayISO(new Date(hariIni + "T00:00:00")) : serviceDate;
+  };
+  const [tanggal, setTanggal] = useState(tanggalBawaan);
+  useEffect(() => { setTanggal(tanggalBawaan()); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceDate, pickupSchedules]);
   const dateRef = useRef<HTMLInputElement>(null);
   /** Jalan pintas TAMBAHAN ke `tanggal` yang sama, langsung dari tab
    * Buku Menu — supaya tidak perlu lompat ke Preview PO dulu cuma buat
