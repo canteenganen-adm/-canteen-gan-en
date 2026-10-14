@@ -237,7 +237,7 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
@@ -342,13 +342,13 @@ export default function Penjualan({
               sectionCats.map((c) => (
                 <div key={c} style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
                     {byCat[c].map(menuCard)}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
                 {filtered.map(menuCard)}
               </div>
             )}
