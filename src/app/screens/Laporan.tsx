@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Clock, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
+import { AlarmClock, Calendar, ChevronLeft, ChevronRight, CircleCheck, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
-import PaperTabs from "../components/PaperTabs";
 import type { Transaction, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -352,8 +351,9 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: nowY, m: nowM });
   const [txs, setTxs] = useState<Transaction[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"harian" | "ulasan">("ulasan");
+  const [busyXlsx, setBusyXlsx] = useState(false);
+  const [busyPdf, setBusyPdf] = useState(false);
+  const [menuUnduh, setMenuUnduh] = useState(false);
   const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
@@ -380,53 +380,39 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   const u = useMemo(() => (txs ? buildUlasan(txs, pickupSchedules.map((x) => x.name)) : null), [txs, pickupSchedules]);
   const pk = useMemo(() => (txs ? hitungPacking(txs, pickupSchedules, ym.y, ym.m) : null), [txs, pickupSchedules, ym]);
   const perHariMap = useMemo(() => new Map(r ? r.hari : []), [r]);
-  const txPerHari = useMemo(() => {
-    const m = new Map<string, Transaction[]>();
-    (txs ?? []).forEach((tx) => {
-      const k = wibTanggal(tx.createdAt);
-      const arr = m.get(k);
-      if (arr) arr.push(tx); else m.set(k, [tx]);
-    });
-    return m;
-  }, [txs]);
 
   const jumlahHari = new Date(ym.y, ym.m + 1, 0).getDate();
   const ymd = (d: number) => `${ym.y}-${pad2(ym.m + 1)}-${pad2(d)}`;
-  const awalBulan = ymd(1);
   const adaBerikut = ym.y * 12 + ym.m < nowY * 12 + nowM;
   const geser = (d: number) => setYm(({ y, m }) => { const v = y * 12 + m + d; return { y: Math.floor(v / 12), m: v % 12 }; });
 
   // Tanggal terpilih: hari ini kalau bulan berjalan; bulan lalu = hari terakhir yang ada transaksinya.
-  const hariAktif = dipilih ?? (ym.y === nowY && ym.m === nowM ? todayYmd : r && r.hari.length ? r.hari[r.hari.length - 1][0] : awalBulan);
+  const hariAktif = dipilih ?? (ym.y === nowY && ym.m === nowM ? todayYmd : r && r.hari.length ? r.hari[r.hari.length - 1][0] : ymd(1));
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
+  const hariData = perHariMap.get(hariAktif);
+  const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
 
-  const [busy2, setBusy2] = useState(false);
-  const [menuUnduh, setMenuUnduh] = useState(false);
   const download = async (jenis: "xlsx" | "pdf") => {
     if (!txs) return;
-    (jenis === "pdf" ? setBusy2 : setBusy)(true);
+    (jenis === "pdf" ? setBusyPdf : setBusyXlsx)(true);
     try {
       if (jenis === "pdf") await unduhPdf(txs, ym.y, ym.m, banding); else await unduhExcel(txs, ym.y, ym.m, banding);
     } catch { setErr(jenis === "pdf" ? "Gagal membuat file PDF." : "Gagal membuat file Excel."); }
-    (jenis === "pdf" ? setBusy2 : setBusy)(false);
+    (jenis === "pdf" ? setBusyPdf : setBusyXlsx)(false);
   };
 
-  const navBtn = (aktif: boolean, ukuran = 48): React.CSSProperties => ({
-    width: ukuran, height: ukuran, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: aktif ? t.text : t.textDis,
+  const navBtn = (aktif: boolean): React.CSSProperties => ({
+    width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: aktif ? t.text : t.textDis,
     cursor: aktif ? "pointer" : "default", display: "grid", placeItems: "center", flex: "none",
   });
-
-  const siap = r && u && txs;
   const bandingPct = banding && r && banding.prevMasuk > 0 ? Math.round(((r.masuk - banding.prevMasuk) / banding.prevMasuk) * 100) : null;
-  const hariIni = perHariMap.get(hariAktif);
-  const rHari = useMemo(() => buildReport(txPerHari.get(hariAktif) ?? []), [txPerHari, hariAktif]);
-  const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
-  const hariBuka = r ? r.hari.length : 0;
-  const { hi, lo } = r ? tinggiRendah(r) : { hi: null, lo: null };
+  const siap = r && u && txs && pk;
+  const tglIni = ym.y === nowY && ym.m === nowM;
 
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 70px" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
+        {/* Header standar */}
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Laporan</div>
@@ -438,184 +424,142 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
         </div>
 
         <div style={{ padding: "0 20px" }}>
-          {/* Pilih bulan */}
-          <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+          {/* Bulan */}
+          <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
             <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={navBtn(true)}><ChevronLeft size={22} /></button>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>{BULAN[ym.m]} {ym.y}</div>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>{BULAN[ym.m]} {ym.y}</div>
             <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={navBtn(adaBerikut)}><ChevronRight size={22} /></button>
           </div>
 
-          <PaperTabs tabs={[{ id: "ulasan" as const, label: "Ulasan" }, { id: "harian" as const, label: "Pemasukan Harian" }]} value={tab} onChange={setTab} />
-
-          {err && <div style={{ ...card, background: t.errorBg, borderColor: t.errorBg, color: t.error, fontWeight: 700, fontSize: 14.5, marginTop: 14 }}>{err}</div>}
+          {err && <div style={{ ...card, background: t.errorBg, borderColor: t.errorBg, color: t.error, fontWeight: 700, fontSize: 14.5, marginBottom: 12 }}>{err}</div>}
           {!txs && !err && <div style={{ textAlign: "center", padding: "48px 0", color: t.text2, fontWeight: 600 }}>Memuat…</div>}
 
-          {/* ===== TAB HARIAN: grafik batang sebulan + tanggal kuning + rincian hari itu ===== */}
-          {siap && tab === "harian" && (
-            <div style={{ paddingTop: 16 }}>
-              {/* Kalender warna: makin tua kuning, makin besar uang masuk (Lunas) hari itu */}
-              <div style={{ ...card, padding: "14px 12px 12px" }}>
+          {siap && txs.length === 0 && <div style={{ textAlign: "center", padding: "40px 0", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di bulan ini.</div>}
+
+          {siap && txs.length > 0 && (
+            <div className="flex flex-col" style={{ gap: 12 }}>
+              {/* 1 · Masuk */}
+              <div style={{ ...card, position: "relative" }}>
+                <div className="flex items-start justify-between" style={{ gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={kecil}>Masuk (Lunas)</div>
+                    <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.15, marginTop: 2 }}>{rupiah(r.masuk)}</div>
+                  </div>
+                  <button onClick={() => setMenuUnduh((v) => !v)} aria-label="Unduh laporan" aria-expanded={menuUnduh}
+                    style={{ ...navBtn(true), marginTop: -4 }}>
+                    <Ellipsis size={22} />
+                  </button>
+                </div>
+                {menuUnduh && (
+                  <>
+                    <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
+                    <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
+                    <div role="menu" style={{ position: "absolute", top: 62, right: 12, zIndex: 45, width: "min(260px, calc(100% - 24px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                      {([
+                        { Ic: FileText, label: busyPdf ? "Membuat PDF…" : "Unduh PDF", on: () => { setMenuUnduh(false); download("pdf"); } },
+                        { Ic: FileSpreadsheet, label: busyXlsx ? "Membuat Excel…" : "Unduh Excel", on: () => { setMenuUnduh(false); download("xlsx"); } },
+                      ]).map((o, i) => (
+                        <button key={o.label} role="menuitem" onClick={o.on} className="flex items-center"
+                          style={{ gap: 12, width: "100%", minHeight: 52, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, fontSize: 15.5, fontWeight: 700 }}>
+                          <o.Ic size={21} /> {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {bandingPct !== null && (
+                  <div className="flex items-center flex-wrap" style={{ gap: 6, marginTop: 6, fontSize: 14.5, fontWeight: 800 }}>
+                    {bandingPct >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                    {Math.abs(bandingPct)}%
+                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari bulan lalu{banding?.berjalan ? " · belum penuh" : ""}</span>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "16px 0 10px" }} role="img" aria-label="Pemasukan dari Pre-order dan Penjualan">
+                  <div style={{ flex: r.masukPO, background: t.chart[0] }} />
+                  <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
+                </div>
+                <div className="flex flex-wrap items-center justify-between" style={{ gap: "6px 12px", fontSize: 14, fontWeight: 800 }}>
+                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
+                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
+                </div>
+                {r.belum > 0 && (
+                  <div className="flex items-center gap-2" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}`, fontSize: 14, fontWeight: 700, color: t.text2 }}>
+                    <Wallet size={18} style={{ flex: "none" }} /> Belum dibayar <b style={{ color: t.text, fontWeight: 800 }}>{rpSingkat(r.belum)}</b>
+                  </div>
+                )}
+              </div>
+
+              {/* 2 · Kalender harian */}
+              <div style={card}>
                 <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
                   {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
                     <div key={h} style={{ fontSize: 12, fontWeight: 700, color: t.text2, paddingBottom: 2 }}>{h}</div>
                   ))}
                   {Array.from({ length: (new Date(ym.y, ym.m, 1).getDay() + 6) % 7 }, (_, i) => <div key={"k" + i} />)}
                   {Array.from({ length: jumlahHari }, (_, i) => {
-                    const v = perHariMap.get(ymd(i + 1))?.masuk;
                     const ada = perHariMap.has(ymd(i + 1));
+                    const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
                     const on = i === idxAktif;
                     const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,201,51,${(0.25 + 0.75 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
                     return (
                       <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
-                        style={{ height: 46, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                        style={{ height: 44, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
                         {i + 1}
                       </button>
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-between gap-2" style={{ marginTop: 10, minHeight: 40, paddingLeft: 4 }}>
-                  <div className="flex items-center gap-2" style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>
-                    sedikit
-                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgba(255,201,51,.3)" }} />
-                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgba(255,201,51,.65)" }} />
-                    <span style={{ width: 22, height: 10, borderRadius: 5, background: "rgb(255,201,51)" }} />
-                    banyak
-                  </div>
-                  {ym.y === nowY && ym.m === nowM && hariAktif !== todayYmd && (
-                    <button onClick={() => setDipilih(todayYmd)}
-                      aria-label="Kembali ke hari ini" className="flex items-center gap-1.5" style={{ height: 40, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
-                      <RotateCcw size={15} /> Hari ini
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Satu kartu: tanggal terpilih (kuning) + rincian hari itu */}
-              <div style={{ ...card, marginTop: 14 }}>
-                {/* Kiri: label + tanggal kuning · Kanan: nominal besar + jumlah transaksi */}
-                <div className="flex items-start justify-between gap-3">
-                  <div style={{ flex: "none" }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
-                    <div style={{ marginTop: 8, height: 34, padding: "0 11px", borderRadius: 10, background: t.primary, color: t.onPrimary, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
+                  <div className="flex items-center flex-wrap" style={{ gap: 8 }}>
+                    <span className="flex items-center gap-1.5" style={{ height: 34, padding: "0 11px", borderRadius: 10, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>
                       <Calendar size={16} /> {labelHari(hariAktif)}
-                    </div>
+                    </span>
+                    {tglIni && hariAktif !== todayYmd && (
+                      <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
+                        style={{ height: 34, padding: "0 11px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                        <RotateCcw size={14} /> Hari ini
+                      </button>
+                    )}
                   </div>
-                  <div style={{ textAlign: "right", minWidth: 0 }}>
-                    <div style={{ fontSize: rHari.masuk >= 10_000_000 ? 22 : 28, fontWeight: 800, color: t.text, lineHeight: 1.15, whiteSpace: "nowrap" }}>{rupiah(rHari.masuk)}</div>
-                    <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 6 }}>{rHari.nMasuk} transaksi Lunas</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2, marginTop: 10 }}>{rupiah(hariData?.masuk ?? 0)}</div>
+                  <div style={{ ...kecil, marginTop: 2 }}>
+                    {hariData ? `${hariData.n} transaksi${hariData.belum > 0 ? ` · belum dibayar ${rpSingkat(hariData.belum)}` : ""}` : "Tidak ada transaksi"}
                   </div>
-                </div>
-                <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
-                {!hariIni ? (
-                  <div style={{ textAlign: "center", color: t.text2, fontWeight: 600, padding: "6px 0 4px" }}>Tidak ada transaksi di tanggal ini.</div>
-                ) : (
-                  <>
-                    <Baris label="Dari Pre-order" nilai={rupiah(rHari.masukPO)} />
-                    <Baris label="Dari Penjualan" nilai={rupiah(rHari.masukPJ)} />
-                    <Baris label={`Belum Dibayar (${rHari.nBelum})`} nilai={rupiah(rHari.belum)} />
-                    {rHari.nBatal > 0 && <Baris label="Dibatalkan (tidak dihitung)" nilai={String(rHari.nBatal)} />}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ===== TAB ULASAN: gambaran sebulan ===== */}
-          {siap && tab === "ulasan" && (
-            <div style={{ paddingTop: 16 }}>
-              <div style={{ ...card, marginBottom: 14, position: "relative" }}>
-                <button onClick={() => setMenuUnduh((v) => !v)} aria-label="Unduh laporan" aria-expanded={menuUnduh}
-                  style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                  <Ellipsis size={22} />
-                </button>
-                {menuUnduh && (
-                  <>
-                    <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
-                    <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
-                    <div role="menu" style={{ position: "absolute", top: 60, right: 10, zIndex: 45, width: "min(290px, calc(100% - 20px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
-                      {([
-                        { Ic: FileText, label: busy2 ? "Membuat PDF…" : "Unduh PDF", on: () => { setMenuUnduh(false); download("pdf"); } },
-                        { Ic: FileSpreadsheet, label: busy ? "Membuat Excel…" : "Unduh Excel", on: () => { setMenuUnduh(false); download("xlsx"); } },
-                      ]).map((o, i) => (
-                        <button key={o.label} role="menuitem" onClick={o.on} disabled={txs.length === 0} className="flex items-center"
-                          style={{ gap: 12, width: "100%", minHeight: 52, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, opacity: txs.length === 0 ? 0.5 : 1 }}>
-                          <o.Ic size={21} />
-                          <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ display: "block", fontSize: 15.5, fontWeight: 700 }}>{o.label}</span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: t.text, marginTop: 2, lineHeight: 1.15 }}>{rupiah(r.masuk)}</div>
-                {bandingPct !== null && banding && (
-                  <div className="flex items-center gap-1.5" style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: t.text }}>
-                    {bandingPct >= 0 ? <TrendingUp size={19} /> : <TrendingDown size={19} />} {Math.abs(bandingPct)}%
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari bulan lalu{banding.berjalan ? " · belum penuh" : ""}</span>
-                  </div>
-                )}
-                {/* Pre-order vs Penjualan */}
-                <div style={{ display: "flex", height: 14, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "16px 0 10px" }} role="img" aria-label="Pemasukan dari Pre-order dan Penjualan">
-                  <div style={{ flex: r.masukPO, background: t.chart[0] }} />
-                  <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
-                </div>
-                <div className="flex items-center justify-between" style={{ fontSize: 14, fontWeight: 800 }}>
-                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
                 </div>
               </div>
 
-              {txs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di bulan ini.</div>
-              ) : (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
-                    <Ubin Ic={Wallet} judul="Belum dibayar" nilai={rpSingkat(r.belum)} cap={`${r.nBelum.toLocaleString("id-ID")} transaksi`} />
-                    <Ubin Ic={CalendarDays} judul="Rata-rata per hari" nilai={rpSingkat(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} cap={`dari ${hariBuka} hari`} />
-                  </div>
+              {/* 3 · Menu terlaris */}
+              <div style={card}>
+                <div style={{ ...kecil, marginBottom: 8 }}>Menu terlaris</div>
+                <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
+              </div>
 
-                  {pk && pk.dikemas > 0 && (
-                    <div className="flex items-center gap-4" style={{ ...card, marginBottom: 14 }}>
-                      <Gauge pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>Packing Pre-order</div>
-                        <BarisPacking Ic={CircleCheck} warna={t.text} nilai={pk.tepat.toLocaleString("id-ID")} teks="pesanan dikemas tepat waktu" />
-                        <BarisPacking Ic={AlarmClock} warna={t.text} nilai={pk.telat.toLocaleString("id-ID")} teks="pesanan telat dikemas" />
-                        {pk.rataMenit > 0 && <BarisPacking Ic={Timer} warna={t.text} nilai={`${pk.rataMenit} mnt`} teks="rata-rata telatnya" />}
-                        {pk.belum > 0 && <BarisPacking Ic={CircleDashed} warna={t.text2} nilai={pk.belum.toLocaleString("id-ID")} teks="belum ditandai dikemas" />}
+              {/* 4 · Packing */}
+              {pk.dikemas > 0 && (
+                <div style={card}>
+                  <div style={{ ...kecil, marginBottom: 8 }}>Packing Pre-order</div>
+                  <div className="flex items-center flex-wrap" style={{ gap: "10px 18px" }}>
+                    <Gauge pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 15, fontWeight: 600, color: t.text2 }}>
+                        <CircleCheck size={19} color={t.text} style={{ flex: "none" }} /><span><b style={{ fontSize: 17, fontWeight: 800, color: t.text }}>{pk.tepat.toLocaleString("id-ID")}</b> tepat waktu</span>
+                      </div>
+                      <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 15, fontWeight: 600, color: t.text2 }}>
+                        <AlarmClock size={19} color={t.text} style={{ flex: "none" }} /><span><b style={{ fontSize: 17, fontWeight: 800, color: t.text }}>{pk.telat.toLocaleString("id-ID")}</b> telat</span>
                       </div>
                     </div>
-                  )}
-
-                  <div style={{ ...card, marginBottom: 14 }}>
-                    <div style={sectionTitle}>Menu Terlaris · {BULAN[ym.m]} {ym.y}</div>
-                    <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
+                </div>
+              )}
 
-                  {u.tingkatAmbil.length > 0 && (
-                    <div style={{ ...card, marginBottom: 14 }}>
-                      <div style={sectionTitle}>Pesanan per Tingkat</div>
-                      <Treemap items={u.tingkatAmbil.map((x) => ({ nama: x.tingkat, n: x.total }))} />
-                      <div className="flex flex-wrap" style={{ gap: 8, marginTop: 12 }}>
-                        {u.ambilUrut.map((k) => (
-                          <span key={k} className="flex items-center gap-1.5" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 700 }}>
-                            <Clock size={14} /> {k} <b style={{ fontWeight: 800 }}>{(u.ambil.find(([n]) => n === k)?.[1] ?? 0).toLocaleString("id-ID")}</b>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {u.pemesan.length > 0 && (
-                    <div style={card}>
-                      <div style={sectionTitle}>Langganan</div>
-                      <Piktogram kembali={u.pemesanKembali} total={u.pemesanTotal} />
-                      <Podium rows={u.pemesan} />
-                    </div>
-                  )}
-                </>
+              {/* 5 · Pemesan kembali */}
+              {u.pemesanTotal > 0 && (
+                <div style={card}>
+                  <div style={{ ...kecil, marginBottom: 10 }}>Pemesan kembali memesan</div>
+                  <Piktogram kembali={u.pemesanKembali} total={u.pemesanTotal} />
+                </div>
               )}
             </div>
           )}
@@ -625,145 +569,9 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   );
 }
 
-function Baris({ label, nilai, warna }: { label: string; nilai: string; warna?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3" style={{ padding: "5px 0" }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: t.text2 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: warna ?? t.text, textAlign: "right" }}>{nilai}</div>
-    </div>
-  );
-}
+const kecil: React.CSSProperties = { fontSize: 13.5, fontWeight: 700, color: t.text2 };
 
-/** Daftar batang horizontal tipis: label kiri, nilai kanan, batang kuning proporsional. */
-function Batang({ rows }: { rows: { label: string; nilai: number; teks: string }[] }) {
-  const max = Math.max(1, ...rows.map((x) => x.nilai));
-  return (
-    <div>
-      {rows.map((x) => (
-        <div key={x.label} style={{ padding: "7px 0" }}>
-          <div className="flex items-baseline justify-between gap-3">
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{x.label}</div>
-            <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>{x.teks}</div>
-          </div>
-          <div style={{ height: 6, borderRadius: 999, background: t.divider, marginTop: 6, overflow: "hidden" }}>
-            <div style={{ width: `${Math.round((x.nilai / max) * 100)}%`, height: "100%", borderRadius: 999, background: t.primary }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* Warna irisan donat = t.chart (palet E pilihan pemilik: kuning + hijau segar, selang terang/gelap
-   supaya irisan bersebelahan tetap terpisah jelas). */
-const IRIS = t.chart;
-
-function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: number }][]; bulan: string; tahun: number }) {
-  // Donat = 5 menu teratas menurut OMZET (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
-  // kalau digabung jadi irisan "Lainnya", irisan itu mendominasi dan donat tidak informatif.
-  const top = data.slice(0, 5);
-  const total = top.reduce((n, [, v]) => n + v.nilai, 0);
-  if (!total) return null;
-  const baris = top.map(([k, v], i) => ({ k, qty: v.qty, nilai: v.nilai, warna: IRIS[i] }));
-  const R = 52, SW = 24, C = 2 * Math.PI * R;
-  let acc = 0;
-  return (
-    <div>
-      <div style={{ display: "grid", placeItems: "center", margin: "4px 0 14px", position: "relative" }}>
-        <svg width="170" height="170" viewBox="0 0 140 140" role="img" aria-label="Menu terlaris">
-          <g transform="rotate(-90 70 70)">
-            {baris.map((b) => {
-              const len = (b.nilai / total) * C;
-              const el = (
-                <circle key={b.k} cx="70" cy="70" r={R} fill="none" stroke={b.warna} strokeWidth={SW}
-                  strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />
-              );
-              acc += len;
-              return el;
-            })}
-          </g>
-        </svg>
-        <div style={{ position: "absolute", textAlign: "center" }}>
-          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{bulan}</div>
-          <div style={{ fontSize: 14, color: t.text2, fontWeight: 700 }}>{tahun}</div>
-        </div>
-      </div>
-      {baris.map((b) => (
-        <div key={b.k} className="flex items-center gap-3" style={{ padding: "7px 0" }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: b.warna, flex: "none", border: `1px solid ${t.borderStrong}` }} />
-          <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.k}</div>
-          <div style={{ fontSize: 14, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{b.qty.toLocaleString("id-ID")}</div>
-          <div style={{ width: 40, textAlign: "right", fontSize: 13.5, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((b.nilai / total) * 100)}%</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Peringkat langganan: nomor urut + batang tipis sesuai total belanja. */
-function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nilai: number }[] }) {
-  const max = Math.max(1, ...rows.map((x) => x.nilai));
-  return (
-    <div>
-      {rows.map((x, i) => {
-        const pct = Math.max(4, Math.round((x.nilai / max) * 100));
-        return (
-          <div key={x.nama + x.kelas} style={{ padding: "10px 0", borderTop: i ? `1px solid ${t.divider}` : "none" }}>
-            <div className="flex items-center gap-3">
-              <div style={{ width: 36, height: 36, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", fontSize: 16, fontWeight: 800,
-                background: i === 0 ? t.primary : "transparent", color: t.text, border: i === 0 ? "none" : `1.5px solid ${t.borderStrong}` }}>
-                {i + 1}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nama}</div>
-                <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>{x.kelas ? `${x.kelas} · ` : ""}{x.n} pesanan</div>
-              </div>
-              <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>{rupiah(x.nilai)}</div>
-            </div>
-            <div style={{ position: "relative", height: 8, borderRadius: 999, background: t.divider, margin: "10px 0 0 48px" }}>
-              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: t.primary }} />
-                          </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Treemap: luas kotak = jumlah pesanan Pre-order per tingkat. Tingkat kecil (<5%) digabung "Lainnya". */
-function Treemap({ items }: { items: { nama: string; n: number }[] }) {
-  const total = items.reduce((a, x) => a + x.n, 0);
-  if (!total) return null;
-  const besar = items.filter((x) => x.n / total >= 0.05).sort((a, b) => b.n - a.n);
-  const kecil = items.filter((x) => x.n / total < 0.05);
-  const blok = [...besar, ...(kecil.length ? [{ nama: "Lainnya", n: kecil.reduce((a, x) => a + x.n, 0), isi: kecil.map((x) => x.nama).join(", ") }] : [])] as { nama: string; n: number; isi?: string }[];
-  // potong bergantian (kiri/atas) — kotak terbesar dulu
-  const rects: { x: number; y: number; w: number; h: number; b: { nama: string; n: number; isi?: string } }[] = [];
-  let x = 0, y = 0, w = 100, h = 62; // satuan relatif; tinggi 62% dari lebar
-  let sisa = total;
-  blok.forEach((b, i) => {
-    if (i === blok.length - 1) { rects.push({ x, y, w, h, b }); return; }
-    const frac = b.n / sisa;
-    if (w >= h) { const fw = w * frac; rects.push({ x, y, w: fw, h, b }); x += fw; w -= fw; }
-    else { const fh = h * frac; rects.push({ x, y, w, h: fh, b }); y += fh; h -= fh; }
-    sisa -= b.n;
-  });
-  return (
-    <div style={{ position: "relative", width: "100%", paddingTop: "62%" }} role="img" aria-label="Pesanan per tingkat">
-      {rects.map((r, i) => (
-        <div key={r.b.nama} title={r.b.isi ?? r.b.nama}
-          style={{ position: "absolute", left: `${r.x}%`, top: `${(r.y / 62) * 100}%`, width: `${r.w}%`, height: `${(r.h / 62) * 100}%`, padding: 2, boxSizing: "border-box" }}>
-          <div style={{ width: "100%", height: "100%", borderRadius: 10, background: t.chart[i % t.chart.length], color: t.text, padding: "8px 9px", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.b.nama}</div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{r.b.n.toLocaleString("id-ID")}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Rupiah ringkas untuk ubin/chip: Rp2,8 jt · Rp716 rb · Rp950 */
+/** Rupiah ringkas: Rp2,8 jt · Rp717 rb · Rp950 */
 function rpSingkat(n: number): string {
   if (n >= 1_000_000) return `Rp${(n / 1_000_000).toFixed(1).replace(".", ",").replace(",0", "")} jt`;
   if (n >= 1_000) return `Rp${Math.round(n / 1_000)} rb`;
@@ -774,25 +582,38 @@ function IkonKotak({ warna, children }: { warna: string; children: React.ReactNo
   return <span style={{ width: 24, height: 24, borderRadius: 7, background: warna, color: t.onPrimary, display: "grid", placeItems: "center", flex: "none" }}>{children}</span>;
 }
 
-/** Ubin sorotan: ikon bulat + nilai besar + keterangan sangat singkat. */
-function Ubin({ Ic, judul, nilai, cap }: { Ic: React.ComponentType<{ size?: number }>; judul: string; nilai: string; cap: string }) {
+/** Donat 5 menu teratas (omzet): bulan di tengah, legenda = nama + persen. */
+function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: number }][]; bulan: string; tahun: number }) {
+  const top = data.slice(0, 5);
+  const total = top.reduce((n, [, v]) => n + v.nilai, 0);
+  if (!total) return null;
+  const R = 52, SW = 24, C = 2 * Math.PI * R;
+  let acc = 0;
   return (
-    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 12 }}>
-      <div className="flex items-center gap-2">
-        <div style={{ width: 32, height: 32, borderRadius: 10, background: t.primaryLight, color: t.text, display: "grid", placeItems: "center", flex: "none" }}><Ic size={18} /></div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: t.text2, lineHeight: 1.2 }}>{judul}</div>
+    <div>
+      <div style={{ display: "grid", placeItems: "center", margin: "2px 0 14px", position: "relative" }}>
+        <svg width="160" height="160" viewBox="0 0 140 140" role="img" aria-label="Menu terlaris">
+          <g transform="rotate(-90 70 70)">
+            {top.map(([k, v], i) => {
+              const len = (v.nilai / total) * C;
+              const el = <circle key={k} cx="70" cy="70" r={R} fill="none" stroke={t.chart[i]} strokeWidth={SW} strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />;
+              acc += len;
+              return el;
+            })}
+          </g>
+        </svg>
+        <div style={{ position: "absolute", textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}>{bulan}</div>
+          <div style={{ fontSize: 13, color: t.text2, fontWeight: 700 }}>{tahun}</div>
+        </div>
       </div>
-      <div style={{ fontSize: 21, fontWeight: 800, marginTop: 8, lineHeight: 1.15 }}>{nilai}</div>
-      <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600, marginTop: 2, lineHeight: 1.25 }}>{cap}</div>
-    </div>
-  );
-}
-
-function BarisPacking({ Ic, warna, nilai, teks }: { Ic: React.ComponentType<{ size?: number }>; warna: string; nilai: string; teks: string }) {
-  return (
-    <div className="flex items-start gap-2" style={{ padding: "4px 0", color: warna }}>
-      <span style={{ flex: "none", marginTop: 1 }}><Ic size={19} /></span>
-      <span style={{ fontSize: 14, fontWeight: 600, color: t.text2, lineHeight: 1.3 }}><b style={{ fontSize: 16, fontWeight: 800, color: warna }}>{nilai}</b> {teks}</span>
+      {top.map(([k, v], i) => (
+        <div key={k} className="flex items-center gap-3" style={{ padding: "6px 0" }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: t.chart[i], flex: "none" }} />
+          <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: t.text2, flex: "none" }}>{Math.round((v.nilai / total) * 100)}%</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -812,39 +633,20 @@ function Gauge({ pct }: { pct: number }) {
   );
 }
 
-/** Piktogram 10 orang: berisi = pemesan yang kembali memesan. */
+/** Piktogram 10 orang: berisi = pemesan yang kembali memesan (2 hari berbeda atau lebih). */
 function Piktogram({ kembali, total }: { kembali: number; total: number }) {
   const pct = Math.round((kembali / Math.max(1, total)) * 100);
   const isi = Math.round(pct / 10);
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div>
       <div className="flex" style={{ justifyContent: "space-between" }} role="img" aria-label={`${pct}% pemesan kembali memesan`}>
         {Array.from({ length: 10 }, (_, i) => (
-          <User key={i} size={27} strokeWidth={1.8} color={i < isi ? t.chart[1] : t.borderStrong} style={{ fill: i < isi ? t.chart[1] : "none" }} />
+          <User key={i} size={26} strokeWidth={1.8} color={i < isi ? t.chart[1] : t.borderStrong} style={{ fill: i < isi ? t.chart[1] : "none" }} />
         ))}
       </div>
-      <div style={{ marginTop: 8, fontSize: 15, fontWeight: 800 }}>{pct}% pemesan kembali memesan</div>
-      <div style={{ fontSize: 13, color: t.text2, fontWeight: 600 }}>{kembali.toLocaleString("id-ID")} dari {total.toLocaleString("id-ID")} pemesan memesan di 2 hari berbeda atau lebih</div>
-    </div>
-  );
-}
-
-/** Podium 3 pemesan teratas (menurut total belanja): tinggi kolom sesuai peringkat. */
-function Podium({ rows }: { rows: { nama: string; kelas: string; n: number; nilai: number }[] }) {
-  const tinggi = [112, 84, 64];
-  const warna = [t.chart[0], t.chart[2], t.primaryLight];
-  const urut = [1, 0, 2].filter((i) => rows[i]); // 2 - 1 - 3
-  return (
-    <div className="flex items-end" style={{ gap: 8, marginTop: 4 }}>
-      {urut.map((i) => (
-        <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-          <div style={{ fontSize: 13, fontWeight: 800, fontFamily: STRUK_MONO, marginBottom: 4 }}>{rpSingkat(rows[i].nilai)}</div>
-          <div style={{ height: tinggi[i], borderRadius: "12px 12px 0 0", background: warna[i], border: i === 2 ? `1.5px solid ${t.chart[2]}` : "none", display: "grid", placeItems: "start center", paddingTop: 8, fontSize: 22, fontWeight: 800 }}>{i + 1}</div>
-          <div style={{ height: 3, background: t.borderStrong }} />
-          <div style={{ marginTop: 6, fontSize: 13.5, fontWeight: 800, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{rows[i].nama}</div>
-          <div style={{ fontSize: 12, color: t.text2, fontWeight: 600 }}>{rows[i].kelas}</div>
-        </div>
-      ))}
+      <div style={{ marginTop: 8, fontSize: 15, fontWeight: 600, color: t.text2 }}>
+        <b style={{ fontSize: 19, fontWeight: 800, color: t.text }}>{pct}%</b> · {kembali.toLocaleString("id-ID")} dari {total.toLocaleString("id-ID")} pemesan
+      </div>
     </div>
   );
 }
