@@ -379,12 +379,12 @@ export default function PreOrderAdmin({
               style={{ flex: "none", gap: 8, minHeight: 44, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
               {/* Saklar PIL: lintasan kapsul + kenop berikon power. Dibuka = hijau, kenop di kanan; ditutup = merah, kenop di kiri;
                   tutup otomatis = merah lembut berbingkai, kenop di kiri. */}
-              <span style={{ flex: "none", position: "relative", width: 60, height: 34, borderRadius: 999,
+              <span style={{ flex: "none", position: "relative", width: 46, height: 26, borderRadius: 999,
                 background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
                 border: isAutoClosed ? "2px solid #E0392B" : "none", boxSizing: "border-box" }}>
-                <span style={{ position: "absolute", top: isAutoClosed ? 2 : 3, left: open && !isAutoClosed ? 29 : (isAutoClosed ? 2 : 3), width: 28, height: 28, borderRadius: "50%", background: "#FFFFFF", display: "grid", placeItems: "center",
+                <span style={{ position: "absolute", top: isAutoClosed ? 1 : 3, left: open && !isAutoClosed ? 23 : (isAutoClosed ? 1 : 3), width: 20, height: 20, borderRadius: "50%", background: "#FFFFFF", display: "grid", placeItems: "center",
                   color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
-                  <Power size={16} strokeWidth={2.8} />
+                  <Power size={12} strokeWidth={3} />
                 </span>
               </span>
             </button>
