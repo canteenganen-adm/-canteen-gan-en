@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, CookingPot, Printer,
-  Box, Check, X, Search, Power, AlertCircle, Settings,
+  Box, Check, X, Search, Power, AlertCircle,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
@@ -147,6 +147,8 @@ export default function PreOrderAdmin({
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
+  const [cariBuka, setCariBuka] = useState(false);
+  const [kalOffset, setKalOffset] = useState(0);
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
@@ -233,6 +235,11 @@ export default function PreOrderAdmin({
     setViewDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
   };
   const lihatSesi = viewDate === serviceDate;
+  const jumlahPerHari = useMemo(() => {
+    const m = new Map<string, number>();
+    transactions.forEach((tx) => { if (tx.source === "preorder" && tx.serviceDate && !tx.cancelledAt) m.set(tx.serviceDate, (m.get(tx.serviceDate) ?? 0) + 1); });
+    return m;
+  }, [transactions]);
   const hariTerakhir = useMemo(() => {
     const m = new Map<string, number>();
     transactions.forEach((tx) => {
@@ -356,17 +363,18 @@ export default function PreOrderAdmin({
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
-            <div className="flex items-center" style={{ gap: 8 }}>
-              <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", height: 36, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
-                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
-                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
-                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
-                <Power size={12} strokeWidth={2.4} />
-                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
-              </button>
-              <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}><Settings size={19} /></button>
-            </div>
+            {/* Status sesi: tombol ON/OFF bulat, HANYA warna + ikon power (tanpa tulisan).
+                Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
+                Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
+            <button onClick={onToggleOpen}
+              aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk membuka" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
+              title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
+              style={{ flex: "none", width: 46, height: 46, borderRadius: "50%", cursor: "pointer", display: "grid", placeItems: "center",
+                background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
+                border: isAutoClosed ? "2px solid #E0392B" : "none",
+                color: isAutoClosed ? "#B3261E" : "#FFFFFF" }}>
+              <Power size={24} strokeWidth={2.6} />
+            </button>
           </div>
 
           {/* Bagian atas — padat, tanpa ruang kosong:
@@ -376,7 +384,7 @@ export default function PreOrderAdmin({
           <div style={{ marginTop: 8 }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
             <div className="flex items-center" style={{ gap: 6 }}>
-              <button onClick={() => setSheet("gantiTanggal")} aria-label="Ganti tanggal"
+              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
                 style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
@@ -419,16 +427,26 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Cari nama (murid atau guru/karyawan): satu baris penuh. */}
-          <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+          {/* Cari + kategori SATU baris: ikon cari di kiri, chip kelas menggulir di kanan.
+              Ketuk ikon = kolom cari penuh (chip disembunyikan sementara); X = tutup. */}
+          {cariBuka || q ? (
+            <div className="flex items-center gap-2" style={{ marginTop: 8, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              <X size={20} color={t.text2} style={{ cursor: "pointer", flex: "none" }} aria-label="Tutup pencarian" onClick={() => { setQ(""); setCariBuka(false); }} />
             </div>
-          </div>
-          <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
+          ) : (
+            <div className="flex items-center" style={{ marginTop: 8, gap: 6 }}>
+              <button onClick={() => setCariBuka(true)} aria-label="Cari nama pemesan"
+                style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Search size={19} />
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <KelasChips value={tingkatFilter} onChange={setTingkatFilter} rapat />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Daftar utama — preset pertama, TANPA label */}
@@ -493,27 +511,12 @@ export default function PreOrderAdmin({
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Lihat pesanan hari lain</div>
-              <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>Hanya melihat. Sesi yang sedang berjalan tidak berubah.</div>
-              {hariTerakhir.map(([d, n]) => (
-                <button key={d} onClick={() => { setViewDate(d); setSheet(null); }} className="flex items-center justify-between"
-                  style={{ width: "100%", minHeight: 52, padding: "0 2px", border: "none", borderBottom: `1px solid ${t.divider}`, background: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, color: t.text }}>
-                  <span>{tglPendekPO(d)}</span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{n} pesanan</span>
-                </button>
-              ))}
-              <div style={{ position: "relative", marginBottom: 22 }}>
-                <div className="flex items-center justify-between" style={{ minHeight: 52, padding: "0 2px", borderBottom: `1px solid ${t.divider}`, fontSize: 16, fontWeight: 700 }}>
-                  <span>Pilih tanggal lain</span><ChevronRight size={18} color={t.text2} />
-                </div>
-                <input ref={lihatTglRef} type="date" aria-label="Pilih tanggal untuk dilihat" value={viewDate}
-                  onChange={(e) => { if (e.target.value) { setViewDate(e.target.value); setSheet(null); } }}
-                  onClick={() => { try { lihatTglRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-              </div>
+              {/* Kalender bulan: ketuk tanggal = LIHAT pesanan hari itu (hanya melihat). Warna = banyaknya pesanan. */}
+              <KalenderPO viewDate={viewDate} offset={kalOffset} onOffset={setKalOffset} jumlah={jumlahPerHari}
+                onPilih={(d) => { setViewDate(d); setSheet(null); }} />
+              <div style={{ height: 1, background: t.divider, margin: "16px 0 14px" }} />
 
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Ganti tanggal sesi</div>
-              <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Pindahkan sesi ke</div>
               <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
                 style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                 <Calendar size={18} /> Hari Sekolah Berikutnya
@@ -675,7 +678,7 @@ export default function PreOrderAdmin({
 /** Baris chip kelas yang bisa digeser. Tanda ">" / "<" redup muncul di sisi
  * yang masih menyimpan chip di luar layar, hilang di ujungnya. Ketuk tanda
  * itu = geser lebih jauh. */
-function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: KelasGroup) => void }) {
+function KelasChips({ value, onChange, rapat }: { value: KelasGroup; onChange: (v: KelasGroup) => void; rapat?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState(false);
   const [before, setBefore] = useState(false);
@@ -693,7 +696,7 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
   // dipilih polos tanpa kotak; hanya yang dipilih berisi warna.
   const arrow: React.CSSProperties = { flex: "none", width: 28, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text2 };
   return (
-    <div className="flex items-center" style={{ marginTop: 6 }}>
+    <div className="flex items-center" style={{ marginTop: rapat ? 0 : 6 }}>
       {before && (
         <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser kembali ke kelas sebelumnya" style={arrow}>
           <ChevronLeft size={20} />
@@ -741,7 +744,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ background: alt ? t.bandAlt : t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+    <div style={{ background: alt ? t.bandAlt : t.surface, border: "none", boxShadow: "0 1px 1px rgba(60,48,20,.14)", borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
       {/* KARTU PENUH selang-seling: ganjil POLOS krem (t.surface), genap hijau krem (t.bandAlt) — DISETUJUI Mama via WA ("perbedaannya kentara/jelas"): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
       <div className="flex" style={{ gap: 10, padding: "10px 12px", alignItems: "flex-start" }}>
@@ -831,6 +834,46 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
             style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(47,42,36,.1)" }}><X size={18} /></button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const BULAN_PANJANG_PO = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+/** Kalender bulan untuk melihat pesanan hari lain: tanggal berwarna kuning = ada pesanan (makin pekat makin banyak). */
+function KalenderPO({ viewDate, offset, onOffset, jumlah, onPilih }: {
+  viewDate: string; offset: number; onOffset: (n: number) => void; jumlah: Map<string, number>; onPilih: (d: string) => void;
+}) {
+  const [vy, vm] = viewDate.split("-").map(Number);
+  const tot = vy * 12 + (vm - 1) + offset;
+  const y = Math.floor(tot / 12), m = tot % 12;
+  const hari = new Date(y, m + 1, 0).getDate();
+  const awal = (new Date(y, m, 1).getDay() + 6) % 7;
+  const ymd = (d: number) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const maks = Math.max(1, ...Array.from({ length: hari }, (_, i) => jumlah.get(ymd(i + 1)) ?? 0));
+  const nav: React.CSSProperties = { width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" };
+  return (
+    <div>
+      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+        <button onClick={() => onOffset(offset - 1)} aria-label="Bulan sebelumnya" style={nav}><ChevronLeft size={20} /></button>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>{BULAN_PANJANG_PO[m]} {y}</div>
+        <button onClick={() => onOffset(offset + 1)} aria-label="Bulan berikutnya" style={nav}><ChevronRight size={20} /></button>
+      </div>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
+        {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>)}
+        {Array.from({ length: awal }, (_, i) => <div key={"k" + i} />)}
+        {Array.from({ length: hari }, (_, i) => {
+          const d = ymd(i + 1);
+          const n = jumlah.get(d) ?? 0;
+          const on = d === viewDate;
+          return (
+            <button key={d} onClick={() => onPilih(d)} aria-label={`${i + 1} ${BULAN_PANJANG_PO[m]}${n ? `, ${n} pesanan` : ""}`}
+              style={{ height: 46, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600,
+                background: n ? `rgba(255,230,109,${(0.3 + 0.7 * Math.sqrt(n / maks)).toFixed(2)})` : "transparent", color: n ? t.text : t.textDis }}>
+              {i + 1}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

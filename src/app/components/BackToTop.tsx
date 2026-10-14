@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { t } from "../../lib/theme";
 
-/* Tombol bulat "kembali ke atas" — dipakai di SEMUA halaman yang bisa panjang
+/* Tombol "kembali ke atas" — ubin persegi membulat, SAMA dengan ubin kalender di Pre-order (krem kartu + garis tipis) — dipakai di SEMUA halaman yang bisa panjang
    (tab admin, Pengaturan/Laporan, halaman pemesanan orang tua).
    Muncul setelah menggulir jauh; ketuk = gulir mulus ke atas.
    - root diisi  : hanya mengikuti gulir DI DALAM elemen itu (kolom gulir sendiri).
@@ -44,7 +44,7 @@ export default function BackToTop({ root, bottom = "calc(20px + env(safe-area-in
   if (!show) return null;
   return (
     <button onClick={() => last.current?.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Kembali ke atas"
-      style={{ position: "fixed", right: 16, bottom, zIndex, width: 48, height: 48, borderRadius: "50%", border: `1.5px solid ${t.borderStrong}`, background: t.fab, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 16px rgba(42,40,32,.2)" }}>
+      style={{ position: "fixed", right: 16, bottom, zIndex, width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(42,40,32,.14)" }}>
       <ArrowUp size={22} strokeWidth={2.4} />
     </button>
   );
