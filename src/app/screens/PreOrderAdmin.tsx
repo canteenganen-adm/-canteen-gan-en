@@ -457,7 +457,7 @@ export default function PreOrderAdmin({
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>
           ) : utama.map((g, i) => (
-            <MergedOrderCard key={g.key} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
+            <MergedOrderCard key={g.key} alt={i % 2 === 1} g={g} onTap={() => handleGroupTap(g)} isLate={isGroupLate(g)} packedLate={isPackedLate(g)} lateTime={jamAmbilFor(g)} />
           ))}
 
         </div>
@@ -735,16 +735,16 @@ function ItemLines({ items }: { items: Transaction["items"] }) {
   );
 }
 
-function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: MergedGroup; onTap: () => void; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
+function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: MergedGroup; alt?: boolean; onTap: () => void; isLate?: boolean; packedLate?: boolean; lateTime?: string | null }) {
   const partial = g.somePacked && !g.allPacked;
   const checkBg = g.allPacked ? t.success : partial ? t.primary : t.surface;
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
     <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
-      {/* PITA ATAS (abu hangat, sama untuk semua kartu): centang + nama + kelas/waktu ambil
+      {/* PITA ATAS (kuning, kartu genap hijau segar — selang-seling): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
-      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: t.band, alignItems: "flex-start" }}>
+      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: alt ? t.bandAlt : t.band, alignItems: "flex-start" }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}
