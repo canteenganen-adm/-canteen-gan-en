@@ -394,12 +394,12 @@ export default function Tagihan({
             onChange={setTab}
           />
 
-          {/* Cari — ramping, tanpa border berat */}
-          <div className="flex items-center gap-2" style={{ marginTop: 10, background: t.surfaceSoft, border: `1px solid ${t.divider}`, borderRadius: 11, padding: "0 12px", height: 42 }}>
-            <Search size={17} color={t.textDis} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kelas, atau WhatsApp…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 14.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {q && <X size={17} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+          {/* Cari — SAMA dengan Pre-order/Menu: tinggi 48, sudut 12, garis 1.5px, latar kartu */}
+          <div className="flex items-center gap-2" style={{ marginTop: 12, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 14px", height: 48, boxSizing: "border-box" }}>
+            <Search size={19} color={t.text2} style={{ flex: "none" }} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kelas, WA…"
+              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+            {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
           </div>
 
           {/* SATU baris filter, TIDAK PERNAH melebar dua baris: chip sumber
