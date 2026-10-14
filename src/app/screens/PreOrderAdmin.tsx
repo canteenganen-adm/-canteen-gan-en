@@ -369,7 +369,7 @@ export default function PreOrderAdmin({
                 {isAutoClosed ? "tutup otomatis" : open ? "telah dibuka" : "ditutup"}
               </span>
             </div>
-            {/* Status sesi: tombol ON/OFF bulat, HANYA warna + ikon power (tanpa tulisan).
+            {/* Status sesi: saklar ON/OFF berbentuk pil (tanpa tulisan; tulisan ada di judul).
                 Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
                 Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
             <button onClick={onToggleOpen}
@@ -377,11 +377,15 @@ export default function PreOrderAdmin({
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
               className="flex items-center"
               style={{ flex: "none", gap: 8, minHeight: 44, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-              <span style={{ flex: "none", width: 32, height: 32, borderRadius: "50%", display: "grid", placeItems: "center",
+              {/* Saklar PIL: lintasan kapsul + kenop berikon power. Dibuka = hijau, kenop di kanan; ditutup = merah, kenop di kiri;
+                  tutup otomatis = merah lembut berbingkai, kenop di kiri. */}
+              <span style={{ flex: "none", position: "relative", width: 60, height: 34, borderRadius: 999,
                 background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
-                border: isAutoClosed ? "2px solid #E0392B" : "none",
-                color: isAutoClosed ? "#B3261E" : "#FFFFFF" }}>
-                <Power size={17} strokeWidth={2.6} />
+                border: isAutoClosed ? "2px solid #E0392B" : "none", boxSizing: "border-box" }}>
+                <span style={{ position: "absolute", top: isAutoClosed ? 2 : 3, left: open && !isAutoClosed ? 29 : (isAutoClosed ? 2 : 3), width: 28, height: 28, borderRadius: "50%", background: "#FFFFFF", display: "grid", placeItems: "center",
+                  color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
+                  <Power size={16} strokeWidth={2.8} />
+                </span>
               </span>
             </button>
           </div>
