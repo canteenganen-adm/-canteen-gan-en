@@ -6,7 +6,6 @@ import {
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
-import { tingkatColor } from "../../lib/constants";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
 
@@ -443,7 +442,7 @@ export default function Tagihan({
                     <div className="flex items-center justify-between" style={{ gap: 10 }}>
                       <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
                         <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.customer.tingkat, g.customer.kelas), flex: "none" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
                           {g.customer.kelas || g.customer.tingkat}
                         </span>
                       </div>
@@ -555,7 +554,7 @@ export default function Tagihan({
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
                       <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama}</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: tingkatColor(g.customer.tingkat, g.customer.kelas), flex: "none" }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
                         {g.customer.kelas || g.customer.tingkat}
                       </span>
                     </div>

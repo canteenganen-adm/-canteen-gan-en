@@ -286,7 +286,7 @@ export default function Penjualan({
               Seluruh area tanggal diketuk via input date overlay inset:0 */}
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 42, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 11px 11px 0", cursor: "pointer",
+              style={{ position: "relative", flex: "none", height: 44, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 12px 12px 0", cursor: "pointer",
                 background: isBackdate ? "#FFF4BF" : t.surface, border: `1px solid ${isBackdate ? t.primaryLine : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
@@ -297,11 +297,11 @@ export default function Penjualan({
                 aria-label="Tanggal transaksi"
                 style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
             </div>
-            <div className="flex items-center gap-2" style={{ flex: 1, background: t.surfaceSoft, border: `1px solid ${t.divider}`, borderRadius: 11, padding: "0 12px", height: 42 }}>
-              <Search size={16} color={t.textDis} />
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+              <Search size={18} color={t.text2} style={{ flex: "none" }} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 14.5, width: "100%", color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={16} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
           </div>
           {isBackdate && (

@@ -33,6 +33,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - **Kolom ketik:** huruf WAJIB ≥16px (sudah dipaksa global di `theme.css`) — di bawah itu Safari iOS memperbesar layar dan terasa "susah mengetik".
 - **Header halaman (4 tab + halaman baru):** SAMA PERSIS — padding atas 20px, baris `flex items-center justify-between`, judul 22px w800 `letter-spacing:-.02em` rata kiri 20px (hasilnya top ±26px di HP), tombol gear (Pengaturan) KOTAK 44×44 radius 12 border 1.5px `t.border` isi `t.surface` ikon Settings 19px, 20px dari tepi kanan. Info ringkas (mis. total) boleh di kiri gear, jangan mengubah tinggi/posisi baris judul. Jangan bikin variasi per halaman.
 - **Tombol melayang "kembali ke atas":** bulat 48px, token `t.fab` (abu-kuning lembut `#D6D0B0`) + panah gelap, kanan bawah di ATAS nav (bukan menempel dasar). Bukan hitam (ditolak), bukan kuning (menyatu dengan pita kartu).
+- **Kolom cari (Pre-order, Penjualan, Transaksi, Menu):** SAMA — tinggi 44px, latar `t.surface` (krem kartu), garis 1.5px `t.border`, sudut 12, huruf 16px (cegah zoom iOS), ikon Search 18px `t.text2`. Tombol + di Menu 44×44. Pil KELAS di mana pun = border saja `#A59B80`, tanpa warna per tingkat (termasuk Transaksi). Tab kertas: satu baris (nowrap).
 - **Grid dua kolom kartu:** pakai `repeat(2, minmax(0, 1fr))` + item `minWidth:0` — `1fr` biasa bisa jadi 6:4 di iOS.
 - **Interaksi:** hindari dialog konfirmasi → pakai Undo. Picker tanggal/jam wajib bisa diketuk di SELURUH area (input overlay inset:0), uji di Safari iOS.
 

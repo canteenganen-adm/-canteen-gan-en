@@ -18,7 +18,7 @@ export default function PaperTabs<T extends string>({ tabs, value, onChange, war
           return (
             <button key={id} onClick={() => onChange(id)}
               className="flex items-center gap-1.5"
-              style={{ padding: "11px 20px 10px", fontSize: 14, fontWeight: on ? 800 : 600, cursor: "pointer",
+              style={{ padding: tabs.length > 2 ? "11px 12px 10px" : "11px 20px 10px", whiteSpace: "nowrap", fontSize: 14, fontWeight: on ? 800 : 600, cursor: "pointer",
                 borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
                 borderTop: `1px solid ${on ? t.border : "transparent"}`,
                 borderLeft: `1px solid ${on ? t.border : "transparent"}`,
