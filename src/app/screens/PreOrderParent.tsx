@@ -279,8 +279,8 @@ export default function PreOrderParent({
           <div style={{ fontSize: 24, fontWeight: 800 }}>{kantin}</div>
           <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, fontStyle: "italic" }}>Masakan sehangat pelukan Ibu</div>
           <div className="flex items-center justify-center gap-2" style={{ marginTop: 12, color: t.text2, fontSize: 14.5 }}><Calendar size={16} /> {serviceDate}</div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: closed ? "#FFDDD7" : "#D6F2B0", border: `2px solid ${closed ? "#E0392B" : "#5DBB3F"}`, color: closed ? "#B3261E" : "#1E5E1A" }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: closed ? "#E0392B" : "#5DBB3F" }} /> Pre-order {closed ? "Ditutup" : "Dibuka"}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 13.5, background: closed ? "#D9382A" : "#D6F2B0", border: `2px solid ${closed ? "#D9382A" : "#5DBB3F"}`, color: closed ? "#FFFFFF" : "#1E5E1A" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: closed ? "#FFFFFF" : "#5DBB3F" }} /> Pre-order {closed ? "Ditutup" : "Dibuka"}
           </div>
           <div style={{ marginTop: 36 }}>
             {!closed ? (

@@ -382,9 +382,9 @@ export default function PreOrderAdmin({
             <div className="flex items-center justify-between" style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? "#FFF4BF" : open ? "#D6F2B0" : "#FFDDD7",
-                  border: `2px solid ${isAutoClosed ? "#E8C84C" : open ? "#5DBB3F" : "#E0392B"}`,
-                  color: isAutoClosed ? t.onPrimary : open ? "#1E5E1A" : "#B3261E" }}>
+                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
+                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
+                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
