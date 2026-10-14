@@ -636,7 +636,7 @@ export default function Pengaturan({
                     <div>
                       <div style={{ fontSize: 15.5, fontWeight: 800 }}>{tx.customer.nama}</div>
                       {kelasParts && (
-                        <span style={{ background: tingkatColor(tx.customer.tingkat, tx.customer.kelas), color: "#FFFFFF", padding: "2px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
+                        <span style={{ background: "transparent", color: t.text, border: "1.5px solid #A59B80", padding: "1px 9px", borderRadius: 999, fontSize: 12, fontWeight: 800, display: "inline-block", marginTop: 4 }}>
                           {kelasParts}
                         </span>
                       )}

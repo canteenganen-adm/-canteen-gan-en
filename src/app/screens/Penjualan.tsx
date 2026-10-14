@@ -435,7 +435,7 @@ export default function Penjualan({
                     style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left" }}>
                     <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{c.nama}</span>
                     {c.kelas && (
-                      <span style={{ fontSize: 11, fontWeight: 800, color: "#FFFFFF", background: tingkatColor(c.tingkat, c.kelas), padding: "1px 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: t.text, background: "transparent", border: "1.5px solid #A59B80", padding: "0 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
                     )}
                     <span style={{ marginLeft: "auto", textAlign: "right", flex: "none" }}>
                       <span style={{ display: "block", fontSize: 12, color: t.text2 }}>{c.wa || "tanpa WA"}</span>

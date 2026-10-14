@@ -367,23 +367,24 @@ export default function PreOrderAdmin({
               lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
           <div style={{ marginTop: 8 }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
-            <div className="flex items-center" style={{ gap: 8 }}>
+            <div className="flex items-center" style={{ gap: 6 }}>
               <button onClick={() => setSheet("gantiTanggal")} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 46, height: 46, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.25 }}>{tglPendekPO(viewDate)}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{tglPendekPO(viewDate)}</div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center"
                   style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
                   Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
               <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", height: 38, padding: "0 11px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
+                style={{ flex: "none", height: 32, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
                   border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
                   color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
+                <Power size={12} strokeWidth={2.4} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
             </div>
@@ -704,8 +705,8 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
               style={{ flex: "none", height: 38, padding: "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit", border: "none",
-                background: on ? (k.warna ?? t.primary) : "transparent",
-                color: on ? (k.warna ? "#FFFFFF" : t.onPrimary) : t.text2 }}>
+                background: on ? t.primary : "transparent",
+                color: on ? t.onPrimary : t.text2 }}>
               {k.label}
             </button>
           );
