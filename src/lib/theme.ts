@@ -28,6 +28,8 @@ export const t = {
   errorBg: "#FBE7E3",
   border: "#E8E0D2",
   borderStrong: "#DDD4C0",
+  // palet donat/grafik (pilihan pemilik "E"): kuning + hijau segar, selang terang-gelap
+  chart: ["#FFC933", "#3FAE49", "#FFE66D", "#8CCB4F", "#F59E0B"],
   fab: "#D6D0B0", // tombol melayang (kembali ke atas): abu-kuning lembut, terpisah jelas dari pita kuning & kartu krem
   divider: "#F1EBE0",
   amberText: "#2A2820",

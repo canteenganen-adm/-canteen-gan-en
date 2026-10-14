@@ -302,7 +302,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   const [txs, setTxs] = useState<Transaction[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"harian" | "ulasan">("harian");
+  const [tab, setTab] = useState<"harian" | "ulasan">("ulasan");
   const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
@@ -390,7 +390,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
             <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={navBtn(adaBerikut)}><ChevronRight size={22} /></button>
           </div>
 
-          <PaperTabs tabs={[{ id: "harian" as const, label: "Pemasukan Harian" }, { id: "ulasan" as const, label: "Ulasan" }]} value={tab} onChange={setTab} />
+          <PaperTabs tabs={[{ id: "ulasan" as const, label: "Ulasan" }, { id: "harian" as const, label: "Pemasukan Harian" }]} value={tab} onChange={setTab} />
 
           {err && <div style={{ ...card, background: t.errorBg, borderColor: t.errorBg, color: t.error, fontWeight: 700, fontSize: 14.5, marginTop: 14 }}>{err}</div>}
           {!txs && !err && <div style={{ textAlign: "center", padding: "48px 0", color: t.text2, fontWeight: 600 }}>Memuat…</div>}
@@ -398,20 +398,32 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
           {/* ===== TAB HARIAN: grafik batang sebulan + tanggal kuning + rincian hari itu ===== */}
           {siap && tab === "harian" && (
             <div style={{ paddingTop: 16 }}>
-              <div style={{ ...card, paddingBottom: 12 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 10 }}>Uang masuk tiap hari · ketuk batang untuk memilih tanggal</div>
-                <div role="img" aria-label="Grafik uang masuk per hari" data-testid="grafik-harian"
-                  onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); const i = Math.min(jumlahHari - 1, Math.max(0, Math.floor(((e.clientX - b.left) / b.width) * jumlahHari))); setDipilih(ymd(i + 1)); }}
-                  style={{ position: "relative", height: 130, display: "flex", alignItems: "flex-end", gap: 2, cursor: "pointer", paddingBottom: 22, boxSizing: "border-box" }}>
-                  {Array.from({ length: jumlahHari }, (_, i) => {
-                    const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
-                    const on = i === idxAktif;
-                    const tinggi = maxHari ? Math.max(v > 0 ? 4 : 2, Math.round((v / maxHari) * 100)) : 2;
-                    return <div key={i} style={{ flex: 1, height: `${tinggi}%`, borderRadius: 3, background: on ? t.primary : v > 0 ? t.fab : t.divider, boxShadow: on ? `0 0 0 2px ${t.primary}` : "none" }} />;
-                  })}
-                  {[1, 5, 10, 15, 20, 25, jumlahHari].map((d) => (
-                    <div key={d} style={{ position: "absolute", bottom: 0, left: `${((d - 0.5) / jumlahHari) * 100}%`, transform: "translateX(-50%)", fontSize: 11.5, fontWeight: d - 1 === idxAktif ? 800 : 600, color: t.text2 }}>{d}</div>
+              {/* Kalender warna: makin tua kuning, makin besar uang masuk (Lunas) hari itu */}
+              <div style={{ ...card, padding: "14px 12px 12px" }}>
+                <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
+                  {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
+                    <div key={h} style={{ fontSize: 12, fontWeight: 700, color: t.text2, paddingBottom: 2 }}>{h}</div>
                   ))}
+                  {Array.from({ length: (new Date(ym.y, ym.m, 1).getDay() + 6) % 7 }, (_, i) => <div key={"k" + i} />)}
+                  {Array.from({ length: jumlahHari }, (_, i) => {
+                    const v = perHariMap.get(ymd(i + 1))?.masuk;
+                    const ada = perHariMap.has(ymd(i + 1));
+                    const on = i === idxAktif;
+                    const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,201,51,${(0.25 + 0.75 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
+                    return (
+                      <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
+                        style={{ height: 46, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-center gap-2" style={{ marginTop: 12, fontSize: 12.5, color: t.text2, fontWeight: 600 }}>
+                  sedikit
+                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgba(255,201,51,.3)" }} />
+                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgba(255,201,51,.65)" }} />
+                  <span style={{ width: 26, height: 10, borderRadius: 5, background: "rgb(255,201,51)" }} />
+                  banyak
                 </div>
               </div>
 
@@ -479,8 +491,8 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 <>
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Sorotan</div>
-                    {hi && <Baris label="Pemasukan tertinggi" nilai={`${labelHari(hi[0])} · ${rupiah(hi[1].masuk)}`} />}
-                    {lo && <Baris label="Pemasukan terendah" nilai={`${labelHari(lo[0])} · ${rupiah(lo[1].masuk)}`} />}
+                    {hi && <Baris label={`Tertinggi · ${labelHari(hi[0])}`} nilai={rupiah(hi[1].masuk)} />}
+                    {lo && <Baris label={`Terendah · ${labelHari(lo[0])}`} nilai={rupiah(lo[1].masuk)} />}
                     <Baris label="Hari ada transaksi" nilai={`${hariBuka} hari`} />
                     <Baris label="Rata-rata masuk per hari" nilai={rupiah(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} />
                     <Baris label="Rata-rata per transaksi" nilai={rupiah(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} />
@@ -576,9 +588,9 @@ function Batang({ rows }: { rows: { label: string; nilai: number; teks: string }
   );
 }
 
-/* Warna irisan: hanya dari palet (kuning madu, hijau, kuning, khaki, abu-kuning) — selang terang/gelap
-   supaya irisan bersebelahan tetap terpisah jelas. */
-const IRIS = ["#F2B53C", "#5BAF4E", "#FFE66D", "#A59B80", "#D6D0B0"];
+/* Warna irisan donat = t.chart (palet E pilihan pemilik: kuning + hijau segar, selang terang/gelap
+   supaya irisan bersebelahan tetap terpisah jelas). */
+const IRIS = t.chart;
 
 function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
   // Donat = 5 menu teratas menurut OMZET (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
@@ -608,7 +620,7 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
         </svg>
         <div style={{ position: "absolute", textAlign: "center" }}>
           <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.1 }}>Rp{(total / 1_000_000).toFixed(1).replace(".", ",")} jt</div>
-          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas (omzet)</div>
+          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas</div>
         </div>
       </div>
       {baris.map((b) => (
