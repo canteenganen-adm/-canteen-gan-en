@@ -347,26 +347,30 @@ export default function MasterMenu({
             </div>
           </div>
 
+          {/* Tanggal menu yang sedang diatur: subjudul BESAR di bawah judul (pilihan pemilik "C", dibesarkan agar
+              terlihat). Chip berbingkai, BUKAN kuning (tombol + di bawah sudah kuning). Seluruh chip bisa
+              diketuk — input tanggal menutupi chip (inset 0). */}
+          {view === "menu" && menuHarianReady && (
+            <div className="flex items-center" style={{ position: "relative", marginTop: 8, height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", width: "fit-content", maxWidth: "100%" }}>
+              <Calendar size={19} />
+              <span style={{ fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap" }}>{tglParts(tanggal)[0]} {tglSingkat(tanggal)}</span>
+              <ChevronDown size={17} color={t.text2} />
+              <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
+                onChange={(e) => e.target.value && setTanggal(e.target.value)}
+                onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
+                aria-label="Ganti tanggal yang diatur"
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+            </div>
+          )}
+
           {/* Dua "kertas" ala tab Chrome: Buku Menu · Preview PO. Tanggal yang diatur
-              ikut di KANAN baris tab (seluruh area bisa diketuk) — bukan kotak sendiri. */}
+              ada di chip di bawah judul (di atas kertas ini). */}
           <div style={{ marginTop: 16, position: "relative" }}>
             <PaperTabs
               tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
               value={view}
               onChange={onViewChange}
             />
-            {view === "menu" && menuHarianReady && (
-              <div className="flex items-center gap-1" style={{ position: "absolute", right: 0, bottom: 0, height: 46, paddingBottom: 2 }}>
-                <Calendar size={18} color={t.text} />
-                <span style={{ fontSize: 15.5, fontWeight: 800 }}>{tglSingkat(tanggal)}</span>
-                <ChevronDown size={16} color={t.text2} />
-                <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
-                  onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                  onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                  aria-label="Ganti tanggal yang diatur"
-                  style={{ position: "absolute", inset: "0 -4px", opacity: 0, cursor: "pointer", width: "calc(100% + 8px)", height: "100%" }} />
-              </div>
-            )}
           </div>
         </div>
         <div style={{ padding: "0 20px 4px" }}>
