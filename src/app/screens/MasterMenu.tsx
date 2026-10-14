@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package,
+  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks,
 } from "lucide-react";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
@@ -25,7 +25,11 @@ export type MenuView = "po" | "menu";
 
 /** "Rabu, 14 Oktober 2026" -> "Rabu, 14 Okt" (muat satu baris di HP, tanpa terpotong "…"). */
 const BULAN_PENDEK: Record<string, string> = { Januari: "Jan", Februari: "Feb", Maret: "Mar", April: "Apr", Mei: "Mei", Juni: "Jun", Juli: "Jul", Agustus: "Agu", September: "Sep", Oktober: "Okt", November: "Nov", Desember: "Des" };
-const tglPendek = (iso: string) => serviceDateLabel(iso).replace(/sd{4}$/, "").replace(/([A-Za-z]{3,9})$/, (w) => BULAN_PENDEK[w] ?? w);
+const tglParts = (iso: string) => serviceDateLabel(iso).split(" "); // ["Rabu,","14","Oktober","2026"]
+/** "Rabu, 14 Okt" */
+const tglPendek = (iso: string) => { const w = tglParts(iso); return w[0] + " " + w[1] + " " + (BULAN_PENDEK[w[2]] ?? w[2]); };
+/** "14 Okt" */
+const tglSingkat = (iso: string) => { const w = tglParts(iso); return w[1] + " " + (BULAN_PENDEK[w[2]] ?? w[2]); };
 
 /* Tepi zigzag ala struk thermal — dipakai pratinjau PO & pengingat Simpan */
 const STRUK_ZIGZAG = "polygon(0 4px, 4% 0, 8% 4px, 12% 0, 16% 4px, 20% 0, 24% 4px, 28% 0, 32% 4px, 36% 0, 40% 4px, 44% 0, 48% 4px, 52% 0, 56% 4px, 60% 0, 64% 4px, 68% 0, 72% 4px, 76% 0, 80% 4px, 84% 0, 88% 4px, 92% 0, 96% 4px, 100% 0, 100% calc(100% - 4px), 96% 100%, 92% calc(100% - 4px), 88% 100%, 84% calc(100% - 4px), 80% 100%, 76% calc(100% - 4px), 72% 100%, 68% calc(100% - 4px), 64% 100%, 60% calc(100% - 4px), 56% 100%, 52% calc(100% - 4px), 48% 100%, 44% calc(100% - 4px), 40% 100%, 36% calc(100% - 4px), 32% 100%, 28% calc(100% - 4px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 4px), 8% 100%, 4% calc(100% - 4px), 0 100%)";
@@ -208,6 +212,8 @@ export default function MasterMenu({
      semua menu tetap) — tidak mengurangi pilihan lain, dan baru berlaku
      setelah Simpan. Menu tetap TIDAK otomatis dijual. */
   const [tetapSheet, setTetapSheet] = useState(false);
+  /** Menu melayang di bawah tombol plus (bukan lembar dari bawah layar). */
+  const [aksiMenu, setAksiMenu] = useState(false);
   const [tetapQ, setTetapQ] = useState("");
   const tetapSet = useMemo(() => new Set(menuTetap), [menuTetap]);
   const tetapMenus = useMemo(() => menus.filter((m) => tetapSet.has(m.id)), [menus, tetapSet]);
@@ -320,76 +326,80 @@ export default function MasterMenu({
               >
                 <Settings size={19} />
               </button>
-              <button onClick={addMenu}
-                className="flex items-center gap-2"
-                style={{ background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, height: 44, padding: "0 16px", borderRadius: 12, border: "none", cursor: "pointer" }}>
-                <Plus size={20} /> Tambah
-              </button>
             </div>
           </div>
 
-          {/* Dua "kertas" ala tab Chrome: Buku Menu (kelola, id tetap "menu"
-              untuk kompatibilitas state) · Preview PO (baca saja). Label
-              "Menu" dulu dobel dengan judul halaman "Menu" -- bikin bingung
-              tab mana yang dimaksud. */}
-          <div style={{ marginTop: 16 }}>
+          {/* Dua "kertas" ala tab Chrome: Buku Menu · Preview PO. Tanggal yang diatur
+              ikut di KANAN baris tab (seluruh area bisa diketuk) — bukan kotak sendiri. */}
+          <div style={{ marginTop: 16, position: "relative" }}>
             <PaperTabs
               tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
               value={view}
               onChange={onViewChange}
             />
+            {view === "menu" && menuHarianReady && (
+              <div className="flex items-center gap-1" style={{ position: "absolute", right: 0, bottom: 0, height: 46, paddingBottom: 2 }}>
+                <Calendar size={18} color={t.text} />
+                <span style={{ fontSize: 15.5, fontWeight: 800 }}>{tglSingkat(tanggal)}</span>
+                <ChevronDown size={16} color={t.text2} />
+                <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
+                  onChange={(e) => e.target.value && setTanggal(e.target.value)}
+                  onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
+                  aria-label="Ganti tanggal yang diatur"
+                  style={{ position: "absolute", inset: "0 -4px", opacity: 0, cursor: "pointer", width: "calc(100% + 8px)", height: "100%" }} />
+              </div>
+            )}
           </div>
-
         </div>
-        <div style={{ padding: "0 20px 8px" }}>
+        <div style={{ padding: "0 20px 4px" }}>
           {view === "menu" && (
             <>
-              {/* Search */}
-              <div className="flex items-center gap-2" style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
-                <Search size={20} color={t.text2} />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
-                {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
+              {/* Cari + tombol plus (membuka menu melayang: Tambah menu / Menu Tetap) */}
+              <div style={{ position: "relative", marginTop: 14 }}>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 52 }}>
+                    <Search size={20} color={t.text2} style={{ flex: "none" }} />
+                    <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
+                      style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+                    {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+                  </div>
+                  <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
+                    style={{ flex: "none", width: 52, height: 52, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, cursor: "pointer" }}>
+                    <Plus size={26} />
+                  </button>
+                </div>
+                {aksiMenu && (
+                  <>
+                    <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
+                    <div onClick={() => setAksiMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
+                    <div role="menu" style={{ position: "absolute", top: 60, right: 0, zIndex: 45, width: "min(310px, 100%)", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                      {([
+                        { show: true, Ic: Plus, label: "Tambah menu baru", sub: "", on: () => { setAksiMenu(false); addMenu(); } },
+                        { show: menuTetapReady && !isPast && tetapMenus.length > 0, Ic: Pin, label: "Pakai Menu Tetap", sub: tglSingkat(tanggal) + " · " + tetapMenus.length + " menu", on: () => { setAksiMenu(false); pakaiMenuTetap(); } },
+                        { show: menuTetapReady, Ic: ListChecks, label: "Atur Menu Tetap", sub: "", on: () => { setAksiMenu(false); setTetapSheet(true); } },
+                      ]).filter((o) => o.show).map((o, i) => (
+                        <button key={o.label} role="menuitem" onClick={o.on} className="flex items-center"
+                          style={{ gap: 12, width: "100%", minHeight: 56, padding: "0 12px", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                          <o.Ic size={21} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 15.5, fontWeight: 700 }}>{o.label}</span>
+                            {o.sub && <span style={{ display: "block", fontSize: 12.5, color: t.text2, marginTop: 1 }}>{o.sub}</span>}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* SATU baris: tanggal yang diatur (seluruh area bisa diketuk) + Menu Tetap.
-                  Tidak menyentuh sesi Pre-order (buka/tutup + tanggal aktif ortu). */}
-              {menuHarianReady && (
-                <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
-                  <div style={{ position: "relative", flex: 1, minWidth: 0, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 12px" }}
-                    className="flex items-center gap-2">
-                    <Calendar size={19} color={t.text} style={{ flex: "none" }} />
-                    <div style={{ minWidth: 0, lineHeight: 1.2 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{tglPendek(tanggal)}</div>
-                      <div style={{ fontSize: 12.5, color: t.text2 }}>{aktifCount} item aktif</div>
-                    </div>
-                    <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
-                      onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                      onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                      aria-label="Ganti tanggal yang diatur"
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-                  </div>
-                  {menuTetapReady && !isPast && (
-                    <button onClick={() => setTetapSheet(true)} className="flex items-center justify-center gap-2"
-                      style={{ flex: "none", height: 52, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
-                      <Pin size={18} /> Menu Tetap
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Category filter */}
-              <div className="flex gap-2 hscroll" style={{ marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
+              {/* Kategori: tab bergaris bawah (bukan kapsul) */}
+              <div className="flex hscroll" style={{ gap: 20, marginTop: 10, overflowX: "auto", borderBottom: `1px solid ${t.divider}` }}>
                 {categories.map((c) => {
                   const on = c === cat;
                   return (
                     <button key={c} onClick={() => setCat(c)}
-                      style={{
-                        flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primaryLine : t.border}`,
-                        background: on ? t.primary : t.surface,
-                        color: on ? t.amberText : t.text2,
-                      }}>
+                      style={{ flex: "none", padding: "12px 0 10px", background: "none", border: "none", borderBottom: `3px solid ${on ? t.primaryLine : "transparent"}`, marginBottom: -1,
+                        fontSize: 15, fontWeight: on ? 800 : 600, color: on ? t.text : t.text2, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                       {c}
                     </button>
                   );
@@ -400,7 +410,7 @@ export default function MasterMenu({
         </div>
 
         {/* List */}
-        <div style={{ padding: "4px 20px" }}>
+        <div style={{ padding: "10px 20px 4px" }}>
           {/* Banner item belum dikategorikan — hilang otomatis saat 0 */}
           {view === "menu" && uncategorized.length > 0 && (
             <button onClick={() => setShowUncategorized((v) => !v)}
