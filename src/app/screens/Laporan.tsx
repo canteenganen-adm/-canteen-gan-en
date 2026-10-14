@@ -480,7 +480,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <div style={{ flex: r.masukPO, background: t.chart[0] }} />
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
-                <div className="flex flex-wrap items-center justify-between" style={{ gap: "6px 12px", fontSize: 14, fontWeight: 800 }}>
+                <div className="flex flex-wrap items-center justify-between" style={{ gap: "6px 12px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
                   <span className="flex items-center gap-2"><IkonKotak bg={t.primaryLight} line={t.chart[0]} warna={t.warnText}><Utensils size={17} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
                   <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak bg={t.successBg} line={t.chart[1]} warna={t.successText}><ShoppingCart size={17} /></IkonKotak></span>
                 </div>
