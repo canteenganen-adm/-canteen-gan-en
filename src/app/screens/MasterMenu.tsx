@@ -351,7 +351,7 @@ export default function MasterMenu({
               diketuk — input tanggal menutupi chip (inset 0). */}
           {menuHarianReady && (
             <div className="flex items-center" style={{ gap: 8, marginTop: 8 }}>
-            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 12px", gap: 8, borderRadius: 12, background: t.surface, border: `1.5px solid ${t.borderStrong}`, boxSizing: "border-box", flex: 1, minWidth: 0 }}>
+            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 2px", gap: 8, boxSizing: "border-box", flex: 1, minWidth: 0 }}>
               <Calendar size={19} />
               <span style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)}</span>
               <ChevronDown size={17} color={t.text2} style={{ flex: "none" }} />
@@ -363,7 +363,7 @@ export default function MasterMenu({
             </div>
             {tanggal !== tanggalBawaan() && (
               <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan" title="Kembali"
-                style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <RotateCcw size={18} />
               </button>
             )}
@@ -391,11 +391,12 @@ export default function MasterMenu({
                     <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
                       style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
                     {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+                    {/* + di DALAM kolom cari (satu blok, bukan dua) */}
+                    <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
+                      style={{ flex: "none", width: 34, height: 34, marginRight: -6, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 10, border: "none", cursor: "pointer" }}>
+                      <Plus size={20} />
+                    </button>
                   </div>
-                  <button onClick={() => setAksiMenu((v) => !v)} aria-label="Tambah menu atau Menu Tetap" aria-expanded={aksiMenu}
-                    style={{ flex: "none", width: 44, height: 44, display: "grid", placeItems: "center", background: t.primary, color: t.onPrimary, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, cursor: "pointer" }}>
-                    <Plus size={22} />
-                  </button>
                 </div>
                 {aksiMenu && (
                   <>
@@ -810,8 +811,8 @@ function ChannelIcon({ on, label, onClick, children }: {
   return (
     <button onClick={onClick} title={label} aria-label={label} aria-pressed={on}
       style={{ width: 44, height: 44, borderRadius: 12, cursor: "pointer",
-        border: `1.5px solid ${on ? t.primaryLine : t.border}`,
-        background: on ? t.primary : t.surface,
+        border: `1.5px solid ${on ? t.primaryLine : "transparent"}`,
+        background: on ? t.primary : "transparent",
         color: on ? t.onPrimary : t.textDis,
         display: "grid", placeItems: "center", flex: "none" }}>
       {children}

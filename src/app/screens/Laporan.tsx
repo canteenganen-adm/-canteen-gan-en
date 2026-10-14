@@ -492,7 +492,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 
               {/* Tab + isi = SATU panel warna kartu (map folder): kertas aktif sewarna dengan blok tepat di bawah garisnya */}
               <style>{`.lap-panel > * + * { border-top: 1px solid ${t.divider}; }`}</style>
-              <div className="lap-panel" style={{ marginTop: -12, background: t.surface, border: `1px solid ${t.border}`, borderTop: "none", borderRadius: tab === "ulasan" ? "0 16px 16px 16px" : "16px", overflow: "hidden" }}>
+              <div className="lap-panel" style={{ marginTop: -12, background: t.surface, border: `1px solid ${t.border}`, borderTop: "none", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
                 {tab === "ulasan" && (
                   <>
                   {/* 2 · Kalender harian */}
@@ -507,7 +507,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                         const ada = perHariMap.has(ymd(i + 1));
                         const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
                         const on = i === idxAktif;
-                        const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,201,51,${(0.25 + 0.75 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
+                        const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,230,109,${(0.3 + 0.7 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
                         return (
                           <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
                             style={{ height: 44, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>

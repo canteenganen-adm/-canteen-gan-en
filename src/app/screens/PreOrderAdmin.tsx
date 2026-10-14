@@ -741,8 +741,8 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ background: alt ? t.bandAlt : t.primaryLight, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
-      {/* KARTU PENUH selang-seling: ganjil kuning krem (t.primaryLight), genap hijau krem (t.bandAlt) — permintaan Mama: kartu kuning dan hijau: centang + nama + kelas/waktu ambil
+    <div style={{ background: alt ? t.bandAlt : t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+      {/* KARTU PENUH selang-seling: ganjil POLOS krem (t.surface), genap hijau krem (t.bandAlt) — DISETUJUI Mama via WA ("perbedaannya kentara/jelas"): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
       <div className="flex" style={{ gap: 10, padding: "10px 12px", alignItems: "flex-start" }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
