@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
-import { fetchTransactionsMonth } from "../../lib/canteenApi";
+import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
 import PaperTabs from "../components/PaperTabs";
 import type { Transaction } from "../../types";
 
@@ -59,33 +59,80 @@ function buildReport(txs: Transaction[]) {
   return { masuk, nMasuk, belum, nBelum, nBatal, masukPO, masukPJ, hari, menuList };
 }
 
-async function unduhExcel(txs: Transaction[], year: number, month: number) {
+/* ---------- Bahan laporan: SATU sumber untuk layar, Excel, dan PDF ---------- */
+
+interface Banding { prevLabel: string; prevMasuk: number; berjalan: boolean }
+
+function teksBanding(masuk: number, bd: Banding | null): string | null {
+  if (!bd) return null;
+  if (bd.prevMasuk <= 0) return `Belum ada data ${bd.prevLabel} untuk dibandingkan`;
+  const pct = Math.round(((masuk - bd.prevMasuk) / bd.prevMasuk) * 100);
+  const arah = pct === 0 ? "Sama dengan" : pct > 0 ? `Naik ${pct}% dibanding` : `Turun ${Math.abs(pct)}% dibanding`;
+  return `${arah} ${bd.prevLabel} (${rupiah(bd.prevMasuk)})${bd.berjalan ? " · bulan ini belum penuh" : ""}`;
+}
+
+type Rep = ReturnType<typeof buildReport>;
+/** Menu diurutkan menurut omzet (nilai), bukan jumlah. */
+const menuOmzet = (r: Rep) => [...r.menuList].sort((x, y) => y[1].nilai - x[1].nilai);
+/** Tanggal pemasukan tertinggi dan terendah (hanya hari yang ada uang masuk). */
+function tinggiRendah(r: Rep) {
+  const ada = r.hari.filter(([, v]) => v.masuk > 0);
+  if (!ada.length) return { hi: null, lo: null };
+  const hi = ada.reduce((m, x) => (x[1].masuk > m[1].masuk ? x : m));
+  const lo = ada.reduce((m, x) => (x[1].masuk < m[1].masuk ? x : m));
+  return { hi, lo };
+}
+
+function unduhBlob(blob: Blob, nama: string) {
+  const url = URL.createObjectURL(blob);
+  const el = document.createElement("a");
+  el.href = url;
+  el.download = nama;
+  document.body.appendChild(el);
+  el.click();
+  el.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+async function unduhExcel(txs: Transaction[], year: number, month: number, banding: Banding | null) {
   const { default: writeExcelFile } = await import("write-excel-file/universal");
   const r = buildReport(txs);
-  const H = (v: string) => ({ value: v, fontWeight: "bold" as const });
-  const rp = (v: number) => ({ value: v, type: Number, format: "#,##0" });
+  const { hi, lo } = tinggiRendah(r);
+  const H = (v: string) => ({ value: v, fontWeight: "bold" as const, backgroundColor: "#FFE66D" });
+  const B = (v: string) => ({ value: v, fontWeight: "bold" as const });
+  const rp = (v: number) => ({ value: v, type: Number, format: '"Rp "#,##0' });
+  const nm = (v: number) => ({ value: v, type: Number });
   const judul = `${BULAN[month]} ${year}`;
+  const hariBaru = [...r.hari].reverse(); // terbaru dulu
 
   const ringkasan = [
-    [H("Laporan Canteen Gan En"), { value: judul }],
+    [{ value: "Laporan Kantin Gan En", fontWeight: "bold" as const, fontSize: 14 }],
+    [B("Periode"), { value: judul }],
     [],
-    [H("Masuk (Lunas)"), rp(r.masuk)],
-    [H("   dari Pre-order"), rp(r.masukPO)],
-    [H("   dari Penjualan"), rp(r.masukPJ)],
-    [H("Jumlah transaksi Lunas"), { value: r.nMasuk, type: Number }],
-    [H("Belum Dibayar"), rp(r.belum)],
-    [H("Jumlah transaksi Belum Dibayar"), { value: r.nBelum, type: Number }],
-    [H("Dibatalkan (tidak dihitung)"), { value: r.nBatal, type: Number }],
+    [B("Masuk (Lunas)"), rp(r.masuk)],
+    [{ value: "   dari Pre-order" }, rp(r.masukPO)],
+    [{ value: "   dari Penjualan" }, rp(r.masukPJ)],
+    [B("Jumlah transaksi Lunas"), nm(r.nMasuk)],
+    [B("Belum Dibayar"), rp(r.belum)],
+    [B("Jumlah transaksi Belum Dibayar"), nm(r.nBelum)],
+    [B("Dibatalkan (tidak dihitung)"), nm(r.nBatal)],
+    [],
+    [B("Dibanding bulan lalu"), { value: teksBanding(r.masuk, banding) ?? "-" }],
+    [B("Pemasukan tertinggi"), { value: hi ? labelHari(hi[0]) : "-" }, hi ? rp(hi[1].masuk) : { value: "" }],
+    [B("Pemasukan terendah"), { value: lo ? labelHari(lo[0]) : "-" }, lo ? rp(lo[1].masuk) : { value: "" }],
+    [],
+    [{ value: "Catatan: pemasukan = uang masuk dari transaksi Lunas (omzet), bukan laba.", fontSize: 10 }],
   ];
   const perHari = [
     [H("Tanggal"), H("Transaksi"), H("Masuk (Lunas)"), H("Belum Dibayar")],
-    ...r.hari.map(([d, v]) => [{ value: d }, { value: v.n, type: Number }, rp(v.masuk), rp(v.belum)]),
+    ...hariBaru.map(([d, v]) => [{ value: labelHari(d) }, nm(v.n), rp(v.masuk), rp(v.belum)]),
+    [B("Total"), { value: r.nMasuk + r.nBelum, type: Number, fontWeight: "bold" as const }, { value: r.masuk, type: Number, format: '"Rp "#,##0', fontWeight: "bold" as const }, { value: r.belum, type: Number, format: '"Rp "#,##0', fontWeight: "bold" as const }],
   ];
-  const menu = [
-    [H("Menu"), H("Terjual"), H("Nilai")],
-    ...r.menuList.map(([k, v]) => [{ value: k }, { value: v.qty, type: Number }, rp(v.nilai)]),
+  const perMenu = [
+    [H("Menu"), H("Terjual"), H("Omzet")],
+    ...menuOmzet(r).map(([k, v]) => [{ value: k }, nm(v.qty), rp(v.nilai)]),
   ];
-  const detail = [
+  const rincian = [
     [H("Tanggal"), H("Jam"), H("No. Pesanan"), H("Sumber"), H("Nama"), H("Tingkat"), H("Kelas"), H("Waktu Ambil"), H("Tanggal Layanan"), H("Status"), H("Total"), H("Isi Pesanan")],
     ...txs.map((tx) => [
       { value: wibTanggal(tx.createdAt) },
@@ -104,20 +151,119 @@ async function unduhExcel(txs: Transaction[], year: number, month: number) {
   ];
 
   const blob = await writeExcelFile([
-    { data: ringkasan, sheet: "Ringkasan", columns: [{ width: 32 }, { width: 18 }] },
-    { data: perHari, sheet: "Per Hari", columns: [{ width: 14 }, { width: 11 }, { width: 16 }, { width: 16 }], stickyRowsCount: 1 },
-    { data: menu, sheet: "Menu", columns: [{ width: 38 }, { width: 10 }, { width: 14 }], stickyRowsCount: 1 },
-    { data: detail, sheet: "Transaksi", columns: [{ width: 12 }, { width: 7 }, { width: 12 }, { width: 11 }, { width: 24 }, { width: 9 }, { width: 8 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 12 }, { width: 70 }], stickyRowsCount: 1 },
+    { data: ringkasan, sheet: "Ringkasan", columns: [{ width: 34 }, { width: 22 }, { width: 18 }] },
+    { data: perHari, sheet: "Per Hari", columns: [{ width: 16 }, { width: 11 }, { width: 18 }, { width: 18 }], stickyRowsCount: 1 },
+    { data: perMenu, sheet: "Per Menu", columns: [{ width: 38 }, { width: 10 }, { width: 18 }], stickyRowsCount: 1 },
+    { data: rincian, sheet: "Rincian Transaksi", columns: [{ width: 12 }, { width: 7 }, { width: 12 }, { width: 11 }, { width: 24 }, { width: 9 }, { width: 8 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 70 }], stickyRowsCount: 1 },
   ]).toBlob();
+  unduhBlob(blob, `Laporan Gan En ${BULAN[month]} ${year}.xlsx`);
+}
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Laporan Gan En ${BULAN[month]} ${year}.xlsx`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+async function unduhPdf(txs: Transaction[], year: number, month: number, banding: Banding | null) {
+  const { jsPDF } = await import("jspdf");
+  const r = buildReport(txs);
+  const u = buildUlasan(txs);
+  const { hi, lo } = tinggiRendah(r);
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const M = 16, W = 210 - M * 2;
+  const GELAP: [number, number, number] = [42, 40, 32], REDUP: [number, number, number] = [95, 92, 77];
+  const HIJAU: [number, number, number] = [31, 122, 46], MERAH: [number, number, number] = [168, 47, 36];
+  const KUNING: [number, number, number] = [255, 230, 109], KHAKI: [number, number, number] = [214, 208, 176], MADU: [number, number, number] = [242, 181, 60];
+  const GARIS: [number, number, number] = [232, 224, 210];
+  const txt = (s: string, x: number, y: number, o?: { size?: number; bold?: boolean; color?: [number, number, number]; align?: "left" | "right" | "center" }) => {
+    doc.setFont("helvetica", o?.bold ? "bold" : "normal");
+    doc.setFontSize(o?.size ?? 10);
+    doc.setTextColor(...(o?.color ?? GELAP));
+    doc.text(s, x, y, { align: o?.align ?? "left" });
+  };
+  const judul = `${BULAN[month]} ${year}`;
+  const dibuat = new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10);
+  const footer = (hal: number) => txt(`Canteen Gan En · dibuat ${dibuat} · hal. ${hal}`, M, 289, { size: 8, color: REDUP });
+
+  /* Halaman 1 */
+  txt("Laporan Kantin Gan En", M, 22, { size: 18, bold: true });
+  txt(judul, M, 29, { size: 12, color: REDUP });
+  doc.setFillColor(...KUNING); doc.rect(M, 32, W, 1.4, "F");
+
+  const kotak = (x: number, w: number, label: string, nilai: string, warna: [number, number, number], sub: string) => {
+    doc.setDrawColor(...GARIS); doc.setLineWidth(0.4); doc.roundedRect(x, 38, w, 24, 3, 3, "S");
+    txt(label, x + 4, 45, { size: 9, color: REDUP });
+    txt(nilai, x + 4, 54, { size: 15, bold: true, color: warna });
+    txt(sub, x + 4, 59.5, { size: 8.5, color: REDUP });
+  };
+  kotak(M, (W - 4) / 2, "Masuk (Lunas)", rupiah(r.masuk), HIJAU, `${r.nMasuk} transaksi`);
+  kotak(M + (W + 4) / 2, (W - 4) / 2, "Belum Dibayar", rupiah(r.belum), r.belum > 0 ? MERAH : GELAP, `${r.nBelum} transaksi`);
+
+  let y = 70;
+  const bandingTeks = teksBanding(r.masuk, banding);
+  if (bandingTeks) { txt(bandingTeks, M, y, { size: 10 }); y += 5.5; }
+  txt(`Dari Pre-order ${rupiah(r.masukPO)}  ·  Dari Penjualan ${rupiah(r.masukPJ)}  ·  Dibatalkan ${r.nBatal} (tidak dihitung)`, M, y, { size: 9, color: REDUP });
+  y += 5.5;
+  if (hi && lo) {
+    txt(`Tertinggi ${labelHari(hi[0])} ${rupiah(hi[1].masuk)}  ·  Terendah ${labelHari(lo[0])} ${rupiah(lo[1].masuk)}`, M, y, { size: 9, color: REDUP });
+    y += 5.5;
+  }
+
+  /* Grafik batang pemasukan per hari */
+  y += 5;
+  txt("Pemasukan per hari", M, y, { size: 12, bold: true });
+  y += 4;
+  const gTop = y, gH = 42, jumlahHari = new Date(year, month + 1, 0).getDate();
+  const harian = new Map(r.hari);
+  const maxMasuk = Math.max(1, ...r.hari.map(([, v]) => v.masuk));
+  const slot = W / jumlahHari;
+  for (let d = 1; d <= jumlahHari; d++) {
+    const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const v = harian.get(key)?.masuk ?? 0;
+    const h = v > 0 ? Math.max(0.8, (v / maxMasuk) * gH) : 0.4;
+    doc.setFillColor(...(hi && hi[0] === key ? MADU : KHAKI));
+    doc.rect(M + (d - 1) * slot + 0.3, gTop + gH - h, slot - 0.6, h, "F");
+    if (d === 1 || d % 5 === 0 || d === jumlahHari) txt(String(d), M + (d - 0.5) * slot, gTop + gH + 4.5, { size: 7.5, color: REDUP, align: "center" });
+  }
+  y = gTop + gH + 12;
+
+  /* Menu teratas (omzet) */
+  txt("Menu teratas (berdasarkan omzet)", M, y, { size: 12, bold: true });
+  y += 6;
+  doc.setFillColor(...KUNING); doc.rect(M, y - 4.2, W, 6, "F");
+  txt("Menu", M + 2, y, { size: 9, bold: true }); txt("Terjual", M + W - 40, y, { size: 9, bold: true, align: "right" }); txt("Omzet", M + W - 2, y, { size: 9, bold: true, align: "right" });
+  y += 6;
+  menuOmzet(r).slice(0, 5).forEach(([k, v], i) => {
+    txt(`${i + 1}. ${k}`, M + 2, y, { size: 9.5 }); txt(String(v.qty), M + W - 40, y, { size: 9.5, align: "right" }); txt(rupiah(v.nilai), M + W - 2, y, { size: 9.5, align: "right" });
+    y += 5.8;
+  });
+
+  /* Per tingkat */
+  y += 5;
+  txt("Per tingkat (nilai pesanan)", M, y, { size: 12, bold: true });
+  y += 6;
+  u.tingkat.slice(0, 7).forEach(([k, v]) => {
+    txt(k, M + 2, y, { size: 9.5 }); txt(`${v.n} pesanan`, M + W - 40, y, { size: 9.5, align: "right" }); txt(rupiah(v.nilai), M + W - 2, y, { size: 9.5, align: "right" });
+    y += 5.8;
+  });
+  footer(1);
+
+  /* Halaman 2: tabel per hari (terbaru dulu) */
+  doc.addPage();
+  txt(`Pemasukan per hari · ${judul}`, M, 22, { size: 14, bold: true });
+  let ty = 32;
+  const kolom = (yy: number, a: string, b: string, c: string, d: string, bold = false) => {
+    txt(a, M + 2, yy, { size: 9.5, bold }); txt(b, M + 62, yy, { size: 9.5, bold, align: "right" }); txt(c, M + 112, yy, { size: 9.5, bold, align: "right" }); txt(d, M + W - 2, yy, { size: 9.5, bold, align: "right" });
+  };
+  doc.setFillColor(...KUNING); doc.rect(M, ty - 4.5, W, 6.5, "F");
+  kolom(ty, "Tanggal", "Transaksi", "Masuk (Lunas)", "Belum Dibayar", true);
+  ty += 7;
+  for (const [d, v] of [...r.hari].reverse()) {
+    if (ty > 278) { footer(2); doc.addPage(); ty = 22; }
+    kolom(ty, labelHari(d), String(v.n), rupiah(v.masuk), rupiah(v.belum));
+    doc.setDrawColor(...GARIS); doc.setLineWidth(0.2); doc.line(M, ty + 1.8, M + W, ty + 1.8);
+    ty += 6.2;
+  }
+  doc.setDrawColor(...GELAP); doc.setLineWidth(0.4); doc.line(M, ty - 3.2, M + W, ty - 3.2);
+  kolom(ty + 1, "Total", String(r.nMasuk + r.nBelum), rupiah(r.masuk), rupiah(r.belum), true);
+  footer(doc.getNumberOfPages());
+
+  unduhBlob(doc.output("blob"), `Laporan Gan En ${BULAN[month]} ${year}.pdf`);
 }
 
 /** Ulasan: per tingkat, waktu ambil, pemesan teratas (transaksi tidak dibatalkan). */
@@ -158,6 +304,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<"harian" | "ulasan">("harian");
   const [dipilih, setDipilih] = useState<string | null>(null);
+  const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
   useEffect(() => {
     let batal = false;
@@ -167,6 +314,16 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
       .catch(() => { if (!batal) setErr("Gagal memuat data. Periksa koneksi lalu coba lagi."); });
     return () => { batal = true; };
   }, [ym]);
+
+  // Bulan lalu (hanya total Lunas) untuk perbandingan
+  const prevM = ym.m === 0 ? 11 : ym.m - 1, prevY = ym.m === 0 ? ym.y - 1 : ym.y;
+  useEffect(() => {
+    let batal = false;
+    setPrev(null);
+    fetchMasukBulan(prevY, prevM).then((d) => { if (!batal) setPrev(d); }).catch(() => { /* perbandingan opsional */ });
+    return () => { batal = true; };
+  }, [prevY, prevM]);
+  const banding: Banding | null = prev ? { prevLabel: BULAN[prevM], prevMasuk: prev.masuk, berjalan: ym.y === nowY && ym.m === nowM } : null;
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
   const u = useMemo(() => (txs ? buildUlasan(txs) : null), [txs]);
@@ -192,11 +349,14 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
   const stepHari = (d: number) => { const n = idxAktif + d; if (n >= 0 && n < jumlahHari) setDipilih(ymd(n + 1)); };
 
-  const download = async () => {
+  const [busy2, setBusy2] = useState(false);
+  const download = async (jenis: "xlsx" | "pdf") => {
     if (!txs) return;
-    setBusy(true);
-    try { await unduhExcel(txs, ym.y, ym.m); } catch { setErr("Gagal membuat file Excel."); }
-    setBusy(false);
+    (jenis === "pdf" ? setBusy2 : setBusy)(true);
+    try {
+      if (jenis === "pdf") await unduhPdf(txs, ym.y, ym.m, banding); else await unduhExcel(txs, ym.y, ym.m, banding);
+    } catch { setErr(jenis === "pdf" ? "Gagal membuat file PDF." : "Gagal membuat file Excel."); }
+    (jenis === "pdf" ? setBusy2 : setBusy)(false);
   };
 
   const navBtn = (aktif: boolean, ukuran = 48): React.CSSProperties => ({
@@ -209,7 +369,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   const rHari = useMemo(() => buildReport(txPerHari.get(hariAktif) ?? []), [txPerHari, hariAktif]);
   const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
   const hariBuka = r ? r.hari.length : 0;
-  const tersibuk = r && r.hari.length ? [...r.hari].sort((a, b) => b[1].n - a[1].n)[0] : null;
+  const { hi, lo } = r ? tinggiRendah(r) : { hi: null, lo: null };
 
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
@@ -304,6 +464,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}>Masuk (Lunas)</div>
                 <div style={{ fontSize: 30, fontWeight: 800, color: t.successText, marginTop: 2 }}>{rupiah(r.masuk)}</div>
                 <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>{r.nMasuk} transaksi</div>
+                {teksBanding(r.masuk, banding) && <div style={{ fontSize: 13.5, color: t.text, fontWeight: 700, marginTop: 6 }}>{teksBanding(r.masuk, banding)}</div>}
                 <div style={{ height: 1, background: t.divider, margin: "14px 0 8px" }} />
                 <Baris label="Dari Pre-order" nilai={rupiah(r.masukPO)} />
                 <Baris label="Dari Penjualan" nilai={rupiah(r.masukPJ)} />
@@ -318,7 +479,8 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 <>
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Sorotan</div>
-                    {tersibuk && <Baris label="Hari tersibuk" nilai={`${labelHari(tersibuk[0])} · ${tersibuk[1].n}`} />}
+                    {hi && <Baris label="Pemasukan tertinggi" nilai={`${labelHari(hi[0])} · ${rupiah(hi[1].masuk)}`} />}
+                    {lo && <Baris label="Pemasukan terendah" nilai={`${labelHari(lo[0])} · ${rupiah(lo[1].masuk)}`} />}
                     <Baris label="Hari ada transaksi" nilai={`${hariBuka} hari`} />
                     <Baris label="Rata-rata masuk per hari" nilai={rupiah(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} />
                     <Baris label="Rata-rata per transaksi" nilai={rupiah(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} />
@@ -326,7 +488,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
 
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Menu Terlaris · {BULAN[ym.m]} {ym.y}</div>
-                    <Donat data={r.menuList} />
+                    <Donat data={menuOmzet(r)} />
                   </div>
 
                   <div style={{ ...card, marginBottom: 14 }}>
@@ -362,13 +524,20 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
 
           {siap && (
             <div style={{ paddingTop: 18 }}>
-              <button onClick={download} disabled={busy || txs.length === 0}
-                className="flex items-center justify-center gap-2"
-                style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontSize: 16, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: txs.length === 0 ? 0.5 : 1 }}>
-                <Download size={20} /> {busy ? "Membuat file…" : "Unduh Excel"}
-              </button>
+              <div className="flex gap-3">
+                <button onClick={() => download("pdf")} disabled={busy2 || txs.length === 0}
+                  className="flex items-center justify-center gap-2"
+                  style={{ flex: 1, height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontSize: 15.5, fontWeight: 800, cursor: busy2 ? "default" : "pointer", opacity: txs.length === 0 ? 0.5 : 1 }}>
+                  <Download size={19} /> {busy2 ? "Membuat…" : "Unduh PDF"}
+                </button>
+                <button onClick={() => download("xlsx")} disabled={busy || txs.length === 0}
+                  className="flex items-center justify-center gap-2"
+                  style={{ flex: 1, height: 54, borderRadius: 14, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 15.5, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: txs.length === 0 ? 0.5 : 1 }}>
+                  <Download size={19} /> {busy ? "Membuat…" : "Unduh Excel"}
+                </button>
+              </div>
               <div style={{ fontSize: 12.5, color: t.text2, textAlign: "center", marginTop: 6 }}>
-                Isi: ringkasan, per hari, menu terjual, dan semua transaksi bulan ini.
+                PDF: ringkas, siap dibaca, dicetak, atau dikirim. Excel: lengkap, bisa diolah.
               </div>
             </div>
           )}
@@ -412,13 +581,13 @@ function Batang({ rows }: { rows: { label: string; nilai: number; teks: string }
 const IRIS = ["#F2B53C", "#5BAF4E", "#FFE66D", "#A59B80", "#D6D0B0"];
 
 function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
-  // Donat = 5 menu teratas saja (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
+  // Donat = 5 menu teratas menurut OMZET (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
   // kalau digabung jadi irisan "Lainnya", irisan itu mendominasi dan donat tidak informatif.
   const top = data.slice(0, 5);
-  const total = top.reduce((n, [, v]) => n + v.qty, 0);
+  const total = top.reduce((n, [, v]) => n + v.nilai, 0);
   if (!total) return null;
-  const lain = data.slice(5).reduce((n, [, v]) => n + v.qty, 0);
-  const baris = top.map(([k, v], i) => ({ k, qty: v.qty, warna: IRIS[i] }));
+  const lainNilai = data.slice(5).reduce((n, [, v]) => n + v.nilai, 0);
+  const baris = top.map(([k, v], i) => ({ k, qty: v.qty, nilai: v.nilai, warna: IRIS[i] }));
   const R = 52, SW = 24, C = 2 * Math.PI * R;
   let acc = 0;
   return (
@@ -427,7 +596,7 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
         <svg width="170" height="170" viewBox="0 0 140 140" role="img" aria-label="Menu terlaris">
           <g transform="rotate(-90 70 70)">
             {baris.map((b) => {
-              const len = (b.qty / total) * C;
+              const len = (b.nilai / total) * C;
               const el = (
                 <circle key={b.k} cx="70" cy="70" r={R} fill="none" stroke={b.warna} strokeWidth={SW}
                   strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />
@@ -438,8 +607,8 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
           </g>
         </svg>
         <div style={{ position: "absolute", textAlign: "center" }}>
-          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{total.toLocaleString("id-ID")}</div>
-          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas</div>
+          <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.1 }}>Rp{(total / 1_000_000).toFixed(1).replace(".", ",")} jt</div>
+          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas (omzet)</div>
         </div>
       </div>
       {baris.map((b) => (
@@ -447,12 +616,12 @@ function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
           <span style={{ width: 14, height: 14, borderRadius: 4, background: b.warna, flex: "none", border: `1px solid ${t.borderStrong}` }} />
           <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.k}</div>
           <div style={{ fontSize: 14, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{b.qty.toLocaleString("id-ID")}</div>
-          <div style={{ width: 40, textAlign: "right", fontSize: 13.5, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((b.qty / total) * 100)}%</div>
+          <div style={{ width: 40, textAlign: "right", fontSize: 13.5, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((b.nilai / total) * 100)}%</div>
         </div>
       ))}
-      {lain > 0 && (
+      {lainNilai > 0 && (
         <div style={{ fontSize: 13, color: t.text2, fontWeight: 600, marginTop: 8 }}>
-          Menu lainnya ×{lain.toLocaleString("id-ID")} · daftar lengkap ada di file Excel
+          Menu lainnya {rupiah(lainNilai)} · daftar lengkap ada di file Excel
         </div>
       )}
     </div>

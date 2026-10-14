@@ -366,6 +366,32 @@ export async function fetchTransactionsMonth(year: number, month: number): Promi
   return rows.map(txRowToTransaction);
 }
 
+/** Ringkasan ringan satu bulan (hanya total Lunas) — untuk perbandingan "dibanding bulan lalu".
+ * Hanya mengambil 3 kolom kecil, bukan seluruh baris transaksi. month: 0–11. */
+export async function fetchMasukBulan(year: number, month: number): Promise<{ masuk: number; n: number }> {
+  const WIB = 7 * 3_600_000;
+  const start = new Date(Date.UTC(year, month, 1) - WIB).toISOString();
+  const end = new Date(Date.UTC(year, month + 1, 1) - WIB).toISOString();
+  const PAGE_SIZE = 1000;
+  let masuk = 0, n = 0;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transaksi")
+      .select("total")
+      .gte("created_at", start)
+      .lt("created_at", end)
+      .eq("paid", true)
+      .is("cancelled_at", null)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    for (const r of data as { total: number }[]) { masuk += r.total; n++; }
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return { masuk, n };
+}
+
 export async function fetchTrashedTransactions(): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transaksi")
