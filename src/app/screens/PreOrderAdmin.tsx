@@ -741,10 +741,10 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
-      {/* PITA ATAS (kuning, kartu genap hijau segar — selang-seling): centang + nama + kelas/waktu ambil
+    <div style={{ background: alt ? t.bandAlt : t.primaryLight, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+      {/* KARTU PENUH selang-seling: ganjil kuning muda, genap hijau muda (bukan hanya pita atas): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
-      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: alt ? t.bandAlt : t.band, alignItems: "flex-start" }}>
+      <div className="flex" style={{ gap: 10, padding: "10px 12px", alignItems: "flex-start" }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}

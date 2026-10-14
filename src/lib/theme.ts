@@ -14,7 +14,7 @@ export const t = {
   surfaceSoft: "#FFF8EE",
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
-  bandAlt: "#D6F2B0", // pita kartu pesanan SELANG-SELING (genap): hijau segar terang, pilihan Mama (sage/hijau keabuan DITOLAK)
+  bandAlt: "#E0F3BF", // ISI SELURUH kartu pesanan genap: hijau muda segar (pilihan Mama/pemilik; sage & hijau keabuan DITOLAK)
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",
