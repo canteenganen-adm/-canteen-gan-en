@@ -15,6 +15,8 @@ export const t = {
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
   bandAlt: "#E0F3BF", // ISI SELURUH kartu pesanan genap: hijau muda segar (pilihan Mama/pemilik; sage & hijau keabuan DITOLAK)
+  bandAltLine: "#B9DA8F", // bingkai kartu hijau (seirama, bukan krem-beige yang bentrok)
+  bandAltDiv: "#CFE6AE", // garis pemisah di dalam kartu hijau
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",

@@ -605,7 +605,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   );
 }
 
-const kecil: React.CSSProperties = { fontSize: 13.5, fontWeight: 600, color: t.text2 };
+const kecil: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: t.text2 };
 
 /** Rupiah ringkas: Rp2,8 jt · Rp717 rb · Rp950 */
 function rpSingkat(n: number): string {
@@ -670,9 +670,9 @@ function Meter({ Ic, pct, judul, cap }: { Ic: React.ComponentType<{ size?: numbe
 /** Baris tabel rincian: kiri teks, kanan angka (rata kanan, boleh turun baris). */
 function BarisRincian({ a, b, tebal, kepala }: { a: string; b: string; tebal?: boolean; kepala?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between" style={{ gap: 12, padding: "7px 0", borderTop: kepala ? "none" : `1px solid ${t.divider}`, fontSize: kepala ? 12.5 : 14.5, fontWeight: kepala ? 700 : tebal ? 800 : 600, color: kepala ? t.text2 : t.text }}>
+    <div className="flex items-baseline justify-between" style={{ gap: 12, padding: "7px 0", borderTop: kepala ? "none" : `1px solid ${t.divider}`, fontSize: kepala ? 12 : 14.5, fontWeight: kepala ? 500 : tebal ? 700 : 500, color: kepala ? t.text2 : t.text }}>
       <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{a}</span>
-      <span style={{ textAlign: "right", flex: "none", maxWidth: "62%", fontWeight: kepala ? 700 : 800 }}>{b}</span>
+      <span style={{ textAlign: "right", flex: "none", maxWidth: "62%", fontWeight: kepala ? 500 : tebal ? 700 : 600 }}>{b}</span>
     </div>
   );
 }
@@ -682,14 +682,14 @@ function Tabel({ kolom, kepala, baris, totalAkhir }: { kolom: string; kepala: st
   const sel = (i: number): React.CSSProperties => ({ textAlign: i === 0 ? "left" : "right", minWidth: 0, overflowWrap: "anywhere" });
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "6px 0", fontSize: 12, fontWeight: 600, color: t.text2, borderBottom: `1.5px solid ${t.border}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "6px 0", fontSize: 11.5, fontWeight: 500, color: t.text2, borderBottom: `1.5px solid ${t.border}` }}>
         {kepala.map((h, i) => <div key={i} style={sel(i)}>{h}</div>)}
       </div>
       {baris.map((b, ri) => {
         const total = totalAkhir && ri === baris.length - 1;
         return (
-          <div key={ri} style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "8px 0", alignItems: "baseline", fontSize: 13.5, borderTop: ri ? `${total ? "1.5px" : "1px"} solid ${total ? t.borderStrong : t.divider}` : "none", fontWeight: total ? 800 : 600 }}>
-            {b.map((c, i) => <div key={i} style={{ ...sel(i), fontWeight: total ? 800 : i === 0 ? 600 : 700 }}>{c}</div>)}
+          <div key={ri} style={{ display: "grid", gridTemplateColumns: kolom, gap: 8, padding: "8px 0", alignItems: "baseline", fontSize: 13.5, borderTop: ri ? `${total ? "1.5px" : "1px"} solid ${total ? t.borderStrong : t.divider}` : "none", fontWeight: total ? 700 : 500 }}>
+            {b.map((c, i) => <div key={i} style={{ ...sel(i), fontWeight: total ? 700 : 500 }}>{c}</div>)}
           </div>
         );
       })}

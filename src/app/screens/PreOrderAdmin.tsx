@@ -741,7 +741,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
   const checkBorder = g.allPacked ? t.success : partial ? t.primary : t.border;
   const late = isLate && !g.allPacked;
   return (
-    <div style={{ background: alt ? t.bandAlt : t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
+    <div style={{ background: alt ? t.bandAlt : t.surface, border: `1.5px solid ${alt ? t.bandAltLine : t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
       {/* KARTU PENUH selang-seling: ganjil POLOS krem (t.surface), genap berwarna hijau krem (permintaan Mama: hanya salah satu yang berwarna): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
       <div className="flex" style={{ gap: 10, padding: "10px 12px", alignItems: "flex-start" }}>
@@ -782,7 +782,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
         )}
       </div>
       {/* Pemisah tipis antara kepala dan isi (pengganti pita yang sudah tidak ada) */}
-      <div aria-hidden="true" style={{ height: 1, background: t.borderStrong, margin: "0 12px" }} />
+      <div aria-hidden="true" style={{ height: 1, background: alt ? t.bandAltDiv : t.borderStrong, margin: "0 12px" }} />
       {/* BADAN: hanya isi pesanan */}
       <div style={{ padding: "10px 12px 12px" }}>
         <div style={{ paddingLeft: g.perOrder.length > 1 ? 19 : 32 }}>
