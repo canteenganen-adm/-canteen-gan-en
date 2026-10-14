@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, CookingPot, Printer,
-  Box, Check, X, Search, Power, AlertCircle, MoreHorizontal,
+  Box, Check, X, Search, Power, AlertCircle,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
@@ -149,7 +149,7 @@ export default function PreOrderAdmin({
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [cariBuka, setCariBuka] = useState(false);
   const [kalOffset, setKalOffset] = useState(0);
-  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan" | "aksi">(null);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
    * konfirmasi jelas dulu, tidak langsung commit begitu tanggal diketuk. */
@@ -372,11 +372,6 @@ export default function PreOrderAdmin({
             {/* Status sesi: tombol ON/OFF bulat, HANYA warna + ikon power (tanpa tulisan).
                 Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
                 Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
-            <div className="flex items-center" style={{ flex: "none", gap: 4 }}>
-            <button onClick={() => setSheet("aksi")} aria-label="Bagikan, Rekap Masak, Cetak"
-              style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
-              <MoreHorizontal size={24} />
-            </button>
             <button onClick={onToggleOpen}
               aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk membuka" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
@@ -389,7 +384,6 @@ export default function PreOrderAdmin({
                 <Power size={17} strokeWidth={2.6} />
               </span>
             </button>
-            </div>
           </div>
 
           {/* Bagian atas — LEGA, tanpa kotak/garis (mata Mama & Papa sudah tua; permintaan pemilik):
@@ -421,6 +415,19 @@ export default function PreOrderAdmin({
                 onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
               <StatBox n={belum} label="Belum" color={t.error} active={packedFilter === "belum"}
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
+            </div>
+
+            {/* Bagikan / Rekap / Cetak: tiga bulatan kuning pucat (t.primaryLight) + label, sejajar dengan kolom angka */}
+            <div className="flex" style={{ marginTop: 18 }}>
+              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria}
+                  style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left" }}>
+                  <span style={{ width: 54, height: 54, borderRadius: "50%", background: t.primaryLight, color: t.text, display: "grid", placeItems: "center" }}>
+                    <Ic size={24} />
+                  </span>
+                  <span style={{ display: "block", marginTop: 6, fontSize: 14, fontWeight: 600, color: t.text2 }}>{label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -540,16 +547,6 @@ export default function PreOrderAdmin({
               </div>
             </>
           )}
-        </Sheet>
-      )}
-      {sheet === "aksi" && (
-        <Sheet title="Lainnya" onClose={() => setSheet(null)}>
-          {([["Bagikan Link", Share2, "bagikan"], ["Rekap Masak", CookingPot, "rekap"], ["Cetak", Printer, "cetak"]] as const).map(([label, Ic, sh]) => (
-            <button key={sh} onClick={() => setSheet(sh)} className="flex items-center"
-              style={{ width: "100%", gap: 14, minHeight: 60, padding: "0 4px", border: "none", background: "transparent", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, color: t.text, textAlign: "left" }}>
-              <Ic size={22} color={t.text2} /> {label}
-            </button>
-          ))}
         </Sheet>
       )}
       {sheet === "jamTutup" && (
