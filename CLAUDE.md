@@ -31,6 +31,9 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - **Emoji:** DILARANG di UI admin. Pengecualian: tile kategori halaman parent (map tetap di kode) + branding 🪷.
 - **Rasa:** kalem ala Apple/Notion/Linear. Satu warna = satu tugas (lihat palet). Bukan dashboard POS ramai, bukan Material warna-warni.
 - **Kolom ketik:** huruf WAJIB ≥16px (sudah dipaksa global di `theme.css`) — di bawah itu Safari iOS memperbesar layar dan terasa "susah mengetik".
+- **Header halaman (4 tab + halaman baru):** SAMA PERSIS — padding atas 20px, baris `flex items-center justify-between`, judul 22px w800 `letter-spacing:-.02em` rata kiri 20px (hasilnya top ±26px di HP), tombol gear (Pengaturan) KOTAK 44×44 radius 12 border 1.5px `t.border` isi `t.surface` ikon Settings 19px, 20px dari tepi kanan. Info ringkas (mis. total) boleh di kiri gear, jangan mengubah tinggi/posisi baris judul. Jangan bikin variasi per halaman.
+- **Tombol melayang "kembali ke atas":** bulat 48px, token `t.fab` (abu-kuning lembut `#D6D0B0`) + panah gelap, kanan bawah di ATAS nav (bukan menempel dasar). Bukan hitam (ditolak), bukan kuning (menyatu dengan pita kartu).
+- **Grid dua kolom kartu:** pakai `repeat(2, minmax(0, 1fr))` + item `minWidth:0` — `1fr` biasa bisa jadi 6:4 di iOS.
 - **Interaksi:** hindari dialog konfirmasi → pakai Undo. Picker tanggal/jam wajib bisa diketuk di SELURUH area (input overlay inset:0), uji di Safari iOS.
 
 ## ISTILAH TERKUNCI
@@ -48,5 +51,6 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - Pil KELAS (grade): BORDER SAJA (`#A59B80`, tebal 1.5px), isi transparan, teks gelap — TANPA warna per tingkat (keputusan pemilik menggantikan aturan lama "pil berwarna solid"). Chip saringan kelas di Pre-order: SEMUA hanya GARIS tanpa isi — tidak dipilih = garis tipis 1px, dipilih = garis kuning 3px (bukan isi kuning, bukan warna per tingkat).
 - WA tagihan gaya struk, **pratinjau & bisa diedit sebelum kirim**; pembuka/penutup dari Pengaturan; template tanpa emoji; encoding UTF-8 (jangan sampai `�`).
 - Satu pesanan = satu anak + satu waktu ambil; layar sukses punya "Buat Pesanan Lagi" (data pemesan tetap terisi).
+- **Laporan Bulanan** (Pengaturan → Data): HANYA membaca, per bulan WIB (Lunas / Belum Dibayar / Dibatalkan tidak dihitung; per hari; menu terlaris) + unduh Excel 4 sheet (Ringkasan, Per Hari, Menu, Transaksi) via `write-excel-file/universal`. Tidak ada tombol hapus/reset di sini.
 - **Drop-off**: kotak bekal dititipkan di **Pos Satpam** sebelum jam masuk sekolah, berlaku SEMUA tingkat.
 - **Pickup (beda per tingkat, WAJIB tampil jelas)**: **KB/TK/SD kelas 1–2 → diantar ke kelas** oleh kantin; **SD kelas 3 ke atas → diambil sendiri di Lemari Pengambilan Bekal** (loker di lobby).

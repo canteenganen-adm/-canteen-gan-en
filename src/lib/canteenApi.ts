@@ -341,6 +341,31 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   return rows.map(txRowToTransaction).filter((tx) => !tx.deletedAt);
 }
 
+/** Semua transaksi satu BULAN (batas bulan menurut WIB, UTC+7) — dipakai Laporan.
+ * Hanya dibaca saat Laporan dibuka; tidak ikut pemuatan harian. Yang ada di
+ * Tong Sampah tidak dihitung. month: 0–11. */
+export async function fetchTransactionsMonth(year: number, month: number): Promise<Transaction[]> {
+  const WIB = 7 * 3_600_000;
+  const start = new Date(Date.UTC(year, month, 1) - WIB).toISOString();
+  const end = new Date(Date.UTC(year, month + 1, 1) - WIB).toISOString();
+  const PAGE_SIZE = 1000;
+  const rows: TransaksiRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transaksi")
+      .select("*")
+      .gte("created_at", start)
+      .lt("created_at", end)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data as TransaksiRow[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return rows.map(txRowToTransaction);
+}
+
 export async function fetchTrashedTransactions(): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transaksi")
