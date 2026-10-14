@@ -488,115 +488,119 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 </div>
               </div>
 
-              <PaperTabs tabs={[{ id: "ulasan" as const, label: "Ulasan" }, { id: "rincian" as const, label: "Rincian" }]} value={tab} onChange={setTab} />
+              <PaperTabs tabs={[{ id: "ulasan" as const, label: "Ulasan" }, { id: "rincian" as const, label: "Rincian" }]} value={tab} onChange={setTab} warna={t.surface} />
 
-              {tab === "ulasan" && (
-                <>
-                {/* 2 · Kalender harian */}
-                <div style={card}>
-                  <div style={{ ...judulKartu, marginBottom: 10 }}>Pemasukan per hari</div>
-                  <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
-                    {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
-                      <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>
-                    ))}
-                    {Array.from({ length: (new Date(ym.y, ym.m, 1).getDay() + 6) % 7 }, (_, i) => <div key={"k" + i} />)}
-                    {Array.from({ length: jumlahHari }, (_, i) => {
-                      const ada = perHariMap.has(ymd(i + 1));
-                      const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
-                      const on = i === idxAktif;
-                      const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,201,51,${(0.25 + 0.75 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
-                      return (
-                        <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
-                          style={{ height: 44, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
-                          {i + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
-                    <div className="flex items-center justify-between" style={{ gap: 12 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
-                      </div>
-                      {tglIni && hariAktif !== todayYmd && (
-                        <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
-                          style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
-                          <RotateCcw size={14} /> Hari ini
-                        </button>
-                      )}
+              {/* Tab + isi = SATU panel warna kartu (map folder): kertas aktif sewarna dengan blok tepat di bawah garisnya */}
+              <style>{`.lap-panel > * + * { border-top: 1px solid ${t.divider}; }`}</style>
+              <div className="lap-panel" style={{ marginTop: -12, background: t.surface, border: `1px solid ${t.border}`, borderTop: "none", borderRadius: tab === "ulasan" ? "0 16px 16px 16px" : "16px", overflow: "hidden" }}>
+                {tab === "ulasan" && (
+                  <>
+                  {/* 2 · Kalender harian */}
+                  <div style={sek}>
+                    <div style={{ ...judulKartu, marginBottom: 10 }}>Pemasukan per hari</div>
+                    <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
+                      {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
+                        <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>
+                      ))}
+                      {Array.from({ length: (new Date(ym.y, ym.m, 1).getDay() + 6) % 7 }, (_, i) => <div key={"k" + i} />)}
+                      {Array.from({ length: jumlahHari }, (_, i) => {
+                        const ada = perHariMap.has(ymd(i + 1));
+                        const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
+                        const on = i === idxAktif;
+                        const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,201,51,${(0.25 + 0.75 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
+                        return (
+                          <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
+                            style={{ height: 44, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                            {i + 1}
+                          </button>
+                        );
+                      })}
                     </div>
-                    {hariData && (
-                      <div className="flex items-center flex-wrap" style={{ gap: "6px 18px", marginTop: 10, fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                        <span className="flex items-center gap-1.5" aria-label="Lunas" title="Lunas"><CircleCheck size={18} />{hariData.nMasuk}</span>
-                        <span className="flex items-center gap-1.5" aria-label="Belum dibayar" title="Belum dibayar"><CircleDashed size={18} />{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</span>
+                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
+                      <div className="flex items-center justify-between" style={{ gap: 12 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
+                        </div>
+                        {tglIni && hariAktif !== todayYmd && (
+                          <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
+                            style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                            <RotateCcw size={14} /> Hari ini
+                          </button>
+                        )}
                       </div>
-                    )}
-                    {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
+                      {hariData && (
+                        <div className="flex items-center flex-wrap" style={{ gap: "6px 18px", marginTop: 10, fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                          <span className="flex items-center gap-1.5" aria-label="Lunas" title="Lunas"><CircleCheck size={18} />{hariData.nMasuk}</span>
+                          <span className="flex items-center gap-1.5" aria-label="Belum dibayar" title="Belum dibayar"><CircleDashed size={18} />{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</span>
+                        </div>
+                      )}
+                      {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
+                    </div>
                   </div>
-                </div>
 
-                {/* 3 · Menu terlaris */}
-                <div style={card}>
-                  <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
-                  <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
-                </div>
-
-                {/* 4 · Dua angka persen dengan batang tipis (bukan donat lagi) */}
-                {(pk.dikemas > 0 || u.pemesanTotal > 0) && (
-                  <div className="flex flex-col" style={{ ...card, gap: 16 }}>
-                    {pk.dikemas > 0 && <Meter Ic={PackageCheck} pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} / ${pk.dikemas.toLocaleString("id-ID")}`} />}
-                    {pk.dikemas > 0 && u.pemesanTotal > 0 && <div style={{ height: 1, background: t.divider }} />}
-                    {u.pemesanTotal > 0 && <Meter Ic={Repeat} pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} / ${u.pemesanTotal.toLocaleString("id-ID")}`} />}
+                  {/* 3 · Menu terlaris */}
+                  <div style={sek}>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
+                    <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
-                )}
-                </>
-              )}
 
-              {tab === "rincian" && (
-                <>
-                <div style={card}>
-                  <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
-                  <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
-                  <BarisRincian a="Pre-order" b={rupiah(r.masukPO)} />
-                  <BarisRincian a="Penjualan" b={rupiah(r.masukPJ)} />
-                  <BarisRincian a={`Belum dibayar · ${r.nBelum}`} b={rupiah(r.belum)} />
-                  <BarisRincian a="Dibatalkan" b={String(r.nBatal)} />
-                </div>
-
-                <div style={card}>
-                  <div style={{ ...judulKartu, marginBottom: 8 }}>Per hari</div>
-                  <Tabel kolom="46px 34px minmax(0,1fr) minmax(0,1fr)" kepala={["Tgl", "Jml", "Lunas", "Belum"]}
-                    baris={[
-                      ...[...r.hari].reverse().map(([d, v]) => [`${Number(d.slice(8))} ${BLN_PENDEK[Number(d.slice(5, 7)) - 1]}`, String(v.n), rupiah(v.masuk), v.belum > 0 ? rupiah(v.belum) : "–"]),
-                      ["Total", String(r.nMasuk + r.nBelum), rupiah(r.masuk), rupiah(r.belum)],
-                    ]} totalAkhir />
-                </div>
-
-                <div style={card}>
-                  <div style={{ ...judulKartu, marginBottom: 8 }}>Per menu</div>
-                  <Tabel kolom="minmax(0,1fr) 54px 96px" kepala={["Menu", "Terjual", "Omzet"]}
-                    baris={menuOmzet(r).map(([k, v]) => [k, v.qty.toLocaleString("id-ID"), rupiah(v.nilai)])} />
-                </div>
-
-                {u.tingkat.length > 0 && (
-                  <div style={card}>
-                    <div style={{ ...judulKartu, marginBottom: 8 }}>Per tingkat</div>
-                    <Tabel kolom="minmax(0,1fr) 62px 96px" kepala={["Tingkat", "Pesanan", "Nilai"]}
-                      baris={u.tingkat.map(([k, v]) => [k, v.n.toLocaleString("id-ID"), rupiah(v.nilai)])} />
-                  </div>
+                  {/* 4 · Dua angka persen dengan batang tipis (bukan donat lagi) */}
+                  {(pk.dikemas > 0 || u.pemesanTotal > 0) && (
+                    <div className="flex flex-col" style={{ ...sek, gap: 16 }}>
+                      {pk.dikemas > 0 && <Meter Ic={PackageCheck} pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} / ${pk.dikemas.toLocaleString("id-ID")}`} />}
+                      {pk.dikemas > 0 && u.pemesanTotal > 0 && <div style={{ height: 1, background: t.divider }} />}
+                      {u.pemesanTotal > 0 && <Meter Ic={Repeat} pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} / ${u.pemesanTotal.toLocaleString("id-ID")}`} />}
+                    </div>
+                  )}
+                  </>
                 )}
 
-                {pk && (pk.dikemas > 0 || pk.belum > 0) && (
-                  <div style={card}>
-                    <div style={{ ...judulKartu, marginBottom: 8 }}>Packing Pre-order</div>
-                    <BarisRincian a="Dikemas tepat waktu" b={pk.tepat.toLocaleString("id-ID")} />
-                    <BarisRincian a="Telat dikemas" b={pk.telat.toLocaleString("id-ID")} />
-                    {pk.rataMenit > 0 && <BarisRincian a="Rata-rata telat" b={`${pk.rataMenit} menit`} />}
-                    <BarisRincian a="Belum ditandai dikemas" b={pk.belum.toLocaleString("id-ID")} />
+                {tab === "rincian" && (
+                  <>
+                  <div style={sek}>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
+                    <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
+                    <BarisRincian a="Pre-order" b={rupiah(r.masukPO)} />
+                    <BarisRincian a="Penjualan" b={rupiah(r.masukPJ)} />
+                    <BarisRincian a={`Belum dibayar · ${r.nBelum}`} b={rupiah(r.belum)} />
+                    <BarisRincian a="Dibatalkan" b={String(r.nBatal)} />
                   </div>
+
+                  <div style={sek}>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Per hari</div>
+                    <Tabel kolom="46px 34px minmax(0,1fr) minmax(0,1fr)" kepala={["Tgl", "Jml", "Lunas", "Belum"]}
+                      baris={[
+                        ...[...r.hari].reverse().map(([d, v]) => [`${Number(d.slice(8))} ${BLN_PENDEK[Number(d.slice(5, 7)) - 1]}`, String(v.n), rupiah(v.masuk), v.belum > 0 ? rupiah(v.belum) : "–"]),
+                        ["Total", String(r.nMasuk + r.nBelum), rupiah(r.masuk), rupiah(r.belum)],
+                      ]} totalAkhir />
+                  </div>
+
+                  <div style={sek}>
+                    <div style={{ ...judulKartu, marginBottom: 8 }}>Per menu</div>
+                    <Tabel kolom="minmax(0,1fr) 54px 96px" kepala={["Menu", "Terjual", "Omzet"]}
+                      baris={menuOmzet(r).map(([k, v]) => [k, v.qty.toLocaleString("id-ID"), rupiah(v.nilai)])} />
+                  </div>
+
+                  {u.tingkat.length > 0 && (
+                    <div style={sek}>
+                      <div style={{ ...judulKartu, marginBottom: 8 }}>Per tingkat</div>
+                      <Tabel kolom="minmax(0,1fr) 62px 96px" kepala={["Tingkat", "Pesanan", "Nilai"]}
+                        baris={u.tingkat.map(([k, v]) => [k, v.n.toLocaleString("id-ID"), rupiah(v.nilai)])} />
+                    </div>
+                  )}
+
+                  {pk && (pk.dikemas > 0 || pk.belum > 0) && (
+                    <div style={sek}>
+                      <div style={{ ...judulKartu, marginBottom: 8 }}>Packing Pre-order</div>
+                      <BarisRincian a="Dikemas tepat waktu" b={pk.tepat.toLocaleString("id-ID")} />
+                      <BarisRincian a="Telat dikemas" b={pk.telat.toLocaleString("id-ID")} />
+                      {pk.rataMenit > 0 && <BarisRincian a="Rata-rata telat" b={`${pk.rataMenit} menit`} />}
+                      <BarisRincian a="Belum ditandai dikemas" b={pk.belum.toLocaleString("id-ID")} />
+                    </div>
+                  )}
+                  </>
                 )}
-                </>
-              )}
+              </div>
             </div>
           )}
         </div>
@@ -605,6 +609,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   );
 }
 
+const sek: React.CSSProperties = { padding: 16 };
 const kecil: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: t.text2 };
 /** Judul kartu: LEBIH TEGAS daripada isinya (hierarki: judul > isi > kepala kolom). */
 const judulKartu: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-.01em" };

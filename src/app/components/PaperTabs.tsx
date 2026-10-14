@@ -3,10 +3,12 @@ import { t } from "../../lib/theme";
 /* Tab "kertas" ala Chrome — dipakai di tab Menu (Tampilan Ortu · Menu)
    dan Transaksi (Belum Dibayar · Lunas). Kertas aktif: sudut atas
    membulat, SEWARNA dengan latar di bawahnya (menyatu, bukan lebih terang) dan memutus garis di bawahnya. BUKAN pil segmen. */
-export default function PaperTabs<T extends string>({ tabs, value, onChange }: {
+export default function PaperTabs<T extends string>({ tabs, value, onChange, warna }: {
   tabs: { id: T; label: React.ReactNode }[];
   value: T;
   onChange: (v: T) => void;
+  /** Warna kertas aktif — HARUS sama dengan blok tepat di bawah garisnya (default: latar halaman). */
+  warna?: string;
 }) {
   return (
     <div>
@@ -22,7 +24,7 @@ export default function PaperTabs<T extends string>({ tabs, value, onChange }: {
                 borderLeft: `1px solid ${on ? t.border : "transparent"}`,
                 borderRight: `1px solid ${on ? t.border : "transparent"}`,
                 borderBottom: 0,
-                background: on ? t.bg : "transparent", // sewarna dengan area di bawahnya (latar), bukan lebih terang
+                background: on ? (warna ?? t.bg) : "transparent", // sewarna dengan blok di bawahnya
                 color: on ? t.text : t.text2,
                 position: "relative", top: 1, fontFamily: "inherit" }}>
               {label}
