@@ -358,8 +358,8 @@ export default function PreOrderAdmin({
               </button>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? t.warnFill : open ? "#D4F2CA" : t.errorBg,
-                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? "#7FD06F" : "#E7A79C"}`,
+                  background: isAutoClosed ? t.warnFill : open ? t.successPill : t.errorBg,
+                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? t.successPillLine : "#E7A79C"}`,
                   color: isAutoClosed ? t.warnText : open ? t.successText : t.error }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
@@ -809,7 +809,7 @@ function Stat({ n, label, tone, active, onClick }: { n: number; label: string; t
   return (
     <button onClick={onClick} aria-pressed={active}
       style={{ flex: 1, background: t.surface, color: t.text,
-        border: active ? `2.5px solid ${t.primary}` : `1.5px solid ${t.border}`,
+        border: active ? `2.5px solid ${t.successText}` : `1.5px solid ${t.border}`,
         borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
       <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1, color: col }}>{n}</div>
       <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5, color: t.text2 }}>{label}</div>

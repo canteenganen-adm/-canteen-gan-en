@@ -1,33 +1,28 @@
 // Palet Final — Decision Lock §10. Satu sumber token warna untuk semua layar.
 export const t = {
-  // Palet "Taman" (N2): krem hangat + kartu putih. Satu warna = satu tugas:
-  //   kuning madu = satu warna hero (aksi/dipilih), tulisan di atasnya GELAP. Hijau HANYA untuk status Dibuka/Sudah (permintaan Mama). BUKAN hitam, BUKAN biru · hijau = Sudah · jingga = Belum · merah = Telat.
-  primary: "#F2B53C",
-  primaryHover: "#E0A12E",
-  primaryLight: "#FFF1CC",
+  // Palet referensi pemilik, versi terpilih: krem + kuning (hero) + hijau alami.
+  // Satu warna = satu tugas: kuning = aksi/dipilih (tulisan GELAP di atasnya) ·
+  // hijau = Dibuka/Sudah · jingga = Tutup otomatis · merah = Telat/Ditutup.
+  // BUKAN hitam, BUKAN biru, BUKAN warna penuh yang banyak.
+  primary: "#FFE66D",
+  primaryHover: "#F2D84F",
+  primaryLight: "#F4F0BB",
   onPrimary: "#2A2820",
-  bg: "#FAF6EE",
+  bg: "#FFF1DF",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
-  surfaceAlt: "#D8E7D0", // kartu pesanan selang-seling (biru abu lembut) supaya pesanan bersebelahan terbedakan
+  surfaceAlt: "#CFE1B9", // kartu pesanan genap (sage) supaya pesanan bersebelahan terbedakan
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",
-  success: "#3F8A3A",
-  successBg: "#DDEFD3",
-  successText: "#17702B",
-  // isi solid cerah untuk kotak ringkasan (tulisan gelap di atasnya)
-  successFill: "#DCEFD3",
+  success: "#5BAF4E", // isi centang / garis (terlalu terang untuk tulisan)
+  successBg: "#E9F5DB",
+  successText: "#4A5A2A", // angka/tulisan Sudah (olive tua, kontras >= 4.5)
+  successPill: "#ECF39E", // pil Dibuka
+  successPillLine: "#BFE35A",
   warnFill: "#FFE9CC",
-  infoFill: "#E1EAF6",
-  // solid untuk pil status (tulisan putih di atasnya, kontras >= 4.5)
-  successSolid: "#2A7F3A",
-  warnSolid: "#A85A0C",
-  errorSolid: "#C63E2B",
-  warn: "#D9822B",
-  warnBg: "#FFE6C7",
   warnText: "#8F4E08",
-  error: "#B5352A",
+  error: "#A82F24",
   errorBg: "#FBE7E3",
   border: "#DCD6C2",
   borderStrong: "#C4BDA3",
