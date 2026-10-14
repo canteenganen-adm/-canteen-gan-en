@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router";
-import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
+import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle, ArrowUp } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
@@ -588,6 +588,19 @@ function MainShell({ store }: { store: CanteenStore }) {
   const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
 
+  /* Tombol bulat "kembali ke atas": muncul setelah menggulir jauh, di kanan bawah
+     DI ATAS bar navigasi (tidak menempel di dasar). Mengikuti kolom yang terakhir
+     digulir (halaman biasa, atau kolom scroll sendiri milik Penjualan). */
+  const [showTop, setShowTop] = useState(false);
+  const lastScroller = useRef<HTMLElement | null>(null);
+  const onScrollAny = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLElement;
+    if (typeof el.scrollTop !== "number") return;
+    lastScroller.current = el;
+    setShowTop(el.scrollTop > 400);
+  };
+  const keAtas = () => lastScroller.current?.scrollTo({ top: 0, behavior: "smooth" });
+
   /* Double-tap ikon tab yang sedang aktif = scroll ke atas + refresh data
      (ambil ulang semua dari server) + toast kecil di atas. */
   const lastNavTap = useRef<{ id: Tab; at: number }>({ id: "preorder", at: 0 });
@@ -603,6 +616,7 @@ function MainShell({ store }: { store: CanteenStore }) {
       setTimeout(() => setRefreshedToast(false), 1600);
     }
     lastNavTap.current = { id, at: now };
+    setShowTop(false);
     setTab(id);
   };
 
@@ -652,7 +666,7 @@ function MainShell({ store }: { store: CanteenStore }) {
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: t.bg }}>
-      <div ref={contentRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", position: "relative" }}>
+      <div ref={contentRef} onScrollCapture={onScrollAny} style={{ flex: 1, minHeight: 0, overflowY: "auto", position: "relative" }}>
         {tab === "preorder" && (
           <PreOrderAdmin
             serviceDate={store.serviceDate}
@@ -729,6 +743,12 @@ function MainShell({ store }: { store: CanteenStore }) {
       </div>
 
       {/* Bottom nav — 4 tab, tanpa lebih. Teks/ikon gelap di atas amber. */}
+      {showTop && (
+        <button onClick={keAtas} aria-label="Kembali ke atas"
+          style={{ position: "fixed", right: 16, bottom: `calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`, zIndex: 30, width: 48, height: 48, borderRadius: "50%", border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 16px rgba(60,48,20,.22)" }}>
+          <ArrowUp size={22} strokeWidth={2.4} />
+        </button>
+      )}
       <div data-testid="bottom-nav" style={{ flex: "none", borderTop: `1px solid ${t.border}`, background: t.surface, height: NAV_HEIGHT, display: "flex" }}>
         {tabs.map(({ id, label, Icon, badge }) => {
           const active = tab === id;
