@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, Calendar, ChevronLeft, ChevronRight, CircleCheck, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
+import { ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -484,15 +484,11 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
                   <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
                 </div>
-                {r.belum > 0 && (
-                  <div className="flex items-center gap-2" style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.divider}`, fontSize: 14, fontWeight: 700, color: t.text2 }}>
-                    <Wallet size={18} style={{ flex: "none" }} /> Belum dibayar <b style={{ color: t.text, fontWeight: 800 }}>{rpSingkat(r.belum)}</b>
-                  </div>
-                )}
               </div>
 
               {/* 2 · Kalender harian */}
               <div style={card}>
+                <div style={{ ...kecil, marginBottom: 10 }}>Pemasukan per hari</div>
                 <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
                   {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
                     <div key={h} style={{ fontSize: 12, fontWeight: 700, color: t.text2, paddingBottom: 2 }}>{h}</div>
@@ -511,22 +507,17 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     );
                   })}
                 </div>
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
-                  <div className="flex items-center flex-wrap" style={{ gap: 8 }}>
-                    <span className="flex items-center gap-1.5" style={{ height: 34, padding: "0 11px", borderRadius: 10, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>
-                      <Calendar size={16} /> {labelHari(hariAktif)}
-                    </span>
-                    {tglIni && hariAktif !== todayYmd && (
-                      <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
-                        style={{ height: 34, padding: "0 11px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                        <RotateCcw size={14} /> Hari ini
-                      </button>
-                    )}
+                <div className="flex items-center justify-between" style={{ gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
+                    <div style={kecil}>{hariData ? `${hariData.n} transaksi` : "Tidak ada transaksi"}</div>
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2, marginTop: 10 }}>{rupiah(hariData?.masuk ?? 0)}</div>
-                  <div style={{ ...kecil, marginTop: 2 }}>
-                    {hariData ? `${hariData.n} transaksi${hariData.belum > 0 ? ` · belum dibayar ${rpSingkat(hariData.belum)}` : ""}` : "Tidak ada transaksi"}
-                  </div>
+                  {tglIni && hariAktif !== todayYmd && (
+                    <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
+                      style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                      <RotateCcw size={14} /> Hari ini
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -536,29 +527,11 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                 <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
               </div>
 
-              {/* 4 · Packing */}
-              {pk.dikemas > 0 && (
-                <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 8 }}>Packing Pre-order</div>
-                  <div className="flex items-center flex-wrap" style={{ gap: "10px 18px" }}>
-                    <Gauge pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
-                    <div style={{ flex: 1, minWidth: 140 }}>
-                      <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 15, fontWeight: 600, color: t.text2 }}>
-                        <CircleCheck size={19} color={t.text} style={{ flex: "none" }} /><span><b style={{ fontSize: 17, fontWeight: 800, color: t.text }}>{pk.tepat.toLocaleString("id-ID")}</b> tepat waktu</span>
-                      </div>
-                      <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 15, fontWeight: 600, color: t.text2 }}>
-                        <AlarmClock size={19} color={t.text} style={{ flex: "none" }} /><span><b style={{ fontSize: 17, fontWeight: 800, color: t.text }}>{pk.telat.toLocaleString("id-ID")}</b> telat</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 5 · Pemesan kembali */}
-              {u.pemesanTotal > 0 && (
-                <div style={card}>
-                  <div style={{ ...kecil, marginBottom: 10 }}>Pemesan kembali memesan</div>
-                  <Piktogram kembali={u.pemesanKembali} total={u.pemesanTotal} />
+              {/* 4 · Dua cincin (gaya sama dengan donat): packing tepat waktu + pemesan kembali */}
+              {(pk.dikemas > 0 || u.pemesanTotal > 0) && (
+                <div className="grid" style={{ ...card, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  {pk.dikemas > 0 && <Cincin pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} dari ${pk.dikemas.toLocaleString("id-ID")} pesanan`} />}
+                  {u.pemesanTotal > 0 && <Cincin pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} dari ${u.pemesanTotal.toLocaleString("id-ID")} pemesan`} />}
                 </div>
               )}
             </div>
@@ -618,35 +591,22 @@ function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: nu
   );
 }
 
-/** Gauge setengah lingkaran: hijau = tepat waktu, kuning = telat. */
-function Gauge({ pct }: { pct: number }) {
-  const L = Math.PI * 50;
-  const hijau = (pct / 100) * L;
+/** Cincin persen — gaya sama dengan donat menu: hijau = bagian yang dimaksud, kuning = sisanya. */
+function Cincin({ pct, judul, cap }: { pct: number; judul: string; cap: string }) {
+  const R = 52, SW = 24, C = 2 * Math.PI * R, hijau = (pct / 100) * C;
   return (
-    <div style={{ position: "relative", width: 124, height: 82, flex: "none" }}>
-      <svg width="124" height="82" viewBox="0 0 120 80" role="img" aria-label={`${pct}% tepat waktu`}>
-        <path d="M10,64 A50,50 0 0 1 110,64" fill="none" stroke={t.chart[0]} strokeWidth="14" />
-        <path d="M10,64 A50,50 0 0 1 110,64" fill="none" stroke={t.chart[1]} strokeWidth="14" strokeDasharray={`${hijau} ${L}`} />
-      </svg>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 2, textAlign: "center", fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{pct}%</div>
-    </div>
-  );
-}
-
-/** Piktogram 10 orang: berisi = pemesan yang kembali memesan (2 hari berbeda atau lebih). */
-function Piktogram({ kembali, total }: { kembali: number; total: number }) {
-  const pct = Math.round((kembali / Math.max(1, total)) * 100);
-  const isi = Math.round(pct / 10);
-  return (
-    <div>
-      <div className="flex" style={{ justifyContent: "space-between" }} role="img" aria-label={`${pct}% pemesan kembali memesan`}>
-        {Array.from({ length: 10 }, (_, i) => (
-          <User key={i} size={26} strokeWidth={1.8} color={i < isi ? t.chart[1] : t.borderStrong} style={{ fill: i < isi ? t.chart[1] : "none" }} />
-        ))}
+    <div style={{ textAlign: "center", minWidth: 0 }}>
+      <div style={{ display: "grid", placeItems: "center", position: "relative" }}>
+        <svg width="112" height="112" viewBox="0 0 140 140" role="img" aria-label={`${judul} ${pct}%`}>
+          <g transform="rotate(-90 70 70)">
+            <circle cx="70" cy="70" r={R} fill="none" stroke={t.chart[0]} strokeWidth={SW} />
+            <circle cx="70" cy="70" r={R} fill="none" stroke={t.chart[1]} strokeWidth={SW} strokeDasharray={`${hijau} ${C - hijau}`} />
+          </g>
+        </svg>
+        <div style={{ position: "absolute", fontSize: 21, fontWeight: 800 }}>{pct}%</div>
       </div>
-      <div style={{ marginTop: 8, fontSize: 15, fontWeight: 600, color: t.text2 }}>
-        <b style={{ fontSize: 19, fontWeight: 800, color: t.text }}>{pct}%</b> · {kembali.toLocaleString("id-ID")} dari {total.toLocaleString("id-ID")} pemesan
-      </div>
+      <div style={{ fontSize: 14.5, fontWeight: 800, marginTop: 8, lineHeight: 1.25 }}>{judul}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: t.text2, marginTop: 2, lineHeight: 1.25 }}>{cap}</div>
     </div>
   );
 }
