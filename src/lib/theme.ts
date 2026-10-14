@@ -15,8 +15,6 @@ export const t = {
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
   bandAlt: "#E4EEC9", // ISI kartu pesanan genap: hijau zaitun krem (pilihan "D"; menyatu dengan latar krem, tidak kontras)
-  bandAltLine: "#C3D8A0", // bingkai kartu hijau (seirama)
-  bandAltDiv: "#D3E4B7", // garis pemisah di dalam kartu hijau
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",
