@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router";
-import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle } from "lucide-react";
+import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle, ChartColumn } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
@@ -24,6 +24,7 @@ import Tagihan from "./screens/Tagihan";
 import PreOrderAdmin from "./screens/PreOrderAdmin";
 import PreOrderParent, { type PreOrderReceipt } from "./screens/PreOrderParent";
 import Pengaturan from "./screens/Pengaturan";
+import Laporan from "./screens/Laporan";
 import BackToTop from "./components/BackToTop";
 
 /* ============================================================
@@ -581,7 +582,7 @@ function ParentRoute({ store }: { store: CanteenStore }) {
 
 /* ---------------- Shell utama: 4 tab + gear ---------------- */
 
-type Tab = "preorder" | "penjualan" | "tagihan" | "menu";
+type Tab = "preorder" | "penjualan" | "tagihan" | "menu" | "laporan";
 
 function MainShell({ store }: { store: CanteenStore }) {
   const [tab, setTab] = useState<Tab>("preorder");
@@ -650,6 +651,7 @@ function MainShell({ store }: { store: CanteenStore }) {
     { id: "penjualan", label: "Penjualan", Icon: ShoppingBag },
     { id: "tagihan", label: "Transaksi", Icon: CreditCard, badge: unpaidCount },
     { id: "menu", label: "Menu", Icon: BookOpen },
+    { id: "laporan", label: "Laporan", Icon: ChartColumn },
   ];
 
   return (
@@ -704,6 +706,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onOpenSettings={openSettings}
           />
         </div>
+        {tab === "laporan" && <Laporan pickupSchedules={store.pickupSchedules} onOpenSettings={openSettings} />}
         {tab === "menu" && (
           <MasterMenu
             menus={store.menus}
@@ -730,7 +733,7 @@ function MainShell({ store }: { store: CanteenStore }) {
         )}
       </div>
 
-      {/* Bottom nav — 4 tab, tanpa lebih. Teks/ikon gelap di atas amber. */}
+      {/* Bottom nav — 5 tab (Pre-order · Penjualan · Transaksi · Menu · Laporan). Teks/ikon gelap di atas amber. */}
       <BackToTop key={tab} root={contentRef} bottom={`calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`} />
       <div data-testid="bottom-nav" style={{ flex: "none", borderTop: `1px solid ${t.border}`, background: t.surface, height: NAV_HEIGHT, display: "flex" }}>
         {tabs.map(({ id, label, Icon, badge }) => {

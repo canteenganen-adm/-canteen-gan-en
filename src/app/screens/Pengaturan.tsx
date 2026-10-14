@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Info, X, Check, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
-  Link2, Copy, Share2, FileSpreadsheet,
+  Link2, Copy, Share2,
 } from "lucide-react";
 import { t } from "../../lib/theme";
-import Laporan from "./Laporan";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
@@ -79,7 +78,6 @@ export default function Pengaturan({
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
   const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
-  const [laporanOpen, setLaporanOpen] = useState(false);
   const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
   // Bagikan Link Pemesanan — dipindah dari PO Admin (dipakai jarang)
   const [linkOpen, setLinkOpen] = useState(false);
@@ -603,9 +601,6 @@ export default function Pengaturan({
     );
   }
 
-  /* ===== VIEW: Laporan Bulanan ===== */
-  if (laporanOpen) return <Laporan onClose={() => setLaporanOpen(false)} pickupSchedules={pickupSchedules} />;
-
   /* ===== VIEW: Tong Sampah ===== */
   if (trashOpen) {
     return (
@@ -823,18 +818,6 @@ export default function Pengaturan({
               <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })}
                 placeholder="Nama pemilik rekening" style={inp} />
             </FieldRow>
-          </Group>
-
-          {/* Data */}
-          <Group label="Data">
-            <button onClick={() => setLaporanOpen(true)} className="flex items-center gap-3" style={rowBtn}>
-              <span style={ic}><FileSpreadsheet size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Laporan Bulanan</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Ringkasan per bulan + unduh Excel</div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
           </Group>
 
           {/* Tentang */}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, ArrowLeft, Ban, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, ClipboardList, Ellipsis, FileSpreadsheet, FileText, Flag, Receipt, RotateCcw, ShoppingBag, Timer, TrendingDown, TrendingUp, Trophy, Wallet } from "lucide-react";
+import { AlarmClock, Ban, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, FileSpreadsheet, FileText, Receipt, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, Utensils, Wallet } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -342,7 +342,7 @@ const card: React.CSSProperties = { background: t.surface, border: `1px solid ${
 const sectionTitle: React.CSSProperties = { fontSize: 17, fontWeight: 800, marginBottom: 10 };
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export default function Laporan({ onClose, pickupSchedules }: { onClose: () => void; pickupSchedules: PickupSchedule[] }) {
+export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSettings: () => void; pickupSchedules: PickupSchedule[] }) {
   const now = new Date(Date.now() + 7 * 3_600_000);
   const nowY = now.getUTCFullYear(), nowM = now.getUTCMonth();
   const todayYmd = `${nowY}-${pad2(nowM + 1)}-${pad2(now.getUTCDate())}`;
@@ -424,12 +424,14 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 70px" }}>
-        <div className="flex items-center gap-3" style={{ padding: "20px 20px 16px" }}>
-          <button onClick={onClose} aria-label="Kembali"
-            style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
-            <ArrowLeft size={20} />
-          </button>
-          <div style={{ fontSize: 19, fontWeight: 800 }}>Laporan</div>
+        <div style={{ padding: "20px 20px 12px" }}>
+          <div className="flex items-center justify-between">
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Laporan</div>
+            <button onClick={onOpenSettings} aria-label="Pengaturan"
+              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              <Settings size={19} />
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: "0 20px" }}>
@@ -557,8 +559,8 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
                 <div className="flex items-center justify-between" style={{ fontSize: 14, fontWeight: 800 }}>
-                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><ClipboardList size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingBag size={15} /></IkonKotak></span>
+                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak><span>{rpSingkat(r.masukPO)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>Pre-order</span></span></span>
+                  <span className="flex items-center gap-2" style={{ textAlign: "right" }}><span>{rpSingkat(r.masukPJ)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>Penjualan</span></span><IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
                 </div>
                 <div className="flex gap-2" style={{ marginTop: 14 }}>
                   <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: r.belum > 0 ? t.errorBg : t.surfaceSoft, color: r.belum > 0 ? t.error : t.text2, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
@@ -567,7 +569,7 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
                   </div>
                   <div className="flex items-center gap-2" style={{ flex: "none", background: t.surfaceSoft, color: t.text2, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
                     <Ban size={18} />
-                    <span>{r.nBatal}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600 }}>batal</span></span>
+                    <span>{r.nBatal}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600 }}>dibatalkan</span></span>
                   </div>
                 </div>
               </div>
@@ -577,20 +579,21 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
               ) : (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
-                    {hi && <Ubin Ic={TrendingUp} warna={t.successText} bg={t.successBg} nilai={rpSingkat(hi[1].masuk)} cap={labelHari(hi[0])} />}
-                    {lo && <Ubin Ic={TrendingDown} warna={t.error} bg={t.errorBg} nilai={rpSingkat(lo[1].masuk)} cap={labelHari(lo[0])} />}
-                    <Ubin Ic={CalendarDays} warna={t.text} bg={t.primaryLight} nilai={rpSingkat(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} cap="per hari" />
-                    <Ubin Ic={Receipt} warna={t.text} bg={t.primaryLight} nilai={rpSingkat(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} cap="per transaksi" />
+                    {hi && <Ubin Ic={TrendingUp} judul="Tertinggi" nilai={rpSingkat(hi[1].masuk)} cap={labelHari(hi[0])} />}
+                    {lo && <Ubin Ic={TrendingDown} judul="Terendah" nilai={rpSingkat(lo[1].masuk)} cap={labelHari(lo[0])} />}
+                    <Ubin Ic={CalendarDays} judul="Rata-rata per hari" nilai={rpSingkat(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} cap={`dari ${hariBuka} hari ada transaksi`} />
+                    <Ubin Ic={Receipt} judul="Rata-rata per transaksi" nilai={rpSingkat(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} cap={`dari ${r.nMasuk.toLocaleString("id-ID")} transaksi Lunas`} />
                   </div>
 
                   {pk && pk.dikemas > 0 && (
                     <div className="flex items-center gap-4" style={{ ...card, marginBottom: 14 }}>
                       <Cincin pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Packing Pre-order</div>
-                        <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 16, fontWeight: 800, color: t.successText }}><CircleCheck size={20} /> {pk.tepat.toLocaleString("id-ID")}</div>
-                        <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 16, fontWeight: 800, color: t.error }}><AlarmClock size={20} /> {pk.telat.toLocaleString("id-ID")}{pk.rataMenit > 0 && <span className="flex items-center gap-1" style={{ fontSize: 13, fontWeight: 700, color: t.text2 }}><Timer size={15} />{pk.rataMenit} mnt</span>}</div>
-                        {pk.belum > 0 && <div className="flex items-center gap-2" style={{ padding: "4px 0", fontSize: 16, fontWeight: 800, color: t.text2 }}><CircleDashed size={20} /> {pk.belum.toLocaleString("id-ID")}</div>}
+                        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>Packing Pre-order</div>
+                        <BarisPacking Ic={CircleCheck} warna={t.successText} nilai={pk.tepat.toLocaleString("id-ID")} teks="pesanan dikemas tepat waktu" />
+                        <BarisPacking Ic={AlarmClock} warna={t.error} nilai={pk.telat.toLocaleString("id-ID")} teks="pesanan telat dikemas" />
+                        {pk.rataMenit > 0 && <BarisPacking Ic={Timer} warna={t.text} nilai={`${pk.rataMenit} mnt`} teks="rata-rata telatnya" />}
+                        {pk.belum > 0 && <BarisPacking Ic={CircleDashed} warna={t.text2} nilai={pk.belum.toLocaleString("id-ID")} teks="belum ditandai dikemas" />}
                       </div>
                     </div>
                   )}
@@ -609,7 +612,7 @@ export default function Laporan({ onClose, pickupSchedules }: { onClose: () => v
 
                   {u.pemesan.length > 0 && (
                     <div style={card}>
-                      <div className="flex items-center gap-2" style={sectionTitle}><Trophy size={19} /> Langganan Teratas</div>
+                      <div style={sectionTitle}>Langganan Teratas</div>
                       <Balapan rows={u.pemesan} />
                     </div>
                   )}
@@ -698,7 +701,7 @@ function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: nu
   );
 }
 
-/** Peringkat pemesan ala balapan: lintasan tipis, pelari kuning di posisi sesuai belanjaan, bendera finis di ujung. */
+/** Peringkat langganan: nomor urut + batang tipis sesuai total belanja. */
 function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nilai: number }[] }) {
   const max = Math.max(1, ...rows.map((x) => x.nilai));
   return (
@@ -710,7 +713,7 @@ function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nil
             <div className="flex items-center gap-3">
               <div style={{ width: 36, height: 36, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", fontSize: 16, fontWeight: 800,
                 background: i === 0 ? t.primary : "transparent", color: t.text, border: i === 0 ? "none" : `1.5px solid ${t.borderStrong}` }}>
-                {i === 0 ? <Trophy size={19} /> : i + 1}
+                {i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nama}</div>
@@ -718,11 +721,9 @@ function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nil
               </div>
               <div style={{ fontSize: 14.5, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>{rupiah(x.nilai)}</div>
             </div>
-            <div style={{ position: "relative", height: 8, borderRadius: 999, background: t.divider, margin: "10px 22px 0 48px" }}>
+            <div style={{ position: "relative", height: 8, borderRadius: 999, background: t.divider, margin: "10px 0 0 48px" }}>
               <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: t.primary }} />
-              <span style={{ position: "absolute", top: -3, left: `calc(${pct}% - 7px)`, width: 14, height: 14, borderRadius: "50%", background: t.primary, border: `2px solid ${t.text}`, boxSizing: "border-box" }} />
-              <Flag size={15} color={t.text2} style={{ position: "absolute", right: -20, top: -4 }} />
-            </div>
+                          </div>
           </div>
         );
       })}
@@ -773,12 +774,24 @@ function IkonKotak({ warna, children }: { warna: string; children: React.ReactNo
 }
 
 /** Ubin sorotan: ikon bulat + nilai besar + keterangan sangat singkat. */
-function Ubin({ Ic, warna, bg, nilai, cap }: { Ic: React.ComponentType<{ size?: number }>; warna: string; bg: string; nilai: string; cap: string }) {
+function Ubin({ Ic, judul, nilai, cap }: { Ic: React.ComponentType<{ size?: number }>; judul: string; nilai: string; cap: string }) {
   return (
-    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: "12px 12px 12px" }}>
-      <div style={{ width: 36, height: 36, borderRadius: 11, background: bg, color: warna, display: "grid", placeItems: "center" }}><Ic size={20} /></div>
-      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8, lineHeight: 1.15 }}>{nilai}</div>
-      <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600, marginTop: 1 }}>{cap}</div>
+    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, padding: 12 }}>
+      <div className="flex items-center gap-2">
+        <div style={{ width: 32, height: 32, borderRadius: 10, background: t.primaryLight, color: t.text, display: "grid", placeItems: "center", flex: "none" }}><Ic size={18} /></div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: t.text2, lineHeight: 1.2 }}>{judul}</div>
+      </div>
+      <div style={{ fontSize: 21, fontWeight: 800, marginTop: 8, lineHeight: 1.15 }}>{nilai}</div>
+      <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600, marginTop: 2, lineHeight: 1.25 }}>{cap}</div>
+    </div>
+  );
+}
+
+function BarisPacking({ Ic, warna, nilai, teks }: { Ic: React.ComponentType<{ size?: number }>; warna: string; nilai: string; teks: string }) {
+  return (
+    <div className="flex items-start gap-2" style={{ padding: "4px 0", color: warna }}>
+      <span style={{ flex: "none", marginTop: 1 }}><Ic size={19} /></span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: t.text2, lineHeight: 1.3 }}><b style={{ fontSize: 16, fontWeight: 800, color: warna }}>{nilai}</b> {teks}</span>
     </div>
   );
 }
@@ -791,7 +804,7 @@ function Cincin({ pct }: { pct: number }) {
       <svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label={`${pct}% tepat waktu`}>
         <g transform="rotate(-90 52 52)">
           <circle cx="52" cy="52" r={R} fill="none" stroke={t.error} strokeWidth="13" />
-          <circle cx="52" cy="52" r={R} fill="none" stroke={t.success} strokeWidth="13" strokeDasharray={`${hijau} ${C - hijau}`} />
+          <circle cx="52" cy="52" r={R} fill="none" stroke={t.chart[1]} strokeWidth="13" strokeDasharray={`${hijau} ${C - hijau}`} />
         </g>
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22, fontWeight: 800 }}>{pct}%</div>
