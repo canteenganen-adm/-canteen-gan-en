@@ -233,6 +233,14 @@ export default function PreOrderAdmin({
     setViewDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
   };
   const lihatSesi = viewDate === serviceDate;
+  const hariTerakhir = useMemo(() => {
+    const m = new Map<string, number>();
+    transactions.forEach((tx) => {
+      if (tx.source === "preorder" && tx.serviceDate && !tx.cancelledAt) m.set(tx.serviceDate, (m.get(tx.serviceDate) || 0) + 1);
+    });
+    return Array.from(m.entries()).filter(([d]) => d !== viewDate).sort((x, y) => y[0].localeCompare(x[0])).slice(0, 5);
+  }, [transactions, viewDate]);
+  const lihatTglRef = useRef<HTMLInputElement>(null);
 
   const orders: AdminOrder[] = useMemo(
     () =>
@@ -365,19 +373,9 @@ export default function PreOrderAdmin({
                 <Calendar size={24} color={t.text} />
               </button>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="flex items-center">
-                  <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
-                    style={{ width: 26, height: 28, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                    <ChevronLeft size={20} />
-                  </button>
-                  <span style={{ fontSize: 16.5, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
-                  <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
-                    style={{ width: 26, height: 28, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
+                <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.25 }}>{tglPendekPO(viewDate)}</div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: "0 0 0 4px", minHeight: 22, fontFamily: "inherit" }}>
+                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
                   Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
@@ -466,7 +464,7 @@ export default function PreOrderAdmin({
 
       {/* Sheets */}
       {sheet === "gantiTanggal" && (
-        <Sheet title="Ganti Tanggal" onClose={() => { setSheet(null); setPendingDate(null); }}>
+        <Sheet title="Tanggal" onClose={() => { setSheet(null); setPendingDate(null); }}>
           {pendingDate ? (
             /* Konfirmasi wajib: pindah sesi = aksi nyata, ortu bisa langsung
                pesan di tanggal baru. Jelaskan juga status buka/tutup yang
@@ -494,6 +492,26 @@ export default function PreOrderAdmin({
             </div>
           ) : (
             <>
+              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Lihat pesanan hari lain</div>
+              <div style={{ fontSize: 13, color: t.text2, marginBottom: 6 }}>Hanya melihat. Sesi yang sedang berjalan tidak berubah.</div>
+              {hariTerakhir.map(([d, n]) => (
+                <button key={d} onClick={() => { setViewDate(d); setSheet(null); }} className="flex items-center justify-between"
+                  style={{ width: "100%", minHeight: 52, padding: "0 2px", border: "none", borderBottom: `1px solid ${t.divider}`, background: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, color: t.text }}>
+                  <span>{tglPendekPO(d)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{n} pesanan</span>
+                </button>
+              ))}
+              <div style={{ position: "relative", marginBottom: 22 }}>
+                <div className="flex items-center justify-between" style={{ minHeight: 52, padding: "0 2px", borderBottom: `1px solid ${t.divider}`, fontSize: 16, fontWeight: 700 }}>
+                  <span>Pilih tanggal lain</span><ChevronRight size={18} color={t.text2} />
+                </div>
+                <input ref={lihatTglRef} type="date" aria-label="Pilih tanggal untuk dilihat" value={viewDate}
+                  onChange={(e) => { if (e.target.value) { setViewDate(e.target.value); setSheet(null); } }}
+                  onClick={() => { try { lihatTglRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+              </div>
+
+              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Ganti tanggal sesi</div>
               <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Pilih tanggal untuk sesi Pre-order berikutnya.</div>
               <button onClick={pickNextSchoolDay} className="flex items-center justify-center gap-2"
                 style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
