@@ -352,9 +352,25 @@ export default function PreOrderAdmin({
           {/* KARTU UTAMA (satu-satunya bidang besar): tanggal + status + angka + tombol.
               Tanpa garis pemisah: bagian dibedakan lewat JARAK dan BENTUK (angka = teks, tombol = bulatan ikon). */}
           <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: "16px 14px 18px" }}>
+            {/* Status di KANAN ATAS (ketuk pil = buka/tutup); jam tutup di kiri atas */}
+            <div className="flex items-center justify-between">
+              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
+                style={{ gap: 2, background: "transparent", border: "none", color: t.text, fontWeight: 700, fontSize: 14.5, cursor: "pointer", padding: "8px 0 8px 8px", fontFamily: "inherit" }}>
+                <span style={{ color: t.text2, fontWeight: 500 }}>Tutup jam&nbsp;</span>{hhmm(autoCloseTime)} <ChevronRight size={16} color={t.text2} />
+              </button>
+              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
+                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
+                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
+                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
+                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
+                <Power size={13} />
+                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
+              </button>
+            </div>
+
             {/* Tanggal Layanan: panah kiri/kanan = jelajah pesanan hari lain
                 (TANPA menyentuh sesi); ketuk tanggal di tengah = Ganti Tanggal. */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1" style={{ marginTop: 4 }}>
               <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
                 style={{ width: 44, height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
                 <ChevronLeft size={22} />
@@ -380,25 +396,13 @@ export default function PreOrderAdmin({
               </button>
             )}
 
-            {/* Status sesi (ketuk = buka/tutup) di kiri, jam tutup otomatis di kanan */}
-            <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
-              <button onClick={onToggleOpen} className="flex items-center gap-1.5"
-                style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
-                  border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
-                  color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
-                <Power size={13} />
-                {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
-              </button>
-              <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                style={{ gap: 2, background: "transparent", border: "none", color: t.text, fontWeight: 700, fontSize: 14.5, cursor: "pointer", padding: "8px 0 8px 8px", fontFamily: "inherit" }}>
-                <span style={{ color: t.text2, fontWeight: 500 }}>Tutup jam&nbsp;</span>{hhmm(autoCloseTime)} <ChevronRight size={16} color={t.text2} />
-              </button>
-            </div>
 
+
+            {/* Divider super halus: memudar di kedua ujung (bukan garis kaku) */}
+            <div aria-hidden="true" style={{ height: 1, margin: "10px 6px 0", background: "linear-gradient(90deg, rgba(227,218,198,0) 0%, #E3DAC6 22%, #E3DAC6 78%, rgba(227,218,198,0) 100%)" }} />
 
             {/* Angka: teks tanpa kotak; ketuk = saring daftar. Yang aktif: garis bawah kuning. */}
-            <div className="flex justify-around" style={{ marginTop: 22 }}>
+            <div className="flex justify-around" style={{ marginTop: 18 }}>
               <StatText n={orders.length} label="Pesanan" active={packedFilter === "semua"} color={t.text}
                 onClick={() => setPackedFilter("semua")} />
               <StatText n={packed} label="Sudah" active={packedFilter === "sudah"} color={t.successText}
