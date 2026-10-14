@@ -138,6 +138,7 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
   }, [ym]);
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
+  const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
   const adaBerikut = ym.y * 12 + ym.m < nowY * 12 + nowM;
   const geser = (d: number) => setYm(({ y, m }) => { const v = y * 12 + m + d; return { y: Math.floor(v / 12), m: v % 12 }; });
 
@@ -209,30 +210,26 @@ export default function Laporan({ onClose }: { onClose: () => void }) {
                 <div style={{ textAlign: "center", padding: "30px 0", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di bulan ini.</div>
               ) : (
                 <>
-                  {/* Per hari */}
+                  {/* Per hari — satu baris: tanggal kiri, uang masuk kanan, batang tipis proporsional */}
                   <div style={{ ...card, marginBottom: 14 }}>
                     <div style={sectionTitle}>Per Hari</div>
-                    {r.hari.map(([d, v], i) => (
-                      <div key={d} className="flex items-center justify-between" style={{ padding: "9px 0", borderTop: i ? `1px solid ${t.divider}` : "none" }}>
-                        <div>
+                    {r.hari.map(([d, v]) => (
+                      <div key={d} style={{ padding: "8px 0" }}>
+                        <div className="flex items-baseline justify-between">
                           <div style={{ fontSize: 15, fontWeight: 700 }}>{labelHari(d)}</div>
-                          <div style={{ fontSize: 12.5, color: t.text2 }}>{v.n} transaksi{v.belum > 0 ? ` · belum dibayar ${rupiah(v.belum)}` : ""}</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: STRUK_MONO }}>{rupiah(v.masuk)}</div>
                         </div>
-                        <div style={{ fontSize: 15, fontWeight: 800, fontFamily: STRUK_MONO }}>{rupiah(v.masuk)}</div>
+                        <div style={{ height: 6, borderRadius: 999, background: t.divider, marginTop: 6, overflow: "hidden" }}>
+                          <div style={{ width: `${maxHari ? Math.round((v.masuk / maxHari) * 100) : 0}%`, height: "100%", borderRadius: 999, background: t.primary }} />
+                        </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Menu terlaris */}
+                  {/* Menu terlaris — donat 5 teratas + Lainnya */}
                   <div style={{ ...card }}>
                     <div style={sectionTitle}>Menu Terlaris</div>
-                    {r.menuList.slice(0, 10).map(([k, v], i) => (
-                      <div key={k} className="flex items-center justify-between gap-3" style={{ padding: "9px 0", borderTop: i ? `1px solid ${t.divider}` : "none" }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, minWidth: 0 }}>{k}</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{v.qty}</div>
-                      </div>
-                    ))}
-                    {r.menuList.length > 10 && <div style={{ fontSize: 12.5, color: t.text2, marginTop: 8 }}>10 teratas. Daftar lengkap ada di file Excel.</div>}
+                    <Donat data={r.menuList} />
                   </div>
                 </>
               )}
@@ -249,6 +246,58 @@ function Baris({ label, nilai, warna }: { label: string; nilai: string; warna?: 
     <div className="flex items-center justify-between" style={{ padding: "5px 0" }}>
       <div style={{ fontSize: 15, fontWeight: 600, color: t.text2 }}>{label}</div>
       <div style={{ fontSize: 16, fontWeight: 800, color: warna ?? t.text }}>{nilai}</div>
+    </div>
+  );
+}
+
+/* Warna irisan: hanya dari palet (kuning madu, hijau, khaki, kuning, abu-kuning) — selang terang/gelap
+   supaya irisan bersebelahan tetap terpisah jelas. "Lainnya" = warna garis. */
+const IRIS = ["#F2B53C", "#5BAF4E", "#FFE66D", "#A59B80", "#D6D0B0"];
+
+function Donat({ data }: { data: [string, { qty: number; nilai: number }][] }) {
+  // Donat = 5 menu teratas saja (persen terhadap kelima menu itu). Sisa menu satu baris catatan —
+  // kalau digabung jadi irisan "Lainnya", irisan itu mendominasi dan donat tidak informatif.
+  const top = data.slice(0, 5);
+  const total = top.reduce((n, [, v]) => n + v.qty, 0);
+  if (!total) return null;
+  const lain = data.slice(5).reduce((n, [, v]) => n + v.qty, 0);
+  const baris = top.map(([k, v], i) => ({ k, qty: v.qty, warna: IRIS[i] }));
+  const R = 52, SW = 24, C = 2 * Math.PI * R;
+  let acc = 0;
+  return (
+    <div>
+      <div style={{ display: "grid", placeItems: "center", margin: "4px 0 14px", position: "relative" }}>
+        <svg width="170" height="170" viewBox="0 0 140 140" role="img" aria-label="Menu terlaris">
+          <g transform="rotate(-90 70 70)">
+            {baris.map((b) => {
+              const len = (b.qty / total) * C;
+              const el = (
+                <circle key={b.k} cx="70" cy="70" r={R} fill="none" stroke={b.warna} strokeWidth={SW}
+                  strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />
+              );
+              acc += len;
+              return el;
+            })}
+          </g>
+        </svg>
+        <div style={{ position: "absolute", textAlign: "center" }}>
+          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{total.toLocaleString("id-ID")}</div>
+          <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>5 teratas</div>
+        </div>
+      </div>
+      {baris.map((b) => (
+        <div key={b.k} className="flex items-center gap-3" style={{ padding: "7px 0" }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: b.warna, flex: "none", border: `1px solid ${t.borderStrong}` }} />
+          <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.k}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, fontFamily: STRUK_MONO, flex: "none" }}>×{b.qty.toLocaleString("id-ID")}</div>
+          <div style={{ width: 40, textAlign: "right", fontSize: 13.5, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((b.qty / total) * 100)}%</div>
+        </div>
+      ))}
+      {lain > 0 && (
+        <div style={{ fontSize: 13, color: t.text2, fontWeight: 600, marginTop: 8 }}>
+          Menu lainnya ×{lain.toLocaleString("id-ID")} · daftar lengkap ada di file Excel
+        </div>
+      )}
     </div>
   );
 }
