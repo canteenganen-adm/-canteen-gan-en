@@ -302,7 +302,10 @@ export default function MasterMenu({
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 96px" }}>
         {/* Header */}
-        <div style={{ padding: "22px 20px 12px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+        {/* Yang MENEMPEL di atas hanya judul + tab (±110px). Cari, tanggal, Menu Tetap,
+            dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
+            menimpa daftar menu. */}
+        <div style={{ padding: "22px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5, boxShadow: "0 8px 8px -8px rgba(70,55,20,.22)" }}>
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">
@@ -333,6 +336,8 @@ export default function MasterMenu({
             />
           </div>
 
+        </div>
+        <div style={{ padding: "0 20px 8px" }}>
           {view === "menu" && (
             <>
               {/* Search */}
