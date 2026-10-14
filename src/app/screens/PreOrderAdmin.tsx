@@ -358,30 +358,31 @@ export default function PreOrderAdmin({
               kanan: pil status, tegak lurus di tengah tumpukan
               lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
           <div style={{ marginTop: 8 }}>
-            <div className="flex items-center justify-between" style={{ gap: 8 }}>
-              <div style={{ minWidth: 0 }}>
+            {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
+            <div className="flex items-center" style={{ gap: 8 }}>
+              <button onClick={() => setSheet("gantiTanggal")} aria-label="Ganti tanggal"
+                style={{ flex: "none", width: 46, height: 46, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Calendar size={24} color={t.text} />
+              </button>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="flex items-center">
                   <button onClick={() => shiftDay(-1)} aria-label="Hari sebelumnya"
-                    style={{ width: 30, height: 38, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                    <ChevronLeft size={22} />
+                    style={{ width: 26, height: 28, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                    <ChevronLeft size={20} />
                   </button>
-                  <button onClick={() => setSheet("gantiTanggal")} className="flex items-center" aria-label="Ganti tanggal"
-                    style={{ gap: 6, minHeight: 38, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: 0, whiteSpace: "nowrap" }}>
-                    <Calendar size={18} color={t.text} style={{ flex: "none" }} />
-                    <span style={{ fontSize: 17, fontWeight: 800, color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
-                  </button>
+                  <span style={{ fontSize: 16.5, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText }}>{tglPendekPO(viewDate)}</span>
                   <button onClick={() => shiftDay(1)} aria-label="Hari berikutnya"
-                    style={{ width: 30, height: 38, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
-                    <ChevronRight size={22} />
+                    style={{ width: 26, height: 28, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 }}>
+                    <ChevronRight size={20} />
                   </button>
                 </div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                  style={{ gap: 2, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "0 0 0 30px", minHeight: 26, fontFamily: "inherit" }}>
-                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={14} />
+                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: "0 0 0 4px", minHeight: 22, fontFamily: "inherit" }}>
+                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
               <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", height: 38, padding: "0 12px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
+                style={{ flex: "none", height: 38, padding: "0 11px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 13,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
                   border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
                   color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
