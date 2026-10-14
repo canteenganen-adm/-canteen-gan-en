@@ -15,6 +15,7 @@ export const t = {
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
   bandAlt: "#DBEEB5", // ISI kartu pesanan genap: hijau krem agak dinaikkan (sebelumnya #E4EEC9 "too muted"); hijau bubble WhatsApp #D9FDD3 DITOLAK
+  bandAltLine: "#A9CE78", // bingkai kartu genap: HIJAU (bukan krem/beige)
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",
