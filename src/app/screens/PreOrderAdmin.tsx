@@ -447,7 +447,7 @@ export default function PreOrderAdmin({
           {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
           {lateCount > 0 && (
             <button onClick={() => setShowLateOnly(v => !v)} className="flex items-center gap-2"
-              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "10px 2px", marginBottom: 6, background: t.bg, color: t.error, border: "none", fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
+              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "8px 2px", marginBottom: 4, background: t.bg, color: t.error, border: "none", fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
               <AlertCircle size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showLateOnly ? "← Semua pesanan" : `${lateCount} pesanan lewat waktu ambil`}
@@ -670,36 +670,32 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  const mask = (more || before)
-    ? `linear-gradient(90deg, ${before ? "transparent 0, #000 44px" : "#000 0"}, ${more ? "#000 calc(100% - 44px), transparent 100%" : "#000 100%"})`
-    : undefined;
+  // Tanda geser punya RUANG SENDIRI di tepi (tidak menimpa chip). Chip yang tidak
+  // dipilih polos tanpa kotak; hanya yang dipilih berisi warna.
+  const arrow: React.CSSProperties = { flex: "none", width: 28, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text2 };
   return (
-    <div style={{ position: "relative", marginTop: 10 }}>
-      <div ref={ref} onScroll={update} className="flex gap-2 hscroll"
-        style={{ overflowX: "auto", paddingBottom: 2, WebkitMaskImage: mask, maskImage: mask }}>
+    <div className="flex items-center" style={{ marginTop: 6 }}>
+      {before && (
+        <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser kembali ke kelas sebelumnya" style={arrow}>
+          <ChevronLeft size={20} />
+        </button>
+      )}
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 4 }}>
         {KELAS_TABS.map((k) => {
           const on = k.id === value;
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
-              style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                border: `1.5px solid ${on ? (k.warna ?? t.primary) : t.border}`,
-                background: on ? (k.warna ?? t.primary) : t.surface,
+              style={{ flex: "none", height: 38, padding: "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit", border: "none",
+                background: on ? (k.warna ?? t.primary) : "transparent",
                 color: on ? (k.warna ? "#FFFFFF" : t.onPrimary) : t.text2 }}>
               {k.label}
             </button>
           );
         })}
       </div>
-      {before && (
-        <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser kembali ke kelas sebelumnya"
-          style={{ position: "absolute", left: -4, top: 0, width: 36, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text, opacity: 0.4 }}>
-          <ChevronLeft size={22} />
-        </button>
-      )}
       {more && (
-        <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser untuk melihat kelas lain"
-          style={{ position: "absolute", right: -4, top: 0, width: 36, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text, opacity: 0.4 }}>
-          <ChevronRight size={22} />
+        <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser untuk melihat kelas lain" style={arrow}>
+          <ChevronRight size={20} />
         </button>
       )}
     </div>
@@ -727,7 +723,7 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
     <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
       {/* PITA ATAS (abu hangat, sama untuk semua kartu): centang + nama + kelas/waktu ambil
           + jam di kanan. Nama panjang turun ke baris berikutnya (tidak dipotong). */}
-      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: t.band, borderBottom: `1.5px solid ${t.bandLine}`, alignItems: "flex-start" }}>
+      <div className="flex" style={{ gap: 10, padding: "10px 12px", background: t.band, alignItems: "flex-start" }}>
         {/* HANYA kotak centang ini yang menandai dikemas / mengembalikan.
             Area ketuk 44px; mengetuk bagian kartu lain tidak melakukan apa-apa. */}
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}
@@ -766,15 +762,16 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
       </div>
       {/* BADAN: hanya isi pesanan */}
       <div style={{ padding: "10px 12px 12px" }}>
-        <div style={{ paddingLeft: 12, borderLeft: `2px solid ${g.perOrder.length > 1 ? t.primaryLine : t.border}` }}>
+        <div style={{ paddingLeft: g.perOrder.length > 1 ? 19 : 32 }}>
           {g.perOrder.length <= 1 ? (
             <ItemLines items={g.flatItems} />
           ) : (
             /* Pesanan dobel/tripel: daftar per pesanan DIPISAH, tidak digabung —
                supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
+            /* Satu strip vertikal per pesanan: hanya muncul kalau ada 2 pesanan atau lebih. */
             g.perOrder.map((items, oi) => (
-              <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 8 : 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginTop: oi ? 4 : 0 }}>Pesanan {oi + 1}</div>
+              <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 12 : 0, paddingLeft: 10, borderLeft: `3px solid ${t.primaryLine}` }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2 }}>Pesanan {oi + 1}</div>
                 <ItemLines items={items} />
               </div>
             ))
