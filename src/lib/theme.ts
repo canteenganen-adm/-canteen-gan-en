@@ -9,9 +9,9 @@ export const t = {
   primaryLight: "#FFF4BF",
   primaryLine: "#FFE66D", // garis kuning = SAMA dengan kuning utama (tidak ada kuning kedua)
   onPrimary: "#2A2820",
-  bg: "#FAF4E6", // krem hangat (titik tengah: #FAF6EE terasa putih bagi Mama, #FAF3DF terlalu kuning); SAMA untuk dapur & halaman orang tua
-  surface: "#FFFAF0", // kartu krem kekuningan (bukan hampir-putih)
-  surfaceSoft: "#FFF6E3",
+  bg: "#FAF6EE", // latar lama (pilihan Mama semula). Mama sempat minta lebih kuning: #FAF3DF dicoba = terlalu kuning, titik tengah #FAF4E6 juga dicoba; pemilik: "lama aja dulu"
+  surface: "#FFFCF7", // kartu krem kekuningan (bukan hampir-putih)
+  surfaceSoft: "#FFF8EE",
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
   bandLine: "#FFE66D",
   bandAlt: "#E4EEC9", // ISI kartu pesanan genap: hijau zaitun krem (pilihan "D"; menyatu dengan latar krem, tidak kontras)
@@ -29,12 +29,12 @@ export const t = {
   warnText: "#8F4E08",
   error: "#A82F24",
   errorBg: "#FBE7E3",
-  border: "#E8E0CB",
-  borderStrong: "#DDD2B8",
+  border: "#E8E0D2",
+  borderStrong: "#DDD4C0",
   // palet donat/grafik (pilihan pemilik "E"): kuning + hijau segar, selang terang-gelap
   chart: ["#FFC933", "#3FAE49", "#FFE66D", "#8CCB4F", "#F59E0B"],
   fab: "#D6D0B0", // tombol melayang (kembali ke atas): abu-kuning lembut, terpisah jelas dari pita kuning & kartu krem
-  divider: "#F1E9D8",
+  divider: "#F1EBE0",
   amberText: "#2A2820",
 } as const;
 

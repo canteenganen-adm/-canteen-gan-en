@@ -2,7 +2,7 @@ import { t } from "../../lib/theme";
 
 /* Tab "kertas" ala Chrome — dipakai di tab Menu (Tampilan Ortu · Menu)
    dan Transaksi (Belum Dibayar · Lunas). Kertas aktif: sudut atas
-   membulat, menyatu dengan garis di bawahnya. BUKAN pil segmen. */
+   membulat, SEWARNA dengan latar di bawahnya (menyatu, bukan lebih terang) dan memutus garis di bawahnya. BUKAN pil segmen. */
 export default function PaperTabs<T extends string>({ tabs, value, onChange }: {
   tabs: { id: T; label: React.ReactNode }[];
   value: T;
@@ -22,7 +22,7 @@ export default function PaperTabs<T extends string>({ tabs, value, onChange }: {
                 borderLeft: `1px solid ${on ? t.border : "transparent"}`,
                 borderRight: `1px solid ${on ? t.border : "transparent"}`,
                 borderBottom: 0,
-                background: on ? t.surface : "transparent",
+                background: on ? t.bg : "transparent", // sewarna dengan area di bawahnya (latar), bukan lebih terang
                 color: on ? t.text : t.text2,
                 position: "relative", top: 1, fontFamily: "inherit" }}>
               {label}
