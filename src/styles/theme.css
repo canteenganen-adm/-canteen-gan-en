@@ -3,26 +3,26 @@
 :root {
   --font-size: 16px;
   /* Palet Final — Decision Lock §10 */
-  --background: #FAF3DF;
+  --background: #FAF4E6;
   --foreground: #2F2A24;
-  --card: #FFF9E9;
+  --card: #FFFAF0;
   --card-foreground: #2F2A24;
-  --popover: #FFF9E9;
+  --popover: #FFFAF0;
   --popover-foreground: #2F2A24;
   --primary: #FFE66D;
   --primary-foreground: #2F2A24;
-  --secondary: #FFF4D9;
+  --secondary: #FFF6E3;
   --secondary-foreground: #2F2A24;
-  --muted: #FFF4D9;
+  --muted: #FFF6E3;
   --muted-foreground: #756B5D;
   --accent: #FFF4BF;
   --accent-foreground: #2A2820;
   --destructive: #D95D5D;
   --destructive-foreground: #FFFFFF;
-  --border: #E9DFC4;
+  --border: #E8E0CB;
   --input: transparent;
-  --input-background: #FFF9E9;
-  --switch-background: #E9DFC4;
+  --input-background: #FFFAF0;
+  --switch-background: #E8E0CB;
   --font-weight-medium: 600;
   --font-weight-normal: 400;
   --ring: #FFE66D;
@@ -32,13 +32,13 @@
   --chart-4: #8B5CF6;
   --chart-5: #D95D5D;
   --radius: 1rem;
-  --sidebar: #FFF4D9;
+  --sidebar: #FFF6E3;
   --sidebar-foreground: #2F2A24;
   --sidebar-primary: #FFE66D;
   --sidebar-primary-foreground: #2F2A24;
   --sidebar-accent: #FFF4BF;
   --sidebar-accent-foreground: #2A2820;
-  --sidebar-border: #E9DFC4;
+  --sidebar-border: #E8E0CB;
   --sidebar-ring: #FFE66D;
 }
 
