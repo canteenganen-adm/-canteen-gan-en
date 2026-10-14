@@ -19,8 +19,8 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
   - Background `#FAF6EE` (versi lama, pilihan Mama) · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE`
   - Kartu pesanan: PITA ATAS kuning lemon terang `#FFF0A8` (abu ditolak Mama: "kurang bright clear"). SATU garis saja per kartu — bingkai luar. DILARANG garis di bawah pita dan garis vertikal di samping daftar ("kebanyakan garis"), SAMA untuk semua kartu — memuat centang + nama + kelas/waktu ambil + jam. TANPA warna selang-seling dan TANPA garis putus-putus (semua sudah ditolak Mama).
   - Halaman Pre-order: SATU kartu utama (tanggal + status + angka sebagai teks + tiga bulatan ikon) TANPA garis/grid pemisah — bagian dibedakan lewat jarak dan bentuk (permintaan Mama). Jangan kembalikan kotak-kotak terpisah.
-  - Hero (kuning) `#FFE66D` · hover `#F2D84F` · light `#FFF4BF` · garis `#E8C84C` (SATU keluarga kuning: jangan campur jingga/hijau-kekuningan) · tulisan di atas hero GELAP `#2A2820` — chip/tab terpilih, tombol utama
-  - Pil status sesi: Dibuka isi `#D6F2B0` + garis `#5DBB3F` + teks `#1E5E1A` · **Ditutup = MERAH SOLID** `#D9382A` teks putih · **Tutup Otomatis = merah lembut** isi `#FFDDD7` + garis tegas 2px `#E0392B` + teks `#B3261E` (permintaan Mama). Centang Sudah `#5BAF4E` · angka/tulisan Sudah `#1F7A2E` · garis kotak aktif `#E8C84C`
+  - Hero (kuning) `#FFE66D` · hover `#F2D84F` · light `#FFF4BF` · garis = kuning yang SAMA `#FFE66D` (hanya SATU kuning, tidak ada kuning kedua yang lebih tua) · tulisan di atas hero GELAP `#2A2820` — chip/tab terpilih, tombol utama
+  - Pil status sesi: Dibuka isi `#D6F2B0` + garis `#5DBB3F` + teks `#1E5E1A` · **Ditutup = MERAH SOLID** `#D9382A` teks putih · **Tutup Otomatis = merah lembut** isi `#FFDDD7` + garis tegas 2px `#E0392B` + teks `#B3261E` (permintaan Mama). Centang Sudah `#5BAF4E` · angka/tulisan Sudah `#1F7A2E` · garis kotak aktif `#FFE66D`
   - Kotak ringkasan NETRAL (krem terang); hanya ANGKA berwarna: Sudah hijau olive, Belum merah `#A82F24`, Pesanan gelap
   - Peringatan: Telat/Ditutup `#A82F24` (bg `#FBE7E3`) · Tutup otomatis jingga `#8F4E08` (bg `#FFE9CC`)
   - Teks `#2A2820` · Teks redup `#5F5C4D` · Border `#E8E0D2` (tipis, seperti versi lama; JANGAN gelap/hitam) · Border tegas `#DDD4C0` · Divider `#F1EBE0` · Garis elemen terpilih `#F2B53C` (kuning madu)
@@ -45,7 +45,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - Nav 4 tab: Pre-order · Penjualan · Transaksi · Menu; Pengaturan via gear.
 - Tingkat dinamis (KB, TK A, TK B, SD, SMP, SMA, Guru/Karyawan) dikelola dari Pengaturan.
 - **Waktu Ambil dinamis** (default: "Istirahat 1", "Istirahat 2", "Istirahat 3", "Pulang Sekolah") dikelola dari Pengaturan → tambah/edit/hapus tanpa coding.
-- Pil KELAS (grade): BORDER SAJA (`#A59B80`, tebal 1.5px), isi transparan, teks gelap — TANPA warna per tingkat (keputusan pemilik menggantikan aturan lama "pil berwarna solid"). Chip saringan kelas di Pre-order: SEMUA hanya GARIS tanpa isi — tidak dipilih = garis tipis 1px, dipilih = garis kuning 2px (bukan isi kuning, bukan warna per tingkat).
+- Pil KELAS (grade): BORDER SAJA (`#A59B80`, tebal 1.5px), isi transparan, teks gelap — TANPA warna per tingkat (keputusan pemilik menggantikan aturan lama "pil berwarna solid"). Chip saringan kelas di Pre-order: SEMUA hanya GARIS tanpa isi — tidak dipilih = garis tipis 1px, dipilih = garis kuning 3px (bukan isi kuning, bukan warna per tingkat).
 - WA tagihan gaya struk, **pratinjau & bisa diedit sebelum kirim**; pembuka/penutup dari Pengaturan; template tanpa emoji; encoding UTF-8 (jangan sampai `�`).
 - Satu pesanan = satu anak + satu waktu ambil; layar sukses punya "Buat Pesanan Lagi" (data pemesan tetap terisi).
 - **Drop-off**: kotak bekal dititipkan di **Pos Satpam** sebelum jam masuk sekolah, berlaku SEMUA tingkat.

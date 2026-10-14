@@ -7,13 +7,13 @@ export const t = {
   primary: "#FFE66D",
   primaryHover: "#F2D84F",
   primaryLight: "#FFF4BF",
-  primaryLine: "#E8C84C", // garis/bingkai elemen terpilih: SATU keluarga kuning dengan primary (bukan jingga, bukan gelap)
+  primaryLine: "#FFE66D", // garis kuning = SAMA dengan kuning utama (tidak ada kuning kedua)
   onPrimary: "#2A2820",
   bg: "#FAF6EE",
   surface: "#FFFCF7",
   surfaceSoft: "#FFF8EE",
   band: "#FFF0A8", // pita atas kartu pesanan (kuning lemon terang), SAMA untuk semua kartu
-  bandLine: "#E8C84C",
+  bandLine: "#FFE66D",
   text: "#2A2820",
   text2: "#5F5C4D",
   textDis: "#B3AF9F",

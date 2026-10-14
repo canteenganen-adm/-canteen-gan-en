@@ -880,7 +880,7 @@ function SourceTag({ source }: { source: Transaction["source"] }) {
     <span title={pre ? "Pre-order" : "Penjualan"}
       style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", flex: "none",
         background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText,
-        border: `1px solid ${pre ? "#E8C84C" : "#D8E6D4"}` }}>
+        border: `1px solid ${pre ? "#FFE66D" : "#D8E6D4"}` }}>
       {pre ? <Utensils size={14} /> : <ShoppingCart size={14} />}
     </span>
   );

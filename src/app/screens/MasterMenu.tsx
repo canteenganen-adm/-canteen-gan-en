@@ -416,7 +416,7 @@ export default function MasterMenu({
             <button onClick={() => setShowUncategorized((v) => !v)}
               className="flex items-center gap-2"
               style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${showUncategorized ? t.primaryLine : "#E8C84C"}`, background: "#FFF4BF", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
+                border: `1.5px solid ${showUncategorized ? t.primaryLine : "#FFE66D"}`, background: "#FFF4BF", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
               <Tag size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showUncategorized
@@ -475,7 +475,7 @@ export default function MasterMenu({
                   )}
                 </div>
               ) : (
-                <div style={{ background: "#FFF4BF", border: "1px solid #E8C84C", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
+                <div style={{ background: "#FFF4BF", border: "1px solid #FFE66D", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
                   Riwayat menu per tanggal butuh <b>migration_9_menu_harian.sql</b> dijalankan di Supabase dulu. Sementara itu toggle di bawah masih langsung tersimpan (perilaku lama).
                 </div>
               )}

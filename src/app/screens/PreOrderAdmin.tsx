@@ -372,15 +372,15 @@ export default function PreOrderAdmin({
                 style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{tglPendekPO(viewDate)}</div>
+              <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
+                <div style={{ fontSize: 19, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{tglPendekPO(viewDate)}</div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center"
                   style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
                   Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
               <button onClick={onToggleOpen} className="flex items-center" aria-label="Buka atau tutup sesi Pre-order"
-                style={{ flex: "none", height: 32, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
+                style={{ flex: "none", marginRight: 6, height: 32, padding: "0 9px", gap: 4, borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 12,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
                   border: `2px solid ${isAutoClosed ? "#E0392B" : open ? "#5DBB3F" : "#D9382A"}`,
                   color: isAutoClosed ? "#B3261E" : open ? "#1E5E1A" : "#FFFFFF" }}>
@@ -437,7 +437,7 @@ export default function PreOrderAdmin({
           {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
           {menuBelumDisimpan && (
             <button onClick={onLihatMenu} className="flex items-center gap-2"
-              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4BF", border: "1.5px solid #E8C84C", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4BF", border: "1.5px solid #FFE66D", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <AlertCircle size={16} style={{ flex: "none" }} />
               <span style={{ flex: 1 }}>Menu untuk {dateLabel} belum disimpan — ortu belum bisa melihat menu. Ketuk untuk mengatur & Simpan.</span>
             </button>
@@ -704,9 +704,9 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
           const on = k.id === value;
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
-              style={{ flex: "none", height: 38, padding: "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit",
+              style={{ flex: "none", height: 38, padding: on ? "0 11px" : "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit",
                 /* Semua chip hanya GARIS (tanpa isi). Tidak dipilih: garis tipis 1px. Dipilih: garis kuning 2px. */
-                border: on ? `2px solid ${t.primaryLine}` : `1px solid ${t.border}`,
+                border: on ? `3px solid ${t.primaryLine}` : `1px solid ${t.border}`,
                 background: "transparent",
                 color: on ? t.text : t.text2 }}>
               {k.label}
