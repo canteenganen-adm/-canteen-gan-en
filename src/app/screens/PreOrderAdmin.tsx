@@ -344,7 +344,6 @@ export default function PreOrderAdmin({
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
             <div className="flex" style={{ marginRight: -10 }}>
-              <button onClick={() => setSheet("cetak")} aria-label="Cetak" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Printer size={22} /></button>
               <button onClick={onOpenSettings} aria-label="Pengaturan" style={{ width: 44, height: 44, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><Settings size={22} /></button>
             </div>
           </div>
@@ -352,15 +351,12 @@ export default function PreOrderAdmin({
           {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
           <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
             <div className="flex items-center justify-between">
-              <button onClick={() => setSheet("bagikan")} className="flex items-center"
-                style={{ gap: 8, height: 40, padding: "0 4px 0 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text }}>
-                <Share2 size={19} color={t.amberText} /> Bagikan Link
-              </button>
+              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2 }}>Sesi Pre-order</span>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? t.primary : open ? t.successPillLine : t.error,
-                  border: `1.5px solid ${isAutoClosed ? t.primaryLine : open ? "#A5CC3F" : t.error}`,
-                  color: isAutoClosed ? t.onPrimary : open ? "#2F4F2F" : "#FFFFFF" }}>
+                  background: isAutoClosed ? "#FFF4BF" : open ? "#D6F2B0" : "#FFDDD7",
+                  border: `2px solid ${isAutoClosed ? "#E8C84C" : open ? "#5DBB3F" : "#E0392B"}`,
+                  color: isAutoClosed ? t.onPrimary : open ? "#1E5E1A" : "#B3261E" }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
@@ -419,6 +415,16 @@ export default function PreOrderAdmin({
               onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
           </div>
 
+          {/* Tiga kotak aksi: Bagikan Link · Rekap Masak · Cetak (ikon di samping tulisan) */}
+          <div className="flex gap-2" style={{ marginTop: 8 }}>
+            {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
+              <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center justify-center gap-2"
+                style={{ flex: 1, minWidth: 0, height: 52, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, cursor: "pointer", fontFamily: "inherit", fontSize: 14.5, fontWeight: 700, color: t.text }}>
+                <Ic size={19} /> {label}
+              </button>
+            ))}
+          </div>
+
           {/* Cari */}
 
           {/* Filter Tingkat */}
@@ -448,8 +454,7 @@ export default function PreOrderAdmin({
             </button>
           )}
 
-          {/* Cari murid + Rekap Masak sebaris. Tanggal yang dilihat sudah
-              terbaca di kartu sesi di atas. */}
+          {/* Cari murid: satu baris penuh. */}
           <div className="flex items-center gap-2" style={{ margin: "14px 0 10px" }}>
             <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
               <Search size={19} color={t.text2} style={{ flex: "none" }} />
@@ -457,10 +462,6 @@ export default function PreOrderAdmin({
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
               {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
-            <button onClick={() => setSheet("rekap")} className="flex items-center"
-              style={{ gap: 7, flex: "none", height: 48, padding: "0 12px", border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, background: t.surface, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
-              <CookingPot size={19} color={t.text} /> Rekap Masak
-            </button>
           </div>
           {utama.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", color: t.text2, fontSize: 14 }}>{q ? "Tidak ada yang cocok." : "Belum ada pesanan."}</div>

@@ -23,6 +23,10 @@ import type { MenuItem, Variant } from "../../types";
 
 export type MenuView = "po" | "menu";
 
+/** "Rabu, 14 Oktober 2026" -> "Rabu, 14 Okt" (muat satu baris di HP, tanpa terpotong "…"). */
+const BULAN_PENDEK: Record<string, string> = { Januari: "Jan", Februari: "Feb", Maret: "Mar", April: "Apr", Mei: "Mei", Juni: "Jun", Juli: "Jul", Agustus: "Agu", September: "Sep", Oktober: "Okt", November: "Nov", Desember: "Des" };
+const tglPendek = (iso: string) => serviceDateLabel(iso).replace(/sd{4}$/, "").replace(/([A-Za-z]{3,9})$/, (w) => BULAN_PENDEK[w] ?? w);
+
 /* Tepi zigzag ala struk thermal — dipakai pratinjau PO & pengingat Simpan */
 const STRUK_ZIGZAG = "polygon(0 4px, 4% 0, 8% 4px, 12% 0, 16% 4px, 20% 0, 24% 4px, 28% 0, 32% 4px, 36% 0, 40% 4px, 44% 0, 48% 4px, 52% 0, 56% 4px, 60% 0, 64% 4px, 68% 0, 72% 4px, 76% 0, 80% 4px, 84% 0, 88% 4px, 92% 0, 96% 4px, 100% 0, 100% calc(100% - 4px), 96% 100%, 92% calc(100% - 4px), 88% 100%, 84% calc(100% - 4px), 80% 100%, 76% calc(100% - 4px), 72% 100%, 68% calc(100% - 4px), 64% 100%, 60% calc(100% - 4px), 56% 100%, 52% calc(100% - 4px), 48% 100%, 44% calc(100% - 4px), 40% 100%, 36% calc(100% - 4px), 32% 100%, 28% calc(100% - 4px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 4px), 8% 100%, 4% calc(100% - 4px), 0 100%)";
 
@@ -348,43 +352,29 @@ export default function MasterMenu({
                 {q && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setQ("")} />}
               </div>
 
-              {/* Konteks tanggal yang sedang diatur — SELALU kelihatan di Buku
-                  Menu (netral, bukan blok amber — amber cukup di ikon + link
-                  "Ubah" saja), supaya jelas ikon Pre-order di bawah ini
-                  berlaku untuk tanggal apa. "Ubah" = satu-satunya jalan pintas
-                  ganti tanggal, tanpa perlu pindah ke tab Preview PO. Tidak
-                  menyentuh sesi Pre-order (buka/tutup + tanggal aktif ortu)
-                  sama sekali — murni menyiapkan menu. */}
+              {/* SATU baris: tanggal yang diatur (seluruh area bisa diketuk) + Menu Tetap.
+                  Tidak menyentuh sesi Pre-order (buka/tutup + tanggal aktif ortu). */}
               {menuHarianReady && (
-                <div className="flex items-center gap-2" style={{ marginTop: 10, padding: "8px 2px" }}>
-                  <Calendar size={15} color={t.amberText} style={{ flex: "none" }} />
-                  <span style={{ fontSize: 13, color: t.text2 }}>Menu untuk</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 800, color: t.text }}>{serviceDateLabel(tanggal)}</span>
-                  <button
-                    onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                    style={{ position: "relative", background: "transparent", border: "none", color: t.amberText, fontWeight: 800, fontSize: 13, cursor: "pointer", padding: 0 }}>
-                    Ubah
+                <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
+                  <div style={{ position: "relative", flex: 1, minWidth: 0, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 12px" }}
+                    className="flex items-center gap-2">
+                    <Calendar size={19} color={t.text} style={{ flex: "none" }} />
+                    <div style={{ minWidth: 0, lineHeight: 1.2 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{tglPendek(tanggal)}</div>
+                      <div style={{ fontSize: 12.5, color: t.text2 }}>{aktifCount} item aktif</div>
+                    </div>
                     <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
                       onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                      aria-label="Ubah tanggal yang diatur"
-                      style={{ position: "absolute", inset: "-6px -10px", opacity: 0, cursor: "pointer" }} />
-                  </button>
-                  <span style={{ fontSize: 12, color: t.text2, marginLeft: "auto", flex: "none" }}>{aktifCount} item</span>
-                </div>
-              )}
-
-              {/* Menu Tetap — hanya saat menyusun tanggal ke depan. */}
-              {menuHarianReady && menuTetapReady && !isPast && (
-                <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
-                  <button onClick={pakaiMenuTetap} disabled={tetapMenus.length === 0}
-                    className="flex items-center justify-center gap-2"
-                    style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: tetapMenus.length ? t.text : t.textDis, fontWeight: 700, fontSize: 15, cursor: tetapMenus.length ? "pointer" : "default", fontFamily: "inherit" }}>
-                    <Pin size={17} color={tetapMenus.length ? t.amberText : t.textDis} /> Pakai Menu Tetap{tetapMenus.length ? " (" + tetapMenus.length + ")" : ""}
-                  </button>
-                  <button onClick={() => setTetapSheet(true)}
-                    style={{ height: 48, padding: "0 16px", borderRadius: 12, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
-                    Atur
-                  </button>
+                      onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
+                      aria-label="Ganti tanggal yang diatur"
+                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+                  </div>
+                  {menuTetapReady && !isPast && (
+                    <button onClick={() => setTetapSheet(true)} className="flex items-center justify-center gap-2"
+                      style={{ flex: "none", height: 52, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                      <Pin size={18} /> Menu Tetap
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -667,12 +657,18 @@ export default function MasterMenu({
             <div className="flex items-center justify-between" style={{ padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }}>
               <div>
                 <div style={{ fontSize: 20, fontWeight: 800 }}>Menu Tetap</div>
-                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{tetapMenus.length} menu ditandai. Ketuk untuk menandai atau melepas.</div>
+                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{tetapMenus.length} menu ditandai. Ketuk menu di bawah untuk menandai atau melepas.</div>
               </div>
               <button onClick={() => setTetapSheet(false)} aria-label="Tutup"
                 style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none" }}><X size={19} /></button>
             </div>
             <div style={{ overflowY: "auto", flex: 1, padding: "12px 20px 24px" }}>
+              {!isPast && tetapMenus.length > 0 && (
+                <button onClick={() => { pakaiMenuTetap(); setTetapSheet(false); }}
+                  style={{ width: "100%", height: 54, marginBottom: 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                  Pakai {tetapMenus.length} menu tetap untuk {tglPendek(tanggal)}
+                </button>
+              )}
               {tetapMenus.length === 0 && awalMatch.found.length > 0 && (
                 <div style={{ border: `1.5px solid ${t.border}`, borderRadius: 14, padding: 14, marginBottom: 14, background: t.surfaceSoft }}>
                   <div style={{ fontSize: 15, fontWeight: 800 }}>Isi daftar awal</div>
@@ -765,9 +761,7 @@ function MenuCard({ m, onEdit, onToggle, stok, onStok }: {
             )}
           </div>
           <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-            <span style={{ fontSize: 12.5, color: t.text2, display: "inline-flex", alignItems: "center", gap: 4 }}>
-              <Tag size={13} /> {m.category}
-            </span>
+            <span style={{ fontSize: 13, color: t.text2 }}>{m.category}</span>
             <span style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
           </div>
         </div>
@@ -786,12 +780,10 @@ function MenuCard({ m, onEdit, onToggle, stok, onStok }: {
       {/* Stok untuk tanggal yang diatur — hanya menu yang sedang tersedia di Pre-order */}
       {onStok && stok !== undefined && (
         <button onClick={(e) => { e.stopPropagation(); onStok(); }}
-          className="flex items-center gap-2"
-          style={{ marginTop: 10, padding: "0 12px", minHeight: 40, borderRadius: 10, border: `1.5px solid ${stok && stok.sisa <= 0 ? t.error : t.border}`, background: t.surfaceSoft, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: stok && stok.sisa <= 0 ? t.error : t.text2 }}>
-          <Package size={16} color={stok ? (stok.sisa <= 0 ? t.error : t.amberText) : t.textDis} />
-          {stok
-            ? (stok.sisa <= 0 ? "Habis" : "Sisa " + stok.sisa) + " dari " + stok.stok
-            : "Stok: tanpa batas"}
+          className="flex items-center gap-1"
+          style={{ marginTop: 4, padding: "0 2px", minHeight: 36, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, color: stok && stok.sisa <= 0 ? t.error : t.text2 }}>
+          <Package size={15} />
+          {stok ? (stok.sisa <= 0 ? "Habis" : "Sisa " + stok.sisa) + " dari " + stok.stok : "Atur stok"}
         </button>
       )}
     </div>
