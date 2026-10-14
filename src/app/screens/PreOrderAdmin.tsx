@@ -349,8 +349,9 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Kartu Sesi PO — tanggal + status jadi SATU sesi, bukan dua saklar terpisah */}
-          <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: 16 }}>
+          {/* KARTU UTAMA (satu-satunya bidang besar): tanggal + status + angka + tombol.
+              Tanpa garis pemisah: bagian dibedakan lewat JARAK dan BENTUK (angka = teks, tombol = bulatan ikon). */}
+          <div style={{ marginTop: 14, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: "16px 14px 18px" }}>
             {/* Tanggal Layanan: panah kiri/kanan = jelajah pesanan hari lain
                 (TANPA menyentuh sesi); ketuk tanggal di tengah = Ganti Tanggal. */}
             <div className="flex items-center gap-1">
@@ -380,7 +381,7 @@ export default function PreOrderAdmin({
             )}
 
             {/* Status sesi (ketuk = buka/tutup) di kiri, jam tutup otomatis di kanan */}
-            <div className="flex items-center justify-between" style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+            <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
                   background: isAutoClosed ? "#FFDDD7" : open ? "#D6F2B0" : "#D9382A",
@@ -395,34 +396,32 @@ export default function PreOrderAdmin({
               </button>
             </div>
 
+
+            {/* Angka: teks tanpa kotak; ketuk = saring daftar. Yang aktif: garis bawah kuning. */}
+            <div className="flex justify-around" style={{ marginTop: 22 }}>
+              <StatText n={orders.length} label="Pesanan" active={packedFilter === "semua"} color={t.text}
+                onClick={() => setPackedFilter("semua")} />
+              <StatText n={packed} label="Sudah" active={packedFilter === "sudah"} color={t.successText}
+                onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
+              <StatText n={belum} label="Belum" active={packedFilter === "belum"} color={t.error}
+                onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
+            </div>
+
+            {/* Tombol: bulatan ikon berlabel (Bagikan Link · Rekap Masak · Cetak) */}
+            <div className="flex justify-around" style={{ marginTop: 22 }}>
+              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 76, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, color: t.text }}>
+                  <span style={{ width: 52, height: 52, borderRadius: "50%", background: t.primaryLight, display: "grid", placeItems: "center" }}><Ic size={22} /></span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Ringkasan hari ini — bisa diketuk sebagai filter daftar */}
-          <div className="flex gap-2" style={{ marginTop: 14 }}>
-            <Stat n={orders.length} label="Pesanan" active={packedFilter === "semua"}
-              onClick={() => setPackedFilter("semua")} />
-            <Stat n={packed} label="Sudah Dikemas" tone="ok" active={packedFilter === "sudah"}
-              onClick={() => setPackedFilter(packedFilter === "sudah" ? "semua" : "sudah")} />
-            <Stat n={belum} label="Belum Dikemas" tone="warn" active={packedFilter === "belum"}
-              onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
-          </div>
-
-          {/* Tiga kotak aksi: Bagikan Link · Rekap Masak · Cetak (ikon di samping tulisan) */}
-          <div className="flex gap-2" style={{ marginTop: 8 }}>
-            {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-              <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center justify-center gap-2"
-                style={{ flex: 1, minWidth: 0, height: 52, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, cursor: "pointer", fontFamily: "inherit", fontSize: 14.5, fontWeight: 700, color: t.text }}>
-                <Ic size={19} /> {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Cari */}
-
-          {/* Filter Tingkat */}
           {/* Cari murid: satu baris penuh. */}
-          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.borderStrong}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
+          <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 48 }}>
               <Search size={19} color={t.text2} style={{ flex: "none" }} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari murid…" aria-label="Cari nama murid"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 15.5, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
@@ -781,16 +780,12 @@ function MergedOrderCard({ g, onTap, isLate, packedLate, lateTime }: { g: Merged
     </div>
   );
 }
-function Stat({ n, label, tone, active, onClick }: { n: number; label: string; tone?: "ok" | "warn"; active?: boolean; onClick?: () => void }) {
-  // Kotak netral; hanya ANGKA yang berwarna: Sudah hijau, Belum merah (seperti dulu).
-  const col = tone === "ok" ? t.successText : tone === "warn" ? t.error : t.text;
+function StatText({ n, label, color, active, onClick }: { n: number; label: string; color: string; active?: boolean; onClick?: () => void }) {
   return (
-    <button onClick={onClick} aria-pressed={active}
-      style={{ flex: 1, background: t.surface, color: t.text,
-        border: active ? `2.5px solid ${t.primaryLine}` : `1.5px solid ${t.border}`,
-        borderRadius: 14, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1, color: col }}>{n}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 5, color: t.text2 }}>{label}</div>
+    <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
+      style={{ minWidth: 76, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", textAlign: "center" }}>
+      <div style={{ display: "inline-block", fontSize: 28, fontWeight: 800, lineHeight: 1.1, color, padding: "0 6px 2px", borderBottom: `3px solid ${active ? t.primaryLine : "transparent"}` }}>{n}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 3 }}>{label}</div>
     </button>
   );
 }
