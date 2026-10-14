@@ -28,6 +28,7 @@ export const t = {
   errorBg: "#FBE7E3",
   border: "#E8E0D2",
   borderStrong: "#DDD4C0",
+  fab: "#D6D0B0", // tombol melayang (kembali ke atas): abu-kuning lembut, terpisah jelas dari pita kuning & kartu krem
   divider: "#F1EBE0",
   amberText: "#2A2820",
 } as const;
