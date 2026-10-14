@@ -369,11 +369,17 @@ export default function PreOrderAdmin({
             <button onClick={onToggleOpen}
               aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk membuka" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
-              style={{ flex: "none", width: 46, height: 46, borderRadius: "50%", cursor: "pointer", display: "grid", placeItems: "center",
+              className="flex items-center"
+              style={{ flex: "none", gap: 8, minHeight: 44, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
+                {isAutoClosed ? "Tutup otomatis" : open ? "Pre-order telah dibuka" : "Pre-order ditutup"}
+              </span>
+              <span style={{ flex: "none", width: 32, height: 32, borderRadius: "50%", display: "grid", placeItems: "center",
                 background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
                 border: isAutoClosed ? "2px solid #E0392B" : "none",
                 color: isAutoClosed ? "#B3261E" : "#FFFFFF" }}>
-              <Power size={24} strokeWidth={2.6} />
+                <Power size={17} strokeWidth={2.6} />
+              </span>
             </button>
           </div>
 
