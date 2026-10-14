@@ -362,7 +362,13 @@ export default function PreOrderAdmin({
 
         <div style={{ padding: "20px 20px 12px" }}>
           <div className="flex items-center justify-between">
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Pre-order</div>
+            {/* Judul = status: kiri atas langsung terbaca "Pre-order telah dibuka" (tidak ada tulisan status terpisah) */}
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em", minWidth: 0 }}>
+              Pre-order{" "}
+              <span style={{ color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
+                {isAutoClosed ? "tutup otomatis" : open ? "telah dibuka" : "ditutup"}
+              </span>
+            </div>
             {/* Status sesi: tombol ON/OFF bulat, HANYA warna + ikon power (tanpa tulisan).
                 Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
                 Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
@@ -371,9 +377,6 @@ export default function PreOrderAdmin({
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
               className="flex items-center"
               style={{ flex: "none", gap: 8, minHeight: 44, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
-                {isAutoClosed ? "Tutup otomatis" : open ? "Pre-order telah dibuka" : "Pre-order ditutup"}
-              </span>
               <span style={{ flex: "none", width: 32, height: 32, borderRadius: "50%", display: "grid", placeItems: "center",
                 background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
                 border: isAutoClosed ? "2px solid #E0392B" : "none",
