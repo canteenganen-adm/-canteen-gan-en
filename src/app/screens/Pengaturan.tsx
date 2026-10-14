@@ -270,7 +270,7 @@ export default function Pengaturan({
                   return (
                     <button key={tg} onClick={() => { setETingkat(tg); setEKelas(""); }}
                       style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                       {tg}
                     </button>
                   );
@@ -554,7 +554,7 @@ export default function Pengaturan({
                 return (
                   <button key={tg} onClick={() => setTingkatFilter(tg)}
                     style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                     {tg}
                   </button>
                 );

@@ -392,7 +392,7 @@ export default function MasterMenu({
                       style={{
                         flex: "none", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer",
                         border: `1.5px solid ${on ? t.primaryLine : t.border}`,
-                        background: on ? t.primaryLight : t.surface,
+                        background: on ? t.primary : t.surface,
                         color: on ? t.amberText : t.text2,
                       }}>
                       {c}
@@ -411,7 +411,7 @@ export default function MasterMenu({
             <button onClick={() => setShowUncategorized((v) => !v)}
               className="flex items-center gap-2"
               style={{ width: "100%", padding: "12px 14px", marginBottom: 12, borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${showUncategorized ? t.primaryLine : "#F0D3A6"}`, background: "#FFEBD0", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
+                border: `1.5px solid ${showUncategorized ? t.primaryLine : "#E8C84C"}`, background: "#FFF4BF", color: t.amberText, fontWeight: 700, fontSize: 14 }}>
               <Tag size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showUncategorized
@@ -464,13 +464,13 @@ export default function MasterMenu({
                       gampang dikira "sudah jadi menu tanggal itu" padahal
                       belum, atau dikira kosong itu bug. */}
                   {!isPast && menuHarianReady && snapLoaded && snapshot === null && (
-                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFEBD0", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
+                    <div className="flex items-center gap-2" style={{ padding: "9px 14px", borderTop: `1px solid ${t.divider}`, background: "#FFF4BF", fontSize: 12.5, fontWeight: 700, color: t.amberText }}>
                       <RefreshCw size={13} /> Menu untuk tanggal ini belum disimpan — mulai kosong, pilih menu lalu tekan Simpan
                     </div>
                   )}
                 </div>
               ) : (
-                <div style={{ background: "#FFEBD0", border: "1px solid #F0D3A6", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
+                <div style={{ background: "#FFF4BF", border: "1px solid #E8C84C", borderRadius: 14, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: t.amberText, lineHeight: 1.55 }}>
                   Riwayat menu per tanggal butuh <b>migration_9_menu_harian.sql</b> dijalankan di Supabase dulu. Sementara itu toggle di bawah masih langsung tersimpan (perilaku lama).
                 </div>
               )}
@@ -800,8 +800,8 @@ function ChannelIcon({ on, label, onClick, children }: {
     <button onClick={onClick} title={label} aria-label={label} aria-pressed={on}
       style={{ width: 44, height: 44, borderRadius: 12, cursor: "pointer",
         border: `1.5px solid ${on ? t.primaryLine : t.border}`,
-        background: on ? t.primaryLight : t.surface,
-        color: on ? t.amberText : t.textDis,
+        background: on ? t.primary : t.surface,
+        color: on ? t.onPrimary : t.textDis,
         display: "grid", placeItems: "center", flex: "none" }}>
       {children}
     </button>
@@ -815,8 +815,8 @@ function ChannelChip({ on, icon, label, onClick }: { on: boolean; icon: React.Re
       style={{
         flex: 1, height: 44, borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14, justifyContent: "center",
         border: `1.5px solid ${on ? t.primaryLine : t.border}`,
-        background: on ? t.primaryLight : t.surfaceSoft,
-        color: on ? t.amberText : t.textDis,
+        background: on ? t.primary : t.surfaceSoft,
+        color: on ? t.onPrimary : t.textDis,
       }}>
       {icon}{label}{on && <Check size={16} />}
     </button>
@@ -902,7 +902,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                 return (
                   <button key={c} onClick={() => pickCategory(c)}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                     {c}
                   </button>
                 );
@@ -910,7 +910,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
               <button onClick={() => { setNewCatMode(true); setNewCat(""); }}
                 className="flex items-center gap-1"
                 style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  border: `1.5px dashed ${newCatMode ? t.primaryLine : t.border}`, background: newCatMode ? t.primaryLight : t.surfaceSoft, color: t.amberText }}>
+                  border: `1.5px dashed ${newCatMode ? t.primaryLine : t.border}`, background: newCatMode ? t.primary : t.surfaceSoft, color: t.amberText }}>
                 <Plus size={16} /> Lainnya
               </button>
             </div>

@@ -404,7 +404,7 @@ export default function PreOrderParent({
                   return (
                     <button key={`${a.nama}|${a.kelas}`} onClick={() => pilihAnak(a)}
                       style={{ height: 44, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text }}>
                       {a.nama}{a.kelas ? ` · ${a.kelas}` : ""}
                     </button>
                   );
@@ -423,7 +423,7 @@ export default function PreOrderParent({
                 return (
                   <button key={tg} onClick={() => pickTingkat(tg)}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                     {tg}
                   </button>
                 );

@@ -358,9 +358,9 @@ export default function PreOrderAdmin({
               </button>
               <button onClick={onToggleOpen} className="flex items-center gap-1.5"
                 style={{ height: 36, padding: "0 14px", borderRadius: 999, cursor: "pointer", fontWeight: 800, fontSize: 14,
-                  background: isAutoClosed ? t.warnFill : open ? t.successPill : t.errorBg,
-                  border: `1.5px solid ${isAutoClosed ? "#EBC58F" : open ? t.successPillLine : "#E7A79C"}`,
-                  color: isAutoClosed ? t.warnText : open ? t.successText : t.error }}>
+                  background: isAutoClosed ? t.primary : open ? t.successPillLine : t.error,
+                  border: `1.5px solid ${isAutoClosed ? t.primaryLine : open ? "#A5CC3F" : t.error}`,
+                  color: isAutoClosed ? t.onPrimary : open ? "#2F4F2F" : "#FFFFFF" }}>
                 <Power size={13} />
                 {isAutoClosed ? "Tutup Otomatis" : open ? "Dibuka" : "Ditutup"}
               </button>
@@ -431,7 +431,7 @@ export default function PreOrderAdmin({
           {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
           {menuBelumDisimpan && (
             <button onClick={onLihatMenu} className="flex items-center gap-2"
-              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFEBD0", border: "1.5px solid #F0D3A6", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4BF", border: "1.5px solid #E8C84C", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <AlertCircle size={16} style={{ flex: "none" }} />
               <span style={{ flex: 1 }}>Menu untuk {dateLabel} belum disimpan — ortu belum bisa melihat menu. Ketuk untuk mengatur & Simpan.</span>
             </button>

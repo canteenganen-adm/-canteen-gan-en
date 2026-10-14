@@ -6,8 +6,8 @@ export const t = {
   // BUKAN hitam, BUKAN biru, BUKAN warna penuh yang banyak.
   primary: "#FFE66D",
   primaryHover: "#F2D84F",
-  primaryLight: "#F4F0BB",
-  primaryLine: "#F2B53C", // garis/bingkai elemen terpilih (kuning madu, BUKAN gelap)
+  primaryLight: "#FFF4BF",
+  primaryLine: "#E8C84C", // garis/bingkai elemen terpilih: SATU keluarga kuning dengan primary (bukan jingga, bukan gelap)
   onPrimary: "#2A2820",
   bg: "#FAF6EE",
   surface: "#FFFCF7",

@@ -287,7 +287,7 @@ export default function Penjualan({
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 42, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 11px 11px 0", cursor: "pointer",
-                background: isBackdate ? "#FFEBD0" : t.surface, border: `1px solid ${isBackdate ? t.primaryLine : t.border}`, borderLeft: "none" }}>
+                background: isBackdate ? "#FFF4BF" : t.surface, border: `1px solid ${isBackdate ? t.primaryLine : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
                 {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
@@ -324,7 +324,7 @@ export default function Penjualan({
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 20px", background: on ? t.primaryLight : "transparent",
+                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 20px", background: on ? t.primary : "transparent",
                     border: "none", borderLeft: `3px solid ${on ? t.primaryLine : "transparent"}`,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
@@ -455,7 +455,7 @@ export default function Penjualan({
                 return (
                   <button key={tg} onClick={() => setForm({ ...form, tingkat: tg, kelas: "" })}
                     style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                     {tg}
                   </button>
                 );
@@ -473,7 +473,7 @@ export default function Penjualan({
                     return (
                       <button key={k.id} onClick={() => setForm({ ...form, kelas: k.nama })}
                         style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text2 }}>
+                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
                         {k.nama}
                       </button>
                     );

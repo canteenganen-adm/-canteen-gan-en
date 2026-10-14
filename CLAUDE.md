@@ -17,8 +17,8 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - **Warna:**
   - Palet referensi pemilik (kuning + hijau alami), versi TERPILIH — jangan tambah warna lain: Mama menolak warna penuh yang banyak, hitam, biru, dan hijau-di-mana-mana. Papa melihat dengan SATU mata → pemisahan antar kartu harus jelas lewat selisih terang-gelap. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru).
   - Background `#FAF6EE` (versi lama, pilihan Mama) · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE` · Kartu pesanan genap sage `#CFE1B9` (tanpa garis putus-putus)
-  - Hero (kuning) `#FFE66D` · hover `#F2D84F` · light `#F4F0BB` · tulisan di atas hero GELAP `#2A2820` — chip/tab terpilih, tombol utama
-  - Hijau: pil Dibuka bg `#ECF39E` + garis `#BFE35A` · centang Sudah `#5BAF4E` · angka/tulisan Sudah `#4A5A2A` (olive tua; `#5BAF4E` terlalu terang untuk tulisan) · garis kotak aktif `#4A5A2A`
+  - Hero (kuning) `#FFE66D` · hover `#F2D84F` · light `#FFF4BF` · garis `#E8C84C` (SATU keluarga kuning: jangan campur jingga/hijau-kekuningan) · tulisan di atas hero GELAP `#2A2820` — chip/tab terpilih, tombol utama
+  - Pil status sesi SOLID: Dibuka lime `#BFE35A` (teks `#2F4F2F`) · Tutup otomatis kuning `#FFE66D` (teks gelap) · Ditutup merah `#A82F24` (teks putih). Centang Sudah `#5BAF4E` · angka/tulisan Sudah `#4A5A2A` (olive tua; `#5BAF4E` terlalu terang untuk tulisan) · garis kotak aktif `#E8C84C`
   - Kotak ringkasan NETRAL (krem terang); hanya ANGKA berwarna: Sudah hijau olive, Belum merah `#A82F24`, Pesanan gelap
   - Peringatan: Telat/Ditutup `#A82F24` (bg `#FBE7E3`) · Tutup otomatis jingga `#8F4E08` (bg `#FFE9CC`)
   - Teks `#2A2820` · Teks redup `#5F5C4D` · Border `#E8E0D2` (tipis, seperti versi lama; JANGAN gelap/hitam) · Border tegas `#DDD4C0` · Divider `#F1EBE0` · Garis elemen terpilih `#F2B53C` (kuning madu)

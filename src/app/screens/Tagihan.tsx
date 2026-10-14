@@ -411,7 +411,7 @@ export default function Tagihan({
               return (
                 <button key={val} onClick={() => setSourceFilter(val)}
                   style={{ flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: "pointer",
-                    border: `1px solid ${on ? t.primaryLine : "transparent"}`, background: on ? t.primaryLight : "transparent", color: on ? t.amberText : t.text2 }}>
+                    border: `1px solid ${on ? t.primaryLine : "transparent"}`, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text2 }}>
                   {label}
                 </button>
               );
@@ -420,7 +420,7 @@ export default function Tagihan({
             <button onClick={() => setFilterSheet(true)}
               className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
-                border: `1px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primaryLight : t.surface, color: filterActive ? t.amberText : t.text2 }}>
+                border: `1px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primary : t.surface, color: filterActive ? t.onPrimary : t.text2 }}>
               <SlidersHorizontal size={13} /> Filter
               {filterActive && (
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
@@ -466,7 +466,7 @@ export default function Tagihan({
                   {expanded && g.txs.map((tx) => (
                     <div key={tx.id} onClick={() => setDetailTx(tx)}
                       style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`,
-                        background: tx.id === highlightedTxId ? "#FFEBD0" : t.surfaceSoft,
+                        background: tx.id === highlightedTxId ? "#FFF4BF" : t.surfaceSoft,
                         transition: "background 0.4s ease", cursor: "pointer" }}>
                       <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                         <div className="flex items-center gap-2">
@@ -752,7 +752,7 @@ export default function Tagihan({
                 return (
                   <button key={val} onClick={() => setSortMode(val)}
                     style={{ flex: "none", height: 42, padding: "0 16px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, color: on ? t.amberText : t.text }}>
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text }}>
                     {SORT_LABEL[val]}
                   </button>
                 );
@@ -880,7 +880,7 @@ function SourceTag({ source }: { source: Transaction["source"] }) {
     <span title={pre ? "Pre-order" : "Penjualan"}
       style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", flex: "none",
         background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText,
-        border: `1px solid ${pre ? "#F0D3A6" : "#D8E6D4"}` }}>
+        border: `1px solid ${pre ? "#E8C84C" : "#D8E6D4"}` }}>
       {pre ? <Utensils size={14} /> : <ShoppingCart size={14} />}
     </span>
   );
