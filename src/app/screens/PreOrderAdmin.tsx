@@ -699,14 +699,16 @@ function KelasChips({ value, onChange }: { value: KelasGroup; onChange: (v: Kela
           <ChevronLeft size={20} />
         </button>
       )}
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 4 }}>
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 6, padding: "2px 0" }}>
         {KELAS_TABS.map((k) => {
           const on = k.id === value;
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
-              style={{ flex: "none", height: 38, padding: "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit", border: "none",
-                background: on ? t.primary : "transparent",
-                color: on ? t.onPrimary : t.text2 }}>
+              style={{ flex: "none", height: 38, padding: "0 13px", borderRadius: 999, fontSize: 14, fontWeight: on ? 800 : 700, cursor: "pointer", fontFamily: "inherit",
+                /* Semua chip hanya GARIS (tanpa isi). Tidak dipilih: garis tipis 1px. Dipilih: garis kuning 2px. */
+                border: on ? `2px solid ${t.primaryLine}` : `1px solid ${t.border}`,
+                background: "transparent",
+                color: on ? t.text : t.text2 }}>
               {k.label}
             </button>
           );

@@ -45,7 +45,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 - Nav 4 tab: Pre-order · Penjualan · Transaksi · Menu; Pengaturan via gear.
 - Tingkat dinamis (KB, TK A, TK B, SD, SMP, SMA, Guru/Karyawan) dikelola dari Pengaturan.
 - **Waktu Ambil dinamis** (default: "Istirahat 1", "Istirahat 2", "Istirahat 3", "Pulang Sekolah") dikelola dari Pengaturan → tambah/edit/hapus tanpa coding.
-- Pil KELAS (grade): BORDER SAJA (`#A59B80`, tebal 1.5px), isi transparan, teks gelap — TANPA warna per tingkat (keputusan pemilik menggantikan aturan lama "pil berwarna solid"). Chip saringan kelas di Pre-order: terpilih = kuning hero, tidak terpilih = teks polos.
+- Pil KELAS (grade): BORDER SAJA (`#A59B80`, tebal 1.5px), isi transparan, teks gelap — TANPA warna per tingkat (keputusan pemilik menggantikan aturan lama "pil berwarna solid"). Chip saringan kelas di Pre-order: SEMUA hanya GARIS tanpa isi — tidak dipilih = garis tipis 1px, dipilih = garis kuning 2px (bukan isi kuning, bukan warna per tingkat).
 - WA tagihan gaya struk, **pratinjau & bisa diedit sebelum kirim**; pembuka/penutup dari Pengaturan; template tanpa emoji; encoding UTF-8 (jangan sampai `�`).
 - Satu pesanan = satu anak + satu waktu ambil; layar sukses punya "Buat Pesanan Lagi" (data pemesan tetap terisi).
 - **Drop-off**: kotak bekal dititipkan di **Pos Satpam** sebelum jam masuk sekolah, berlaku SEMUA tingkat.
