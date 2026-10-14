@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Ellipsis, Eye, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, TrendingDown, TrendingUp, Utensils } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
+import BackToTop from "../components/BackToTop";
 import type { Transaction, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -354,6 +355,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
   const [busyXlsx, setBusyXlsx] = useState(false);
   const [busyPdf, setBusyPdf] = useState(false);
   const [menuUnduh, setMenuUnduh] = useState(false);
+  const [rincian, setRincian] = useState(false);
+  const rincianRef = useRef<HTMLDivElement>(null);
   const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
@@ -411,6 +414,72 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+      {rincian && siap && (
+        <div ref={rincianRef} style={{ position: "fixed", inset: 0, zIndex: 85, background: t.bg, overflowY: "auto" }}>
+          <BackToTop root={rincianRef} zIndex={95} />
+          <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 40px" }}>
+            <div className="flex items-center" style={{ gap: 12, padding: "20px 20px 14px" }}>
+              <button onClick={() => setRincian(false)} aria-label="Kembali"
+                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                <ArrowLeft size={20} />
+              </button>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.2 }}>Rincian laporan</div>
+                <div style={kecil}>{BULAN[ym.m]} {ym.y} · isi sama dengan PDF dan Excel</div>
+              </div>
+            </div>
+            <div className="flex flex-col" style={{ padding: "0 20px", gap: 12 }}>
+              <div style={card}>
+                <div style={{ ...kecil, marginBottom: 6 }}>Ringkasan</div>
+                <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
+                <BarisRincian a="dari Pre-order" b={rupiah(r.masukPO)} />
+                <BarisRincian a="dari Penjualan" b={rupiah(r.masukPJ)} />
+                <BarisRincian a={`Belum Dibayar (${r.nBelum})`} b={rupiah(r.belum)} />
+                <BarisRincian a="Dibatalkan (tidak dihitung)" b={String(r.nBatal)} />
+                {teksBanding(r.masuk, banding) && <div style={{ ...kecil, marginTop: 8 }}>{teksBanding(r.masuk, banding)}</div>}
+              </div>
+
+              <div style={card}>
+                <div style={{ ...kecil, marginBottom: 6 }}>Per hari (terbaru dulu)</div>
+                <BarisRincian a="Tanggal" b="Masuk · Belum dibayar" kepala />
+                {[...r.hari].reverse().map(([d, v]) => (
+                  <BarisRincian key={d} a={`${labelHari(d)} · ${v.n}`} b={`${rupiah(v.masuk)}${v.belum > 0 ? " · " + rpSingkat(v.belum) : ""}`} />
+                ))}
+              </div>
+
+              <div style={card}>
+                <div style={{ ...kecil, marginBottom: 6 }}>Per menu (menurut omzet)</div>
+                <BarisRincian a="Menu · terjual" b="Omzet" kepala />
+                {menuOmzet(r).map(([k, v]) => <BarisRincian key={k} a={`${k} · ${v.qty.toLocaleString("id-ID")}`} b={rupiah(v.nilai)} />)}
+              </div>
+
+              {u.tingkat.length > 0 && (
+                <div style={card}>
+                  <div style={{ ...kecil, marginBottom: 6 }}>Per tingkat</div>
+                  <BarisRincian a="Tingkat · pesanan" b="Nilai" kepala />
+                  {u.tingkat.map(([k, v]) => <BarisRincian key={k} a={`${k} · ${v.n.toLocaleString("id-ID")}`} b={rupiah(v.nilai)} />)}
+                </div>
+              )}
+
+              {pk && (pk.dikemas > 0 || pk.belum > 0) && (
+                <div style={card}>
+                  <div style={{ ...kecil, marginBottom: 6 }}>Packing Pre-order</div>
+                  <BarisRincian a="Dikemas tepat waktu" b={pk.tepat.toLocaleString("id-ID")} />
+                  <BarisRincian a="Telat dikemas" b={pk.telat.toLocaleString("id-ID")} />
+                  {pk.rataMenit > 0 && <BarisRincian a="Rata-rata telat" b={`${pk.rataMenit} menit`} />}
+                  <BarisRincian a="Belum ditandai dikemas" b={pk.belum.toLocaleString("id-ID")} />
+                </div>
+              )}
+
+              <div style={{ ...kecil, textAlign: "center", padding: "0 8px" }}>Daftar semua transaksi (nama, kelas, isi pesanan) ada di file Excel.</div>
+              <div className="flex" style={{ gap: 10 }}>
+                <button onClick={() => download("pdf")} style={{ flex: 1, height: 52, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontSize: 15.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{busyPdf ? "Membuat…" : "Unduh PDF"}</button>
+                <button onClick={() => download("xlsx")} style={{ flex: 1, height: 52, borderRadius: 14, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 15.5, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{busyXlsx ? "Membuat…" : "Unduh Excel"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
         {/* Header standar */}
         <div style={{ padding: "20px 20px 12px" }}>
@@ -456,6 +525,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     <div onClick={() => setMenuUnduh(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
                     <div role="menu" style={{ position: "absolute", top: 62, right: 12, zIndex: 45, width: "min(260px, calc(100% - 24px))", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
                       {([
+                        { Ic: Eye, label: "Lihat rincian", on: () => { setMenuUnduh(false); setRincian(true); } },
                         { Ic: FileText, label: busyPdf ? "Membuat PDF…" : "Unduh PDF", on: () => { setMenuUnduh(false); download("pdf"); } },
                         { Ic: FileSpreadsheet, label: busyXlsx ? "Membuat Excel…" : "Unduh Excel", on: () => { setMenuUnduh(false); download("xlsx"); } },
                       ]).map((o, i) => (
@@ -480,9 +550,9 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <div style={{ flex: r.masukPO, background: t.chart[0] }} />
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
-                <div className="flex flex-wrap items-center justify-between" style={{ gap: "6px 12px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                <div className="flex flex-wrap items-center" style={{ gap: "8px 24px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
                   <span className="flex items-center gap-2"><IkonKotak bg={t.primaryLight} line={t.chart[0]} warna={t.warnText}><Utensils size={17} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak bg={t.successBg} line={t.chart[1]} warna={t.successText}><ShoppingCart size={17} /></IkonKotak></span>
+                  <span className="flex items-center gap-2"><IkonKotak bg={t.successBg} line={t.chart[1]} warna={t.successText}><ShoppingCart size={17} /></IkonKotak>{rpSingkat(r.masukPJ)}</span>
                 </div>
               </div>
 
@@ -604,6 +674,16 @@ function Meter({ pct, judul, cap }: { pct: number; judul: string; cap: string })
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: t.text2, lineHeight: 1.25 }}>{cap}</div>
       </div>
+    </div>
+  );
+}
+
+/** Baris tabel rincian: kiri teks, kanan angka (rata kanan, boleh turun baris). */
+function BarisRincian({ a, b, tebal, kepala }: { a: string; b: string; tebal?: boolean; kepala?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between" style={{ gap: 12, padding: "7px 0", borderTop: kepala ? "none" : `1px solid ${t.divider}`, fontSize: kepala ? 12.5 : 14.5, fontWeight: kepala ? 700 : tebal ? 800 : 600, color: kepala ? t.text2 : t.text }}>
+      <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{a}</span>
+      <span style={{ textAlign: "right", flex: "none", maxWidth: "62%", fontWeight: kepala ? 700 : 800 }}>{b}</span>
     </div>
   );
 }
