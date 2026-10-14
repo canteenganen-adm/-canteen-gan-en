@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, Ban, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Clock, Ellipsis, FileSpreadsheet, FileText, Receipt, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
+import { AlarmClock, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Clock, Ellipsis, FileSpreadsheet, FileText, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -562,18 +562,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
                 <div className="flex items-center justify-between" style={{ fontSize: 14, fontWeight: 800 }}>
-                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak><span>{rpSingkat(r.masukPO)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>Pre-order</span></span></span>
-                  <span className="flex items-center gap-2" style={{ textAlign: "right" }}><span>{rpSingkat(r.masukPJ)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>Penjualan</span></span><IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
-                </div>
-                <div className="flex gap-2" style={{ marginTop: 14 }}>
-                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surfaceSoft, color: t.text, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
-                    <Wallet size={18} style={{ flex: "none" }} />
-                    <span style={{ minWidth: 0 }}>{rpSingkat(r.belum)}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600 }}>belum dibayar · {r.nBelum}</span></span>
-                  </div>
-                  <div className="flex items-center gap-2" style={{ flex: "none", background: t.surfaceSoft, color: t.text2, borderRadius: 12, padding: "9px 12px", fontSize: 14.5, fontWeight: 800 }}>
-                    <Ban size={18} />
-                    <span>{r.nBatal}<span style={{ display: "block", fontSize: 11.5, fontWeight: 600 }}>dibatalkan</span></span>
-                  </div>
+                  <span className="flex items-center gap-2"><IkonKotak warna={t.chart[0]}><Utensils size={15} /></IkonKotak>{rpSingkat(r.masukPO)}</span>
+                  <span className="flex items-center gap-2">{rpSingkat(r.masukPJ)}<IkonKotak warna={t.chart[1]}><ShoppingCart size={15} /></IkonKotak></span>
                 </div>
               </div>
 
@@ -582,10 +572,8 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
               ) : (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
-                    {hi && <Ubin Ic={TrendingUp} judul="Tertinggi" nilai={rpSingkat(hi[1].masuk)} cap={labelHari(hi[0])} />}
-                    {lo && <Ubin Ic={TrendingDown} judul="Terendah" nilai={rpSingkat(lo[1].masuk)} cap={labelHari(lo[0])} />}
-                    <Ubin Ic={CalendarDays} judul="Rata-rata per hari" nilai={rpSingkat(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} cap={`dari ${hariBuka} hari ada transaksi`} />
-                    <Ubin Ic={Receipt} judul="Rata-rata per transaksi" nilai={rpSingkat(r.nMasuk ? Math.round(r.masuk / r.nMasuk) : 0)} cap={`dari ${r.nMasuk.toLocaleString("id-ID")} transaksi Lunas`} />
+                    <Ubin Ic={Wallet} judul="Belum dibayar" nilai={rpSingkat(r.belum)} cap={`${r.nBelum.toLocaleString("id-ID")} transaksi`} />
+                    <Ubin Ic={CalendarDays} judul="Rata-rata per hari" nilai={rpSingkat(hariBuka ? Math.round(r.masuk / hariBuka) : 0)} cap={`dari ${hariBuka} hari`} />
                   </div>
 
                   {pk && pk.dikemas > 0 && (
