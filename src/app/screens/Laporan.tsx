@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, Ban, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, FileSpreadsheet, FileText, Receipt, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, Utensils, Wallet } from "lucide-react";
+import { AlarmClock, Ban, Calendar, CalendarDays, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Clock, Ellipsis, FileSpreadsheet, FileText, Receipt, RotateCcw, Settings, ShoppingCart, Timer, TrendingDown, TrendingUp, User, Utensils, Wallet } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -272,7 +272,7 @@ function buildUlasan(txs: Transaction[], urutAmbil: string[] = []) {
   const tingkat = new Map<string, { n: number; nilai: number }>();
   const ambil = new Map<string, number>();
   const tingkatAmbil = new Map<string, Map<string, number>>();
-  const pemesan = new Map<string, { nama: string; kelas: string; n: number; nilai: number }>();
+  const pemesan = new Map<string, { nama: string; kelas: string; n: number; nilai: number; hari: Set<string> }>();
   for (const tx of aktif) {
     const tk = tx.customer.tingkat || (tx.source === "penjualan" ? "Penjualan langsung" : "Lainnya");
     const a = tingkat.get(tk) ?? { n: 0, nilai: 0 };
@@ -286,8 +286,8 @@ function buildUlasan(txs: Transaction[], urutAmbil: string[] = []) {
     }
     if (tx.source === "preorder" && tx.customer.nama) {
       const key = tx.customer.nama.trim().toLowerCase() + "|" + (tx.customer.kelas ?? "");
-      const pm = pemesan.get(key) ?? { nama: toTitleCase(tx.customer.nama.trim()), kelas: [tx.customer.tingkat, tx.customer.kelas].filter(Boolean).join(" "), n: 0, nilai: 0 };
-      pm.n++; pm.nilai += tx.total; pemesan.set(key, pm);
+      const pm = pemesan.get(key) ?? { nama: toTitleCase(tx.customer.nama.trim()), kelas: [tx.customer.tingkat, tx.customer.kelas].filter(Boolean).join(" "), n: 0, nilai: 0, hari: new Set<string>() };
+      pm.n++; pm.nilai += tx.total; pm.hari.add(tx.serviceDate ?? wibTanggal(tx.createdAt)); pemesan.set(key, pm);
     }
   }
   return {
@@ -302,6 +302,9 @@ function buildUlasan(txs: Transaction[], urutAmbil: string[] = []) {
       .map(([k, m]) => ({ tingkat: k, per: m, total: [...m.values()].reduce((x, y) => x + y, 0) }))
       .sort((a, b) => b.total - a.total),
     pemesan: [...pemesan.values()].sort((a, b) => b.nilai - a.nilai).slice(0, 5),
+    // Tingkat langganan: pemesan yang memesan di 2 hari berbeda atau lebih dalam bulan itu
+    pemesanTotal: pemesan.size,
+    pemesanKembali: [...pemesan.values()].filter((x) => x.hari.size >= 2).length,
   };
 }
 
@@ -587,7 +590,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
 
                   {pk && pk.dikemas > 0 && (
                     <div className="flex items-center gap-4" style={{ ...card, marginBottom: 14 }}>
-                      <Cincin pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
+                      <Gauge pct={Math.round((pk.tepat / pk.dikemas) * 100)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>Packing Pre-order</div>
                         <BarisPacking Ic={CircleCheck} warna={t.text} nilai={pk.tepat.toLocaleString("id-ID")} teks="pesanan dikemas tepat waktu" />
@@ -606,14 +609,22 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                   {u.tingkatAmbil.length > 0 && (
                     <div style={{ ...card, marginBottom: 14 }}>
                       <div style={sectionTitle}>Pesanan per Tingkat</div>
-                      <Tumpuk baris={u.tingkatAmbil} kolom={u.ambilUrut} />
+                      <Treemap items={u.tingkatAmbil.map((x) => ({ nama: x.tingkat, n: x.total }))} />
+                      <div className="flex flex-wrap" style={{ gap: 8, marginTop: 12 }}>
+                        {u.ambilUrut.map((k) => (
+                          <span key={k} className="flex items-center gap-1.5" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 700 }}>
+                            <Clock size={14} /> {k} <b style={{ fontWeight: 800 }}>{(u.ambil.find(([n]) => n === k)?.[1] ?? 0).toLocaleString("id-ID")}</b>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   {u.pemesan.length > 0 && (
                     <div style={card}>
-                      <div style={sectionTitle}>Langganan Teratas</div>
-                      <Balapan rows={u.pemesan} />
+                      <div style={sectionTitle}>Langganan</div>
+                      <Piktogram kembali={u.pemesanKembali} total={u.pemesanTotal} />
+                      <Podium rows={u.pemesan} />
                     </div>
                   )}
                 </>
@@ -731,31 +742,33 @@ function Balapan({ rows }: { rows: { nama: string; kelas: string; n: number; nil
   );
 }
 
-/** Satu chart: tiap tingkat = satu batang, dipecah warna menurut Waktu Ambil (jumlah pesanan Pre-order). */
-function Tumpuk({ baris, kolom }: { baris: { tingkat: string; per: Map<string, number>; total: number }[]; kolom: string[] }) {
-  const max = Math.max(1, ...baris.map((x) => x.total));
-  const warna = (i: number) => t.chart[i % t.chart.length];
+/** Treemap: luas kotak = jumlah pesanan Pre-order per tingkat. Tingkat kecil (<5%) digabung "Lainnya". */
+function Treemap({ items }: { items: { nama: string; n: number }[] }) {
+  const total = items.reduce((a, x) => a + x.n, 0);
+  if (!total) return null;
+  const besar = items.filter((x) => x.n / total >= 0.05).sort((a, b) => b.n - a.n);
+  const kecil = items.filter((x) => x.n / total < 0.05);
+  const blok = [...besar, ...(kecil.length ? [{ nama: "Lainnya", n: kecil.reduce((a, x) => a + x.n, 0), isi: kecil.map((x) => x.nama).join(", ") }] : [])] as { nama: string; n: number; isi?: string }[];
+  // potong bergantian (kiri/atas) — kotak terbesar dulu
+  const rects: { x: number; y: number; w: number; h: number; b: { nama: string; n: number; isi?: string } }[] = [];
+  let x = 0, y = 0, w = 100, h = 62; // satuan relatif; tinggi 62% dari lebar
+  let sisa = total;
+  blok.forEach((b, i) => {
+    if (i === blok.length - 1) { rects.push({ x, y, w, h, b }); return; }
+    const frac = b.n / sisa;
+    if (w >= h) { const fw = w * frac; rects.push({ x, y, w: fw, h, b }); x += fw; w -= fw; }
+    else { const fh = h * frac; rects.push({ x, y, w, h: fh, b }); y += fh; h -= fh; }
+    sisa -= b.n;
+  });
   return (
-    <div>
-      <div className="flex flex-wrap" style={{ gap: "6px 14px", marginBottom: 10 }}>
-        {kolom.map((k, i) => (
-          <span key={k} className="flex items-center gap-1.5" style={{ fontSize: 13, fontWeight: 700 }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: warna(i), flex: "none" }} />{k}
-          </span>
-        ))}
-      </div>
-      {baris.map((x) => (
-        <div key={x.tingkat} className="flex items-center gap-2" style={{ padding: "6px 0" }}>
-          <div style={{ width: 112, flex: "none", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.tingkat}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", width: `${Math.max(6, (x.total / max) * 100)}%`, height: 24, borderRadius: 7, overflow: "hidden" }}>
-              {kolom.map((k, i) => {
-                const n = x.per.get(k) ?? 0;
-                return n ? <div key={k} title={`${k}: ${n}`} style={{ flex: n, background: warna(i), borderLeft: i ? `2px solid ${t.surface}` : "none" }} /> : null;
-              })}
-            </div>
+    <div style={{ position: "relative", width: "100%", paddingTop: "62%" }} role="img" aria-label="Pesanan per tingkat">
+      {rects.map((r, i) => (
+        <div key={r.b.nama} title={r.b.isi ?? r.b.nama}
+          style={{ position: "absolute", left: `${r.x}%`, top: `${(r.y / 62) * 100}%`, width: `${r.w}%`, height: `${(r.h / 62) * 100}%`, padding: 2, boxSizing: "border-box" }}>
+          <div style={{ width: "100%", height: "100%", borderRadius: 10, background: t.chart[i % t.chart.length], color: t.text, padding: "8px 9px", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.b.nama}</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{r.b.n.toLocaleString("id-ID")}</div>
           </div>
-          <div style={{ width: 38, flex: "none", textAlign: "right", fontSize: 14, fontWeight: 800, fontFamily: STRUK_MONO }}>{x.total.toLocaleString("id-ID")}</div>
         </div>
       ))}
     </div>
@@ -796,18 +809,54 @@ function BarisPacking({ Ic, warna, nilai, teks }: { Ic: React.ComponentType<{ si
   );
 }
 
-/** Cincin persen: hijau = tepat waktu, kuning = telat (palet halaman: kuning + hijau saja). */
-function Cincin({ pct }: { pct: number }) {
-  const R = 42, C = 2 * Math.PI * R, hijau = (pct / 100) * C;
+/** Gauge setengah lingkaran: hijau = tepat waktu, kuning = telat. */
+function Gauge({ pct }: { pct: number }) {
+  const L = Math.PI * 50;
+  const hijau = (pct / 100) * L;
   return (
-    <div style={{ position: "relative", width: 104, height: 104, flex: "none" }}>
-      <svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label={`${pct}% tepat waktu`}>
-        <g transform="rotate(-90 52 52)">
-          <circle cx="52" cy="52" r={R} fill="none" stroke={t.chart[0]} strokeWidth="13" />
-          <circle cx="52" cy="52" r={R} fill="none" stroke={t.chart[1]} strokeWidth="13" strokeDasharray={`${hijau} ${C - hijau}`} />
-        </g>
+    <div style={{ position: "relative", width: 124, height: 82, flex: "none" }}>
+      <svg width="124" height="82" viewBox="0 0 120 80" role="img" aria-label={`${pct}% tepat waktu`}>
+        <path d="M10,64 A50,50 0 0 1 110,64" fill="none" stroke={t.chart[0]} strokeWidth="14" />
+        <path d="M10,64 A50,50 0 0 1 110,64" fill="none" stroke={t.chart[1]} strokeWidth="14" strokeDasharray={`${hijau} ${L}`} />
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22, fontWeight: 800 }}>{pct}%</div>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 2, textAlign: "center", fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{pct}%</div>
+    </div>
+  );
+}
+
+/** Piktogram 10 orang: berisi = pemesan yang kembali memesan. */
+function Piktogram({ kembali, total }: { kembali: number; total: number }) {
+  const pct = Math.round((kembali / Math.max(1, total)) * 100);
+  const isi = Math.round(pct / 10);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div className="flex" style={{ justifyContent: "space-between" }} role="img" aria-label={`${pct}% pemesan kembali memesan`}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <User key={i} size={27} strokeWidth={1.8} color={i < isi ? t.chart[1] : t.borderStrong} style={{ fill: i < isi ? t.chart[1] : "none" }} />
+        ))}
+      </div>
+      <div style={{ marginTop: 8, fontSize: 15, fontWeight: 800 }}>{pct}% pemesan kembali memesan</div>
+      <div style={{ fontSize: 13, color: t.text2, fontWeight: 600 }}>{kembali.toLocaleString("id-ID")} dari {total.toLocaleString("id-ID")} pemesan memesan di 2 hari berbeda atau lebih</div>
+    </div>
+  );
+}
+
+/** Podium 3 pemesan teratas (menurut total belanja): tinggi kolom sesuai peringkat. */
+function Podium({ rows }: { rows: { nama: string; kelas: string; n: number; nilai: number }[] }) {
+  const tinggi = [112, 84, 64];
+  const warna = [t.chart[0], t.chart[2], t.primaryLight];
+  const urut = [1, 0, 2].filter((i) => rows[i]); // 2 - 1 - 3
+  return (
+    <div className="flex items-end" style={{ gap: 8, marginTop: 4 }}>
+      {urut.map((i) => (
+        <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+          <div style={{ fontSize: 13, fontWeight: 800, fontFamily: STRUK_MONO, marginBottom: 4 }}>{rpSingkat(rows[i].nilai)}</div>
+          <div style={{ height: tinggi[i], borderRadius: "12px 12px 0 0", background: warna[i], border: i === 2 ? `1.5px solid ${t.chart[2]}` : "none", display: "grid", placeItems: "start center", paddingTop: 8, fontSize: 22, fontWeight: 800 }}>{i + 1}</div>
+          <div style={{ height: 3, background: t.borderStrong }} />
+          <div style={{ marginTop: 6, fontSize: 13.5, fontWeight: 800, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{rows[i].nama}</div>
+          <div style={{ fontSize: 12, color: t.text2, fontWeight: 600 }}>{rows[i].kelas}</div>
+        </div>
+      ))}
     </div>
   );
 }
