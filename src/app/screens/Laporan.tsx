@@ -591,16 +591,9 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     )}
                   </div>
                   {hariData && (
-                    <>
-                      <div style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "12px 0 8px" }} role="img" aria-label="Lunas dan belum dibayar hari ini">
-                        <div style={{ flex: hariData.masuk, background: t.chart[1] }} />
-                        <div style={{ flex: hariData.belum, background: t.chart[0], borderLeft: hariData.masuk && hariData.belum ? `2px solid ${t.surface}` : "none" }} />
-                      </div>
-                      <div className="flex flex-wrap" style={{ gap: "4px 18px", fontSize: 13.5, fontWeight: 600, color: t.text2 }}>
-                        <span className="flex items-center gap-1.5"><span style={{ width: 10, height: 10, borderRadius: 3, background: t.chart[1], flex: "none" }} />Lunas <b style={{ color: t.text, fontWeight: 800 }}>{hariData.nMasuk}</b></span>
-                        <span className="flex items-center gap-1.5"><span style={{ width: 10, height: 10, borderRadius: 3, background: t.chart[0], flex: "none" }} />Belum dibayar <b style={{ color: t.text, fontWeight: 800 }}>{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</b></span>
-                      </div>
-                    </>
+                    <div style={{ ...kecil, marginTop: 10 }}>
+                      Lunas <b style={{ color: t.text, fontWeight: 800 }}>{hariData.nMasuk}</b> · Belum dibayar <b style={{ color: t.text, fontWeight: 800 }}>{hariData.n - hariData.nMasuk}</b> ({rpSingkat(hariData.belum)})
+                    </div>
                   )}
                   {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
                 </div>
