@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, Settings, TrendingDown, TrendingUp, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -345,7 +345,7 @@ const card: React.CSSProperties = { background: t.surface, border: `1px solid ${
 const sectionTitle: React.CSSProperties = { fontSize: 17, fontWeight: 700, marginBottom: 10 };
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSettings: () => void; pickupSchedules: PickupSchedule[] }) {
+export default function Laporan({ onBack, pickupSchedules }: { onBack: () => void; pickupSchedules: PickupSchedule[] }) {
   const now = new Date(Date.now() + 7 * 3_600_000);
   const nowY = now.getUTCFullYear(), nowM = now.getUTCMonth();
   const todayYmd = `${nowY}-${pad2(nowM + 1)}-${pad2(now.getUTCDate())}`;
@@ -416,12 +416,12 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
         {/* Header standar */}
         <div style={{ padding: "20px 20px 12px" }}>
-          <div className="flex items-center justify-between">
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Laporan</div>
-            <button onClick={onOpenSettings} aria-label="Pengaturan"
+          <div className="flex items-center gap-3" style={{ minHeight: 44 }}>
+            <button onClick={onBack} aria-label="Kembali ke Kantin"
               style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-              <Settings size={19} />
+              <ArrowLeft size={20} />
             </button>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Laporan</div>
           </div>
         </div>
 

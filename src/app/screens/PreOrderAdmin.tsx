@@ -143,7 +143,7 @@ export default function PreOrderAdmin({
   /** true = tanggal sesi belum punya snapshot menu_harian — halaman ortu
    * kosong sampai admin menekan Simpan di tab Menu (kertas PO). */
   menuBelumDisimpan: boolean;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");

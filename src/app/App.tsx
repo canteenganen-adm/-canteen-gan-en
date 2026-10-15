@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Routes, Route } from "react-router";
-import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle, ChartColumn } from "lucide-react";
+import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle, Store } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
@@ -582,14 +582,13 @@ function ParentRoute({ store }: { store: CanteenStore }) {
 
 /* ---------------- Shell utama: 4 tab + gear ---------------- */
 
-type Tab = "preorder" | "penjualan" | "tagihan" | "menu" | "laporan";
+type Tab = "preorder" | "penjualan" | "tagihan" | "menu" | "kantin";
 
 function MainShell({ store }: { store: CanteenStore }) {
   const [tab, setTab] = useState<Tab>("preorder");
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [laporanOpen, setLaporanOpen] = useState(false);
   const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
-  const settingsRef = useRef<HTMLDivElement>(null);
 
   /* Double-tap ikon tab yang sedang aktif = scroll ke atas + refresh data
      (ambil ulang semua dari server) + toast kecil di atas. */
@@ -638,7 +637,7 @@ function MainShell({ store }: { store: CanteenStore }) {
    * halaman ortu kosong. Banner di PO Admin mengarahkan ke tab Menu. */
   const menuBelumDisimpan = store.menuHarianReady && !(store.menuHarian[store.serviceDate]?.length);
 
-  const openSettings = () => { setSettingsOpen(true); store.loadTrash(); };
+  useEffect(() => { if (tab === "kantin") store.loadTrash(); }, [tab]);
 
   useEffect(() => {
     if (!store.saveError) return;
@@ -651,7 +650,7 @@ function MainShell({ store }: { store: CanteenStore }) {
     { id: "penjualan", label: "Penjualan", Icon: ShoppingBag },
     { id: "tagihan", label: "Transaksi", Icon: CreditCard, badge: unpaidCount },
     { id: "menu", label: "Menu", Icon: BookOpen },
-    { id: "laporan", label: "Laporan", Icon: ChartColumn },
+    { id: "kantin", label: "Kantin", Icon: Store },
   ];
 
   return (
@@ -673,7 +672,6 @@ function MainShell({ store }: { store: CanteenStore }) {
             onTogglePacked={store.togglePacked}
             onLihatMenu={lihatMenu}
             menuBelumDisimpan={menuBelumDisimpan}
-            onOpenSettings={openSettings}
           />
         )}
         {tab === "penjualan" && (
@@ -685,7 +683,6 @@ function MainShell({ store }: { store: CanteenStore }) {
             onLoadDate={store.loadMenuHarianDate}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
-            onOpenSettings={openSettings}
           />
         )}
         {/* Tetap mounted (display:none saat tidak aktif) — bukan
@@ -703,10 +700,35 @@ function MainShell({ store }: { store: CanteenStore }) {
             onMoveToTrash={store.moveToTrash}
             onChangeDate={store.changeTxDate}
             onMarkBilled={store.markBilled}
-            onOpenSettings={openSettings}
           />
         </div>
-        {tab === "laporan" && <Laporan pickupSchedules={store.pickupSchedules} onOpenSettings={openSettings} />}
+        {/* Kantin = profil + Laporan + pengaturan (satu pintu). Laporan dibuka di dalamnya dengan tombol kembali. */}
+        {tab === "kantin" && (laporanOpen ? (
+          <Laporan pickupSchedules={store.pickupSchedules} onBack={() => { setLaporanOpen(false); requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0 })); }} />
+        ) : (
+          <Pengaturan
+            settings={store.settings}
+            onChange={store.patchSettings}
+            kelasList={store.kelasList}
+            onAddKelas={store.addKelas}
+            onPatchKelas={store.patchKelas}
+            onRemoveKelas={store.removeKelas}
+            onOpenLaporan={() => { setLaporanOpen(true); requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0 })); }}
+            transactions={store.transactions}
+            pickupPresets={store.pickupPresets}
+            onSetPickupPresets={store.setPickupPresets}
+            pickupSchedules={store.pickupSchedules}
+            onSetPickupSchedules={store.setPickupSchedules}
+            onEditCustomer={store.editTransactionCustomer}
+            trashTransactions={store.trashTransactions}
+            onLoadTrash={store.loadTrash}
+            onRestoreFromTrash={store.restoreFromTrash}
+            onHardDeleteFromTrash={store.hardDeleteFromTrash}
+            poLink={poLink}
+            serviceDate={store.serviceDate}
+            preorderOpen={store.preorderOpen}
+          />
+        ))}
         {tab === "menu" && (
           <MasterMenu
             menus={store.menus}
@@ -714,7 +736,6 @@ function MainShell({ store }: { store: CanteenStore }) {
             onPatch={store.patchMenuItem}
             onToggleChannel={store.toggleMenuChannel}
             onRemove={store.removeMenuItem}
-            onOpenSettings={openSettings}
             view={menuView}
             onViewChange={setMenuView}
             serviceDate={store.serviceDate}
@@ -734,7 +755,7 @@ function MainShell({ store }: { store: CanteenStore }) {
         )}
       </div>
 
-      {/* Bottom nav — 5 tab (Pre-order · Penjualan · Transaksi · Menu · Laporan). Teks/ikon gelap di atas amber. */}
+      {/* Bottom nav — 5 tab (Pre-order · Penjualan · Transaksi · Menu · Kantin). Teks/ikon gelap di atas amber. */}
       <BackToTop key={tab} root={contentRef} bottom={`calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`} />
       <div data-testid="bottom-nav" style={{ flex: "none", borderTop: `1px solid ${t.border}`, background: t.surface, height: NAV_HEIGHT, display: "flex" }}>
         {tabs.map(({ id, label, Icon, badge }) => {
@@ -763,35 +784,6 @@ function MainShell({ store }: { store: CanteenStore }) {
           );
         })}
       </div>
-
-      {/* Pengaturan — overlay dari ikon gear, bukan tab */}
-      {settingsOpen && (
-        <div ref={settingsRef} style={{ position: "fixed", inset: 0, zIndex: 70, background: t.bg, overflowY: "auto" }}>
-          <BackToTop root={settingsRef} zIndex={75} />
-          <Pengaturan
-            settings={store.settings}
-            onChange={store.patchSettings}
-            kelasList={store.kelasList}
-            onAddKelas={store.addKelas}
-            onPatchKelas={store.patchKelas}
-            onRemoveKelas={store.removeKelas}
-            onClose={() => setSettingsOpen(false)}
-            transactions={store.transactions}
-            pickupPresets={store.pickupPresets}
-            onSetPickupPresets={store.setPickupPresets}
-            pickupSchedules={store.pickupSchedules}
-            onSetPickupSchedules={store.setPickupSchedules}
-            onEditCustomer={store.editTransactionCustomer}
-            trashTransactions={store.trashTransactions}
-            onLoadTrash={store.loadTrash}
-            onRestoreFromTrash={store.restoreFromTrash}
-            onHardDeleteFromTrash={store.hardDeleteFromTrash}
-            poLink={poLink}
-            serviceDate={store.serviceDate}
-            preorderOpen={store.preorderOpen}
-          />
-        </div>
-      )}
 
       {/* Toast refresh dari double-tap nav — di ATAS, searah dengan
           scroll-ke-atas yang menyertai refresh */}

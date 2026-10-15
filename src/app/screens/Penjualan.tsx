@@ -48,7 +48,7 @@ export default function Penjualan({
   menuHarianReady: boolean;
   onLoadDate: (tanggal: string) => void;
   onTransaction: (tx: Transaction) => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }) {
   /* Tanggal kerja Penjualan — TERPISAH dari sesi PO. Default hari ini;
      dipilih mundur untuk input OTS susulan: daftar & harga memakai
@@ -262,20 +262,13 @@ export default function Penjualan({
 
         {/* Header — selalu terlihat; hanya dua kolom di bawah yang scroll */}
         <div style={{ padding: "20px 20px 0", flex: "none" }}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{isBackdate ? serviceDateLabel(txDate) : "Hari ini"}</div>
                 <div style={{ fontSize: 14, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
-              <button
-                onClick={onOpenSettings}
-                aria-label="Pengaturan"
-                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
-              >
-                <Settings size={19} />
-              </button>
             </div>
           </div>
 

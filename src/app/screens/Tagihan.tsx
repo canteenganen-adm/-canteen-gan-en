@@ -124,7 +124,7 @@ export default function Tagihan({
   onMoveToTrash: (id: string) => void;
   onChangeDate: (id: string, date: string) => void;
   onMarkBilled: (ids: string[]) => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("semua");
@@ -363,7 +363,7 @@ export default function Tagihan({
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
             adalah memproses daftar transaksi, bukan dashboard keuangan */}
-        <div className="flex items-center justify-between" style={{ padding: "20px 20px 6px" }}>
+        <div className="flex items-center justify-between" style={{ padding: "20px 20px 6px", minHeight: 44 + 26 }}>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
           <div className="flex items-center gap-2">
             <div style={{ textAlign: "right" }}>
@@ -374,10 +374,6 @@ export default function Tagihan({
                 {rupiah(tab === "unpaid" ? grandTotal : tab === "riwayat" ? historyMasuk : batalTotal)}
               </div>
             </div>
-            <button onClick={onOpenSettings} aria-label="Pengaturan"
-              style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-              <Settings size={19} />
-            </button>
           </div>
         </div>
 

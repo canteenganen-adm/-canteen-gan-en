@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Info, X, Check, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
-  Link2, Copy, Share2,
+  Link2, Copy, Share2, BookOpen, ChartColumn,
 } from "lucide-react";
-import { t } from "../../lib/theme";
+import { t, NAV_HEIGHT } from "../../lib/theme";
+import { fetchMasukBulan } from "../../lib/canteenApi";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
@@ -29,7 +30,8 @@ export default function Pengaturan({
   onAddKelas,
   onPatchKelas,
   onRemoveKelas,
-  onClose,
+  onClose: _onClose,
+  onOpenLaporan,
   transactions,
   pickupPresets,
   onSetPickupPresets,
@@ -50,7 +52,8 @@ export default function Pengaturan({
   onAddKelas: (k: Kelas) => void;
   onPatchKelas: (id: string, fields: Partial<Kelas>) => void;
   onRemoveKelas: (id: string) => void;
-  onClose: () => void;
+  onClose?: () => void;
+  onOpenLaporan: () => void;
   transactions: Transaction[];
   pickupPresets: string[];
   onSetPickupPresets: (presets: string[]) => void;
@@ -66,6 +69,15 @@ export default function Pengaturan({
   preorderOpen: boolean;
 }) {
   const [toast, setToast] = useState<string | null>(null);
+  const [profilOpen, setProfilOpen] = useState(false);
+  const [printerOpen, setPrinterOpen] = useState(false);
+  const [tagihanOpen, setTagihanOpen] = useState(false);
+  const [panduanOpen, setPanduanOpen] = useState(false);
+  const [masuk, setMasuk] = useState<number | null>(null);
+  useEffect(() => {
+    const n = new Date(Date.now() + 7 * 3_600_000);
+    fetchMasukBulan(n.getUTCFullYear(), n.getUTCMonth()).then((r) => setMasuk(r.masuk)).catch(() => {});
+  }, []);
 
   // --- Daftar Kelas state ---
   const [tingkatFilter, setTingkatFilter] = useState(KELAS_TINGKAT[0]);
@@ -374,6 +386,13 @@ export default function Pengaturan({
             <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
               Dipakai sebagai pilihan Waktu Ambil saat ortu pesan. Isi jam untuk deteksi pesanan belum dikemas yang sudah terlambat.
             </div>
+            <button onClick={() => { setWaktuAmbilOpen(false); setEditingPresetIdx(null); setNewPreset(""); setDaftarKelasOpen(true); }}
+              className="flex items-center gap-3"
+              style={{ width: "100%", minHeight: 56, padding: "0 16px", marginBottom: 16, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+              <GraduationCap size={20} color={t.amberText} />
+              <span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 700 }}>Daftar Kelas</span>
+              <ChevronRight size={18} color={t.text2} />
+            </button>
 
             {pickupPresets.map((p, idx) => {
               const sched = scheduleFor(p);
@@ -694,172 +713,153 @@ export default function Pengaturan({
     );
   }
 
-  /* ===== VIEW: Main Pengaturan ===== */
+  /* ===== VIEW: Tagihan (kalimat pembuka/penutup WA + rekening) ===== */
+  if (tagihanOpen) {
+    return (
+      <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
+          <div className="flex items-center gap-3" style={{ padding: "20px 20px 16px" }}>
+            <button onClick={() => setTagihanOpen(false)} aria-label="Kembali"
+              style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ fontSize: 19, fontWeight: 800 }}>Tagihan</div>
+          </div>
+          <div style={{ padding: "0 20px" }}>
+            <Group label="Template WA Tagihan">
+              <div style={{ padding: "12px 16px" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Pembuka</div>
+                <textarea value={settings.waOpening} onChange={(e) => onChange({ waOpening: e.target.value })}
+                  rows={3} style={tarea} />
+              </div>
+              <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Penutup</div>
+                <textarea value={settings.waClosing} onChange={(e) => onChange({ waClosing: e.target.value })}
+                  rows={3} style={tarea} />
+              </div>
+              <FieldRow icon={<Landmark size={20} />} label="Bank">
+                <input value={settings.namaBank} onChange={(e) => onChange({ namaBank: e.target.value })}
+                  placeholder="BCA" style={inp} />
+              </FieldRow>
+              <FieldRow icon={<Landmark size={20} />} label="Nomor Rekening">
+                <input value={settings.noRekening} onChange={(e) => onChange({ noRekening: e.target.value })}
+                  placeholder="7347028990" inputMode="numeric" style={inp} />
+              </FieldRow>
+              <FieldRow icon={<Landmark size={20} />} label="Atas Nama">
+                <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })}
+                  placeholder="Nama pemilik rekening" style={inp} />
+              </FieldRow>
+            </Group>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ===== VIEW: Panduan (panduan-kantin.html apa adanya, di dalam bingkai) ===== */
+  if (panduanOpen) {
+    return (
+      <div style={{ background: t.bg, height: `calc(100dvh - ${NAV_HEIGHT}px)`, display: "flex", flexDirection: "column" }}>
+        <div className="flex items-center gap-3" style={{ padding: "20px 20px 12px", flex: "none" }}>
+          <button onClick={() => setPanduanOpen(false)} aria-label="Kembali"
+            style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${t.border}`, background: t.surface, cursor: "pointer", display: "grid", placeItems: "center", color: t.text, flex: "none" }}>
+            <ArrowLeft size={20} />
+          </button>
+          <div style={{ fontSize: 19, fontWeight: 800 }}>Panduan</div>
+        </div>
+        <iframe title="Panduan Kantin" src="/panduan-kantin.html" style={{ flex: 1, minHeight: 0, width: "100%", border: "none", background: t.bg }} />
+      </div>
+    );
+  }
+
+  /* ===== VIEW: Kantin (halaman utama — profil, Laporan, kartu pengaturan) ===== */
+  const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BLN[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
 
-        <div className="flex items-center justify-between" style={{ padding: "20px 20px 14px" }}>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em" }}>Pengaturan</div>
-          <button onClick={onClose} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
-            <X size={20} />
-          </button>
+        <div className="flex items-center" style={{ padding: "20px 20px 12px", minHeight: 44 + 32 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Kantin</div>
         </div>
 
         <div style={{ padding: "0 20px" }}>
-          {/* Identitas */}
-          <Group label="Kantin">
-            <FieldRow icon={<Store size={20} />} label="Nama Kantin">
-              <input value={settings.namaKantin} onChange={(e) => onChange({ namaKantin: e.target.value })} style={inp} />
-            </FieldRow>
-            <FieldRow icon={<MessageCircle size={20} />} label="Nomor WhatsApp">
-              <input value={settings.whatsapp} onChange={(e) => onChange({ whatsapp: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inp} />
-            </FieldRow>
-          </Group>
-
-          {/* Pesanan — Edit Pesanan + Daftar Kelas */}
-          <Group label="Pesanan">
-            <button
-              onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }}
-              className="flex items-center gap-3" style={rowBtn}>
-              <span style={ic}><Pencil size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Edit Pesanan</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Koreksi nama, kelas, atau nomor WA</div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
-
-            <button
-              onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }}
-              className="flex items-center gap-3" style={rowBtn}>
-              <span style={ic}><Clock size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Waktu Ambil</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{pickupPresets.length} waktu · {pickupPresets.join(", ")}</div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
-
-            <button
-              onClick={() => setDaftarKelasOpen(true)}
-              className="flex items-center gap-3" style={rowBtn}>
-              <span style={ic}><GraduationCap size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Daftar Kelas</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{kelasList.length} kelas · {KELAS_TINGKAT.join(", ")}</div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
-
-            <button
-              onClick={() => setLinkOpen(true)}
-              className="flex items-center gap-3" style={rowBtn}>
-              <span style={ic}><Link2 size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Bagikan Link Pemesanan</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Salin link /pesan atau kirim ke WhatsApp</div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
-
-            <button
-              onClick={() => { setTrashOpen(true); onLoadTrash(); }}
-              className="flex items-center gap-3" style={rowBtn}>
-              <span style={{ ...ic, background: t.errorBg, color: t.error }}><Trash2 size={20} /></span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Tong Sampah</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>
-                  {trashTransactions.length > 0 ? `${trashTransactions.length} item` : "Kosong"}
-                </div>
-              </div>
-              <ChevronRight size={18} color={t.textDis} />
-            </button>
-          </Group>
-
-          {/* Printer */}
-          <Group label="Perangkat">
-            <div className="flex items-center gap-3" style={{ padding: "14px 16px" }}>
-              <span style={ic}><Printer size={20} /></span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Printer</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{settings.printerConnected ? "Terhubung" : "Belum terhubung"}</div>
-              </div>
-              <button
-                onClick={() => { onChange({ printerConnected: !settings.printerConnected }); setToast(settings.printerConnected ? "Printer diputus" : "Printer terhubung"); }}
-                className="flex items-center gap-1"
-                style={{ height: 40, padding: "0 14px", borderRadius: 10, border: `1.5px solid ${settings.printerConnected ? "#D8E6D4" : t.border}`, background: settings.printerConnected ? t.successBg : t.surface, color: settings.printerConnected ? t.successText : t.text, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-                {settings.printerConnected ? <><Check size={16} /> Aktif</> : "Hubungkan"}
-              </button>
+          {/* Profil — tanpa bingkai, dipisah garis tipis dari kartu di bawahnya; pensil sangat soft */}
+          <div className="flex items-center gap-3" style={{ padding: "4px 0 18px", borderBottom: `1px solid ${t.divider}`, marginBottom: 16 }}>
+            <span style={{ width: 56, height: 56, borderRadius: "50%", background: t.primary, color: t.onPrimary, display: "grid", placeItems: "center", flex: "none" }}>
+              <Store size={26} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{settings.namaKantin || "Nama Kantin"}</div>
+              <div style={{ fontSize: 14.5, color: t.text2, marginTop: 2 }}>{settings.whatsapp || "Nomor WhatsApp"}</div>
             </div>
-          </Group>
+            <button onClick={() => setProfilOpen(true)} aria-label="Ubah nama dan nomor WhatsApp"
+              style={{ width: 44, height: 44, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", flex: "none", color: "#A59B80" }}>
+              <Pencil size={19} />
+            </button>
+          </div>
 
-          {/* Template WA Tagihan */}
-          <Group label="Template WA Tagihan">
-            <div style={{ padding: "12px 16px" }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Pembuka</div>
-              <textarea value={settings.waOpening} onChange={(e) => onChange({ waOpening: e.target.value })}
-                rows={3} style={tarea} />
+          {/* Laporan — ringkasan bulan ini, ketuk untuk membuka */}
+          <button onClick={onOpenLaporan} className="flex items-center gap-3"
+            style={{ width: "100%", minHeight: 76, padding: "0 16px", borderRadius: 18, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", textAlign: "left", marginBottom: 12 }}>
+            <span style={{ width: 46, height: 46, borderRadius: "50%", background: t.surface, color: t.text, display: "grid", placeItems: "center", flex: "none" }}>
+              <ChartColumn size={22} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 17, fontWeight: 800 }}>Laporan</div>
+              <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{bulanIni}{masuk !== null ? ` · Masuk ${rpRingkas(masuk)}` : ""}</div>
             </div>
-            <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Penutup</div>
-              <textarea value={settings.waClosing} onChange={(e) => onChange({ waClosing: e.target.value })}
-                rows={3} style={tarea} />
-            </div>
-            <FieldRow icon={<Landmark size={20} />} label="Bank">
-              <input value={settings.namaBank} onChange={(e) => onChange({ namaBank: e.target.value })}
-                placeholder="BCA" style={inp} />
-            </FieldRow>
-            <FieldRow icon={<Landmark size={20} />} label="Nomor Rekening">
-              <input value={settings.noRekening} onChange={(e) => onChange({ noRekening: e.target.value })}
-                placeholder="7347028990" inputMode="numeric" style={inp} />
-            </FieldRow>
-            <FieldRow icon={<Landmark size={20} />} label="Atas Nama">
-              <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })}
-                placeholder="Nama pemilik rekening" style={inp} />
-            </FieldRow>
-          </Group>
+            <ChevronRight size={20} color={t.text2} />
+          </button>
 
-          {/* Tentang */}
-          <Group label="Lainnya">
-            <div className="flex items-center gap-3" style={{ padding: "14px 16px" }}>
-              <span style={ic}><Info size={20} /></span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Tentang</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>Canteen Gan En · v1.0</div>
-              </div>
-            </div>
-          </Group>
-
-          <div style={{ textAlign: "center", fontSize: 13, color: t.text2, marginTop: 24 }}>
-            Status Pre-order & Tanggal Layanan ada di halaman Pre-order, bukan di sini.
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+            <Kartu Ic={BookOpen} label="Panduan" onClick={() => setPanduanOpen(true)} />
+            <Kartu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
+            <Kartu Ic={Clock} label="Waktu Ambil" onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }} />
+            <Kartu Ic={MessageCircle} label="Tagihan" onClick={() => setTagihanOpen(true)} />
+            <Kartu Ic={Printer} label="Printer" onClick={() => setPrinterOpen(true)} />
+            <Kartu Ic={Trash2} label="Tong Sampah" merah onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
           </div>
         </div>
       </div>
 
-      {/* Sheet Bagikan Link Pemesanan */}
-      {linkOpen && (
+      {/* Sheet Profil: nama kantin + nomor WhatsApp (tersimpan otomatis) */}
+      {profilOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setLinkOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div onClick={() => setProfilOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
           <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>Bagikan Link Pemesanan</div>
-              <button onClick={() => setLinkOpen(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
+            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Profil Kantin</div>
+              <button onClick={() => setProfilOpen(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
-            <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
-              Link untuk {serviceDateLabel(serviceDate)}. {preorderOpen ? "Pre-order sedang dibuka." : "Saat ini ditutup."}
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Nama Kantin</div>
+            <input value={settings.namaKantin} onChange={(e) => onChange({ namaKantin: e.target.value })} style={{ ...inp, marginBottom: 14 }} />
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Nomor WhatsApp</div>
+            <input value={settings.whatsapp} onChange={(e) => onChange({ whatsapp: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={{ ...inp, marginBottom: 18 }} />
+            <button onClick={() => setProfilOpen(false)}
+              style={{ width: "100%", height: 52, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sheet Printer */}
+      {printerOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setPrinterOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Printer</div>
+              <button onClick={() => setPrinterOpen(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
-            <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 13.5, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
-            <div className="flex gap-2">
-              <button onClick={handleCopyLink} className="flex items-center justify-center gap-2"
-                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Tersalin!" : "Salin Link"}
-              </button>
-              <button onClick={handleShareLinkWA} className="flex items-center justify-center gap-2"
-                style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                <Share2 size={18} /> WhatsApp
-              </button>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: settings.printerConnected ? t.successText : t.text2 }}>
+              {settings.printerConnected ? "Terhubung" : "Belum terhubung"}
             </div>
+            <button
+              onClick={() => { onChange({ printerConnected: !settings.printerConnected }); setToast(settings.printerConnected ? "Printer diputus" : "Printer terhubung"); setPrinterOpen(false); }}
+              style={{ width: "100%", height: 52, borderRadius: 14, border: settings.printerConnected ? `1.5px solid ${t.border}` : "none", background: settings.printerConnected ? t.surface : t.primary, color: settings.printerConnected ? t.text : t.onPrimary, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
+              {settings.printerConnected ? "Putuskan" : "Hubungkan"}
+            </button>
           </div>
         </div>
       )}
@@ -868,6 +868,22 @@ export default function Pengaturan({
     </div>
   );
 }
+
+/* Kartu menu Kantin: bulatan ikon + satu label (tanpa keterangan) */
+function Kartu({ Ic, label, onClick, merah }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; merah?: boolean }) {
+  return (
+    <button onClick={onClick} className="flex items-center"
+      style={{ minWidth: 0, gap: 12, minHeight: 68, padding: "8px 12px", borderRadius: 16, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+      <span style={{ width: 40, height: 40, borderRadius: "50%", background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, display: "grid", placeItems: "center", flex: "none" }}>
+        <Ic size={20} />
+      </span>
+      <span style={{ minWidth: 0, fontSize: 15.5, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
+    </button>
+  );
+}
+
+/** Rupiah ringkas untuk kartu Laporan: Rp29,8 jt / Rp950 rb. */
+const rpRingkas = (n: number) => n >= 1_000_000 ? `Rp${(n / 1_000_000).toFixed(1).replace(".", ",")} jt` : n >= 1000 ? `Rp${Math.round(n / 1000)} rb` : `Rp${n}`;
 
 /* ---- styles ---- */
 const ic: React.CSSProperties = {

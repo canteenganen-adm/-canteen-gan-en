@@ -61,7 +61,7 @@ export default function MasterMenu({
   onPatch: (id: string, fields: Partial<MenuItem>) => void;
   onToggleChannel: (id: string, key: keyof MenuItem["channels"]) => void;
   onRemove: (id: string) => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
   view: MenuView;
   onViewChange: (v: MenuView) => void;
   /** Tanggal sesi PO berikutnya — default selector tanggal di kertas PO. */
@@ -333,16 +333,9 @@ export default function MasterMenu({
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
         <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={onOpenSettings}
-                aria-label="Pengaturan"
-                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}
-              >
-                <Settings size={19} />
-              </button>
             </div>
           </div>
 
