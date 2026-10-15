@@ -294,6 +294,8 @@ export default function Penjualan({
               </span>
               <input type="date" value={txDate} max={todayIso}
                 onChange={(e) => e.target.value && setTxDate(e.target.value)}
+                /* Pengaman: sebagian browser HP tidak membuka kalender dari input transparan — buka paksa lewat showPicker() */
+                onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* sudah terbuka / tidak didukung */ } }}
                 aria-label="Tanggal transaksi"
                 style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
             </div>
