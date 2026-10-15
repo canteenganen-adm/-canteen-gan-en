@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
@@ -411,6 +411,23 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
     cursor: aktif ? "pointer" : "default", display: "grid", placeItems: "center", flex: "none",
   });
   const bandingPct = banding && r && banding.prevMasuk > 0 ? Math.round(((r.masuk - banding.prevMasuk) / banding.prevMasuk) * 100) : null;
+  /* Geser kiri/kanan di seluruh isi Laporan (kartu Masuk, tab Ulasan & Rincian) = ganti bulan; tab ikut bulan yang dipilih. Hanya gerakan yang jelas mendatar. */
+  const sentuh = useRef<{ x: number; y: number } | null>(null);
+  const geserBulan = {
+    onTouchStart: (e: React.TouchEvent) => {
+      // jangan rebut gulir mendatar milik tabel/kalender di dalam halaman
+      for (let el = e.target as HTMLElement | null; el && el !== e.currentTarget; el = el.parentElement) {
+        if (el.scrollWidth > el.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) { sentuh.current = null; return; }
+      }
+      sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const a = sentuh.current; sentuh.current = null; if (!a) return;
+      const dx = e.changedTouches[0].clientX - a.x, dy = e.changedTouches[0].clientY - a.y;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx > 0) geser(-1); else if (adaBerikut) geser(1); }
+    },
+  };
+  const glyph: React.CSSProperties = { width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 };
   const siap = r && u && txs && pk;
   const tglIni = ym.y === nowY && ym.m === nowM;
 
@@ -428,12 +445,12 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
           </div>
         </div>
 
-        <div style={{ padding: "0 20px" }}>
-          {/* Bulan */}
-          <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={navBtn(true)}><ChevronLeft size={22} /></button>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>{BULAN[ym.m]} {ym.y}</div>
-            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={navBtn(adaBerikut)}><ChevronRight size={22} /></button>
+        <div style={{ padding: "0 20px", touchAction: "pan-y" }} {...geserBulan}>
+          {/* Bulan: teks + panah polos (tanpa kotak); geser ke kiri/kanan juga mengganti bulan */}
+          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
+            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
+            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
+            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
           </div>
 
           {err && <div style={{ ...card, background: t.errorBg, borderColor: t.errorBg, color: t.error, fontWeight: 600, fontSize: 14.5, marginBottom: 12 }}>{err}</div>}
