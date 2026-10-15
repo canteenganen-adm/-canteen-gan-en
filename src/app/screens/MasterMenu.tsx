@@ -303,6 +303,13 @@ export default function MasterMenu({
   };
 
   const editing = menus.find((m) => m.id === editingId) || null;
+  /* Edit menu yang sudah ada juga DRAFT: tidak ada yang berubah di database sampai "Simpan".
+     Batal / X / ketuk area gelap = kembali ke awal (cegah salah ketuk kategori/harga). */
+  const [draftEdit, setDraftEdit] = useState<MenuItem | null>(null);
+  useEffect(() => {
+    setDraftEdit(editing ? { ...editing, variants: editing.variants.map((v) => ({ ...v })), channels: { ...editing.channels } } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId]);
 
   // --- mutations (semua auto-save: langsung ubah state) ---
   const patch = onPatch;
@@ -728,18 +735,20 @@ export default function MasterMenu({
       {/* Editor sheet — item existing (auto-save) atau draft menu baru */}
       {(editing || draftNew) && (
         <Editor
-          m={draftNew ?? editing!}
+          m={draftNew ?? draftEdit ?? editing!}
           isNew={!!draftNew}
           categories={categories.filter((c) => c !== "Semua")}
-          onClose={() => { setEditingId(null); setDraftNew(null); }}
+          onClose={() => { setEditingId(null); setDraftNew(null); setDraftEdit(null); }}
           onPatch={(f) => draftNew
             ? setDraftNew((prev) => (prev ? { ...prev, ...f } : prev))
-            : patch(editing!.id, f)}
+            : setDraftEdit((prev) => (prev ? { ...prev, ...f } : prev))}
           onSaveNew={() => {
-            setDraftNew((prev) => {
-              if (prev) onAdd(prev);
-              return null;
-            });
+            if (draftNew) { onAdd(draftNew); setDraftNew(null); return; }
+            if (editing && draftEdit) {
+              const { id: _id, ...isi } = draftEdit;
+              patch(editing.id, isi);
+              setEditingId(null); setDraftEdit(null);
+            }
           }}
           onRemove={() => editing && removeMenu(editing.id)}
         />
@@ -843,8 +852,13 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
 }) {
   const hasVariants = m.variants.length > 0;
   const [newCatMode, setNewCatMode] = useState(false);
+  const chipsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const c = chipsRef.current; const on = c?.querySelector('[aria-pressed="true"]') as HTMLElement | null;
+    if (c && on) c.scrollLeft = Math.max(0, on.offsetLeft - 8);
+  }, [newCatMode]);
   const [newCat, setNewCat] = useState("");
-  const canSaveNew = m.name.trim().length > 0 && !!m.kategoriOrtu;
+  const canSaveNew = m.name.trim().length > 0 && (!isNew || !!m.kategoriOrtu);
 
   const setName = (name: string) => onPatch({ name });
   const setPrice = (v: string) => onPatch({ price: v === "" ? null : Number(v) });
@@ -881,16 +895,14 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
             <div style={{ fontSize: 18, fontWeight: 800 }}>{isNew ? "Menu Baru" : "Edit Menu"}</div>
           </div>
           <div className="flex items-center gap-2">
-            {isNew && (
-              <button onClick={onClose} style={{ background: "transparent", color: t.text2, border: `1.5px solid ${t.border}`, borderRadius: 10, height: 40, padding: "0 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                Batal
-              </button>
-            )}
+            <button onClick={onClose} style={{ background: "transparent", color: t.text2, border: `1.5px solid ${t.border}`, borderRadius: 10, height: 40, padding: "0 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Batal
+            </button>
             <button
-              onClick={isNew ? (canSaveNew ? onSaveNew : undefined) : onClose}
+              onClick={canSaveNew ? onSaveNew : undefined}
               className="flex items-center gap-2"
-              style={{ background: t.primary, color: t.onPrimary, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: isNew && !canSaveNew ? 0.45 : 1 }}>
-              <Check size={18} /> {isNew ? "Simpan" : "Selesai"}
+              style={{ background: t.primary, color: t.onPrimary, border: "none", borderRadius: 10, height: 40, padding: "0 16px", fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: canSaveNew ? 1 : 0.45 }}>
+              <Check size={18} /> Simpan
             </button>
           </div>
         </div>
@@ -913,21 +925,24 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                 </button>
               </div>
             ) : (
-              <div className="flex hscroll" style={{ gap: 8, overflowX: "auto", flex: 1, minWidth: 0, padding: "2px 0" }}>
-                {catChips.map((c) => {
-                  const on = c === m.category;
-                  return (
-                    <button key={c} onClick={() => pickCategory(c)}
-                      style={{ flex: "none", height: 40, padding: "0 14px", borderRadius: 12, fontSize: 14.5, fontWeight: on ? 800 : 600, cursor: "pointer", fontFamily: "inherit",
-                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
-                      {c}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center" style={{ gap: 8, flex: 1, minWidth: 0 }}>
+                {/* "+" tetap di kiri, selalu kelihatan */}
                 <button onClick={() => { setNewCatMode(true); setNewCat(""); }} aria-label="Kategori baru"
-                  style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: `1.5px dashed ${t.border}`, background: "transparent", color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                  <Plus size={18} />
+                  style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: `1.5px dashed ${t.border}`, background: "transparent", color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  <Plus size={20} />
                 </button>
+                <div ref={chipsRef} className="flex hscroll" style={{ gap: 8, overflowX: "auto", flex: 1, minWidth: 0, padding: "2px 0", position: "relative" }}>
+                  {catChips.map((c) => {
+                    const on = c === m.category;
+                    return (
+                      <button key={c} onClick={() => pickCategory(c)} aria-pressed={on}
+                        style={{ flex: "none", height: 40, padding: "0 14px", borderRadius: 12, fontSize: 14.5, fontWeight: on ? 800 : 600, cursor: "pointer", fontFamily: "inherit",
+                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </Baris>
