@@ -830,7 +830,7 @@ export default function Pengaturan({
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 13, color: t.text2, margin: "6px 0 0" }}>pemasukan bulan ini (Lunas){persen !== null ? ` · dibanding 1–${hariIni} ${bulanLaluPendek}` : ""}</div>
+            <div style={{ fontSize: 13, color: t.text2, margin: "6px 0 0" }}>pemasukan (Lunas){persen !== null ? ` · dibanding 1–${hariIni} ${bulanLaluPendek}` : ""}</div>
             {ringkas && totalSumber > 0 && (
               <>
                 <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", gap: 3, marginTop: 12 }} role="img" aria-label="Pembagian Pre-order dan Penjualan">
@@ -845,13 +845,13 @@ export default function Pengaturan({
             )}
           </button>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "22px 10px", paddingTop: 10 }}>
             <Kartu Ic={BookOpen} label="Panduan" onClick={() => setPanduanOpen(true)} />
             <Kartu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
             <Kartu Ic={Clock} label="Waktu Ambil" onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }} />
             <Kartu Ic={MessageCircle} label="Tagihan" onClick={() => setTagihanOpen(true)} />
             <Kartu Ic={Printer} label="Printer" onClick={() => setPrinterOpen(true)} />
-            <Kartu Ic={Trash2} label="Tong Sampah" merah onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
+            <Kartu Ic={Trash2} label="Tong Sampah" merah badge={trashTransactions.length} onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
           </div>
         </div>
       </div>
@@ -903,15 +903,18 @@ export default function Pengaturan({
   );
 }
 
-/* Kartu menu Kantin: bulatan ikon + satu label (tanpa keterangan) */
-function Kartu({ Ic, label, onClick, merah }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; merah?: boolean }) {
+/* Menu Kantin gaya layar utama iPhone: ubin kotak membulat (kuning pucat), nama di bawah, lencana angka opsional. */
+function Kartu({ Ic, label, onClick, merah, badge }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; merah?: boolean; badge?: number }) {
   return (
-    <button onClick={onClick} className="flex items-center"
-      style={{ minWidth: 0, gap: 12, minHeight: 68, padding: "8px 12px", borderRadius: 16, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-      <span style={{ width: 40, height: 40, borderRadius: "50%", background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, display: "grid", placeItems: "center", flex: "none" }}>
-        <Ic size={20} />
+    <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex flex-col items-center"
+      style={{ minWidth: 0, gap: 8, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+      <span style={{ position: "relative", width: 76, height: 76, borderRadius: 24, background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, display: "grid", placeItems: "center" }}>
+        <Ic size={34} />
+        {!!badge && (
+          <span style={{ position: "absolute", top: -7, right: -7, minWidth: 24, height: 24, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13, fontWeight: 800, display: "grid", placeItems: "center", border: `2px solid ${t.bg}` }}>{badge}</span>
+        )}
       </span>
-      <span style={{ minWidth: 0, fontSize: 15.5, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, textAlign: "center" }}>{label}</span>
     </button>
   );
 }
