@@ -294,7 +294,7 @@ export default function Tagihan({
     <button onClick={() => setDetailTx(tx)}
       style={{ background: "transparent", border: "none", padding: "10px 4px", margin: "-10px -4px", cursor: "pointer", minHeight: 44, display: "inline-flex", alignItems: "center" }}>
       <span style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, fontFamily: MONO, borderBottom: `1.5px dashed ${t.border}`, paddingBottom: 1 }}>
-        {fmtTxOp(tx)}
+        {fmtTxOp(tx).split(" · ")[0]}
       </span>
     </button>
   );
@@ -633,6 +633,8 @@ export default function Tagihan({
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
               <div style={{ fontSize: 12, lineHeight: 1.8 }}>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Untuk</span><span style={{ fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
               {tab !== "unpaid" && (
