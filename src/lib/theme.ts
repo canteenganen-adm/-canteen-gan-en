@@ -32,6 +32,8 @@ export const t = {
   borderStrong: "#DDD4C0",
   // palet donat/grafik: kuning UTAMA (#FFE66D) + hijau UTAMA (#5BAF4E) + madu + hijau lime + khaki — SAMA dengan warna di seluruh aplikasi
   chart: ["#FFE66D", "#5BAF4E", "#F2B53C", "#BFE35A", "#D6D0B0"],
+  // Donat "Menu terlaris" saja: ungu, biru, hijau, kuning, merah (permintaan pemilik, contoh gambar donat 5 warna) — urutan = peringkat 1..5
+  donut: ["#9B59B6", "#3498DB", "#2ECC71", "#F1C40F", "#E74C3C"],
   fab: "#D6D0B0", // tombol melayang (kembali ke atas): abu-kuning lembut, terpisah jelas dari pita kuning & kartu krem
   divider: "#F1EBE0",
   amberText: "#2A2820",

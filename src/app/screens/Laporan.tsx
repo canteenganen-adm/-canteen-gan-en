@@ -636,7 +636,7 @@ function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: nu
           <g transform="rotate(-90 70 70)">
             {top.map(([k, v], i) => {
               const len = (v.nilai / total) * C;
-              const el = <circle key={k} cx="70" cy="70" r={R} fill="none" stroke={t.chart[i]} strokeWidth={SW} strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />;
+              const el = <circle key={k} cx="70" cy="70" r={R} fill="none" stroke={t.donut[i]} strokeWidth={SW} strokeDasharray={`${Math.max(0, len - 1.5)} ${C - Math.max(0, len - 1.5)}`} strokeDashoffset={-acc} />;
               acc += len;
               return el;
             })}
@@ -649,7 +649,7 @@ function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: nu
       </div>
       {top.map(([k, v], i) => (
         <div key={k} className="flex items-center gap-3" style={{ padding: "6px 0" }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: t.chart[i], flex: "none" }} />
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: t.donut[i], flex: "none" }} />
           <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: t.text2, flex: "none" }}>{Math.round((v.nilai / total) * 100)}%</div>
         </div>
