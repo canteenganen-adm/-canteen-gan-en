@@ -18,6 +18,7 @@ import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSc
 
 const KELAS_TINGKAT = TINGKAT_LIST.filter((tg) => tg !== NO_KELAS_TINGKAT);
 const MIN_WA = 10;
+const BULAN_PANJANG = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 const fmtDate = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN[d.getMonth()]} ${d.getFullYear()}`; };
@@ -73,10 +74,15 @@ export default function Pengaturan({
   const [printerOpen, setPrinterOpen] = useState(false);
   const [tagihanOpen, setTagihanOpen] = useState(false);
   const [panduanOpen, setPanduanOpen] = useState(false);
-  const [masuk, setMasuk] = useState<number | null>(null);
+  /* Ringkasan kartu Laporan: bulan ini (Lunas) + bulan lalu untuk persen naik/turun */
+  const [ringkas, setRingkas] = useState<{ masuk: number; po: number; pj: number; prev: number } | null>(null);
   useEffect(() => {
     const n = new Date(Date.now() + 7 * 3_600_000);
-    fetchMasukBulan(n.getUTCFullYear(), n.getUTCMonth()).then((r) => setMasuk(r.masuk)).catch(() => {});
+    const y = n.getUTCFullYear(), m = n.getUTCMonth();
+    const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1;
+    Promise.all([fetchMasukBulan(y, m), fetchMasukBulan(py, pm, n.getUTCDate())])
+      .then(([a, b]) => setRingkas({ masuk: a.masuk, po: a.po, pj: a.pj, prev: b.masuk }))
+      .catch(() => {});
   }, []);
 
   // --- Daftar Kelas state ---
@@ -773,7 +779,11 @@ export default function Pengaturan({
   }
 
   /* ===== VIEW: Kantin (halaman utama — profil, Laporan, kartu pengaturan) ===== */
-  const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BLN[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
+  const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BULAN_PANJANG[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
+  const hariIni = new Date(Date.now() + 7 * 3_600_000).getUTCDate();
+  const bulanLaluPendek = BLN[(new Date(Date.now() + 7 * 3_600_000).getUTCMonth() + 11) % 12];
+  const persen = ringkas && ringkas.prev > 0 ? Math.round(((ringkas.masuk - ringkas.prev) / ringkas.prev) * 100) : null;
+  const totalSumber = ringkas ? ringkas.po + ringkas.pj : 0;
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
@@ -798,17 +808,41 @@ export default function Pengaturan({
             </button>
           </div>
 
-          {/* Laporan — ringkasan bulan ini, ketuk untuk membuka */}
-          <button onClick={onOpenLaporan} className="flex items-center gap-3"
-            style={{ width: "100%", minHeight: 76, padding: "0 16px", borderRadius: 18, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", textAlign: "left", marginBottom: 12 }}>
-            <span style={{ width: 46, height: 46, borderRadius: "50%", background: t.surface, color: t.text, display: "grid", placeItems: "center", flex: "none" }}>
-              <ChartColumn size={22} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 17, fontWeight: 800 }}>Laporan</div>
-              <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{bulanIni}{masuk !== null ? ` · Masuk ${rpRingkas(masuk)}` : ""}</div>
+          {/* Laporan — kartu besar (pilihan pemilik): angka bulan ini, persen vs bulan lalu, pembagian Pre-order / Penjualan */}
+          <button onClick={onOpenLaporan} aria-label="Buka Laporan"
+            style={{ display: "block", width: "100%", padding: "16px 18px 18px", borderRadius: 20, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", textAlign: "left", marginBottom: 12, color: t.text }}>
+            <div className="flex items-center gap-3">
+              <span style={{ width: 36, height: 36, borderRadius: "50%", background: t.surface, display: "grid", placeItems: "center", flex: "none" }}>
+                <ChartColumn size={18} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>Laporan</div>
+                <div style={{ fontSize: 12.5, color: t.text2 }}>{bulanIni}</div>
+              </div>
+              <ChevronRight size={20} color={t.text2} />
             </div>
-            <ChevronRight size={20} color={t.text2} />
+            <div className="flex items-center" style={{ marginTop: 14, gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1.05 }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</span>
+              {persen !== null && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800,
+                  background: persen >= 0 ? t.successBg : t.surface, color: persen >= 0 ? t.successText : t.text2 }}>
+                  {persen >= 0 ? "▲" : "▼"} {Math.abs(persen)}%
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 13, color: t.text2, margin: "6px 0 0" }}>pemasukan bulan ini (Lunas){persen !== null ? ` · dibanding 1–${hariIni} ${bulanLaluPendek}` : ""}</div>
+            {ringkas && totalSumber > 0 && (
+              <>
+                <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", gap: 3, marginTop: 12 }} role="img" aria-label="Pembagian Pre-order dan Penjualan">
+                  <i style={{ flex: ringkas.po, background: t.chart[2] }} />
+                  <i style={{ flex: ringkas.pj, background: t.chart[1] }} />
+                </div>
+                <div className="flex" style={{ gap: 14, marginTop: 8, fontSize: 12.5, color: t.text2 }}>
+                  <span><b style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: t.chart[2], marginRight: 6 }} />Pre-order</span>
+                  <span><b style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: t.chart[1], marginRight: 6 }} />Penjualan</span>
+                </div>
+              </>
+            )}
           </button>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>

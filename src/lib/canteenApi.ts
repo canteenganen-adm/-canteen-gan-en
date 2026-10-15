@@ -368,16 +368,17 @@ export async function fetchTransactionsMonth(year: number, month: number): Promi
 
 /** Ringkasan ringan satu bulan (hanya total Lunas) — untuk perbandingan "dibanding bulan lalu".
  * Hanya mengambil 3 kolom kecil, bukan seluruh baris transaksi. month: 0–11. */
-export async function fetchMasukBulan(year: number, month: number): Promise<{ masuk: number; n: number }> {
+/** sampaiHari (opsional): hanya sampai tanggal itu (inklusif) — untuk membandingkan periode yang sama dengan bulan berjalan. */
+export async function fetchMasukBulan(year: number, month: number, sampaiHari?: number): Promise<{ masuk: number; n: number; po: number; pj: number }> {
   const WIB = 7 * 3_600_000;
   const start = new Date(Date.UTC(year, month, 1) - WIB).toISOString();
-  const end = new Date(Date.UTC(year, month + 1, 1) - WIB).toISOString();
+  const end = new Date(Math.min(Date.UTC(year, month + 1, 1), sampaiHari ? Date.UTC(year, month, sampaiHari + 1) : Infinity) - WIB).toISOString();
   const PAGE_SIZE = 1000;
-  let masuk = 0, n = 0;
+  let masuk = 0, n = 0, po = 0, pj = 0;
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("transaksi")
-      .select("total")
+      .select("total, source")
       .gte("created_at", start)
       .lt("created_at", end)
       .eq("paid", true)
@@ -386,10 +387,10 @@ export async function fetchMasukBulan(year: number, month: number): Promise<{ ma
       .order("created_at", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
-    for (const r of data as { total: number }[]) { masuk += r.total; n++; }
+    for (const r of data as { total: number; source: string }[]) { masuk += r.total; n++; if (r.source === "preorder") po += r.total; else pj += r.total; }
     if (!data || data.length < PAGE_SIZE) break;
   }
-  return { masuk, n };
+  return { masuk, n, po, pj };
 }
 
 export async function fetchTrashedTransactions(): Promise<Transaction[]> {

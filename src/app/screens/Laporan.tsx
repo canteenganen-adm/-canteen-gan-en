@@ -370,13 +370,16 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
 
   // Bulan lalu (hanya total Lunas) untuk perbandingan
   const prevM = ym.m === 0 ? 11 : ym.m - 1, prevY = ym.m === 0 ? ym.y - 1 : ym.y;
+  /* Bulan berjalan dibandingkan dengan PERIODE YANG SAMA bulan lalu (tgl 1 sampai tanggal hari ini), bukan seluruh bulan lalu — supaya tidak menyesatkan. */
+  const berjalan = ym.y === nowY && ym.m === nowM;
+  const hariIni = now.getUTCDate();
   useEffect(() => {
     let batal = false;
     setPrev(null);
-    fetchMasukBulan(prevY, prevM).then((d) => { if (!batal) setPrev(d); }).catch(() => { /* perbandingan opsional */ });
+    fetchMasukBulan(prevY, prevM, berjalan ? hariIni : undefined).then((d) => { if (!batal) setPrev(d); }).catch(() => { /* perbandingan opsional */ });
     return () => { batal = true; };
-  }, [prevY, prevM]);
-  const banding: Banding | null = prev ? { prevLabel: "bulan lalu", prevMasuk: prev.masuk, berjalan: ym.y === nowY && ym.m === nowM } : null;
+  }, [prevY, prevM, berjalan, hariIni]);
+  const banding: Banding | null = prev ? { prevLabel: berjalan ? `1–${hariIni} ${BLN_PENDEK[prevM]}` : "bulan lalu", prevMasuk: prev.masuk, berjalan: false } : null;
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
   const u = useMemo(() => (txs ? buildUlasan(txs, pickupSchedules.map((x) => x.name)) : null), [txs, pickupSchedules]);
@@ -474,7 +477,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   <div className="flex items-center flex-wrap" style={{ gap: 6, marginTop: 6, fontSize: 14.5, fontWeight: 700 }}>
                     {bandingPct >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                     {Math.abs(bandingPct)}%
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari bulan lalu</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari {banding?.prevLabel ?? "bulan lalu"}</span>
                   </div>
                 )}
 
