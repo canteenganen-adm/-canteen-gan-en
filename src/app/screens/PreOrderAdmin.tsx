@@ -147,7 +147,6 @@ export default function PreOrderAdmin({
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
-  const [cariBuka, setCariBuka] = useState(false);
   const [kalOffset, setKalOffset] = useState(0);
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
@@ -440,26 +439,16 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Cari + kategori SATU baris: ikon cari di kiri, chip kelas menggulir di kanan.
-              Ketuk ikon = kolom cari penuh (chip disembunyikan sementara); X = tutup. */}
-          {cariBuka || q ? (
-            <div className="flex items-center gap-2" style={{ marginTop: 16, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
-              <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              <X size={20} color={t.text2} style={{ cursor: "pointer", flex: "none" }} aria-label="Tutup pencarian" onClick={() => { setQ(""); setCariBuka(false); }} />
-            </div>
-          ) : (
-            <div className="flex items-center" style={{ marginTop: 16, gap: 4 }}>
-              <button onClick={() => setCariBuka(true)} aria-label="Cari nama pemesan"
-                style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", marginLeft: -10 }}>
-                <Search size={19} />
-              </button>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <KelasChips value={tingkatFilter} onChange={setTingkatFilter} rapat />
-              </div>
-            </div>
-          )}
+          {/* Cari = kolom SENDIRI, satu baris penuh (Mama: jangan digabung dengan kategori); kategori di baris bawahnya. */}
+          <div className="flex items-center gap-2" style={{ marginTop: 16, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+            <Search size={18} color={t.text2} style={{ flex: "none" }} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
+              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+            {q && <X size={20} color={t.text2} style={{ cursor: "pointer", flex: "none" }} aria-label="Hapus pencarian" onClick={() => setQ("")} />}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
+          </div>
         </div>
 
         {/* Daftar utama — preset pertama, TANPA label */}
