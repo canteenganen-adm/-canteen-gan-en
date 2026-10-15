@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, RotateCcw, Calendar, SlidersHorizontal,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, RotateCcw, Calendar, SlidersHorizontal,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
@@ -564,64 +564,20 @@ export default function Tagihan({
                   </div>
                   {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
                 </div>
-                {/* Per transaksi */}
+                {/* Per transaksi: SATU baris ringkas. Ketuk = struk (isi pesanan + aksi). */}
                 {g.txs.map((tx) => {
                   const cancelled = !!tx.cancelledAt;
                   return (
-                    <div key={tx.id} onClick={() => setDetailTx(tx)} style={{ padding: "10px 16px 12px", borderTop: `1px solid ${t.divider}`, background: t.surfaceSoft, opacity: cancelled ? 0.82 : 1, cursor: "pointer" }}>
-                      <div className="flex items-center gap-2" style={{ marginBottom: 6, flexWrap: "wrap" }}>
-                        <StatusTag ok={!cancelled} />
-                        <SourceTag source={tx.source} />
-                        {dateTap(tx)}
-                        <span style={{ fontSize: 14, fontWeight: 700, marginLeft: "auto", textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
-                          {rupiah(tx.total)}
-                        </span>
-                      </div>
-                      {tx.items.map((it, i) => (
-                        <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
-                          {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
-                        </div>
-                      ))}
-                      {cancelled ? (
-                        <div className="flex gap-2" style={{ marginTop: 10 }}>
-                          <button onClick={(e) => { e.stopPropagation(); pulihkan(tx); }}
-                            className="flex items-center justify-center gap-1.5"
-                            style={{ flex: 1, height: 36, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                            <RotateCcw size={13} /> Pulihkan
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
-                            className="flex items-center justify-center gap-1.5"
-                            style={{ height: 36, padding: "0 12px", borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                            <Trash2 size={13} /> Hapus
-                          </button>
-                        </div>
-                      ) : (
-                        /* Transaksi Lunas — aksi UTAMA: Tandai Belum Dibayar
-                           (kebalikan salah pencet Lunas; celah temuan Papa —
-                           "Batalkan" ternyata membatalkan TRANSAKSI, dan
-                           Pulihkan mengembalikannya ke Lunas lagi karena paid
-                           tak pernah disentuh). Batalkan/Hapus jadi ikon. */
-                        /* Tiga tombol SEMUA bertulisan — ikon polos susah
-                           ditebak artinya untuk Papa/Mama; bagi rata 3. */
-                        <div className="flex gap-2" style={{ marginTop: 10 }}>
-                          <button onClick={(e) => { e.stopPropagation(); unpay(tx); }}
-                            className="flex items-center justify-center gap-1"
-                            style={{ flex: 1.3, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                            <Undo2 size={13} style={{ flex: "none" }} /> Belum Dibayar
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
-                            className="flex items-center justify-center gap-1"
-                            style={{ flex: 1, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                            <Ban size={13} style={{ flex: "none" }} /> Batalkan
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); setTrashConfirmTx(tx); }}
-                            className="flex items-center justify-center gap-1"
-                            style={{ flex: 1, height: 38, borderRadius: 9, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                            <Trash2 size={13} style={{ flex: "none" }} /> Hapus
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
+                      style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+                      <StatusDot cancelled={cancelled} />
+                      <SourceTag source={tx.source} muted={cancelled} />
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: cancelled ? t.text2 : t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
+                      <span style={{ flex: "none", fontSize: 15, fontWeight: 700, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
+                        {rupiah(tx.total)}
+                      </span>
+                      <ChevronRight size={16} color={t.text2} style={{ flex: "none" }} />
+                    </button>
                   );
                 })}
               </div>
@@ -681,6 +637,31 @@ export default function Tagihan({
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
+              {tab !== "unpaid" && (
+                <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                  {detailTx.cancelledAt ? (
+                    <button onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} className="flex items-center justify-center gap-1.5"
+                      style={{ flex: 1.4, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                      <RotateCcw size={15} /> Pulihkan
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} className="flex items-center justify-center gap-1"
+                        style={{ flex: 2.1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "0 2px", whiteSpace: "nowrap" }}>
+                        <Undo2 size={15} style={{ flex: "none" }} /> Belum Dibayar
+                      </button>
+                      <button onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} className="flex items-center justify-center gap-1"
+                        style={{ flex: 1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                        <Ban size={15} style={{ flex: "none" }} /> Batalkan
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => { const x = detailTx; setDetailTx(null); setTrashConfirmTx(x); }} className="flex items-center justify-center gap-1"
+                    style={{ flex: 1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                    <Trash2 size={15} style={{ flex: "none" }} /> Hapus
+                  </button>
+                </div>
+              )}
               <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Onest', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
                 <Calendar size={16} /> Ubah Tanggal Layanan
                 <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
@@ -873,25 +854,24 @@ export default function Tagihan({
 }
 
 /* ---- Tags ---- */
-function SourceTag({ source }: { source: Transaction["source"] }) {
+function SourceTag({ source, muted }: { source: Transaction["source"]; muted?: boolean }) {
   const pre = source === "preorder";
   return (
-    <span title={pre ? "Pre-order" : "Penjualan"}
-      style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", flex: "none",
-        background: pre ? t.primaryLight : t.successBg, color: pre ? t.amberText : t.successText,
-        border: `1px solid ${pre ? "#FFE66D" : "#D8E6D4"}` }}>
-      {pre ? <Utensils size={14} /> : <ShoppingCart size={14} />}
+    <span title={pre ? "Pre-order" : "Penjualan"} aria-label={pre ? "Pre-order" : "Penjualan"}
+      style={{ width: 22, height: 22, display: "grid", placeItems: "center", flex: "none", color: muted ? "#8A8579" : t.text2 }}>
+      {pre ? <Utensils size={17} /> : <ShoppingCart size={17} />}
     </span>
   );
 }
-function StatusTag({ ok }: { ok: boolean }) {
-  return ok ? (
-    <span className="flex items-center gap-1" style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: t.successBg, color: t.successText, border: "1px solid #D8E6D4" }}>
-      <Check size={12} /> Lunas
+/** Ikon status baris: Lunas = lingkaran hijau berbingkai + latar hijau tipis + centang; Dibatalkan = lingkaran abu dicoret. */
+function StatusDot({ cancelled }: { cancelled: boolean }) {
+  return cancelled ? (
+    <span aria-label="Dibatalkan" title="Dibatalkan" style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none", background: "#F1EFE8", border: "1.8px solid #8A8579", color: "#8A8579" }}>
+      <Ban size={14} strokeWidth={2.4} />
     </span>
   ) : (
-    <span className="flex items-center gap-1" style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: t.errorBg, color: t.error, border: "1px solid #F3C9C9" }}>
-      <Ban size={12} /> Dibatalkan
+    <span aria-label="Lunas" title="Lunas" style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}>
+      <Check size={15} strokeWidth={3} />
     </span>
   );
 }
