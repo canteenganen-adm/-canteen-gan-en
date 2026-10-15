@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, Settings, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, Settings, TrendingDown, TrendingUp, User } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -549,7 +549,7 @@ export default function Laporan({ onOpenSettings, pickupSchedules }: { onOpenSet
                     <div className="flex flex-col" style={{ ...sek, gap: 16 }}>
                       {pk.dikemas > 0 && <Meter Ic={PackageCheck} pct={Math.round((pk.tepat / pk.dikemas) * 100)} judul="Packing tepat waktu" cap={`${pk.tepat.toLocaleString("id-ID")} / ${pk.dikemas.toLocaleString("id-ID")}`} />}
                       {pk.dikemas > 0 && u.pemesanTotal > 0 && <div style={{ height: 1, background: t.divider }} />}
-                      {u.pemesanTotal > 0 && <Meter Ic={Repeat} pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} / ${u.pemesanTotal.toLocaleString("id-ID")}`} />}
+                      {u.pemesanTotal > 0 && <Meter Ic={OrangKembali} pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} / ${u.pemesanTotal.toLocaleString("id-ID")}`} />}
                     </div>
                   )}
                   </>
@@ -621,6 +621,16 @@ function rpSingkat(n: number): string {
   return `Rp${n}`;
 }
 
+
+/** Ikon "pemesan kembali": orang (User) + panah ulang kecil di pojok kanan bawah. */
+function OrangKembali({ size = 17 }: { size?: number }) {
+  return (
+    <span style={{ position: "relative", display: "inline-flex", width: size + 5, height: size + 3, flex: "none" }}>
+      <User size={size} />
+      <Repeat size={Math.round(size * 0.62)} strokeWidth={2.8} style={{ position: "absolute", right: 0, bottom: 0, background: t.surface, borderRadius: 4 }} />
+    </span>
+  );
+}
 
 /** Donat 5 menu teratas (omzet): bulan di tengah, legenda = nama + persen. */
 function Donat({ data, bulan, tahun }: { data: [string, { qty: number; nilai: number }][]; bulan: string; tahun: number }) {
