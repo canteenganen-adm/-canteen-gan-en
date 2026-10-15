@@ -463,65 +463,38 @@ export default function Tagihan({
                       transaksi apa" bukan cuma dead-tap. Tombol aksi pakai
                       stopPropagation supaya tidak ikut membuka detail. */}
                   {expanded && g.txs.map((tx) => (
-                    <div key={tx.id} onClick={() => setDetailTx(tx)}
-                      style={{ padding: "12px 16px 14px", borderTop: `1px solid ${t.divider}`,
-                        background: tx.id === highlightedTxId ? "#FFF4BF" : t.surfaceSoft,
-                        transition: "background 0.4s ease", cursor: "pointer" }}>
-                      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                        <div className="flex items-center gap-2">
-                          <SourceTag source={tx.source} />
-                          {dateTap(tx)}
-                        </div>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: t.text2, fontFamily: MONO }}>{rupiah(tx.total)}</span>
-                      </div>
-                      <div style={{ marginBottom: 12 }}>
-                        {tx.items.map((it, i) => (
-                          <div key={i} style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.8, fontFamily: MONO }}>
-                            {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
-                          </div>
-                        ))}
-                        {tx.waktuAmbil && (
-                          <div style={{ fontSize: 12, color: t.text2, marginTop: 4, fontFamily: MONO }}>{tx.waktuAmbil}</div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); markPaid(tx); }} className="flex items-center justify-center gap-1.5"
-                          style={{ flex: 1, height: 44, borderRadius: 11, border: "none", background: t.success, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                          <Check size={17} /> Tandai Lunas
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); cancel(tx); }}
-                          style={{ width: 48, height: 44, borderRadius: 11, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}
-                          title="Batalkan">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
+                    <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
+                      style={{ width: "100%", gap: 10, minHeight: 56, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, textAlign: "left", fontFamily: "inherit", cursor: "pointer",
+                        background: tx.id === highlightedTxId ? "#FFF4BF" : "transparent", transition: "background 0.4s ease" }}>
+                      <StatusDot unpaid />
+                      <SourceTag source={tx.source} />
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
+                      <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
+                      <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
+                    </button>
                   ))}
 
-                  {/* Footer aksi — ikon kompak rata kanan, supaya deret kartu
-                      tidak ramai oleh tombol besar yang berulang-ulang */}
-                  <div className="flex items-center justify-end gap-2" style={{ padding: "10px 16px", borderTop: `1px solid ${t.divider}` }}>
-                    {/* Tombol share BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan
-                        dikirim via WA — sekali lihat tahu belum/sudah ditagih.
-                        Tetap bisa diketuk untuk mengirim ulang. */}
+                  {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
+                      "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
+                  <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
                     {g.txs.every((tx) => tx.billedAt) ? (() => {
                       const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
                       return (
-                        <button onClick={() => shareWA(g)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Bagikan WA"
-                          className="flex items-center gap-1.5"
-                          style={{ height: 44, padding: "0 14px", borderRadius: 12, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 13, flex: "none" }}>
-                          <Share2 size={15} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                        <button onClick={() => shareWA(g)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
+                          className="flex items-center justify-center gap-2"
+                          style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+                          <Share2 size={17} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
                         </button>
                       );
                     })() : (
-                      <button onClick={() => shareWA(g)} title="Bagikan WA" aria-label="Bagikan WA"
-                        style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                        <Share2 size={18} />
+                      <button onClick={() => shareWA(g)} aria-label="Tagih via WA" className="flex items-center justify-center gap-2"
+                        style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
+                        <Share2 size={17} /> Tagih via WA
                       </button>
                     )}
                     <button onClick={() => setConfirmLunas(g)}
-                      style={{ height: 44, padding: "0 18px", borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14, flex: "none" }}>
-                      Lunaskan
+                      style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+                      Lunaskan Semua
                     </button>
                   </div>
                 </div>
@@ -637,6 +610,18 @@ export default function Tagihan({
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
+              {tab === "unpaid" && (
+                <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                  <button onClick={() => { const x = detailTx; setDetailTx(null); markPaid(x); }} className="flex items-center justify-center gap-1.5"
+                    style={{ flex: 2, height: 48, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+                    <Check size={18} /> Tandai Lunas
+                  </button>
+                  <button onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} className="flex items-center justify-center gap-1"
+                    style={{ flex: 1.2, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
+                    <Trash2 size={16} style={{ flex: "none" }} /> Batalkan
+                  </button>
+                </div>
+              )}
               {tab !== "unpaid" && (
                 <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
                   {detailTx.cancelledAt ? (
@@ -864,7 +849,10 @@ function SourceTag({ source, muted }: { source: Transaction["source"]; muted?: b
   );
 }
 /** Ikon status baris: Lunas = lingkaran hijau berbingkai + latar hijau tipis + centang; Dibatalkan = lingkaran abu dicoret. */
-function StatusDot({ cancelled }: { cancelled: boolean }) {
+function StatusDot({ cancelled, unpaid }: { cancelled?: boolean; unpaid?: boolean }) {
+  if (unpaid) {
+    return <span aria-label="Belum Dibayar" title="Belum Dibayar" style={{ width: 26, height: 26, borderRadius: "50%", flex: "none", boxSizing: "border-box", border: "1.8px dashed #756B5D" }} />;
+  }
   return cancelled ? (
     <span aria-label="Dibatalkan" title="Dibatalkan" style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none", background: "#F1EFE8", border: "1.8px solid #8A8579", color: "#8A8579" }}>
       <Ban size={14} strokeWidth={2.4} />
