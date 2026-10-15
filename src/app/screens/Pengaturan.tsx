@@ -833,9 +833,9 @@ export default function Pengaturan({
             <div style={{ fontSize: 13, color: t.text2, margin: "6px 0 0" }}>pemasukan (Lunas){persen !== null ? ` · dibanding 1–${hariIni} ${bulanLaluPendek}` : ""}</div>
             {ringkas && totalSumber > 0 && (
               <>
-                <div style={{ display: "flex", height: 16, borderRadius: 8, overflow: "hidden", gap: 3, marginTop: 12, padding: 3, background: t.surface, boxSizing: "border-box" }} role="img" aria-label="Pembagian Pre-order dan Penjualan">
-                  <i style={{ flex: ringkas.po, background: t.chart[0], borderRadius: 5 }} />
-                  <i style={{ flex: ringkas.pj, background: t.chart[1], borderRadius: 5 }} />
+                <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", gap: 3, marginTop: 12 }} role="img" aria-label="Pembagian Pre-order dan Penjualan">
+                  <i style={{ flex: ringkas.po, background: t.chart[0] }} />
+                  <i style={{ flex: ringkas.pj, background: t.chart[1] }} />
                 </div>
                 <div className="flex" style={{ gap: 14, marginTop: 8, fontSize: 12.5, color: t.text2 }}>
                   <span><b style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: t.chart[0], marginRight: 6 }} />Pre-order</span>
