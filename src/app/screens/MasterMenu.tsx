@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
+  Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase, wibTodayISO, wibTimeHHMM, nextSchoolDayISO, hhmm } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
@@ -895,129 +895,129 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
           </div>
         </div>
 
-        <div style={{ padding: 20 }}>
-          {/* Nama */}
-          <Field label="Nama Menu">
-            <input value={m.name} onChange={(e) => setName(e.target.value)} placeholder="cth. Nasi Goreng Hongkong" style={inputStyle} />
-          </Field>
+        <div style={{ padding: "2px 20px 22px" }}>
+          {/* Edit DI TEMPAT, seperti edit profil IG/X: ikon sebagai label, isian langsung di barisnya, tanpa layar lanjutan. */}
+          <Baris ik={<Pencil size={21} />} label="Nama menu">
+            <input value={m.name} onChange={(e) => setName(e.target.value)} placeholder="Nama menu" style={isian} />
+          </Baris>
 
-          {/* Kategori — chip ketuk langsung ganti, + Lainnya untuk kategori baru */}
-          <Field label="Kategori">
-            <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
-              {catChips.map((c) => {
-                const on = c === m.category && !newCatMode;
-                return (
-                  <button key={c} onClick={() => pickCategory(c)}
-                    style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
-                    {c}
-                  </button>
-                );
-              })}
-              <button onClick={() => { setNewCatMode(true); setNewCat(""); }}
-                className="flex items-center gap-1"
-                style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  border: `1.5px dashed ${newCatMode ? t.primaryLine : t.border}`, background: newCatMode ? t.primary : t.surfaceSoft, color: t.amberText }}>
-                <Plus size={16} /> Lainnya
-              </button>
-            </div>
-            {newCatMode && (
-              <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
+          <Baris ik={<Tag size={21} />} label="Kategori">
+            {newCatMode ? (
+              <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0 }}>
                 <input value={newCat} onChange={(e) => setNewCat(e.target.value)} autoFocus
                   onKeyDown={(e) => e.key === "Enter" && applyNewCat()}
-                  placeholder="Nama kategori baru…" style={{ ...inputStyle, flex: 1, height: 48 }} />
-                <button onClick={applyNewCat}
-                  style={{ flex: "none", width: 48, height: 48, borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  placeholder="Kategori baru" style={isian} />
+                <button onClick={applyNewCat} aria-label="Simpan kategori baru"
+                  style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", display: "grid", placeItems: "center" }}>
                   <Check size={18} />
                 </button>
               </div>
+            ) : (
+              <div className="flex hscroll" style={{ gap: 8, overflowX: "auto", flex: 1, minWidth: 0, padding: "2px 0" }}>
+                {catChips.map((c) => {
+                  const on = c === m.category;
+                  return (
+                    <button key={c} onClick={() => pickCategory(c)}
+                      style={{ flex: "none", height: 40, padding: "0 14px", borderRadius: 12, fontSize: 14.5, fontWeight: on ? 800 : 600, cursor: "pointer", fontFamily: "inherit",
+                        border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
+                      {c}
+                    </button>
+                  );
+                })}
+                <button onClick={() => { setNewCatMode(true); setNewCat(""); }} aria-label="Kategori baru"
+                  style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: `1.5px dashed ${t.border}`, background: "transparent", color: t.amberText, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                  <Plus size={18} />
+                </button>
+              </div>
             )}
-          </Field>
+          </Baris>
 
-          {/* Kategori untuk Orang Tua — WAJIB; menentukan kelompok di halaman /pesan */}
-          <Field label="Kategori untuk Orang Tua">
-            <select
-              value={m.kategoriOrtu || ""}
-              onChange={(e) => onPatch({ kategoriOrtu: e.target.value })}
-              style={{ ...inputStyle, height: 50, cursor: "pointer",
-                border: `1.5px solid ${m.kategoriOrtu ? t.border : t.error}`,
-                color: m.kategoriOrtu ? t.text : t.textDis }}>
-              <option value="" disabled>Pilih kategori…</option>
+          {/* Kelompok di halaman orang tua — WAJIB; merah dan kosong sampai diisi */}
+          <Baris ik={<Users size={21} color={m.kategoriOrtu ? undefined : t.error} />} label="Kelompok di halaman orang tua">
+            <select value={m.kategoriOrtu || ""} onChange={(e) => onPatch({ kategoriOrtu: e.target.value })}
+              style={{ ...isian, cursor: "pointer", color: m.kategoriOrtu ? t.text : t.error }}>
+              <option value="" disabled>Pilih kelompok…</option>
               {KATEGORI_ORTU_LIST.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
-            {!m.kategoriOrtu && (
-              <div style={{ fontSize: 12.5, color: t.error, marginTop: 6 }}>
-                Wajib dipilih — tanpa ini menu tampil sebagai "Lainnya" di halaman ortu.
-              </div>
-            )}
-          </Field>
+          </Baris>
 
-          {/* Varian toggle */}
-          <div className="flex items-center justify-between" style={{ padding: "14px 0", borderTop: `1px solid ${t.divider}`, borderBottom: `1px solid ${t.divider}`, margin: "4px 0 16px" }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Punya varian?</div>
-              <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>cth. S / M / L, atau Reguler / Jumbo</div>
-            </div>
-            <Toggle on={hasVariants} onClick={() => enableVariants(!hasVariants)} />
-          </div>
-
-          {/* Harga / Varian */}
           {!hasVariants ? (
-            <Field label="Harga">
-              <div className="flex items-center" style={{ ...inputStyle, padding: 0, overflow: "hidden" }}>
-                <span style={{ padding: "0 12px", color: t.text2, fontWeight: 600 }}>Rp</span>
-                <input type="number" value={m.price ?? ""} onChange={(e) => setPrice(e.target.value)} placeholder="0"
-                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", height: 50, color: t.text, fontFamily: "inherit" }} />
-              </div>
-            </Field>
+            <>
+              <Baris ik={<Banknote size={21} />} label="Harga">
+                <span style={{ color: t.text2, fontWeight: 600, flex: "none" }}>Rp</span>
+                <input type="number" inputMode="numeric" value={m.price ?? ""} onChange={(e) => setPrice(e.target.value)} placeholder="0" style={{ ...isian, fontVariantNumeric: "tabular-nums" }} />
+              </Baris>
+              <Baris ik={<Layers size={21} />} label="Tambah ukuran">
+                <button onClick={() => enableVariants(true)}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.amberText, fontWeight: 700, fontSize: 16, padding: 0, height: 52, textAlign: "left", flex: 1 }}>
+                  Tambah ukuran
+                </button>
+              </Baris>
+            </>
           ) : (
-            <Field label="Varian & Harga">
-              {m.variants.map((v) => (
-                <div key={v.id} className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                  <input value={v.name} onChange={(e) => patchVariant(v.id, { name: e.target.value })} placeholder="Nama (cth. M)"
-                    style={{ ...inputStyle, flex: 1, height: 48 }} />
-                  <div className="flex items-center" style={{ ...inputStyle, padding: 0, width: 130, height: 48, overflow: "hidden" }}>
-                    <span style={{ padding: "0 10px", color: t.text2, fontWeight: 600 }}>Rp</span>
-                    <input type="number" value={v.price} onChange={(e) => patchVariant(v.id, { price: Number(e.target.value) })}
-                      style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, width: "100%", height: 46, color: t.text, fontFamily: "inherit" }} />
-                  </div>
-                  <button onClick={() => removeVariant(v.id)} style={{ flex: "none", width: 44, height: 48, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                    <Trash2 size={18} />
+            <>
+              {m.variants.map((v, i) => (
+                <Baris key={v.id} ik={i === 0 ? <Layers size={21} /> : null} label="Ukuran dan harga">
+                  <input value={v.name} onChange={(e) => patchVariant(v.id, { name: e.target.value })} placeholder="S"
+                    style={{ ...isian, width: 74, flex: "none", textAlign: "center", border: `1.5px solid ${t.border}`, borderRadius: 12, height: 44 }} />
+                  <span style={{ color: t.text2, fontWeight: 600, flex: "none" }}>Rp</span>
+                  <input type="number" inputMode="numeric" value={v.price} onChange={(e) => patchVariant(v.id, { price: Number(e.target.value) })} style={{ ...isian, fontVariantNumeric: "tabular-nums" }} />
+                  <button onClick={() => (m.variants.length > 1 ? removeVariant(v.id) : enableVariants(false))} aria-label="Hapus ukuran"
+                    style={{ flex: "none", width: 40, height: 44, border: "none", background: "transparent", color: t.error, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                    <Trash2 size={19} />
                   </button>
-                </div>
+                </Baris>
               ))}
-              <button onClick={addVariant} className="flex items-center justify-center gap-2"
-                style={{ width: "100%", height: 46, borderRadius: 10, border: `1.5px dashed ${t.primaryLine}`, background: t.surfaceSoft, color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 4 }}>
-                <Plus size={18} /> Tambah Varian
-              </button>
-            </Field>
+              <Baris ik={null} label="Tambah ukuran">
+                <button onClick={addVariant} className="flex items-center gap-2"
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.amberText, fontWeight: 700, fontSize: 15.5, padding: 0, height: 48 }}>
+                  <Plus size={18} /> Tambah
+                </button>
+              </Baris>
+            </>
           )}
 
-          {/* Channels */}
-          <Field label="Tampil di">
+          {/* Tampil di: dua ikon yang langsung diketuk (menyala = tampil) */}
+          <Baris ik={<LayoutGrid size={21} />} label="Tampil di">
             <div className="flex gap-2">
-              <ChannelChip on={m.channels.preorder} icon={<Utensils size={16} />} label="Pre-order" onClick={() => onPatch({ channels: { ...m.channels, preorder: !m.channels.preorder } })} />
-              <ChannelChip on={m.channels.sales} icon={<ShoppingCart size={16} />} label="Penjualan" onClick={() => onPatch({ channels: { ...m.channels, sales: !m.channels.sales } })} />
+              {([["preorder", "Pre-order", Utensils], ["sales", "Penjualan", ShoppingCart]] as const).map(([k, lbl, Ic]) => {
+                const on = m.channels[k];
+                return (
+                  <button key={k} onClick={() => onPatch({ channels: { ...m.channels, [k]: !on } })} aria-label={lbl} aria-pressed={on} title={lbl}
+                    style={{ width: 52, height: 48, borderRadius: 14, cursor: "pointer", display: "grid", placeItems: "center",
+                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.textDis }}>
+                    <Ic size={22} />
+                  </button>
+                );
+              })}
             </div>
-          </Field>
+          </Baris>
 
-          {/* Delete — hanya untuk item yang sudah ada */}
           {!isNew && (
             <button onClick={onRemove} className="flex items-center justify-center gap-2"
-              style={{ width: "100%", height: 48, borderRadius: 12, border: `1.5px solid ${t.error}`, background: t.errorBg, color: t.error, fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 20 }}>
-              <Trash2 size={18} /> Hapus Menu
+              style={{ width: "100%", height: 52, marginTop: 6, border: "none", background: "transparent", color: t.error, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              <Trash2 size={19} /> Hapus
             </button>
           )}
-          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 10 }}>
-            {isNew
-              ? "Menu BELUM tersimpan — isi nama & kategori ortu, lalu tekan Simpan. Batal = tidak ada yang ditambahkan."
-              : "Perubahan tersimpan otomatis — tanpa tombol Simpan."}
-          </div>
         </div>
       </div>
     </div>
   );
 }
+
+/** Satu baris editor: ikon (label), lalu isian langsung. Garis tipis antar baris. */
+function Baris({ ik, label, children }: { ik: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center" role="group" aria-label={label} style={{ gap: 14, minHeight: 60, borderTop: `1px solid ${t.divider}` }}>
+      <span title={label} style={{ width: 24, flex: "none", display: "grid", placeItems: "center", color: t.text2 }}>{ik}</span>
+      <div className="flex items-center" style={{ gap: 8, flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+const isian: React.CSSProperties = {
+  flex: 1, minWidth: 0, width: "100%", height: 52, fontSize: 16.5, fontWeight: 600, color: t.text, background: "transparent",
+  border: "none", outline: "none", fontFamily: "inherit", padding: 0,
+};
 
 const inputStyle: React.CSSProperties = {
   width: "100%", height: 50, fontSize: 16, color: t.text, background: t.surface,
