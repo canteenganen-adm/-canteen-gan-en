@@ -412,7 +412,8 @@ export default function Tagihan({
               );
             })}
             <span style={{ flex: 1 }} />
-            <button onClick={() => setFilterSheet(true)}
+            <div style={{ position: "relative", flex: "none" }}>
+            <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
               className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
                 border: `1px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primary : t.surface, color: filterActive ? t.onPrimary : t.text2 }}>
@@ -421,6 +422,47 @@ export default function Tagihan({
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
               )}
             </button>
+            {filterSheet && (
+              <>
+                <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
+                <div onClick={() => setFilterSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
+                {/* Filter ringkas & mengalir: muncul tepat di bawah tombol, langsung berlaku (tanpa tombol Terapkan), ketuk di luar = tutup */}
+                <div role="dialog" aria-label="Filter dan urutan" style={{ position: "absolute", top: 40, right: 0, zIndex: 45, width: "min(260px, calc(100vw - 40px))", maxHeight: "60vh", overflowY: "auto", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                  {/* Daftar seperti filter Excel: urut ke bawah, satu pilihan per baris, centang di yang aktif; bisa digulir */}
+                  {([
+                    ["Urutkan", (["az", "za", "newest", "oldest"] as const).map((v) => ({ key: v, label: v === "az" ? "A–Z" : v === "za" ? "Z–A" : v === "newest" ? "Terbaru dulu" : "Terlama dulu", on: sortMode === v, pilih: () => setSortMode(v) }))],
+                    ["Tanggal", ([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["tanggal", "Pilih Tanggal…"]] as const).map(([v, l]) => ({ key: v, label: l, on: dateFilter === v, pilih: () => setDateFilter(v) }))],
+                  ] as const).map(([judul, baris], gi) => (
+                    <div key={judul} style={{ borderTop: gi ? `1px solid ${t.divider}` : "none", paddingTop: gi ? 4 : 0, marginTop: gi ? 4 : 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, padding: "8px 10px 4px" }}>{judul}</div>
+                      {baris.map((o) => (
+                        <button key={o.key} onClick={o.pilih} role="menuitemradio" aria-checked={o.on} className="flex items-center justify-between"
+                          style={{ width: "100%", minHeight: 44, padding: "0 10px", border: "none", borderRadius: 10, background: o.on ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
+                          <span style={{ fontSize: 15, fontWeight: o.on ? 800 : 600 }}>{o.label}</span>
+                          {o.on && <Check size={18} color={t.amberText} />}
+                        </button>
+                      ))}
+                      {judul === "Tanggal" && dateFilter === "tanggal" && (
+                        <input type="date" value={pickDate} onChange={(e) => setPickDate(e.target.value)}
+                          onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                          aria-label="Pilih tanggal"
+                          style={{ width: "calc(100% - 20px)", height: 44, margin: "4px 10px 6px", fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                      )}
+                    </div>
+                  ))}
+                  {tab === "unpaid" && (
+                    <div style={{ borderTop: `1px solid ${t.divider}`, marginTop: 4, paddingTop: 4 }}>
+                      <button onClick={() => setOnlyUnbilled((v) => !v)} role="menuitemcheckbox" aria-checked={onlyUnbilled} className="flex items-center justify-between"
+                        style={{ width: "100%", minHeight: 44, padding: "0 10px", border: "none", borderRadius: 10, background: onlyUnbilled ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
+                        <span style={{ fontSize: 15, fontWeight: onlyUnbilled ? 800 : 600 }}>Hanya Belum Ditagih</span>
+                        {onlyUnbilled && <Check size={18} color={t.amberText} />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            </div>
           </div>
         </div>
 
@@ -690,71 +732,6 @@ export default function Tagihan({
             <button onClick={() => setConfirmLunas(null)} aria-label="Batal lunaskan"
               style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
               <X size={19} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Sheet Filter GABUNGAN — Urutkan + (Belum Ditagih) + Tanggal, satu
-          tempat, supaya baris chip di atas tidak pernah melebar dua baris */}
-      {filterSheet && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setFilterSheet(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: 20, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>Filter</div>
-              <button onClick={() => setFilterSheet(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
-            </div>
-
-            <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Urutkan</div>
-            <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 20 }}>
-              {(["az", "za", "newest", "oldest"] as const).map((val) => {
-                const on = sortMode === val;
-                return (
-                  <button key={val} onClick={() => setSortMode(val)}
-                    style={{ flex: "none", height: 42, padding: "0 16px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text }}>
-                    {SORT_LABEL[val]}
-                  </button>
-                );
-              })}
-            </div>
-
-            {tab === "unpaid" && (
-              <>
-                <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Tampilkan</div>
-                <button onClick={() => setOnlyUnbilled((v) => !v)}
-                  className="flex items-center justify-between"
-                  style={{ width: "100%", height: 50, marginBottom: 20, borderRadius: 12, border: `1.5px solid ${onlyUnbilled ? t.primaryLine : t.border}`, background: onlyUnbilled ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: onlyUnbilled ? t.amberText : t.text }}>Hanya Belum Ditagih</span>
-                  {onlyUnbilled && <Check size={17} color={t.amberText} />}
-                </button>
-              </>
-            )}
-
-            <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>Tanggal</div>
-            {([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["tanggal", "Pilih Tanggal"]] as const).map(([val, label]) => {
-              const on = dateFilter === val;
-              return (
-                <button key={val}
-                  onClick={() => setDateFilter(val)}
-                  className="flex items-center justify-between"
-                  style={{ width: "100%", height: 50, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primaryLight : t.surface, padding: "0 16px", cursor: "pointer" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: on ? t.amberText : t.text }}>{label}</span>
-                  {on && <Check size={17} color={t.amberText} />}
-                </button>
-              );
-            })}
-            {dateFilter === "tanggal" && (
-              <input type="date" value={pickDate}
-                onChange={(e) => setPickDate(e.target.value)}
-                aria-label="Pilih tanggal"
-                style={{ width: "100%", height: 50, marginTop: 4, marginBottom: 8, fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 12, padding: "0 14px", fontFamily: "inherit" }} />
-            )}
-
-            <button onClick={() => setFilterSheet(false)}
-              style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-              Terapkan
             </button>
           </div>
         </div>
