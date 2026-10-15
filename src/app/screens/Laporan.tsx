@@ -4,6 +4,7 @@ import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
 import PaperTabs from "../components/PaperTabs";
+import { useKunciGulir } from "../components/useKunciGulir";
 import type { Transaction, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -355,6 +356,8 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const [busyXlsx, setBusyXlsx] = useState(false);
   const [busyPdf, setBusyPdf] = useState(false);
   const [menuUnduh, setMenuUnduh] = useState(false);
+  const masukRef = useRef<HTMLDivElement>(null);
+  useKunciGulir(menuUnduh, masukRef);
   const [tab, setTab] = useState<"ulasan" | "rincian">("ulasan");
   const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
@@ -461,7 +464,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
           {siap && txs.length > 0 && (
             <div className="flex flex-col" style={{ gap: 12 }}>
               {/* 1 · Masuk */}
-              <div style={{ ...card, position: "relative" }}>
+              <div ref={masukRef} style={{ ...card, position: "relative" }}>
                 <div className="flex items-start justify-between" style={{ gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={kecil}>Masuk (Lunas)</div>

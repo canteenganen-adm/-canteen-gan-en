@@ -6,6 +6,7 @@ import {
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import PaperTabs from "../components/PaperTabs";
+import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
 
@@ -140,6 +141,8 @@ export default function Tagihan({
   /** Urutkan, Belum Ditagih, dan Tanggal digabung SATU sheet "Filter" —
    * baris chip tetap satu baris (tidak melebar jadi dua baris). */
   const [filterSheet, setFilterSheet] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  useKunciGulir(filterSheet, filterRef);
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled;
 
   const [q, setQ] = useState("");
@@ -412,7 +415,7 @@ export default function Tagihan({
               );
             })}
             <span style={{ flex: 1 }} />
-            <div style={{ position: "relative", flex: "none" }}>
+            <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
               className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 32, padding: "0 11px", borderRadius: 999, fontSize: 12.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
@@ -427,7 +430,7 @@ export default function Tagihan({
                 <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
                 <div onClick={() => setFilterSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
                 {/* Filter ringkas & mengalir: muncul tepat di bawah tombol, langsung berlaku (tanpa tombol Terapkan), ketuk di luar = tutup */}
-                <div role="dialog" aria-label="Filter dan urutan" style={{ position: "absolute", top: 40, right: 0, zIndex: 45, width: "min(260px, calc(100vw - 40px))", maxHeight: "60vh", overflowY: "auto", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                <div role="dialog" aria-label="Filter dan urutan" style={{ position: "absolute", top: 40, right: 0, zIndex: 45, width: "min(260px, calc(100vw - 40px))", maxHeight: "60vh", overflowY: "auto", overscrollBehavior: "contain", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
                   {/* Daftar seperti filter Excel: urut ke bawah, satu pilihan per baris, centang di yang aktif; bisa digulir */}
                   {([
                     ["Urutkan", (["az", "za", "newest", "oldest"] as const).map((v) => ({ key: v, label: v === "az" ? "A–Z" : v === "za" ? "Z–A" : v === "newest" ? "Terbaru dulu" : "Terlama dulu", on: sortMode === v, pilih: () => setSortMode(v) }))],

@@ -6,6 +6,7 @@ import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase, wibTodayISO, wibTimeHHMM, nextSchoolDayISO, hhmm } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
+import { useKunciGulir } from "../components/useKunciGulir";
 import type { MenuItem, Variant, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -231,6 +232,8 @@ export default function MasterMenu({
   const [tetapSheet, setTetapSheet] = useState(false);
   /** Menu melayang di bawah tombol plus (bukan lembar dari bawah layar). */
   const [aksiMenu, setAksiMenu] = useState(false);
+  const aksiRef = useRef<HTMLDivElement>(null);
+  useKunciGulir(aksiMenu, aksiRef);
   const [tetapQ, setTetapQ] = useState("");
   const tetapSet = useMemo(() => new Set(menuTetap), [menuTetap]);
   const tetapMenus = useMemo(() => menus.filter((m) => tetapSet.has(m.id)), [menus, tetapSet]);
@@ -377,7 +380,7 @@ export default function MasterMenu({
           {view === "menu" && (
             <>
               {/* Cari + tombol plus (membuka menu melayang: Tambah menu / Menu Tetap) */}
-              <div style={{ position: "relative", marginTop: 14 }}>
+              <div ref={aksiRef} style={{ position: "relative", marginTop: 14 }}>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
                     <Search size={18} color={t.text2} style={{ flex: "none" }} />
