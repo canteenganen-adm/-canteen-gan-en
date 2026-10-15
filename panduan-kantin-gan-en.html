@@ -3,482 +3,247 @@
 <title>Panduan Kantin Gan En — untuk Mama & Papa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Token sama dengan aplikasi (src/lib/theme.ts): satu kuning, hijau untuk Lunas/Sudah, merah untuk Belum/Telat. */
-  :root{--bg:#FAF6EE;--sf:#FFFCF7;--soft:#FFF8EE;--tx:#2A2820;--t2:#5F5C4D;--hero:#FFE66D;--pl:#FFF4BF;--am:#8a5c00;
-        --bd:#E8E0D2;--dv:#F1EBE0;--ok:#5BAF4E;--okbg:#E9F5DB;--oktx:#1F7A2E;--warnbg:#FFF4DA;--err:#D95D5D;--errbg:#FBEAEA;--errtx:#A82F24;
-        --mono:'DM Mono',ui-monospace,'Courier New',monospace}
+  /* PANDUAN SINGKAT: huruf besar, satu tugas = satu kotak, langkah pendek. Penjelasan rinci ada di panduan-kantin-lengkap.html. */
+  :root{--bg:#FAF6EE;--sf:#FFFCF7;--tx:#2A2820;--t2:#5F5C4D;--hero:#FFE66D;--pl:#FFF4BF;--am:#8a5c00;
+        --bd:#E8E0D2;--dv:#F1EBE0;--ok:#5BAF4E;--okbg:#E9F5DB;--oktx:#1F7A2E;--errbg:#FBEAEA;--errtx:#A82F24}
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{background:var(--bg);font-family:'Onest',system-ui,sans-serif;color:var(--tx);line-height:1.6;
-       font-size:18px;-webkit-font-smoothing:antialiased;padding:0 0 70px}
-  .wrap{max-width:720px;margin:0 auto;padding:0 20px}
-  svg.i{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  body{background:var(--bg);font-family:'Onest',system-ui,sans-serif;color:var(--tx);line-height:1.45;
+       font-size:21px;-webkit-font-smoothing:antialiased;padding:0 0 60px}
+  .wrap{max-width:560px;margin:0 auto;padding:0 18px}
+  svg.i{width:1.1em;height:1.1em;vertical-align:-.18em;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-  .cover{background:var(--hero);color:var(--tx);border-radius:0 0 28px 28px;padding:40px 26px 34px;text-align:center;margin-bottom:28px}
-  .cover .lotus{font-size:40px;margin-bottom:6px}
-  .cover h1{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
-  .cover p{font-size:17px;font-weight:600;margin-top:10px;opacity:.85}
+  .cover{background:var(--hero);border-radius:0 0 28px 28px;padding:30px 20px 26px;text-align:center;margin-bottom:22px}
+  .cover .lotus{font-size:38px}
+  .cover h1{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-top:4px}
+  .tanya{font-size:24px;font-weight:800;margin:0 0 14px}
 
-  h2{font-size:23px;font-weight:800;letter-spacing:-.01em;margin:38px 0 4px;display:flex;align-items:center;gap:11px;scroll-margin-top:16px}
-  h2 .num{width:34px;height:34px;flex:none;border-radius:10px;background:var(--hero);color:var(--tx);display:grid;place-items:center;font-size:18px;font-weight:800}
-  .sub{color:var(--t2);font-size:16px;margin:0 0 14px 45px}
+  details{background:var(--sf);border:1.5px solid var(--bd);border-radius:20px;margin-bottom:12px;overflow:hidden}
+  summary{list-style:none;display:flex;align-items:center;gap:14px;min-height:78px;padding:12px 16px;cursor:pointer;font-size:23px;font-weight:800;line-height:1.2}
+  summary::-webkit-details-marker{display:none}
+  summary .ik{width:54px;height:54px;border-radius:16px;background:var(--pl);display:grid;place-items:center;flex:none}
+  summary .ik .i{width:28px;height:28px}
+  summary .t{flex:1;min-width:0}
+  summary::after{content:"";width:12px;height:12px;border-right:3px solid var(--t2);border-bottom:3px solid var(--t2);transform:rotate(45deg);margin:0 6px 4px 0;flex:none}
+  details[open] summary{background:var(--pl)}
+  details[open] summary .ik{background:var(--hero)}
+  details[open] summary::after{transform:rotate(-135deg);margin-bottom:-4px}
 
-  .card{background:var(--sf);border:1.5px solid var(--bd);border-radius:18px;padding:20px 22px;margin-bottom:14px}
-  .card h3{font-size:18px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:9px}
-  .card h3 .i{color:var(--am)}
-  .card p{font-size:17px;margin-bottom:10px}
-  .card p:last-child{margin-bottom:0}
+  ol.s{list-style:none;counter-reset:s;padding:8px 16px 16px}
+  ol.s li{counter-increment:s;display:flex;align-items:center;gap:14px;padding:12px 0;font-size:22px;font-weight:700;border-bottom:1px solid var(--dv)}
+  ol.s li:last-child{border-bottom:none}
+  ol.s li::before{content:counter(s);width:38px;height:38px;border-radius:50%;background:var(--hero);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
+  ol.s.polos li{display:block}
+  ol.s.polos li::before{display:none}
+  .b{display:inline-block;background:var(--hero);font-weight:800;padding:0 10px;border-radius:9px}
+  .b.g{background:var(--okbg);color:var(--oktx)}
+  .b.o{background:var(--bg);border:1.5px solid var(--bd)}
+  .hint{margin:0 16px 16px;padding:12px 14px;border-radius:14px;background:var(--pl);font-size:19px;font-weight:600}
+  .hint.ok{background:var(--okbg)}
 
-  ol.steps{list-style:none;counter-reset:s;padding:0}
-  ol.steps li{counter-increment:s;position:relative;padding:9px 0 9px 44px;border-bottom:1px solid var(--dv);font-size:17px}
-  ol.steps li:last-child{border-bottom:none}
-  ol.steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:28px;height:28px;border-radius:50%;
-       background:var(--pl);color:var(--am);font-weight:800;font-size:15px;display:grid;place-items:center}
-  ul.pts{list-style:none;padding:0}
-  ul.pts li{position:relative;padding:7px 0 7px 22px;font-size:17px}
-  ul.pts li::before{content:"";position:absolute;left:4px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--hero)}
-
-  .btn{display:inline-block;background:var(--hero);color:var(--tx);font-weight:700;padding:1px 11px;border-radius:8px;font-size:16px;white-space:nowrap}
-  .btn.g{background:var(--okbg);color:var(--oktx)}
-  .btn.o{background:var(--soft);color:var(--tx);border:1.5px solid var(--bd);padding:0 10px}
-  .btn.r{background:var(--errbg);color:var(--errtx)}
-  b{font-weight:800}
-  .mono{font-family:var(--mono);font-weight:500}
-  .dot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.05em;margin-right:4px}
-
-  .note{border-radius:14px;padding:15px 18px;margin:14px 0;font-size:16.5px}
-  .note.warn{background:var(--warnbg);border:1.5px solid #F0D89A}
-  .note.ok{background:var(--okbg);border:1.5px solid #CFE6C8}
-  .note.tip{background:var(--pl);border:1.5px solid #F0DCA6}
-  .note b.t{display:block;margin-bottom:4px;font-size:17px}
-
-  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
-  .toc a{background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;padding:8px 13px;font-size:15.5px;font-weight:700;color:var(--tx);text-decoration:none}
-  .toc a span{color:var(--am);margin-right:5px}
-
-  .nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:6px 0 4px}
-  .navpill{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:14px 10px;text-align:center}
-  .navpill .ic{width:44px;height:36px;border-radius:12px;background:var(--hero);display:grid;place-items:center;margin:0 auto 6px}
-  .navpill .ic .i{width:22px;height:22px}
-  .navpill .nm{font-weight:800;font-size:17px}
-  .navpill .ds{font-size:14px;color:var(--t2);margin-top:3px;line-height:1.4}
-
-  table.arti{width:100%;border-collapse:collapse;font-size:16.5px}
-  table.arti td{padding:10px 6px;border-bottom:1px solid var(--dv);vertical-align:top}
-  table.arti tr:last-child td{border-bottom:none}
-  table.arti td:first-child{width:46px;text-align:center}
-  .lnk{font-weight:800;color:var(--am);word-break:break-all}
-  .foot{text-align:center;color:var(--t2);font-size:16px;margin-top:36px;padding-top:20px;border-top:1.5px solid var(--bd)}
-  .foot .zen{font-size:19px;font-weight:700;color:var(--tx);margin-top:8px}
-  .naik{display:block;text-align:center;margin:26px 0 0;font-weight:700}
-  .naik a{color:var(--am);text-decoration:none}
-
-  @media print{body{background:#fff;font-size:15px}.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .card,.navpill,.note,.btn,ol.steps li::before,h2 .num,.toc a{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    h2{page-break-after:avoid}.card{page-break-inside:avoid}.toc,.naik{display:none}}
+  .warna{display:flex;flex-direction:column;gap:10px;margin:26px 0 0;padding:16px;background:var(--sf);border:1.5px solid var(--bd);border-radius:20px;font-size:21px;font-weight:700}
+  .warna div{display:flex;align-items:center;gap:12px}
+  .dot{width:26px;height:26px;border-radius:50%;flex:none}
+  .lnk{font-weight:800;color:var(--am);word-break:break-all;font-size:20px}
+  .lain{display:block;margin:22px 0 0;text-align:center;font-size:19px;font-weight:700}
+  .lain a{color:var(--am)}
+  .foot{text-align:center;color:var(--t2);font-size:18px;margin-top:26px}
 </style></head>
 <body>
 
-<!-- Ikon (Lucide) dipakai berulang -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></symbol>
-  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
-  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 5h7a3 3 0 0 1 2 1 3 3 0 0 1 2-1h7v14h-7a3 3 0 0 0-2 1 3 3 0 0 0-2-1H3z"/><path d="M12 6v14"/></symbol>
-  <symbol id="i-store" viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"/><path d="M10 20v-5h4v5"/></symbol>
-  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/><path d="M12 2v10"/></symbol>
-  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
   <symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 11h18v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 7h12"/></symbol>
-  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
-  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
-  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
-  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
-  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></symbol>
-  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M6 20V12M12 20V5M18 20v-9"/></symbol>
-  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 18.4L18.4 5.6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 5h7a3 3 0 0 1 2 1 3 3 0 0 1 2-1h7v14h-7a3 3 0 0 0-2 1 3 3 0 0 0-2-1H3z"/><path d="M12 6v14"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M6 20V12M12 20V5M18 20v-9"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
-  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.6 0l3-3a4 4 0 0 0-5.6-5.6l-1 1"/><path d="M14 10a4 4 0 0 0-5.6 0l-3 3a4 4 0 0 0 5.6 5.6l1-1"/></symbol>
-  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17v.1"/></symbol>
-  <symbol id="i-map" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
 </svg>
 
 <div class="cover">
   <div class="lotus">🪷</div>
-  <h1>Panduan Kantin Gan En</h1>
-  <p>Untuk Mama &amp; Papa — pegangan sehari-hari</p>
+  <h1>Panduan Kantin</h1>
 </div>
 
 <div class="wrap">
+  <div class="tanya">Mau apa? Ketuk satu.</div>
 
-  <div class="note tip">
-    <b class="t">Cara pakai buku ini</b>
-    Kalau lupa langkahnya, buka halaman ini. Setiap tugas ada urutannya, tinggal ikuti angka 1, 2, 3. Tidak perlu hafal. Ketuk judul di bawah untuk langsung lompat ke bagiannya.
-  </div>
-
-  <div class="toc">
-    <a href="#buka"><span>0</span>Membuka</a>
-    <a href="#tombol"><span>1</span>Lima tombol</a>
-    <a href="#preorder"><span>2</span>Pre-order</a>
-    <a href="#jual"><span>3</span>Penjualan</a>
-    <a href="#transaksi"><span>4</span>Transaksi</a>
-    <a href="#menu"><span>5</span>Menu</a>
-    <a href="#kantin"><span>6</span>Kantin</a>
-    <a href="#harian"><span>7</span>Alur sehari</a>
-    <a href="#arti"><span>8</span>Arti ikon</a>
-    <a href="#bingung"><span>9</span>Kalau bingung</a>
-  </div>
-
-  <!-- 0 -->
-  <h2 id="buka"><span class="num">0</span> Membuka Aplikasi</h2>
-  <div class="sub">Sekali buka setiap pagi, langsung siap dipakai.</div>
-  <div class="card">
-    <h3><svg class="i"><use href="#i-link"/></svg> Dua alamat yang berbeda — jangan tertukar</h3>
-    <p><b>Alamat kasir (untuk Mama, Papa, Lie Ching):</b><br><span class="lnk">canteen-gan-en.vercel.app/dapur-gan-en</span><br>
-       <span style="color:var(--t2);font-size:15.5px">Ini yang bisa melihat dan mengubah semua data. <b>Jangan disebar.</b></span></p>
-    <p><b>Alamat orang tua (boleh disebar ke grup):</b><br><span class="lnk">canteen-gan-en.vercel.app/pesan</span><br>
-       <span style="color:var(--t2);font-size:15.5px">Hanya untuk memesan. Kalau orang tua mengetik alamat utamanya saja (tanpa tambahan), mereka juga sampai ke halaman pemesanan ini, bukan ke halaman kasir.</span></p>
-  </div>
-  <div class="card">
-    <ol class="steps">
-      <li>Buka aplikasi <b>Kantin Gan En</b> di HP (ketuk ikonnya), atau ketik alamat kasir di atas.</li>
-      <li>Aplikasi langsung terbuka di halaman <b>Pre-order</b>. Siap dipakai.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-power"/></svg></span><span class="t">Buka pemesanan</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Pre-order</span></li>
+      <li>Saklar <b style="color:var(--oktx)">hijau</b> = dibuka</li>
+      <li>Ketuk <span class="b o">Bagikan</span> → WhatsApp</li>
     </ol>
-  </div>
-  <div class="note tip"><b class="t">Tips biar gampang</b> Minta tolong anak untuk memilih <b>“Tambahkan ke Layar Utama”</b> dari alamat <span class="mono">/dapur-gan-en</span>, supaya muncul seperti ikon aplikasi biasa. Tinggal ketuk, tidak usah mengetik alamat.</div>
+  </details>
 
-  <!-- 1 -->
-  <h2 id="tombol"><span class="num">1</span> Lima Tombol di Bawah Layar</h2>
-  <div class="sub">Ini “jalan” utama aplikasi. Selalu ada di bagian bawah. Tab yang sedang dibuka berlatar kuning.</div>
-  <div class="nav">
-    <div class="navpill"><div class="ic"><svg class="i"><use href="#i-clip"/></svg></div><div class="nm">Pre-order</div><div class="ds">Pesanan yang masuk dari orang tua lewat link</div></div>
-    <div class="navpill"><div class="ic"><svg class="i"><use href="#i-bag"/></svg></div><div class="nm">Penjualan</div><div class="ds">Jualan langsung di kantin</div></div>
-    <div class="navpill"><div class="ic"><svg class="i"><use href="#i-card"/></svg></div><div class="nm">Transaksi</div><div class="ds">Yang belum dibayar, lunas, dan dibatalkan</div></div>
-  
-    <div class="navpill"><div class="ic"><svg class="i"><use href="#i-book"/></svg></div><div class="nm">Menu</div><div class="ds">Daftar makanan, harga, dan menu harian</div></div>
-    <div class="navpill"><div class="ic"><svg class="i"><use href="#i-store"/></svg></div><div class="nm">Kantin</div><div class="ds">Laporan, pengaturan, dan panduan ini</div></div>
-  </div>
-  <div class="note tip"><b class="t">Angka merah di tombol Transaksi</b> Itu jumlah transaksi yang <b>belum dibayar</b>. Kalau angkanya besar, berarti masih banyak yang perlu ditagih.</div>
-  <div class="note ok"><b class="t">Ketuk dua kali = segarkan</b> Ketuk dua kali berturut-turut pada tombol tab yang sedang terbuka untuk kembali ke atas halaman sekaligus memuat ulang data terbaru. Muncul tulisan kecil “Data diperbarui”.</div>
-
-  <!-- 2 -->
-  <h2 id="preorder"><span class="num">2</span> Pre-order — Pesanan dari Orang Tua</h2>
-  <div class="sub">Orang tua memesan sendiri lewat link. Mama tinggal masak dan mengemas.</div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-power"/></svg> Bagian atas halaman</h3>
-    <ul class="pts">
-      <li><b>Judul di kiri atas</b> sekaligus memberi tahu status: <span class="btn g">Pre-order telah dibuka</span> berarti orang tua boleh memesan. Tulisan merah <b>“ditutup”</b> atau <b>“tutup otomatis”</b> berarti pemesanan sudah tidak diterima.</li>
-      <li><b>Saklar kecil di kanan judul</b> untuk membuka atau menutup pemesanan. Hijau, kenop di kanan = dibuka. Merah, kenop di kiri = ditutup.</li>
-      <li><b>Tanggal</b> (misalnya <i>Kamis, 15 Oktober 2026</i>) adalah <b>Tanggal Layanan</b>: hari pesanan akan diambil. Orang tua tidak pernah memilih tanggal; tanggal ini yang kita atur.</li>
-      <li><b>“Tutup 08:00”</b> adalah jam pemesanan tertutup sendiri. Ketuk untuk mengubah jamnya.</li>
-      <li><b>Tiga angka besar</b>: <b>Pesanan</b> (semua yang masuk), <b class="mono" style="color:var(--oktx)">Sudah</b> (sudah dikemas, hijau), <b style="color:var(--errtx)">Belum</b> (belum dikemas, merah). Ketuk salah satu angka untuk hanya melihat yang itu. Ketuk <b>Pesanan</b> untuk kembali melihat semua.</li>
-      <li><b>Tiga tombol</b>: <span class="btn o">Bagikan</span> <span class="btn o">Rekap</span> <span class="btn o">Cetak</span> (dijelaskan di bawah).</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-check"/></svg> Mengemas dan menandai sudah dikemas</h3>
-    <ol class="steps">
-      <li>Setiap pesanan ditampilkan sebagai satu <b>kartu</b>: nama anak, kelas, Waktu Ambil, dan daftar makanannya. Kartu berselang-seling warna krem dan hijau muda, hanya supaya tidak tertukar.</li>
-      <li>Setelah selesai mengemas, ketuk <b>kotak kecil di kiri atas kartu</b> satu kali. Kotak menjadi <b>hijau bercentang</b>, nama dicoret = sudah dikemas.</li>
-      <li>Hanya kotak itu yang bisa diketuk untuk menandai. Mengetuk bagian kartu yang lain tidak mengubah apa-apa.</li>
-      <li>Angka <b>Sudah</b> dan <b>Belum</b> di atas ikut berubah. Salah ketuk? Ketuk kotaknya lagi untuk membatalkan.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-power"/></svg></span><span class="t">Tutup pemesanan</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Pre-order</span></li>
+      <li>Ketuk saklar → <b style="color:var(--errtx)">merah</b> = ditutup</li>
     </ol>
-    <p>Di kanan kartu ada <b>jam</b> dengan wajah kecil: <b style="color:var(--oktx)">wajah tersenyum hijau</b> = dikemas tepat waktu, <b style="color:var(--errtx)">wajah cemberut merah</b> = telat. Kalau ada pesanan yang belum dikemas tetapi sudah lewat Waktu Ambilnya, di atas daftar muncul tulisan merah <b>“N pesanan lewat waktu ambil”</b>. Ketuk tulisan itu untuk hanya melihat yang telat, ketuk lagi untuk kembali.</p>
-  </div>
+    <div class="hint">Tutup sendiri jam 08:00.</div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-search"/></svg> Mencari dan menyaring</h3>
-    <ul class="pts">
-      <li><b>Kolom Cari nama…</b> untuk mencari nama murid atau guru/karyawan.</li>
-      <li><b>Deretan kategori</b> di bawahnya: <b>Semua</b>, KB, TK, SD 1–2, SD 3–6, dan seterusnya. Ketuk satu untuk hanya melihat tingkat itu. Yang sedang dipilih bergaris kuning di bawahnya. Deretan ini bisa digeser ke samping.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-cal"/></svg> Melihat tanggal lain, atau memindahkan sesi</h3>
-    <ol class="steps">
-      <li>Ketuk <b>ikon kalender</b> di samping tanggal. Muncul kalender bulan. Hari yang <b>berwarna kuning</b> berarti ada pesanan di hari itu (makin pekat makin banyak).</li>
-      <li><b>Hanya melihat</b> pesanan hari lain: ketuk tanggalnya. Halaman menampilkan pesanan hari itu. Tulisan <span class="btn">Kembali ke Hari Ini</span> membawa Mama kembali.</li>
-      <li><b>Memindahkan sesi</b> ke tanggal baru (hari pemesanan berikutnya): di bagian bawah kalender, pilih <span class="btn">Hari Sekolah Berikutnya</span> (otomatis melewati Sabtu dan Minggu) atau <span class="btn o">Pilih tanggal lain</span>. Muncul <b>konfirmasi</b>; setelah dikonfirmasi, pemesanan ditutup dulu supaya tidak terbuka sendiri tanpa disadari. Bukalah kembali dengan saklar bila sudah siap.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-cal"/></svg></span><span class="t">Ganti tanggal</span></summary>
+    <ol class="s">
+      <li>Ketuk ikon kalender</li>
+      <li>Ketuk <span class="b">Hari Sekolah Berikutnya</span></li>
+      <li>Ketuk konfirmasi</li>
+      <li>Buka lagi saklarnya</li>
     </ol>
-    <p>Ke depannya, jam tutup otomatis (misalnya 08:00) dijaga oleh sistem: pesanan yang masuk sesudah jam itu akan ditolak.</p>
-  </div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-share"/></svg> Bagikan — kirim link ke orang tua</h3>
-    <ol class="steps">
-      <li>Ketuk <span class="btn o">Bagikan</span>.</li>
-      <li>Ketuk <span class="btn g">WhatsApp</span> untuk langsung mengirim pesan berisi link, atau <span class="btn o">Salin Link</span>.</li>
-      <li>Kirim ke grup WhatsApp orang tua. Link pemesanan: <span class="lnk">canteen-gan-en.vercel.app/pesan</span></li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-pot"/></svg></span><span class="t">Berapa harus masak?</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Pre-order</span></li>
+      <li>Ketuk <span class="b o">Rekap</span></li>
+      <li>Masak sesuai angka</li>
     </ol>
-  </div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-pot"/></svg> Rekap — tahu harus masak berapa</h3>
-    <ol class="steps">
-      <li>Ketuk <span class="btn o">Rekap</span>.</li>
-      <li>Muncul daftar nama makanan beserta <b>jumlahnya</b> (angka besar).</li>
-      <li>Masak sesuai angka itu. Tidak ada nama anak, cukup jumlah untuk dapur.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-check"/></svg></span><span class="t">Sudah dikemas</span></summary>
+    <ol class="s">
+      <li>Ketuk kotak kecil di kartu</li>
+      <li>Hijau ✓ = sudah</li>
+      <li>Salah? Ketuk lagi</li>
     </ol>
-  </div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-print"/></svg> Cetak</h3>
-    <p>Ketuk <span class="btn o">Cetak</span> untuk mencetak daftar pesanan. Pengaturan printer ada di bagian <a class="lnk" href="#kantin" style="text-decoration:none">Kantin → Printer</a>.</p>
-  </div>
-
-  <div class="note warn"><b class="t">Pesanan masuk langsung jadi tagihan</b> Begitu orang tua menekan Kirim Pesanan, pesanannya <b>langsung tercatat sebagai Belum Dibayar</b> di tab Transaksi. Jadi Mama tidak perlu mencatat ulang. Mengemas (centang) dan menagih adalah dua hal terpisah.</div>
-
-  <!-- 3 -->
-  <h2 id="jual"><span class="num">3</span> Penjualan — Jual Langsung di Kantin</h2>
-  <div class="sub">Untuk anak yang membeli langsung di kantin.</div>
-  <div class="card">
-    <h3><svg class="i"><use href="#i-bag"/></svg> Mencatat penjualan</h3>
-    <ol class="steps">
-      <li>Ketuk <span class="btn">Penjualan</span> di bawah. Di kiri ada deretan kategori, di kanan daftar menu.</li>
-      <li>Ketuk makanan yang dibeli. Kalau ada pilihan ukuran (S / M / L), pilih dulu ukurannya.</li>
-      <li>Ulangi untuk makanan lain. Pesanan terkumpul di bawah layar, lengkap dengan jumlahnya dan <b>Total</b>.</li>
-      <li>Salah masukkan? Kurangi jumlahnya dengan tanda minus. Kalau jumlahnya sudah 1, ketuk minus lagi untuk menghapus barisnya. Muncul tombol <span class="btn o">Urungkan</span> sebentar.</li>
-      <li>Kalau <b>bayar sekarang</b>: ketuk <span class="btn g">Dibayar</span>. Selesai, langsung tercatat Lunas.</li>
-      <li>Kalau <b>belum bayar</b> (kasbon): ketuk <span class="btn o">Masuk Tagihan</span>, isi <b>Nama Siswa</b> dan <b>Kelas</b> (WhatsApp boleh dikosongkan), lalu ketuk <span class="btn">Simpan ke Tagihan</span>. Tercatat di Transaksi → Belum Dibayar.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-clock"/></svg></span><span class="t">Pesanan telat</span></summary>
+    <ol class="s">
+      <li>Tulisan <b style="color:var(--errtx)">merah</b> di atas daftar</li>
+      <li>Ketuk tulisannya untuk melihat</li>
+      <li>Kemas yang itu dulu</li>
     </ol>
-    <p>Kolom <b>Cari menu…</b> mempercepat mencari makanan.</p>
-  </div>
-  <div class="card">
-    <h3><svg class="i"><use href="#i-cal"/></svg> Mencatat penjualan hari yang lalu (susulan)</h3>
-    <p>Misalnya hari Sabtu baru sempat mencatat kasbon hari Senin.</p>
-    <ol class="steps">
-      <li>Ketuk tulisan <span class="btn o">Hari Ini</span> di sebelah kiri kolom Cari. Kalender terbuka.</li>
-      <li>Pilih tanggal yang sudah lewat. Tanggal di depan tidak bisa dipilih.</li>
-      <li>Tulisan berubah menjadi tanggal itu dan muncul keterangan <b>“Input susulan”</b>. Catat penjualan seperti biasa; tercatat di tanggal yang dipilih, dengan menu dan harga hari itu bila ada.</li>
-      <li>Selesai? Ketuk <span class="btn o">Kembali ke Hari Ini</span> supaya penjualan berikutnya tidak ikut ke tanggal lama.</li>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-bag"/></svg></span><span class="t">Jual di kantin</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Penjualan</span></li>
+      <li>Ketuk makanannya</li>
+      <li>Bayar → <span class="b g">Dibayar</span></li>
+      <li>Belum bayar → <span class="b o">Masuk Tagihan</span></li>
     </ol>
-  </div>
-  <div class="note ok"><b class="t">Tenang</b> Harga mengikuti harga saat itu. Tidak ada tombol “simpan” untuk penjualan; setiap pencatatan langsung tersimpan.</div>
+  </details>
 
-  <!-- 4 -->
-  <h2 id="transaksi"><span class="num">4</span> Transaksi — Menagih dan Menandai Lunas</h2>
-  <div class="sub">Semua pesanan (Pre-order dan Penjualan) berkumpul di sini, dikelompokkan per anak.</div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-card"/></svg> Tiga tab di atas</h3>
-    <ul class="pts">
-      <li><b>Belum Dibayar</b>: yang masih perlu ditagih. Di kanan atas halaman tertulis <b>Total Belum Dibayar</b>.</li>
-      <li><b>Lunas</b>: yang sudah dibayar. Di kanan atas tertulis <b>Masuk (Lunas)</b>.</li>
-      <li><b>Dibatalkan</b>: yang dibatalkan. Tidak dihitung sebagai pemasukan.</li>
-    </ul>
-    <p>Di bawahnya ada <b>kolom cari</b> (nama, kelas, atau nomor WhatsApp; kakak-adik satu nomor langsung muncul bersama), tiga pilihan sumber <b>Semua · PO · Penjualan</b>, dan tombol <b><svg class="i"><use href="#i-filter"/></svg> Filter</b>.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-filter"/></svg> Tombol Filter</h3>
-    <p>Ketuk <b>Filter</b>: muncul daftar kecil di bawah tombolnya. Pilih satu per baris (yang aktif bercentang):</p>
-    <ul class="pts">
-      <li><b>Urutkan</b>: A–Z, Z–A, Terbaru dulu, Terlama dulu.</li>
-      <li><b>Tanggal</b>: Semua Tanggal, Hari Ini, 7 Hari Terakhir, atau Pilih Tanggal… (muncul kalender).</li>
-      <li><b>Hanya Belum Ditagih</b> (khusus tab Belum Dibayar): menyembunyikan anak yang tagihannya sudah pernah dikirim.</li>
-    </ul>
-    <p>Pilihan langsung berlaku. Ketuk di luar daftar untuk menutup; halaman di belakangnya tidak ikut bergeser selama daftar terbuka.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-chat"/></svg> Menagih lewat WhatsApp</h3>
-    <ol class="steps">
-      <li>Di tab <b>Belum Dibayar</b>, ketuk nama anak untuk membuka kartunya. Kartu menampilkan nomor WhatsApp, jumlah transaksi, dan total yang harus dibayar.</li>
-      <li>Ketuk <span class="btn o">Tagih via WA</span>. Muncul <b>pratinjau pesan</b> bergaya struk: periksa, boleh diubah, baru ketuk <span class="btn" style="background:#25D366;color:#fff">Kirim ke WhatsApp</span>.</li>
-      <li>Kalau ada kakak-adik satu nomor WhatsApp, muncul pilihan <b>menggabung</b> menjadi satu pesan supaya orang tua tidak menerima dua kali.</li>
-      <li>Setelah dikirim, tombolnya berubah <b style="color:var(--oktx)">hijau</b> bertulisan <b>“Ditagih 15/10”</b>. Boleh diketuk lagi untuk mengirim ulang.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-cal"/></svg></span><span class="t">Catat hari kemarin</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b o">Hari Ini</span></li>
+      <li>Pilih tanggalnya</li>
+      <li>Catat seperti biasa</li>
+      <li>Selesai → <span class="b o">Kembali ke Hari Ini</span></li>
     </ol>
-    <p>Kalimat pembuka, penutup, dan nomor rekening di pesan itu diatur di <b>Kantin → Tagihan</b>.</p>
-  </div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-check"/></svg> Menandai lunas</h3>
-    <ul class="pts">
-      <li><b>Semua tagihan satu anak sekaligus</b>: ketuk <span class="btn">Lunaskan Semua</span> di kartunya. Muncul struk kecil berisi nama, jumlah transaksi, dan total. Ketuk <span class="btn g">Ya</span> untuk melunaskan, <span class="btn o">Tidak</span> untuk membatalkan.</li>
-      <li><b>Hanya satu transaksi</b> (misalnya baru sebagian yang dibayar): ketuk baris transaksinya (bertuliskan <b>Rincian ›</b>). Terbuka struknya. Ketuk <span class="btn g">Tandai Lunas</span>.</li>
-      <li><b>Salah pencet?</b> Muncul tombol <span class="btn o">Urungkan</span> sebentar di bawah layar. Ketuk untuk membatalkan.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-clip"/></svg> Struk (rincian satu transaksi)</h3>
-    <p>Mengetuk satu baris transaksi membuka <b>struk</b>: nama anak, daftar makanan dan harganya, <b>TOTAL</b>, lalu keterangan <b>Untuk</b> (tanggal layanan), <b>Dicatat</b> (kapan dicatat), <b>Sumber</b> (Pre-order atau Penjualan), dan <b>Status</b>. Tombol di struk tergantung tab-nya:</p>
-    <ul class="pts">
-      <li><b>Belum Dibayar</b>: <span class="btn g">Tandai Lunas</span> dan <span class="btn r">Batalkan</span>.</li>
-      <li><b>Lunas</b>: <span class="btn o">Belum Dibayar</span> (kalau salah menandai lunas), <span class="btn o">Batalkan</span>, <span class="btn r">Hapus</span>.</li>
-      <li><b>Dibatalkan</b>: <span class="btn o">Pulihkan</span> dan <span class="btn r">Hapus</span>.</li>
-      <li>Di semua tab ada <span class="btn">Ubah Tanggal Layanan</span> untuk memindahkan transaksi ke tanggal lain.</li>
-    </ul>
-    <p><b>Hapus</b> memindahkan transaksi ke <b>Tong Sampah</b> (Kantin → Tong Sampah); masih bisa dipulihkan selama 30 hari.</p>
-  </div>
-
-  <div class="note tip"><b class="t">Satu baris cukup dibaca dari ikonnya</b> Lingkaran <b style="color:var(--oktx)">hijau bercentang</b> = Lunas. Lingkaran <b>garis putus-putus</b> = Belum Dibayar. Lingkaran <b>abu dicoret</b> dan harga bergaris coret = Dibatalkan. Sendok-garpu = berasal dari Pre-order, keranjang = dari Penjualan.</div>
-
-  <!-- 5 -->
-  <h2 id="menu"><span class="num">5</span> Menu — Makanan, Harga, dan Menu Harian</h2>
-  <div class="sub">Dipakai kalau ada menu baru, harga berubah, atau saat menyusun menu untuk orang tua.</div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-book"/></svg> Dua halaman: Buku Menu dan Preview PO</h3>
-    <ul class="pts">
-      <li><b>Buku Menu</b>: daftar semua makanan, tempat menyusun dan mengubah.</li>
-      <li><b>Preview PO</b>: tampilan menu seperti yang dilihat orang tua di halaman pemesanan.</li>
-      <li>Di bawah judul ada <b>tanggal menu</b> yang sedang disusun. Ketuk untuk mengganti. Secara otomatis tanggal ini maju ke hari sekolah berikutnya setelah jam pengambilan terakhir hari itu lewat (Sabtu dan Minggu dilewati), jadi malam hari Mama langsung menyusun menu besok.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-utensils"/></svg> Menyusun menu untuk orang tua <span class="btn r" style="font-size:13px">penting</span></h3>
-    <ol class="steps">
-      <li>Pastikan tanggal menu di atas sudah benar.</li>
-      <li>Di Buku Menu, setiap makanan punya dua ikon: <b>sendok-garpu</b> (tampil di Pre-order orang tua) dan <b>keranjang</b> (tersedia di Penjualan). Ketuk ikon sendok-garpu untuk memilih makanan yang boleh dipesan hari itu; yang menyala kuning = ikut.</li>
-      <li>Setelah selesai memilih, ketuk <span class="btn">Simpan</span>. <b>Orang tua baru bisa melihat menunya setelah Simpan.</b> Muncul konfirmasi; ikuti petunjuknya untuk melanjutkan.</li>
-      <li>Kalau muncul peringatan kuning <b>“Menu untuk tanggal ini belum disimpan”</b> di halaman Pre-order, artinya langkah Simpan di atas belum dilakukan. Ketuk peringatannya untuk langsung ke tab Menu.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-chat"/></svg></span><span class="t">Menagih</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Transaksi</span></li>
+      <li>Ketuk nama anak</li>
+      <li>Ketuk <span class="b o">Tagih via WA</span></li>
+      <li>Ketuk <span class="b" style="background:#25D366;color:#fff">Kirim</span></li>
     </ol>
-    <p><b>Menu Tetap</b> adalah daftar makanan yang sering dipakai. Ketuk <span class="btn"><svg class="i"><use href="#i-plus"/></svg></span> di sebelah kolom cari, lalu pilih <b>Pakai Menu Tetap</b> untuk langsung mencentang semuanya di tanggal itu (tetap perlu Simpan), atau <b>Atur Menu Tetap</b> untuk mengubah daftarnya.</p>
-  </div>
+  </details>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-plus"/></svg> Menambah atau mengubah makanan</h3>
-    <ol class="steps">
-      <li>Menambah: ketuk <span class="btn"><svg class="i"><use href="#i-plus"/></svg></span> di sebelah kolom cari, lalu <b>Tambah menu baru</b>. Mengubah: ketuk kartu makanannya.</li>
-      <li>Terbuka lembar edit. Setiap baris berlabel ikon, langsung diisi di tempat: <svg class="i"><use href="#i-pen"/></svg> nama · <svg class="i"><use href="#i-tag"/></svg> kategori (deretan bisa digeser; tombol <b>+</b> di kiri untuk kategori baru) · ikon orang = kelompok di halaman orang tua (<b>wajib diisi</b>, merah sampai terisi) · uang = harga · lapisan = <b>Tambah ukuran</b> (S / M / L, tiap ukuran punya harga sendiri) · kotak = <b>Tampil di</b> (ketuk ikon sendok-garpu dan keranjang).</li>
-      <li>Ketuk <span class="btn">Simpan</span>. Ketuk <span class="btn o">Batal</span> (atau tanda silang) untuk membuang semua perubahan tadi: <b>tidak ada yang berubah sebelum Simpan.</b></li>
-      <li><b>Hapus</b> (teks merah kecil di bawah) menghapus makanan itu dari Buku Menu.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-check"/></svg></span><span class="t">Sudah bayar</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Transaksi</span></li>
+      <li>Ketuk nama anak</li>
+      <li>Ketuk <span class="b">Lunaskan Semua</span></li>
+      <li>Ketuk <span class="b g">Ya</span></li>
     </ol>
-    <p>Di setiap kartu ada juga <b>Atur stok</b> untuk menetapkan jumlah yang tersedia pada tanggal itu; tertulis <b>Sisa</b> atau <b>Habis</b> bila sudah diatur.</p>
-  </div>
-  <div class="note warn"><b class="t">Hati-hati sedikit</b> Menu dilihat semua orang tua di link pemesanan. Ubah seperlunya, dan jangan lupa Simpan setelah menyusun menu harian.</div>
+  </details>
 
-  <!-- 6 -->
-  <h2 id="kantin"><span class="num">6</span> Kantin — Laporan dan Pengaturan</h2>
-  <div class="sub">Satu pintu untuk semua yang jarang dibuka. Tidak ada ikon gerigi lagi.</div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-store"/></svg> Isi halaman Kantin</h3>
-    <ul class="pts">
-      <li><b>Profil</b> di atas: nama kantin dan nomor WhatsApp. Ketuk ikon pensil untuk mengubah.</li>
-      <li><b>Kartu Laporan</b> (kuning): ringkasan pemasukan bulan ini, tanda naik atau turun dibanding periode yang sama bulan lalu, dan batang pembagian Pre-order dan Penjualan. Ketuk untuk membuka Laporan.</li>
-      <li><b>Ubin berikutnya</b>: Panduan, Edit Pesanan, Waktu Ambil, Tagihan, Printer, Tong Sampah.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-chart"/></svg> Laporan</h3>
-    <ul class="pts">
-      <li>Laporan hanya <b>dibaca</b>; tidak ada yang bisa diubah di sini.</li>
-      <li><b>Ganti bulan</b>: geser layar ke kanan atau kiri, atau ketuk panah di samping nama bulan. Tidak bisa melewati bulan ini.</li>
-      <li>Kartu atas: <b>Masuk (Lunas)</b> bulan itu, persen naik atau turun, dan batang Pre-order (kuning) dan Penjualan (hijau). Untuk bulan yang sedang berjalan, pembandingnya adalah tanggal 1 sampai hari ini di bulan lalu, supaya adil.</li>
-      <li>Dua tab: <b>Ulasan</b> (kalender pemasukan harian, menu terlaris, packing tepat waktu, pemesan kembali) dan <b>Rincian</b> (tabel per hari, per menu, per tingkat, dan packing).</li>
-      <li>Tombol <b>⋯</b> di kartu atas untuk <b>Unduh PDF</b> atau <b>Unduh Excel</b> (untuk arsip).</li>
-      <li>Tombol panah kiri di atas halaman untuk kembali ke Kantin.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-pen"/></svg> Edit Pesanan</h3>
-    <p>Untuk memperbaiki data pemesan yang salah ketik (nama, kelas, nomor WhatsApp, Waktu Ambil). Ketik nama atau nomor di kolom cari, ketuk pesanannya, perbaiki, lalu simpan.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-clock"/></svg> Waktu Ambil dan Daftar Kelas</h3>
-    <ul class="pts">
-      <li><b>Waktu Ambil</b> adalah pilihan yang tampil ke orang tua (Istirahat 1, Istirahat 2, Istirahat 3, Pulang Sekolah, atau yang Mama tambah sendiri). Bisa ditambah, diganti nama, atau dihapus, minimal tersisa satu.</li>
-      <li>Isi <b>Jam default</b> (dan jam khusus per tingkat bila beda) supaya aplikasi bisa mengenali pesanan yang <b>telat dikemas</b>.</li>
-      <li><b>Daftar Kelas</b> ada di dalam layar Waktu Ambil (ketuk barisnya): daftar kelas per tingkat (KB, TK A, TK B, SD, SMP, SMA, Guru/Karyawan) yang tampil di pilihan pemesanan.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-chat"/></svg> Tagihan (isi pesan WhatsApp tagihan)</h3>
-    <p>Di sini diatur <b>Kalimat Pembuka</b>, <b>Kalimat Penutup</b>, serta <b>Bank</b>, <b>Nomor Rekening</b>, dan <b>Atas Nama</b>. Semuanya masuk ke pesan tagihan yang dikirim dari Transaksi → Tagih via WA. Perubahan tersimpan otomatis.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-print"/></svg> Printer</h3>
-    <p>Ketuk ubin Printer: tertulis <b>Terhubung</b> atau <b>Belum terhubung</b>. Ketuk <span class="btn">Hubungkan</span> atau <span class="btn o">Putuskan</span>.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-trash"/></svg> Tong Sampah</h3>
-    <p>Transaksi yang di-Hapus pindah ke sini dan <b>terhapus sendiri setelah 30 hari</b>. Selama masih ada, ketuk untuk <b>memulihkan</b> atau menghapus permanen. Angka merah kecil di ubin menunjukkan isinya.</p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="i"><use href="#i-help"/></svg> Panduan</h3>
-    <p>Halaman ini. Bisa dibuka kapan saja dari Kantin.</p>
-  </div>
-
-  <!-- 7 -->
-  <h2 id="harian"><span class="num">7</span> Alur Sehari (ringkasan)</h2>
-  <div class="sub">Urutan umum. Boleh disesuaikan.</div>
-  <div class="card">
-    <ol class="steps">
-      <li><b>Malam sebelumnya</b>: tab Menu → pilih tanggal besok → centang makanan yang dijual → <span class="btn">Simpan</span>. Tab Pre-order → pastikan <b>telah dibuka</b> → <span class="btn o">Bagikan</span> link ke grup orang tua.</li>
-      <li><b>Pagi</b>: tab Pre-order → cek Tanggal Layanan dan jam tutup → <span class="btn o">Rekap</span> untuk tahu jumlah yang dimasak.</li>
-      <li><b>Mengemas</b>: ketuk kotak di kartu satu per satu begitu selesai. Perhatikan pesanan bertulisan merah (lewat waktu ambil).</li>
-      <li><b>Jualan di kantin</b>: tab Penjualan → <span class="btn g">Dibayar</span> atau <span class="btn o">Masuk Tagihan</span>.</li>
-      <li><b>Menagih</b>: tab Transaksi → Belum Dibayar → <span class="btn o">Tagih via WA</span>. Kalau sudah bayar, <span class="btn">Lunaskan Semua</span>.</li>
-      <li><b>Akhir bulan</b>: Kantin → Laporan untuk melihat pemasukan; unduh Excel atau PDF bila perlu arsip.</li>
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-undo"/></svg></span><span class="t">Salah pencet</span></summary>
+    <ol class="s">
+      <li>Lihat bagian bawah layar</li>
+      <li>Ketuk <span class="b o">Urungkan</span></li>
     </ol>
+    <div class="hint ok">Tidak ada yang rusak. Tenang.</div>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-book"/></svg></span><span class="t">Atur menu besok</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Menu</span></li>
+      <li>Cek tanggalnya</li>
+      <li>Ketuk sendok-garpu di makanan yang dijual (kuning)</li>
+      <li>Ketuk <span class="b">Simpan</span></li>
+    </ol>
+    <div class="hint">Orang tua baru bisa lihat setelah <b>Simpan</b>.</div>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-pen"/></svg></span><span class="t">Ubah harga / tambah menu</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Menu</span></li>
+      <li>Ketuk makanannya (baru: ketuk <b>+</b>)</li>
+      <li>Ubah isinya</li>
+      <li>Ketuk <span class="b">Simpan</span></li>
+    </ol>
+    <div class="hint">Ketuk <b>Batal</b> = tidak jadi.</div>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-chart"/></svg></span><span class="t">Lihat laporan</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Kantin</span></li>
+      <li>Ketuk kartu kuning <b>Laporan</b></li>
+      <li>Geser kiri / kanan = ganti bulan</li>
+    </ol>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-pen"/></svg></span><span class="t">Perbaiki data pemesan</span></summary>
+    <ol class="s">
+      <li>Ketuk <span class="b">Kantin</span></li>
+      <li>Ketuk <span class="b">Edit Pesanan</span></li>
+      <li>Cari nama, perbaiki, simpan</li>
+    </ol>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-lock"/></svg></span><span class="t">Dua alamat</span></summary>
+    <ol class="s polos">
+      <li><svg class="i"><use href="#i-lock"/></svg> <b>Kasir</b> (rahasia)<br><span class="lnk">canteen-gan-en.vercel.app/dapur-gan-en</span></li>
+      <li><svg class="i"><use href="#i-share"/></svg> <b>Orang tua</b> (boleh disebar)<br><span class="lnk">canteen-gan-en.vercel.app/pesan</span></li>
+    </ol>
+  </details>
+
+  <details>
+    <summary><span class="ik"><svg class="i"><use href="#i-help"/></svg></span><span class="t">Bingung?</span></summary>
+    <ol class="s polos">
+      <li>Telepon <b>Lie Ching</b>.<br>Tidak apa-apa bertanya.</li>
+    </ol>
+  </details>
+
+  <div class="warna">
+    <div><span class="dot" style="background:var(--ok)"></span> Hijau = beres</div>
+    <div><span class="dot" style="background:#D95D5D"></span> Merah = perhatikan</div>
+    <div><span class="dot" style="background:var(--hero);border:2px solid #F2B53C"></span> Kuning = dipilih</div>
   </div>
 
-  <div class="card">
-    <h3><svg class="i"><use href="#i-map"/></svg> Antar dan ambil bekal (info untuk orang tua)</h3>
-    <ul class="pts">
-      <li>Kotak bekal dititipkan di <b>Pos Satpam</b> sebelum jam masuk sekolah, berlaku untuk semua tingkat.</li>
-      <li><b>KB, TK, dan SD kelas 1–2</b>: pesanan <b>diantar ke kelas</b> oleh kantin.</li>
-      <li><b>SD kelas 3 ke atas</b>: <b>diambil sendiri</b> di Lemari Pengambilan Bekal (loker di lobby).</li>
-    </ul>
-  </div>
+  <div class="lain"><a href="/panduan-kantin-lengkap.html">Penjelasan lengkap (untuk Lie Ching) ›</a></div>
 
-  <!-- 8 -->
-  <h2 id="arti"><span class="num">8</span> Arti Ikon dan Warna</h2>
-  <div class="card">
-    <table class="arti">
-      <tr><td><span class="dot" style="background:var(--ok)"></span></td><td><b>Hijau</b> = beres: Lunas, Sudah dikemas, atau pemesanan dibuka.</td></tr>
-      <tr><td><span class="dot" style="background:var(--err)"></span></td><td><b>Merah</b> = perlu perhatian: Belum dikemas, telat, ditutup, atau hapus.</td></tr>
-      <tr><td><span class="dot" style="background:var(--hero);border:1.5px solid #F2B53C"></span></td><td><b>Kuning</b> = yang sedang dipilih atau tombol utama.</td></tr>
-      <tr><td><svg class="i"><use href="#i-utensils"/></svg></td><td>Sendok-garpu = berasal dari <b>Pre-order</b> (atau tampil di Pre-order).</td></tr>
-      <tr><td><svg class="i"><use href="#i-cart"/></svg></td><td>Keranjang = berasal dari <b>Penjualan</b> (atau tersedia di Penjualan).</td></tr>
-      <tr><td><svg class="i"><use href="#i-power"/></svg></td><td>Saklar di Pre-order = buka atau tutup pemesanan.</td></tr>
-      <tr><td><svg class="i"><use href="#i-cal"/></svg></td><td>Kalender = melihat atau memindahkan tanggal.</td></tr>
-      <tr><td><svg class="i"><use href="#i-undo"/></svg></td><td><b>Urungkan</b> = batalkan yang baru saja dilakukan (muncul sebentar).</td></tr>
-      <tr><td><svg class="i"><use href="#i-ban"/></svg></td><td>Lingkaran dicoret = transaksi <b>dibatalkan</b>.</td></tr>
-    </table>
-  </div>
-
-  <!-- 9 -->
-  <h2 id="bingung"><span class="num">9</span> Kalau Bingung / Takut Salah</h2>
-  <div class="card">
-    <div class="note ok"><b class="t">Data tidak akan hilang</b> Semua tersimpan di internet. Walau HP dimatikan atau aplikasi ditutup, data tetap aman.</div>
-    <div class="note warn"><b class="t">Mana yang tersimpan sendiri, mana yang perlu Simpan</b>
-      <b>Langsung tersimpan:</b> centang kemas, tandai lunas, mencatat penjualan, pengaturan di Kantin.<br>
-      <b>Perlu menekan Simpan:</b> menu harian untuk orang tua (Menu → Simpan), dan lembar Edit Menu (Simpan atau Batal). Selama belum Simpan, tidak ada yang berubah; ditutup berarti kembali ke awal.</div>
-    <div class="note warn"><b class="t">Salah pencet</b> Cari tombol <b>Urungkan</b> yang muncul sebentar di bawah layar. Kalau ragu, tutup saja lembarnya; tidak ada yang rusak.</div>
-    <div class="note tip"><b class="t">Pesanan orang tua tidak bisa diubah sendiri oleh orang tua</b> Kalau ada data pemesan yang salah ketik (nama, kelas, nomor WhatsApp, Waktu Ambil), Mama yang memperbaikinya lewat Kantin → Edit Pesanan.</div>
-    <div class="note tip"><b class="t">Masih bingung?</b> Telepon <b>Lie Ching</b>. Tidak apa-apa bertanya; lama-lama pasti terbiasa. 🙏🏻</div>
-  </div>
-
-  <div class="naik"><a href="#buka">Kembali ke atas</a></div>
-
-  <div class="foot">
-    Dibuat dengan sayang untuk Mama &amp; Papa.
-    <div class="zen">🪷 感恩 Gan En 🙏🏻✨</div>
-  </div>
-
+  <div class="foot">🪷 感恩 Gan En 🙏🏻✨</div>
 </div>
 </body></html>
