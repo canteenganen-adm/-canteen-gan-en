@@ -528,7 +528,15 @@ export default function MasterMenu({
                         fontFamily: STRUK_MONO,
                         fontSize: 13, fontWeight: 600, lineHeight: 1.85, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
-                        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>MENU PO</div>
+                        <div style={{ position: "relative", textAlign: "center", fontWeight: 700, fontSize: 14, letterSpacing: ".14em" }}>
+                          MENU PO
+                          {/* Muat ulang pratinjau (ikon segarkan kembali — permintaan Mama; sempat terhapus bersama selector ganda) */}
+                          <button onClick={doRefresh} aria-label="Muat ulang pratinjau" title="Muat ulang"
+                            style={{ position: "absolute", right: -8, top: "50%", marginTop: -22, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                            <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+                            <RefreshCw size={20} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
+                          </button>
+                        </div>
                         {garis("=")}
                         {kats.map((k, i) => (
                           <div key={k}>
