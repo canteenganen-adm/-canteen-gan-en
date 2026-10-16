@@ -451,15 +451,15 @@ export default function PreOrderAdmin({
             </div>
           </div>
 
-          {/* Cari = kolom SENDIRI, satu baris penuh (Mama: jangan digabung dengan kategori); kategori di baris bawahnya. */}
-          <div className="flex items-center gap-2" style={{ marginTop: 16, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+          {/* KELAS dulu, baru Cari (urutan permintaan Mama); Cari tetap kolom sendiri, tidak digabung. */}
+          <div style={{ marginTop: 14 }}>
+            <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
+          </div>
+          <div className="flex items-center gap-2" style={{ marginTop: 6, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
             <Search size={18} color={t.text2} style={{ flex: "none" }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
             {q && <X size={20} color={t.text2} style={{ cursor: "pointer", flex: "none" }} aria-label="Hapus pencarian" onClick={() => setQ("")} />}
-          </div>
-          <div style={{ marginTop: 6 }}>
-            <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
           </div>
         </div>
 
