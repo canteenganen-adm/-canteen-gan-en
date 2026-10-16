@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar, CookingPot, Printer,
-  Box, Check, X, Search, Power, AlertCircle,
+  Box, Check, X, Search, Power, AlertCircle, RotateCw,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
@@ -126,6 +126,7 @@ export default function PreOrderAdmin({
   onLihatMenu,
   menuBelumDisimpan,
   onOpenSettings,
+  onRefresh,
 }: {
   serviceDate: string;
   onServiceDateChange: (d: string) => void;
@@ -144,10 +145,14 @@ export default function PreOrderAdmin({
    * kosong sampai admin menekan Simpan di tab Menu (kertas PO). */
   menuBelumDisimpan: boolean;
   onOpenSettings?: () => void;
+  /** Muat ulang data dari server (tombol segarkan di judul — permintaan Mama). */
+  onRefresh?: () => void;
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [kalOffset, setKalOffset] = useState(0);
+  const [memuat, setMemuat] = useState(false);
+  const segarkan = () => { if (!onRefresh || memuat) return; setMemuat(true); onRefresh(); setTimeout(() => setMemuat(false), 900); };
   const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
@@ -408,6 +413,13 @@ export default function PreOrderAdmin({
                   Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
                 </button>
               </div>
+              {onRefresh && (
+                <button onClick={segarkan} aria-label="Muat ulang data" title="Muat ulang"
+                  style={{ flex: "none", width: 44, height: 44, marginLeft: "auto", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                  <style>{`@keyframes ganen-putar{to{transform:rotate(360deg)}}`}</style>
+                  <RotateCw size={21} style={{ animation: memuat ? "ganen-putar .8s linear infinite" : "none" }} />
+                </button>
+              )}
             </div>
             {!lihatSesi && (
               <button onClick={() => setViewDate(serviceDate)}

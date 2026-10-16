@@ -594,6 +594,11 @@ function MainShell({ store }: { store: CanteenStore }) {
      (ambil ulang semua dari server) + toast kecil di atas. */
   const lastNavTap = useRef<{ id: Tab; at: number }>({ id: "preorder", at: 0 });
   const [refreshedToast, setRefreshedToast] = useState(false);
+  const segarkanSekarang = () => {
+    store.reload();
+    setRefreshedToast(true);
+    setTimeout(() => setRefreshedToast(false), 1600);
+  };
   const tapNav = (id: Tab) => {
     const now = Date.now();
     if (tab === id && lastNavTap.current.id === id && now - lastNavTap.current.at < 500) {
@@ -671,6 +676,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             onLihatMenu={lihatMenu}
+            onRefresh={segarkanSekarang}
             menuBelumDisimpan={menuBelumDisimpan}
           />
         )}
