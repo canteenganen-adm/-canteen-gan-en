@@ -126,6 +126,8 @@ export default function PreOrderAdmin({
   onLihatMenu,
   menuBelumDisimpan,
   onOpenSettings,
+  viewDatePilihan,
+  onViewDatePilihan,
 }: {
   serviceDate: string;
   onServiceDateChange: (d: string) => void;
@@ -144,6 +146,9 @@ export default function PreOrderAdmin({
    * kosong sampai admin menekan Simpan di tab Menu (kertas PO). */
   menuBelumDisimpan: boolean;
   onOpenSettings?: () => void;
+  /** Tanggal lihat yang dipilih (null = tanggal sesi). Disimpan di induk supaya tidak hilang saat pindah tab. */
+  viewDatePilihan?: string | null;
+  onViewDatePilihan?: (d: string | null) => void;
 }) {
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
@@ -226,8 +231,13 @@ export default function PreOrderAdmin({
   /* Tanggal yang DILIHAT di daftar pesanan — terpisah dari sesi live.
      Geser < > untuk menengok hari lain (kemarin/besok) tanpa pernah
      menyentuh buka/tutup/tanggal sesi PO yang sedang berjalan. */
-  const [viewDate, setViewDate] = useState(serviceDate);
-  useEffect(() => { setViewDate(serviceDate); }, [serviceDate]);
+  const [viewLokal, setViewLokal] = useState<string | null>(null);
+  useEffect(() => { setViewLokal(null); }, [serviceDate]);
+  const viewDate = (onViewDatePilihan ? viewDatePilihan : viewLokal) ?? serviceDate;
+  const setViewDate = (d: string) => {
+    const v = d === serviceDate ? null : d;
+    if (onViewDatePilihan) onViewDatePilihan(v); else setViewLokal(v);
+  };
   const shiftDay = (n: number) => {
     const d = new Date(viewDate + "T00:00:00");
     d.setDate(d.getDate() + n);

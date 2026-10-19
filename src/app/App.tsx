@@ -587,6 +587,12 @@ type Tab = "preorder" | "penjualan" | "tagihan" | "menu" | "kantin";
 function MainShell({ store }: { store: CanteenStore }) {
   const [tab, setTab] = useState<Tab>("preorder");
   const [laporanOpen, setLaporanOpen] = useState(false);
+  /* Tanggal yang DIPILIH Mama (null = ikut tanggal bawaan/sesi). Disimpan DI SINI, bukan di dalam tab, supaya
+     tidak "balik sendiri" ke hari ini saat pindah tab Pre-order ⇄ Menu atau saat data dimuat ulang realtime.
+     Direset hanya kalau tanggal SESI diganti. */
+  const [tglLihatPO, setTglLihatPO] = useState<string | null>(null);
+  const [tglMenu, setTglMenu] = useState<string | null>(null);
+  useEffect(() => { setTglLihatPO(null); setTglMenu(null); }, [store.serviceDate]);
   const [menuView, setMenuView] = useState<MenuView>("menu");
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -671,6 +677,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             transactions={store.transactions}
             onTogglePacked={store.togglePacked}
             onLihatMenu={lihatMenu}
+            viewDatePilihan={tglLihatPO}
+            onViewDatePilihan={setTglLihatPO}
             menuBelumDisimpan={menuBelumDisimpan}
           />
         )}
@@ -738,6 +746,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onRemove={store.removeMenuItem}
             view={menuView}
             onViewChange={setMenuView}
+            tanggalPilihan={tglMenu}
+            onTanggalPilihan={setTglMenu}
             serviceDate={store.serviceDate}
             pickupSchedules={store.pickupSchedules}
             menuHarian={store.menuHarian}

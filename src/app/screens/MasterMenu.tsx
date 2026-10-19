@@ -43,6 +43,8 @@ export default function MasterMenu({
   onOpenSettings,
   view,
   onViewChange,
+  tanggalPilihan,
+  onTanggalPilihan,
   serviceDate,
   pickupSchedules,
   menuHarian,
@@ -65,6 +67,9 @@ export default function MasterMenu({
   onOpenSettings?: () => void;
   view: MenuView;
   onViewChange: (v: MenuView) => void;
+  /** Tanggal menu yang DIPILIH (null = tanggal bawaan otomatis). Disimpan di induk supaya tidak balik sendiri. */
+  tanggalPilihan?: string | null;
+  onTanggalPilihan?: (d: string | null) => void;
   /** Tanggal sesi PO berikutnya — default selector tanggal di kertas PO. */
   serviceDate: string;
   /** Jadwal Waktu Ambil — jam ambil TERAKHIR hari itu menentukan kapan tab Menu pindah ke besok. */
@@ -128,9 +133,12 @@ export default function MasterMenu({
     const lewat = serviceDate < hariIni || (serviceDate === hariIni && wibTimeHHMM() >= akhirHari());
     return lewat ? nextSchoolDayISO(new Date(hariIni + "T00:00:00")) : serviceDate;
   };
-  const [tanggal, setTanggal] = useState(tanggalBawaan);
-  useEffect(() => { setTanggal(tanggalBawaan()); // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceDate, pickupSchedules]);
+  const [tanggalLokal, setTanggalLokal] = useState<string | null>(null);
+  const tanggal = (onTanggalPilihan ? tanggalPilihan : tanggalLokal) ?? tanggalBawaan();
+  const setTanggal = (d: string) => {
+    const v = d === tanggalBawaan() ? null : d;
+    if (onTanggalPilihan) onTanggalPilihan(v); else setTanggalLokal(v);
+  };
   const dateRef = useRef<HTMLInputElement>(null);
   /** Jalan pintas TAMBAHAN ke `tanggal` yang sama, langsung dari tab
    * Buku Menu — supaya tidak perlu lompat ke Preview PO dulu cuma buat
