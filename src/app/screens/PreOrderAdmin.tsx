@@ -153,7 +153,7 @@ export default function PreOrderAdmin({
   const [q, setQ] = useState("");
   const [tingkatFilter, setTingkatFilter] = useState<KelasGroup>("all");
   const [kalOffset, setKalOffset] = useState(0);
-  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan">(null);
+  const [sheet, setSheet] = useState<null | "waktu" | "rekap" | "cetak" | "gantiTanggal" | "jamTutup" | "bagikan" | "sesiTutup">(null);
   /** Tanggal yang DIPILIH tapi belum dikonfirmasi — pindah sesi PO adalah
    * aksi nyata (ortu langsung bisa pesan di tanggal baru), jadi wajib
    * konfirmasi jelas dulu, tidak langsung commit begitu tanggal diketuk. */
@@ -217,6 +217,9 @@ export default function PreOrderAdmin({
     return open && autoClosedNow(serviceDate, autoCloseTime) && !reopenNow;
   }, [open, serviceDate, autoCloseTime, nowTick, reopenNow]);
 
+  /** Sesi = HARI INI dan jam tutup sudah lewat (tanpa "buka lagi"): membuka saklar tidak ada gunanya — langsung kembali "tutup otomatis". */
+  const sesiLewatJam = autoClosedNow(serviceDate, autoCloseTime) && !reopenNow;
+  const onSaklar = () => { if (sesiLewatJam) setSheet("sesiTutup"); else onToggleOpen(); };
   const reopenFor = (minutes: number) =>
     onReopenUntilChange(new Date(Date.now() + minutes * 60_000).toISOString());
 
@@ -357,9 +360,10 @@ export default function PreOrderAdmin({
    * manual, terpisah dari tanggal. Kalau sesi sedang Dibuka, paksa Tutup
    * dulu saat tanggal pindah; admin wajib ketuk "Dibuka" sendiri lagi
    * untuk tanggal barunya. Mencegah sesi "kebuka sendiri" tanpa disadari. */
-  const confirmPendingDate = () => {
+  const confirmPendingDate = (bukaSekalian: boolean) => {
     if (!pendingDate) return;
-    if (open) onToggleOpen();
+    // bukaSekalian = Mama sendiri yang memilih langsung membuka untuk tanggal baru; selain itu tetap TUTUP (aturan lama).
+    if (bukaSekalian ? !open : open) onToggleOpen();
     onServiceDateChange(pendingDate);
     setPendingDate(null);
     setSheet(null);
@@ -381,8 +385,8 @@ export default function PreOrderAdmin({
             {/* Status sesi: saklar ON/OFF berbentuk pil (tanpa tulisan; tulisan ada di judul).
                 Hijau = dibuka · merah = ditutup · merah lembut berbingkai = tutup otomatis.
                 Gear Pengaturan TIDAK ada di halaman ini (tetap ada di tab lain) — mengurangi keramaian. */}
-            <button onClick={onToggleOpen}
-              aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk membuka" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
+            <button onClick={onSaklar}
+              aria-label={isAutoClosed ? "Pre-order tutup otomatis, ketuk untuk pilihan" : open ? "Pre-order dibuka, ketuk untuk menutup" : "Pre-order ditutup, ketuk untuk membuka"}
               title={isAutoClosed ? "Tutup otomatis" : open ? "Dibuka" : "Ditutup"}
               className="flex items-center"
               style={{ flex: "none", gap: 8, minHeight: 44, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
@@ -420,10 +424,21 @@ export default function PreOrderAdmin({
               </div>
             </div>
             {!lihatSesi && (
-              <button onClick={() => setViewDate(serviceDate)}
-                style={{ display: "block", background: "transparent", border: "none", minHeight: 30, padding: "0 4px", color: t.amberText, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                Kembali ke Hari Ini
-              </button>
+              <div style={{ background: t.primaryLight, borderRadius: 12, padding: "10px 12px", margin: "2px 0 4px" }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, lineHeight: 1.45 }}>
+                  Hanya <b>melihat</b> {serviceDateLabel(viewDate)}. Pemesanan masih untuk <b>{serviceDateLabel(serviceDate)}</b>.
+                </div>
+                <div className="flex" style={{ gap: 8, marginTop: 8 }}>
+                  <button onClick={() => setViewDate(serviceDate)}
+                    style={{ flex: 1, height: 44, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}>
+                    Kembali
+                  </button>
+                  <button onClick={() => { setPendingDate(viewDate); setSheet("gantiTanggal"); }}
+                    style={{ flex: 1.6, height: 44, borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}>
+                    Pakai untuk pemesanan
+                  </button>
+                </div>
+              </div>
             )}
 
             <div style={{ height: 10 }} />
@@ -507,17 +522,23 @@ export default function PreOrderAdmin({
               <div style={{ fontSize: 21, fontWeight: 800, color: t.amberText, marginBottom: 12 }}>
                 {serviceDateLabel(pendingDate)}?
               </div>
-              <div style={{ fontSize: 15, lineHeight: 1.55, color: t.text, background: t.primaryLight, borderRadius: 12, padding: 14, marginBottom: 16 }}>
-                Setelah dipindah, pemesanan <b>DITUTUP</b> — orang tua belum bisa memesan. Ketuk <b>saklar di kanan atas</b> sampai hijau ("telah dibuka") kalau sudah siap menerima pesanan untuk tanggal ini.
+              <div style={{ fontSize: 15, lineHeight: 1.55, color: t.text, background: t.primaryLight, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                Pilih: <b>Pindahkan dan Buka</b> = orang tua langsung bisa memesan. <b>Pindahkan saja</b> = pemesanan tetap TUTUP; buka sendiri nanti lewat saklar di kanan atas.
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setPendingDate(null)}
-                  style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  Batal
+              <div className="flex flex-col gap-2">
+                {!autoClosedNow(pendingDate, autoCloseTime) && (
+                  <button onClick={() => confirmPendingDate(true)}
+                    style={{ width: "100%", height: 54, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
+                    Ya, Pindahkan dan Buka
+                  </button>
+                )}
+                <button onClick={() => confirmPendingDate(false)}
+                  style={{ width: "100%", height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Pindahkan saja (tetap tutup)
                 </button>
-                <button onClick={confirmPendingDate}
-                  style={{ flex: 1, height: 52, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-                  Ya, Pindahkan
+                <button onClick={() => setPendingDate(null)}
+                  style={{ width: "100%", height: 44, border: "none", background: "transparent", color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                  Batal
                 </button>
               </div>
             </div>
@@ -555,6 +576,28 @@ export default function PreOrderAdmin({
               </div>
             </>
           )}
+        </Sheet>
+      )}
+      {sheet === "sesiTutup" && (
+        <Sheet title="Pemesanan sudah tutup" onClose={() => setSheet(null)}>
+          <div style={{ fontSize: 15.5, lineHeight: 1.55, marginBottom: 16 }}>
+            {serviceDateLabel(serviceDate)} tutup otomatis jam <b>{hhmm(autoCloseTime)}</b>. Supaya orang tua bisa memesan lagi, pindahkan sesi ke hari sekolah berikutnya.
+          </div>
+          <button onClick={() => { setPendingDate(nextSchoolDayISO()); setSheet("gantiTanggal"); }}
+            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
+            Pindah ke {serviceDateLabel(nextSchoolDayISO())}
+          </button>
+          <div style={{ textAlign: "center", fontSize: 13, color: t.textDis, margin: "12px 0" }}>atau, untuk yang masih mau pesan hari ini</div>
+          <div className="flex gap-2">
+            <button onClick={() => { if (!open) onToggleOpen(); reopenFor(30); setSheet(null); }}
+              style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+              Buka lagi 30 menit
+            </button>
+            <button onClick={() => { if (!open) onToggleOpen(); reopenFor(60); setSheet(null); }}
+              style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, color: t.amberText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+              Buka lagi 1 jam
+            </button>
+          </div>
         </Sheet>
       )}
       {sheet === "jamTutup" && (
