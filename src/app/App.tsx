@@ -125,6 +125,9 @@ function useCanteenStore() {
    * data lama dan menimpa huruf yang baru diketik (terasa seperti huruf hilang
    * / teks melompat balik) — hasilnya dibuang bila ada penulisan sejak ia mulai. */
   const menuWritesInFlight = useRef(0);
+  /** Jumlah tulisan app_state (tanggal sesi, buka/tutup, jam tutup, pengaturan) yang belum selesai. Selama > 0,
+   * muat ulang data TIDAK boleh menimpa nilai app_state di layar dengan versi server yang masih lama. */
+  const appWritesInFlight = useRef(0);
   const menuWriteEpoch = useRef(0);
   const writeMenuToServer = (item: MenuItem, label: string) => {
     menuWriteEpoch.current++;
@@ -163,13 +166,15 @@ function useCanteenStore() {
       if (menuWriteTimers.current.size === 0 && menuWritesInFlight.current === 0 && menuWriteEpoch.current === epochAtStart) setMenus(menusData);
       if (txData) setTransactions(applyBilledLocal(txData));
       setKelasList(kelasData);
-      setPreorderOpenLocal(appState.preorderOpen);
-      setServiceDateLocal(appState.serviceDate);
-      setAutoCloseTimeLocal(appState.autoCloseTime);
-      setReopenUntilLocal(appState.reopenUntil);
-      setPickupPresetsLocal(appState.pickupPresets);
-      setPickupSchedulesLocal(appState.pickupSchedules);
-      setSettingsLocal(appState.settings);
+      if (appWritesInFlight.current === 0) {
+        setPreorderOpenLocal(appState.preorderOpen);
+        setServiceDateLocal(appState.serviceDate);
+        setAutoCloseTimeLocal(appState.autoCloseTime);
+        setReopenUntilLocal(appState.reopenUntil);
+        setPickupPresetsLocal(appState.pickupPresets);
+        setPickupSchedulesLocal(appState.pickupSchedules);
+        setSettingsLocal(appState.settings);
+      }
       // Snapshot menu untuk tanggal sesi PO + hari ini (untuk POS).
       // Kalau tabel belum ada (migration_9 belum jalan) → fallback mode.
       try {
@@ -445,6 +450,20 @@ function useCanteenStore() {
 
   /** Muat ulang sisa stok satu tanggal (dipanggil berkala di halaman ortu,
    * setelah pesanan gagal karena stok, dan saat Mama mengubah stok). */
+  /** Baca ulang HANYA status sesi (satu baris kecil): tanggal, buka/tutup, jam tutup. Dipakai halaman orang tua yang
+   * dibiarkan terbuka lama — koneksi realtime di HP sering putus diam-diam, jadi tanggal/status bisa basi. */
+  const serviceDateRef = useRef("");
+  serviceDateRef.current = serviceDate;
+  const muatStatusSesi = useCallback(async () => {
+    try {
+      const a = await fetchAppState();
+      if (appWritesInFlight.current > 0) return;
+      setPreorderOpenLocal(a.preorderOpen);
+      setAutoCloseTimeLocal(a.autoCloseTime);
+      setReopenUntilLocal(a.reopenUntil);
+      if (a.serviceDate !== serviceDateRef.current) loadAll({ skipTx: true }); // tanggal sesi berganti → menu/stok tanggal baru ikut dimuat
+    } catch { /* jaringan putus: coba lagi 30 detik lagi */ }
+  }, [loadAll]);
   const loadStokDate = useCallback(async (tanggal: string) => {
     try {
       const sm = await fetchStokSisa(tanggal);
@@ -478,44 +497,54 @@ function useCanteenStore() {
   };
 
   /* ---- Status operasional & Pengaturan (app_state) ---- */
+  /** Kirim satu tulisan app_state: dihitung "sedang berjalan" supaya muat ulang tidak menimpanya; kalau GAGAL,
+   * tampilkan galat lalu baca ulang server sehingga layar jujur (bukan menampilkan tanggal/status yang tidak pernah tersimpan). */
+  const kirimApp = (kirim: Promise<void>, ctx: string) => {
+    appWritesInFlight.current++;
+    let gagal = false;
+    kirim.catch((e) => { gagal = true; reportError(ctx, e); }).finally(() => {
+      appWritesInFlight.current--;
+      if (gagal && appWritesInFlight.current === 0) loadAll({ skipTx: true }); // hanya bila gagal: layar kembali ke yang benar-benar tersimpan
+    });
+  };
   const togglePreorderOpen = () => {
     setPreorderOpenLocal((prev) => {
       const next = !prev;
-      appStatePatch.preorderOpen(next).catch((e) => reportError("togglePreorderOpen", e));
+      kirimApp(appStatePatch.preorderOpen(next), "togglePreorderOpen");
       return next;
     });
   };
   const setServiceDate = (date: string) => {
     setServiceDateLocal(date);
-    appStatePatch.serviceDate(date).catch((e) => reportError("setServiceDate", e));
+    kirimApp(appStatePatch.serviceDate(date), "setServiceDate");
   };
   const setAutoCloseTime = (time: string) => {
     setAutoCloseTimeLocal(time);
-    appStatePatch.autoCloseTime(time).catch((e) => reportError("setAutoCloseTime", e));
+    kirimApp(appStatePatch.autoCloseTime(time), "setAutoCloseTime");
   };
   /** "Buka Lagi" sementara setelah tutup otomatis — null = tutup lagi sekarang. */
   const setReopenUntil = (iso: string | null) => {
     setReopenUntilLocal(iso);
-    appStatePatch.reopenUntil(iso).catch((e) => reportError("setReopenUntil", e));
+    kirimApp(appStatePatch.reopenUntil(iso), "setReopenUntil");
   };
   const setPickupPresets = (presets: string[]) => {
     setPickupPresetsLocal(presets);
-    appStatePatch.pickupPresets(presets).catch((e) => reportError("setPickupPresets", e));
+    kirimApp(appStatePatch.pickupPresets(presets), "setPickupPresets");
   };
   const setPickupSchedules = (schedules: PickupSchedule[]) => {
     setPickupSchedulesLocal(schedules);
-    appStatePatch.pickupSchedules(schedules).catch((e) => reportError("setPickupSchedules", e));
+    kirimApp(appStatePatch.pickupSchedules(schedules), "setPickupSchedules");
   };
   const patchSettings = (patch: Partial<CanteenSettings>) => {
     setSettingsLocal((s) => ({ ...s, ...patch }));
-    if (patch.namaKantin !== undefined) appStatePatch.namaKantin(patch.namaKantin).catch((e) => reportError("patchSettings.namaKantin", e));
-    if (patch.whatsapp !== undefined) appStatePatch.whatsapp(patch.whatsapp).catch((e) => reportError("patchSettings.whatsapp", e));
-    if (patch.printerConnected !== undefined) appStatePatch.printerConnected(patch.printerConnected).catch((e) => reportError("patchSettings.printerConnected", e));
-    if (patch.waOpening !== undefined) appStatePatch.waOpening(patch.waOpening).catch((e) => reportError("patchSettings.waOpening", e));
-    if (patch.waClosing !== undefined) appStatePatch.waClosing(patch.waClosing).catch((e) => reportError("patchSettings.waClosing", e));
-    if (patch.namaBank !== undefined) appStatePatch.namaBank(patch.namaBank).catch((e) => reportError("patchSettings.namaBank", e));
-    if (patch.noRekening !== undefined) appStatePatch.noRekening(patch.noRekening).catch((e) => reportError("patchSettings.noRekening", e));
-    if (patch.namaRekening !== undefined) appStatePatch.namaRekening(patch.namaRekening).catch((e) => reportError("patchSettings.namaRekening", e));
+    if (patch.namaKantin !== undefined) kirimApp(appStatePatch.namaKantin(patch.namaKantin), "patchSettings.namaKantin");
+    if (patch.whatsapp !== undefined) kirimApp(appStatePatch.whatsapp(patch.whatsapp), "patchSettings.whatsapp");
+    if (patch.printerConnected !== undefined) kirimApp(appStatePatch.printerConnected(patch.printerConnected), "patchSettings.printerConnected");
+    if (patch.waOpening !== undefined) kirimApp(appStatePatch.waOpening(patch.waOpening), "patchSettings.waOpening");
+    if (patch.waClosing !== undefined) kirimApp(appStatePatch.waClosing(patch.waClosing), "patchSettings.waClosing");
+    if (patch.namaBank !== undefined) kirimApp(appStatePatch.namaBank(patch.namaBank), "patchSettings.namaBank");
+    if (patch.noRekening !== undefined) kirimApp(appStatePatch.noRekening(patch.noRekening), "patchSettings.noRekening");
+    if (patch.namaRekening !== undefined) kirimApp(appStatePatch.namaRekening(patch.namaRekening), "patchSettings.namaRekening");
   };
 
   return {
@@ -527,7 +556,7 @@ function useCanteenStore() {
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
-    serviceDate, setServiceDate,
+    serviceDate, setServiceDate, muatStatusSesi,
     autoCloseTime, setAutoCloseTime,
     reopenUntil, setReopenUntil,
     pickupPresets, setPickupPresets,
@@ -550,10 +579,11 @@ function ParentRoute({ store }: { store: CanteenStore }) {
   }, []);
   void nowTick;
   // Sisa stok disegarkan tiap 30 detik (angka kecil, tanpa data pembeli)
-  const { stokReady, loadStokDate } = store;
+  const { stokReady, loadStokDate, muatStatusSesi } = store;
   useEffect(() => {
     if (stokReady) loadStokDate(store.serviceDate);
   }, [nowTick, stokReady, loadStokDate, store.serviceDate]);
+  useEffect(() => { muatStatusSesi(); }, [nowTick, muatStatusSesi]);
   const effectiveOpen = store.preorderOpen &&
     (!autoClosedNow(store.serviceDate, store.autoCloseTime) || reopenActiveNow(store.reopenUntil));
 

@@ -507,8 +507,8 @@ export default function PreOrderAdmin({
               <div style={{ fontSize: 21, fontWeight: 800, color: t.amberText, marginBottom: 12 }}>
                 {serviceDateLabel(pendingDate)}?
               </div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.6, color: t.text2, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
-                Sesi akan tetap <b style={{ color: t.text }}>Tertutup</b> — buka/tutup selalu manual, tidak pernah ikut pindah tanggal. Ketuk "Dibuka" sendiri kalau sudah siap menerima pesanan untuk tanggal ini.
+              <div style={{ fontSize: 15, lineHeight: 1.55, color: t.text, background: t.primaryLight, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                Setelah dipindah, pemesanan <b>DITUTUP</b> — orang tua belum bisa memesan. Ketuk <b>saklar di kanan atas</b> sampai hijau ("telah dibuka") kalau sudah siap menerima pesanan untuk tanggal ini.
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setPendingDate(null)}
