@@ -532,11 +532,13 @@ export type CanteenChange =
   | { table: "transaksi"; kind: "delete"; id: string }
   | { table: "other" };
 
-export function subscribeToCanteenChanges(onChange: (c: CanteenChange) => void): () => void {
+/** `tanpaTransaksi` = halaman orang tua: tidak ikut menerima baris transaksi (data pembeli lain; tidak dipakai di sana). */
+export function subscribeToCanteenChanges(onChange: (c: CanteenChange) => void, opts?: { tanpaTransaksi?: boolean }): () => void {
   const other = () => onChange({ table: "other" });
-  const channel = supabase
+  const base = supabase
     .channel("canteen-changes")
-    .on("postgres_changes", { event: "*", schema: "public", table: "menu" }, other)
+    .on("postgres_changes", { event: "*", schema: "public", table: "menu" }, other);
+  const channel = (opts?.tanpaTransaksi ? base : base
     .on("postgres_changes", { event: "*", schema: "public", table: "transaksi" }, (p) => {
       if (p.eventType === "DELETE") {
         const id = (p.old as { id?: string } | null)?.id;
@@ -547,7 +549,7 @@ export function subscribeToCanteenChanges(onChange: (c: CanteenChange) => void):
       // Baris tanpa kolom wajib (mis. payload terpotong) → jatuh ke muat ulang.
       if (!row || !row.id || !row.customer || !row.items) { onChange({ table: "other" }); return; }
       onChange({ table: "transaksi", kind: "upsert", tx: txRowToTransaction(row) });
-    })
+    }))
     .on("postgres_changes", { event: "*", schema: "public", table: "app_state" }, other)
     .on("postgres_changes", { event: "*", schema: "public", table: "kelas" }, other)
     .on("postgres_changes", { event: "*", schema: "public", table: "menu_harian" }, other)

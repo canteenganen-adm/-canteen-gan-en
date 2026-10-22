@@ -68,6 +68,14 @@ export default function App() {
 /* HP/tablet milik Mama & Papa: sekali membuka /dapur-gan-en, perangkat itu DIINGAT sebagai perangkat kasir. Setelah itu
    alamat lama / pintasan layar utama (domain utama tanpa tambahan) langsung membawa ke kasir, bukan ke halaman "Mulai Memesan"
    milik orang tua. Perangkat orang tua tidak pernah membuka /dapur-gan-en, jadi mereka tidak terpengaruh. /pesan selalu halaman orang tua. */
+/** Hanya perangkat kasir (alamat /dapur-gan-en atau HP yang sudah mengingat dirinya) yang menarik ribuan transaksi.
+ * Halaman orang tua (/pesan dan sisanya) TIDAK — dulu tiap kunjungan orang tua mengunduh ±2 MB data pembeli lain,
+ * dan itulah yang menghabiskan kuota bandwidth Supabase gratis (exceed_egress_quota, 13 Okt). */
+const perluTransaksi = () => {
+  const p = window.location.pathname.toLowerCase();
+  if (p.startsWith("/dapur-gan-en")) return true;
+  return bacaKasir() && !p.startsWith("/pesan");
+};
 const KUNCI_KASIR = "ganen_kasir";
 const bacaKasir = () => { try { return localStorage.getItem(KUNCI_KASIR) === "1"; } catch { return false; } };
 function IngatKasir({ children }: { children: React.ReactNode }) {
@@ -171,7 +179,7 @@ function useCanteenStore() {
     try {
       const [menusData, txData, appState, kelasData] = await Promise.all([
         fetchMenus(),
-        opts?.skipTx ? Promise.resolve(null) : fetchTransactions(),
+        opts?.skipTx || !perluTransaksi() ? Promise.resolve(null) : fetchTransactions(),
         fetchAppState(),
         fetchKelas(),
       ]);
@@ -225,6 +233,7 @@ function useCanteenStore() {
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     loadAll();
+    const tanpaTransaksi = !perluTransaksi();
     // Realtime: perubahan TRANSAKSI dari device/tab lain (mis. pesanan baru
     // dari /pesan, centang dikemas) cukup MENAMBAL satu baris di layar —
     // tidak lagi menarik ulang ribuan baris tiap kali (pemborosan kuota
@@ -251,7 +260,7 @@ function useCanteenStore() {
       }
       if (reloadTimer) clearTimeout(reloadTimer);
       reloadTimer = setTimeout(() => loadAll({ skipTx: true }), 800);
-    });
+    }, { tanpaTransaksi });
     // HP yang lama di background: Safari/Chrome mematikan koneksi realtime,
     // jadi data bisa basi tanpa terasa (kasus dua gadget beda angka).
     // Kembali terlihat → menu/pengaturan selalu disegarkan; transaksi hanya
