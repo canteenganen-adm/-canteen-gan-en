@@ -3,7 +3,7 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
-import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase, wibTodayISO, wibTimeHHMM, nextSchoolDayISO, hhmm } from "../../lib/format";
+import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import { useKunciGulir } from "../components/useKunciGulir";
@@ -119,25 +119,25 @@ export default function MasterMenu({
      Toggle di kertas ini mengubah DRAFT di layar saja; baru tersimpan permanen
      ke menu_harian saat tombol "Simpan" ditekan (dengan konfirmasi). Tanggal
      lampau = read-only (riwayat). Sebelum migration_9: fallback toggle live. */
-  /* Tanggal menu BAWAAN: setelah jam tutup sesi (08:00) orang tua masih packing sampai jam ambil
-     terakhir, jadi menu hari ini tetap tampil. BARU setelah jam ambil TERAKHIR hari itu lewat
-     (mis. Pulang Sekolah; cadangan 13:00 bila jadwal kosong) — atau tanggal sesi sudah lewat —
-     tab Menu otomatis membuka HARI SEKOLAH BERIKUTNYA (lewati Sabtu/Minggu) untuk menyusun
-     menu besok. Sesi yang sudah diatur ke tanggal depan dipakai apa adanya. */
-  const akhirHari = () => {
-    const semua = (pickupSchedules ?? []).flatMap((x) => [x.defaultTime, ...Object.values(x.byTingkat ?? {})]).filter((v): v is string => !!v).map(hhmm);
-    return semua.length ? semua.reduce((a, b) => (a > b ? a : b)) : "13:00";
-  };
-  const tanggalBawaan = () => {
-    const hariIni = wibTodayISO();
-    const lewat = serviceDate < hariIni || (serviceDate === hariIni && wibTimeHHMM() >= akhirHari());
-    return lewat ? nextSchoolDayISO(new Date(hariIni + "T00:00:00")) : serviceDate;
-  };
+  /* Tanggal menu BAWAAN = tanggal sesi Pre-order. TIDAK loncat sendiri ke hari berikutnya (dulu otomatis
+     setelah jam ambil terakhir; Mama sedang menyusun menu besok lalu layar berpindah dan pilihannya hilang).
+     Untuk menyusun menu hari lain, Mama memilih tanggalnya sendiri (disimpan di MainShell). */
+  const tanggalBawaan = () => serviceDate;
   const [tanggalLokal, setTanggalLokal] = useState<string | null>(null);
-  const tanggal = (onTanggalPilihan ? tanggalPilihan : tanggalLokal) ?? tanggalBawaan();
-  const setTanggal = (d: string) => {
+  /** Selama ada perubahan yang BELUM disimpan, tanggal ditahan di tanggal yang sedang disusun —
+   * tidak boleh berpindah (mis. sesi diganti dari tab lain) lalu menimpa/menyimpan ke tanggal yang salah. */
+  const [tahanTgl, setTahanTgl] = useState<string | null>(null);
+  const tanggal = tahanTgl ?? ((onTanggalPilihan ? tanggalPilihan : tanggalLokal) ?? tanggalBawaan());
+  const aturTanggal = (d: string) => {
     const v = d === tanggalBawaan() ? null : d;
     if (onTanggalPilihan) onTanggalPilihan(v); else setTanggalLokal(v);
+  };
+  /** Tanggal tujuan yang menunggu keputusan "Lanjutkan edit / Buang perubahan". */
+  const [tujuanTgl, setTujuanTgl] = useState<string | null>(null);
+  const setTanggal = (d: string) => {
+    if (d === tanggal) return;
+    if (dailyDirtyRef.current) { setTujuanTgl(d); return; }
+    aturTanggal(d);
   };
   const dateRef = useRef<HTMLInputElement>(null);
   /** Jalan pintas TAMBAHAN ke `tanggal` yang sama, langsung dari tab
@@ -156,11 +156,20 @@ export default function MasterMenu({
   const [seed, setSeed] = useState<Record<string, boolean>>({});
   const menusRef = useRef(menus);
   menusRef.current = menus;
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const seedRef = useRef(seed);
+  seedRef.current = seed;
+  const diseedUntuk = useRef<string | null>(null);
   useEffect(() => {
     // Seed draft saat ganti tanggal / snapshot pertama termuat. SENGAJA tidak
     // depend ke `menus` supaya reload realtime tidak menghapus draft yang
     // sedang diedit.
     if (!menuHarianReady || isPast || !snapLoaded) return;
+    // Pilihan yang belum disimpan pada tanggal yang SAMA tidak pernah ditimpa (mis. data selesai termuat saat Mama sedang memilih).
+    const kotor = menusRef.current.some((m) => (draftRef.current[m.id] ?? false) !== (seedRef.current[m.id] ?? false));
+    if (diseedUntuk.current === tanggal && kotor) return;
+    diseedUntuk.current = tanggal;
     const base: Record<string, boolean> = {};
     if (snapshot) {
       const on = new Set(snapshot.filter((s) => s.channels.preorder).map((s) => s.id));
@@ -188,6 +197,13 @@ export default function MasterMenu({
     () => menuHarianReady && !isPast && menus.some((m) => (draft[m.id] ?? false) !== (seed[m.id] ?? false)),
     [menus, draft, seed, menuHarianReady, isPast]
   );
+  const dailyDirtyRef = useRef(false);
+  dailyDirtyRef.current = dailyDirty;
+  useEffect(() => {
+    if (dailyDirty) setTahanTgl((x) => x ?? tanggal);
+    else setTahanTgl(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyDirty]);
   const aktifCount = useMemo(() => menus.filter((m) => poOn(m)).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [menus, draft, menuHarianReady, isPast]);
@@ -676,6 +692,29 @@ export default function MasterMenu({
               <button onClick={() => simpanStok(null)} disabled={stokSaving}
                 style={{ marginTop: 8, width: "100%", height: 48, borderRadius: 12, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
                 Tanpa batas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pindah tanggal saat ada pilihan yang belum disimpan: Mama yang memutuskan, bukan dihapus otomatis */}
+      {tujuanTgl && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setTujuanTgl(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
+          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: "22px 20px 28px", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.01em" }}>Menu belum disimpan</div>
+            <div style={{ fontSize: 15.5, lineHeight: 1.55, color: t.text2, margin: "6px 0 18px" }}>
+              Pilihan menu untuk {serviceDateLabel(tanggal)} belum disimpan. Mau diteruskan atau dibuang?
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => setTujuanTgl(null)}
+                style={{ width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                Lanjutkan edit
+              </button>
+              <button onClick={() => { const d = tujuanTgl; setTujuanTgl(null); setDraft({ ...seedRef.current }); aturTanggal(d); }}
+                style={{ width: "100%", height: 50, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15.5, cursor: "pointer", fontFamily: "inherit" }}>
+                Buang perubahan, pindah ke {serviceDateLabel(tujuanTgl)}
               </button>
             </div>
           </div>

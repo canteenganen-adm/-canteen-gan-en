@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate, useLocation } from "react-router";
 import { ClipboardList, ShoppingBag, CreditCard, BookOpen, AlertTriangle, Store } from "lucide-react";
 import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
@@ -59,10 +59,25 @@ export default function App() {
       {/* Admin di path tersembunyi — root & path nyasar SELALU jatuh ke halaman
           ortu, supaya ortu yang mengetik domain tanpa /pesan tidak pernah
           mendarat di layar admin (app ini tanpa login). */}
-      <Route path="/dapur-gan-en" element={<MainShell store={store} />} />
-      <Route path="*" element={<ParentRoute store={store} />} />
+      <Route path="/dapur-gan-en" element={<IngatKasir><MainShell store={store} /></IngatKasir>} />
+      <Route path="*" element={<GerbangOrtu store={store} />} />
     </Routes>
   );
+}
+
+/* HP/tablet milik Mama & Papa: sekali membuka /dapur-gan-en, perangkat itu DIINGAT sebagai perangkat kasir. Setelah itu
+   alamat lama / pintasan layar utama (domain utama tanpa tambahan) langsung membawa ke kasir, bukan ke halaman "Mulai Memesan"
+   milik orang tua. Perangkat orang tua tidak pernah membuka /dapur-gan-en, jadi mereka tidak terpengaruh. /pesan selalu halaman orang tua. */
+const KUNCI_KASIR = "ganen_kasir";
+const bacaKasir = () => { try { return localStorage.getItem(KUNCI_KASIR) === "1"; } catch { return false; } };
+function IngatKasir({ children }: { children: React.ReactNode }) {
+  useEffect(() => { try { localStorage.setItem(KUNCI_KASIR, "1"); } catch { /* penyimpanan diblokir: abaikan */ } }, []);
+  return <>{children}</>;
+}
+function GerbangOrtu({ store }: { store: CanteenStore }) {
+  const { pathname } = useLocation();
+  if (bacaKasir() && !pathname.toLowerCase().startsWith("/pesan")) return <Navigate to="/dapur-gan-en" replace />;
+  return <ParentRoute store={store} />;
 }
 
 function LoadingScreen() {
