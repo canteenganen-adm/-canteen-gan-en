@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { fetchMasukBulan } from "../../lib/canteenApi";
+import CadanganBulanLalu from "../components/CadanganBulanLalu";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
@@ -807,6 +808,8 @@ export default function Pengaturan({
               <Pencil size={19} />
             </button>
           </div>
+
+          <CadanganBulanLalu />
 
           {/* Laporan — kartu besar (pilihan pemilik): angka bulan ini, persen vs bulan lalu, pembagian Pre-order / Penjualan */}
           <button onClick={onOpenLaporan} aria-label="Buka Laporan"

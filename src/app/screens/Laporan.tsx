@@ -99,65 +99,129 @@ async function unduhExcel(txs: Transaction[], year: number, month: number, bandi
   const { default: writeExcelFile } = await import("write-excel-file/universal");
   const r = buildReport(txs);
   const { hi, lo } = tinggiRendah(r);
-  const H = (v: string) => ({ value: v, fontWeight: "bold" as const, backgroundColor: "#FFE66D" });
-  const B = (v: string) => ({ value: v, fontWeight: "bold" as const });
-  const rp = (v: number) => ({ value: v, type: Number, format: '"Rp "#,##0' });
-  const nm = (v: number) => ({ value: v, type: Number });
   const judul = `${BULAN[month]} ${year}`;
   const hariBaru = [...r.hari].reverse(); // terbaru dulu
 
+  /* Gaya satu sumber: palet app (kuning + krem + hijau/merah lembut), garis tipis, baris selang-seling, angka rata kanan. */
+  const GARIS = "#E8E0D2", KUNING = "#FFE66D", KUNING_PUCAT = "#FFF4BF", KREM = "#FFF8EE", TEKS = "#2A2820", REDUP = "#756B5D";
+  const garisBawah = { bottomBorderColor: GARIS, bottomBorderStyle: "thin" as const };
+  const tengah = { alignVertical: "center" as const };
+  const zebra = (i: number) => (i % 2 === 1 ? { backgroundColor: KREM } : {});
+  const kepala = (v: string, align: "left" | "center" | "right" = "left") => ({
+    value: v, fontWeight: "bold" as const, textColor: TEKS, backgroundColor: KUNING, align, ...tengah, height: 26,
+    bottomBorderColor: "#F2B53C", bottomBorderStyle: "medium" as const,
+  });
+  const teks = (v: string, i = 0, extra: object = {}) => ({ value: v, textColor: TEKS, ...tengah, ...garisBawah, ...zebra(i), ...extra });
+  const rp = (v: number, i = 0, extra: object = {}) => ({ value: v, type: Number, format: '"Rp "#,##0', align: "right" as const, textColor: TEKS, ...tengah, ...garisBawah, ...zebra(i), ...extra });
+  const angka = (v: number, i = 0, extra: object = {}) => ({ value: v, type: Number, format: "#,##0", align: "right" as const, textColor: TEKS, ...tengah, ...garisBawah, ...zebra(i), ...extra });
+  const total = (v: string | number, rupiahFmt = false, align: "left" | "right" = "right") => ({
+    value: v, ...(typeof v === "number" ? { type: Number, format: rupiahFmt ? '"Rp "#,##0' : "#,##0" } : {}),
+    fontWeight: "bold" as const, textColor: TEKS, backgroundColor: KUNING_PUCAT, align, ...tengah, height: 26,
+    topBorderColor: "#F2B53C", topBorderStyle: "medium" as const,
+  });
+
+  /* ---------- Ringkasan: judul, angka utama, dan cara membaca file ---------- */
+  const bagian = (v: string) => [
+    { value: v, fontWeight: "bold" as const, fontSize: 11, textColor: REDUP, backgroundColor: KREM, ...tengah, height: 24, columnSpan: 3, bottomBorderColor: GARIS, bottomBorderStyle: "thin" as const }, null, null,
+  ];
+  const baris = (label: string, nilai: object, catatan?: string) => [
+    { value: label, fontSize: 12, textColor: TEKS, ...tengah, height: 24, ...garisBawah },
+    { ...nilai, ...tengah, ...garisBawah },
+    { value: catatan ?? "", fontSize: 10, textColor: REDUP, ...tengah, ...garisBawah },
+  ];
+  const besar = (v: number, warna = TEKS) => ({ value: v, type: Number, format: '"Rp "#,##0', align: "right" as const, fontWeight: "bold" as const, fontSize: 14, textColor: warna });
+  const biasa = (v: number, warna = TEKS) => ({ value: v, type: Number, format: '"Rp "#,##0', align: "right" as const, textColor: warna, fontSize: 12 });
+  const jml = (v: number) => ({ value: v, type: Number, format: '#,##0 "transaksi"', align: "right" as const, textColor: TEKS, fontSize: 12 });
+  const teksKanan = (v: string) => ({ value: v, align: "right" as const, textColor: TEKS, fontSize: 12 });
+  const bandingTeks = teksBanding(r.masuk, banding);
   const ringkasan = [
-    [{ value: "Laporan Kantin Gan En", fontWeight: "bold" as const, fontSize: 14 }],
-    [B("Periode"), { value: judul }],
+    [{ value: "Laporan Kantin Gan En", fontWeight: "bold" as const, fontSize: 20, textColor: TEKS, backgroundColor: KUNING, ...tengah, height: 40, columnSpan: 3 }, null, null],
+    [{ value: judul, fontSize: 13, fontWeight: "bold" as const, textColor: TEKS, backgroundColor: KUNING_PUCAT, ...tengah, height: 26, columnSpan: 3 }, null, null],
     [],
-    [B("Masuk (Lunas)"), rp(r.masuk)],
-    [{ value: "   dari Pre-order" }, rp(r.masukPO)],
-    [{ value: "   dari Penjualan" }, rp(r.masukPJ)],
-    [B("Jumlah transaksi Lunas"), nm(r.nMasuk)],
-    [B("Belum Dibayar"), rp(r.belum)],
-    [B("Jumlah transaksi Belum Dibayar"), nm(r.nBelum)],
-    [B("Dibatalkan (tidak dihitung)"), nm(r.nBatal)],
+    bagian("PEMASUKAN (UANG YANG SUDAH DITERIMA)"),
+    baris("Masuk (Lunas)", besar(r.masuk, "#1F7A2E")),
+    baris("   dari Pre-order", biasa(r.masukPO)),
+    baris("   dari Penjualan", biasa(r.masukPJ)),
+    baris("Jumlah transaksi Lunas", jml(r.nMasuk)),
     [],
-    [B("Dibanding bulan lalu"), { value: teksBanding(r.masuk, banding) ?? "-" }],
-    [B("Pemasukan tertinggi"), { value: hi ? labelHari(hi[0]) : "-" }, hi ? rp(hi[1].masuk) : { value: "" }],
-    [B("Pemasukan terendah"), { value: lo ? labelHari(lo[0]) : "-" }, lo ? rp(lo[1].masuk) : { value: "" }],
+    bagian("BELUM DITERIMA"),
+    baris("Belum Dibayar", besar(r.belum, r.belum > 0 ? "#A82F24" : TEKS)),
+    baris("Jumlah transaksi Belum Dibayar", jml(r.nBelum)),
     [],
-    [{ value: "Catatan: pemasukan = uang masuk dari transaksi Lunas (omzet), bukan laba.", fontSize: 10 }],
+    bagian("LAINNYA"),
+    baris("Dibatalkan (tidak dihitung)", jml(r.nBatal)),
+    baris("Dibanding bulan lalu", teksKanan(bandingTeks ?? "-")),
+    baris("Pemasukan tertinggi", hi ? biasa(hi[1].masuk) : teksKanan("-"), hi ? labelHari(hi[0]) : ""),
+    baris("Pemasukan terendah", lo ? biasa(lo[1].masuk) : teksKanan("-"), lo ? labelHari(lo[0]) : ""),
+    [],
+    bagian("ISI FILE INI"),
+    baris("Per Hari", teksKanan("Sheet 2"), "Uang masuk dan belum dibayar tiap tanggal"),
+    baris("Per Menu", teksKanan("Sheet 3"), "Menu terlaris, diurutkan dari omzet terbesar"),
+    baris("Rincian Transaksi", teksKanan("Sheet 4"), "Semua pesanan satu per satu, terbaru di atas"),
+    [],
+    [{ value: "Pemasukan = uang masuk dari transaksi Lunas (omzet), bukan laba. Transaksi Dibatalkan tidak dihitung.", fontSize: 10, fontStyle: "italic" as const, textColor: REDUP, columnSpan: 3 }, null, null],
   ];
+
+  /* ---------- Per Hari ---------- */
   const perHari = [
-    [H("Tanggal"), H("Transaksi"), H("Masuk (Lunas)"), H("Belum Dibayar")],
-    ...hariBaru.map(([d, v]) => [{ value: labelHari(d) }, nm(v.n), rp(v.masuk), rp(v.belum)]),
-    [B("Total"), { value: r.nMasuk + r.nBelum, type: Number, fontWeight: "bold" as const }, { value: r.masuk, type: Number, format: '"Rp "#,##0', fontWeight: "bold" as const }, { value: r.belum, type: Number, format: '"Rp "#,##0', fontWeight: "bold" as const }],
+    [kepala("Tanggal"), kepala("Transaksi", "right"), kepala("Masuk (Lunas)", "right"), kepala("Belum Dibayar", "right")],
+    ...hariBaru.map(([d, v], i) => [teks(labelHari(d), i), angka(v.n, i), rp(v.masuk, i, v.masuk > 0 ? { textColor: "#1F7A2E", fontWeight: "bold" as const } : { textColor: REDUP }), rp(v.belum, i, v.belum > 0 ? { textColor: "#A82F24" } : { textColor: REDUP })]),
+    [total("Total", false, "left"), total(r.nMasuk + r.nBelum), total(r.masuk, true), total(r.belum, true)],
   ];
+
+  /* ---------- Per Menu ---------- */
+  const daftarMenu = menuOmzet(r);
   const perMenu = [
-    [H("Menu"), H("Terjual"), H("Omzet")],
-    ...menuOmzet(r).map(([k, v]) => [{ value: k }, nm(v.qty), rp(v.nilai)]),
+    [kepala("No", "center"), kepala("Menu"), kepala("Terjual", "right"), kepala("Omzet", "right")],
+    ...daftarMenu.map(([k, v], i) => [teks(String(i + 1), i, { align: "center" as const, textColor: REDUP }), teks(k, i), angka(v.qty, i), rp(v.nilai, i)]),
+    [total("", false, "left"), total("Total", false, "left"), total(daftarMenu.reduce((a, [, v]) => a + v.qty, 0)), total(daftarMenu.reduce((a, [, v]) => a + v.nilai, 0), true)],
   ];
+
+  /* ---------- Rincian Transaksi: status diberi warna supaya terbaca sekilas ---------- */
+  const warnaStatus = (st: string) =>
+    st === "Lunas" ? { textColor: "#1F7A2E", backgroundColor: "#E9F5DB", fontWeight: "bold" as const }
+      : st === "Belum Dibayar" ? { textColor: "#A82F24", backgroundColor: "#FBE7E3", fontWeight: "bold" as const }
+        : { textColor: REDUP, backgroundColor: "#EFEAE0" };
   const rincian = [
-    [H("Tanggal"), H("Jam"), H("No. Pesanan"), H("Sumber"), H("Nama"), H("Tingkat"), H("Kelas"), H("Waktu Ambil"), H("Tanggal Layanan"), H("Status"), H("Total"), H("Isi Pesanan")],
-    ...txs.map((tx) => [
-      { value: wibTanggal(tx.createdAt) },
-      { value: wibJam(tx.createdAt) },
-      { value: tx.orderNo ?? "" },
-      { value: tx.source === "preorder" ? "Pre-order" : "Penjualan" },
-      { value: tx.customer.nama ?? "" },
-      { value: tx.customer.tingkat ?? "" },
-      { value: tx.customer.kelas ?? "" },
-      { value: tx.waktuAmbil ?? "" },
-      { value: tx.serviceDate ?? "" },
-      { value: statusOf(tx) },
-      rp(tx.total),
-      { value: tx.items.map((i) => `${itemLabel(i)} x${i.qty}`).join(", ") },
-    ]),
+    [kepala("Tanggal"), kepala("Jam", "center"), kepala("No. Pesanan"), kepala("Sumber"), kepala("Nama"), kepala("Tingkat"), kepala("Kelas"), kepala("Waktu Ambil"), kepala("Tanggal Layanan"), kepala("Status", "center"), kepala("Total", "right"), kepala("Isi Pesanan")],
+    ...txs.map((tx, i) => {
+      const st = statusOf(tx);
+      const batal = st === "Dibatalkan";
+      const redup = batal ? { textColor: REDUP, textDecoration: { strikethrough: true } } : {};
+      const atas = { alignVertical: "top" as const };
+      return [
+        teks(wibTanggal(tx.createdAt), i, { ...atas }),
+        teks(wibJam(tx.createdAt), i, { align: "center" as const, ...atas }),
+        teks(tx.orderNo ?? "", i, { ...atas }),
+        teks(tx.source === "preorder" ? "Pre-order" : "Penjualan", i, { ...atas }),
+        teks(tx.customer.nama ?? "", i, { fontWeight: "bold" as const, ...atas }),
+        teks(tx.customer.tingkat ?? "", i, { ...atas }),
+        teks(tx.customer.kelas ?? "", i, { ...atas }),
+        teks(tx.waktuAmbil ?? "", i, { ...atas }),
+        teks(tx.serviceDate ?? "", i, { ...atas }),
+        teks(st, i, { align: "center" as const, ...atas, ...warnaStatus(st) }),
+        rp(tx.total, i, { ...atas, ...redup }),
+        teks(tx.items.map((it) => `${itemLabel(it)} x${it.qty}`).join("\n"), i, { wrap: true, ...atas, ...redup }),
+      ];
+    }),
   ];
 
   const blob = await writeExcelFile([
-    { data: ringkasan, sheet: "Ringkasan", columns: [{ width: 34 }, { width: 22 }, { width: 18 }] },
-    { data: perHari, sheet: "Per Hari", columns: [{ width: 16 }, { width: 11 }, { width: 18 }, { width: 18 }], stickyRowsCount: 1 },
-    { data: perMenu, sheet: "Per Menu", columns: [{ width: 38 }, { width: 10 }, { width: 18 }], stickyRowsCount: 1 },
-    { data: rincian, sheet: "Rincian Transaksi", columns: [{ width: 12 }, { width: 7 }, { width: 12 }, { width: 11 }, { width: 24 }, { width: 9 }, { width: 8 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 70 }], stickyRowsCount: 1 },
+    { data: ringkasan, sheet: "Ringkasan", columns: [{ width: 34 }, { width: 26 }, { width: 44 }], showGridLines: false },
+    { data: perHari, sheet: "Per Hari", columns: [{ width: 18 }, { width: 12 }, { width: 20 }, { width: 20 }], stickyRowsCount: 1, showGridLines: false },
+    { data: perMenu, sheet: "Per Menu", columns: [{ width: 6 }, { width: 40 }, { width: 11 }, { width: 20 }], stickyRowsCount: 1, showGridLines: false },
+    { data: rincian, sheet: "Rincian Transaksi", columns: [{ width: 12 }, { width: 7 }, { width: 12 }, { width: 11 }, { width: 24 }, { width: 9 }, { width: 8 }, { width: 16 }, { width: 14 }, { width: 15 }, { width: 16 }, { width: 52 }], stickyRowsCount: 1, showGridLines: false },
   ]).toBlob();
   unduhBlob(blob, `Laporan Gan En ${BULAN[month]} ${year}.xlsx`);
+}
+
+/** Unduh Excel lengkap satu bulan langsung (dipakai pengingat "Cadangan" di tab Kantin). month = 0–11. */
+export async function unduhExcelBulan(year: number, month: number) {
+  const txs = await fetchTransactionsMonth(year, month);
+  const pm = month === 0 ? 11 : month - 1, py = month === 0 ? year - 1 : year;
+  const prev = await fetchMasukBulan(py, pm).catch(() => null);
+  const banding: Banding | null = prev ? { prevLabel: "bulan lalu", prevMasuk: prev.masuk, berjalan: false } : null;
+  await unduhExcel(txs, year, month, banding);
 }
 
 async function unduhPdf(txs: Transaction[], year: number, month: number, banding: Banding | null) {
