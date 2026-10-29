@@ -24,8 +24,8 @@ const waIntl = (wa?: string) => {
 export default function TagihSatuSatu({
   pekan, antrean, byId, bangunPesan, onKirim, onUbahTanggal, onTutup,
 }: {
-  /** Senin pekan yang ditagih (YYYY-MM-DD). */
-  pekan: string;
+  /** Senin tiap minggu yang ditagih (YYYY-MM-DD); lebih dari satu = minggu digabung jadi satu pesan per anak. */
+  pekan: string[];
   /** Antrean dibekukan saat mulai: satu entri = satu pesan = satu atau lebih anak (daftar id transaksi per anak). */
   antrean: string[][][];
   byId: Map<string, Transaction>;
@@ -34,7 +34,9 @@ export default function TagihSatuSatu({
   onUbahTanggal: (tx: Transaction) => void;
   onTutup: () => void;
 }) {
-  const label = labelPekan(pekan);
+  const labels = [...pekan].sort().map(labelPekan);
+  const label = labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
+  const judul = pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
   const [i, setI] = useState(0);
   const [terkirim, setTerkirim] = useState(0);
   const [lewat, setLewat] = useState(0);
@@ -46,7 +48,7 @@ export default function TagihSatuSatu({
      atau dipindah ke pekan lain (ganti tanggal) gugur dari layar ini. */
   const entri = useMemo(() => antrean.map((anak) => anak
     .map((ids) => ids.map((id) => byId.get(id))
-      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && mondayOf(opDate(x)) === pekan)
+      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && pekan.includes(mondayOf(opDate(x))))
       .sort((a, b) => opDate(a).localeCompare(opDate(b)) || a.createdAt.localeCompare(b.createdAt)))
     .filter((txs) => txs.length > 0)
     .map((txs) => {
@@ -83,11 +85,11 @@ export default function TagihSatuSatu({
   );
 
   return (
-    <div role="dialog" aria-label={`Tagih minggu ${label}`} style={{ position: "fixed", inset: 0, zIndex: 75, background: t.bg, color: t.text, display: "flex", flexDirection: "column" }}>
+    <div role="dialog" aria-label={`Tagih ${judul}`} style={{ position: "fixed", inset: 0, zIndex: 75, background: t.bg, color: t.text, display: "flex", flexDirection: "column" }}>
       <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
         <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
-          <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>Minggu {label}</div>
+          <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
           <button onClick={onTutup} aria-label="Tutup" className="flex items-center gap-1"
             style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
             <X size={17} /> Tutup

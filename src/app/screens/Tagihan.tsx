@@ -163,7 +163,9 @@ export default function Tagihan({
     return () => cancelAnimationFrame(id);
   }, [pekanBuka]);
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
-  const [tagih, setTagih] = useState<{ pekan: string; antrean: string[][][] } | null>(null);
+  const [tagih, setTagih] = useState<{ pekan: string[]; antrean: string[][][] } | null>(null);
+  /** Berapa minggu sebelumnya (yang belum ditagih) digabung dengan minggu yang dibuka — satu pesan per anak. */
+  const [gabungN, setGabungN] = useState(0);
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   /** Draf WA. `siblings` = grup lain (anak lain) dengan nomor WA sama —
@@ -298,10 +300,9 @@ export default function Tagihan({
   const byId = useMemo(() => new Map(transactions.map((x) => [x.id, x])), [transactions]);
 
   /** Antrean satu pekan: anak yang masih ada tagihan belum dikirim; kakak-adik satu nomor WA digabung jadi satu pesan. */
-  const mulaiTagih = (senin: string) => {
-    const p = pekanList.find((x) => x.senin === senin);
-    if (!p) return;
-    const gs = sortGroups(buatGrup(p.txs).filter((g) => g.txs.some((tx) => !tx.billedAt)), sortMode);
+  const antreanMinggu = (daftar: string[]) => {
+    const txs = pekanList.filter((x) => daftar.includes(x.senin)).flatMap((x) => x.txs);
+    const gs = sortGroups(buatGrup(txs).filter((g) => g.txs.some((tx) => !tx.billedAt)), sortMode);
     const antrean: string[][][] = [];
     const perWa = new Map<string, string[][]>();
     for (const g of gs) {
@@ -313,14 +314,23 @@ export default function Tagihan({
       antrean.push(entri);
       if (w) perWa.set(w, entri);
     }
-    if (antrean.length) setTagih({ pekan: senin, antrean });
+    return antrean;
   };
+  const mulaiTagih = (daftar: string[]) => {
+    const antrean = antreanMinggu(daftar);
+    if (antrean.length) setTagih({ pekan: daftar, antrean });
+  };
+  /** Minggu sebelum yang dibuka yang sudah lewat dan masih ada yang belum ditagih, terdekat dulu. */
+  const calonGabung = pekanDibuka
+    ? pekanList.filter((x) => !x.berjalan && x.belum > 0 && x.senin < pekanDibuka.senin).sort((a, b) => b.senin.localeCompare(a.senin))
+    : [];
+  const gabungDipilih = calonGabung.slice(0, gabungN).map((x) => x.senin);
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
   useEffect(() => { if (pekanBuka && !pekanDibuka) setPekanBuka(null); }, [pekanBuka, pekanDibuka]);
   useEffect(() => { setPekanBuka(null); }, [bulanAktif]);
   /** Minggu yang dibuka memuat 20 kartu dulu (satu minggu bisa >150 anak) — sisanya lewat "Tampilkan lagi". */
   const [kartuTampil, setKartuTampil] = useState(20);
-  useEffect(() => { setKartuTampil(20); }, [pekanBuka]);
+  useEffect(() => { setKartuTampil(20); setGabungN(0); }, [pekanBuka]);
   /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
   const cariLain = useMemo(() => {
     if (!q.trim()) return null;
@@ -711,10 +721,26 @@ export default function Tagihan({
                           {p.berjalan ? (
                             <div style={{ margin: "0 2px 12px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Tagih setelah Jumat.</div>
                           ) : p.belum > 0 && (
-                            <button onClick={() => mulaiTagih(p.senin)} className="flex items-center justify-center gap-2"
-                              style={{ width: "100%", height: 56, marginBottom: 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
-                              <MessageCircle size={20} /> Tagih satu per satu ({p.belum})
-                            </button>
+                            <>
+                              <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
+                                style={{ width: "100%", height: 56, marginBottom: calonGabung.length ? 6 : 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+                                <MessageCircle size={20} />
+                                {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu (${antreanMinggu([p.senin, ...gabungDipilih]).reduce((s, e) => s + e.length, 0)})` : `Tagih satu per satu (${p.belum})`}
+                              </button>
+                              {/* Gabung dengan minggu sebelumnya: satu pesan per anak, bukan dua WhatsApp. Baris berikutnya muncul setelah yang ini dicentang. */}
+                              {calonGabung.slice(0, gabungN + 1).map((c, i) => {
+                                const on = i < gabungN;
+                                return (
+                                  <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} role="checkbox" aria-checked={on} className="flex items-center gap-3"
+                                    style={{ width: "100%", minHeight: 48, padding: "0 4px", marginBottom: i === Math.min(gabungN, calonGabung.length - 1) ? 12 : 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
+                                    <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
+                                      {on && <Check size={17} strokeWidth={3} />}
+                                    </span>
+                                    <span style={{ fontSize: 15.5, fontWeight: 700 }}>Gabung dengan {labelPekan(c.senin)} <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
+                                  </button>
+                                );
+                              })}
+                            </>
                           )}
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
