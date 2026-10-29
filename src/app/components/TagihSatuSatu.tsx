@@ -134,7 +134,7 @@ export default function TagihSatuSatu({
               })}
               {gs.length > 1 && (
                 <div style={{ fontSize: 13.5, color: t.text2, margin: "0 4px 10px", fontWeight: 600 }}>
-                  Satu nomor WhatsApp, jadi digabung dalam satu pesan.
+                  Satu nomor WA, digabung jadi satu pesan.
                 </div>
               )}
 
