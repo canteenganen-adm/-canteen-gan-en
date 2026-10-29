@@ -1,11 +1,13 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, RotateCcw, Calendar, SlidersHorizontal,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Calendar, SlidersHorizontal, MessageCircle,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
+import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari } from "../../lib/pekan";
 import PaperTabs from "../components/PaperTabs";
+import TagihSatuSatu from "../components/TagihSatuSatu";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -99,6 +101,10 @@ const isoShift = (days: number) => {
   d.setDate(d.getDate() - days);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+/** Kartu Belum Dibayar satu anak. */
+type Grup = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; total: number };
+const buatGrup = (txs: Transaction[]): Grup[] =>
+  unionGroups(txs).map((g) => ({ customer: g.customer, txs: g.txs, newestAt: g.newestAt, total: g.txs.reduce((s, tx) => s + tx.total, 0) }));
 type UndoAction =
   | { type: "paid"; tx: Transaction }
   | { type: "unpaid"; tx: Transaction }
@@ -146,6 +152,19 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled;
 
   const [q, setQ] = useState("");
+  /** Belum Dibayar dibaca per PEKAN: daftar pekan → (ketuk) kartu anak di pekan itu.
+   * pekanBuka = Senin pekan yang sedang dibuka (null = daftar pekan); bulanLihat = "YYYY-MM" (null = bulan pekan ini). */
+  const [pekanBuka, setPekanBuka] = useState<string | null>(null);
+  const [bulanLihat, setBulanLihat] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  /** Pindah daftar minggu ↔ isi minggu: mulai dari atas, bukan dari posisi gulir sebelumnya. */
+  useEffect(() => {
+    let el: HTMLElement | null = rootRef.current?.parentElement ?? null;
+    while (el && !/(auto|scroll)/.test(getComputedStyle(el).overflowY)) el = el.parentElement;
+    el?.scrollTo({ top: 0 });
+  }, [pekanBuka]);
+  /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
+  const [tagih, setTagih] = useState<{ pekan: string; antrean: string[][][] } | null>(null);
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   /** Draf WA. `siblings` = grup lain (anak lain) dengan nomor WA sama —
@@ -155,6 +174,8 @@ export default function Tagihan({
     base: { customer: Transaction["customer"]; txs: Transaction[]; total: number };
     siblings: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[];
     merged: boolean;
+    /** "12–16 Okt" bila dikirim dari satu pekan — dicantumkan di pesan. */
+    label?: string;
   } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
@@ -233,6 +254,74 @@ export default function Tagihan({
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
 
+  /* ---- Per pekan ---- */
+  const hariIni = todayISO();
+  /** Cari/filter tanggal/Hanya Belum Ditagih aktif → daftar biasa lintas pekan (tempat mencari anak). */
+  const modeDaftar = !!q.trim() || dateFilter !== "semua" || onlyUnbilled;
+  const pekanList = useMemo(() => {
+    const per = new Map<string, Transaction[]>();
+    for (const tx of unpaid) {
+      const k = mondayOf(opDate(tx));
+      const arr = per.get(k);
+      if (arr) arr.push(tx); else per.set(k, [tx]);
+    }
+    const senin = mondayOf(hariIni);
+    if (!per.has(senin)) per.set(senin, []); // pekan ini selalu tampil
+    return [...per.entries()].map(([k, txs]) => {
+      const gs = buatGrup(txs);
+      const belum = gs.filter((g) => g.txs.some((tx) => !tx.billedAt)).length;
+      return { senin: k, txs, anak: gs.length, belum, sudah: gs.length - belum, berjalan: pekanBerjalan(k, hariIni) };
+    }).sort((a, b) => b.senin.localeCompare(a.senin));
+  }, [unpaid, hariIni]);
+  /** Pekan paling lama yang sudah lewat dan masih ada yang belum ditagih — sasaran tombol utama. */
+  const pekanTagih = [...pekanList].reverse().find((p) => !p.berjalan && p.belum > 0) || null;
+  const bulanDefault = bulanPekan(mondayOf(hariIni));
+  const bulanAda = useMemo(
+    () => [...new Set([...pekanList.map((p) => bulanPekan(p.senin)), bulanDefault])].sort(),
+    [pekanList, bulanDefault]
+  );
+  const bulanAktif = bulanLihat && bulanAda.includes(bulanLihat) ? bulanLihat : bulanDefault;
+  const bulanIdx = bulanAda.indexOf(bulanAktif);
+  const pekanBulanIni = pekanList.filter((p) => bulanPekan(p.senin) === bulanAktif);
+  const pekanDibuka = pekanBuka ? pekanList.find((p) => p.senin === pekanBuka) || null : null;
+  const groupsPekan = useMemo(
+    () => (pekanDibuka ? sortGroups(buatGrup(pekanDibuka.txs), sortMode) : []),
+    [pekanDibuka, sortMode]
+  );
+  const byId = useMemo(() => new Map(transactions.map((x) => [x.id, x])), [transactions]);
+
+  /** Antrean satu pekan: anak yang masih ada tagihan belum dikirim; kakak-adik satu nomor WA digabung jadi satu pesan. */
+  const mulaiTagih = (senin: string) => {
+    const p = pekanList.find((x) => x.senin === senin);
+    if (!p) return;
+    const gs = sortGroups(buatGrup(p.txs).filter((g) => g.txs.some((tx) => !tx.billedAt)), sortMode);
+    const antrean: string[][][] = [];
+    const perWa = new Map<string, string[][]>();
+    for (const g of gs) {
+      const ids = g.txs.map((tx) => tx.id);
+      const w = normWa(g.customer.wa);
+      const ada = w ? perWa.get(w) : undefined;
+      if (ada) { ada.push(ids); continue; }
+      const entri = [ids];
+      antrean.push(entri);
+      if (w) perWa.set(w, entri);
+    }
+    if (antrean.length) setTagih({ pekan: senin, antrean });
+  };
+  /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
+  useEffect(() => { if (pekanBuka && !pekanDibuka) setPekanBuka(null); }, [pekanBuka, pekanDibuka]);
+  /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
+  const cariLain = useMemo(() => {
+    if (!q.trim()) return null;
+    const cocok = (x: Transaction) => bySource(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa);
+    return {
+      lunas: unionGroups(transactions.filter((x) => x.paid && !x.cancelledAt && cocok(x))).length,
+      batal: unionGroups(transactions.filter((x) => !!x.cancelledAt && cocok(x))).length,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, q, sourceFilter]);
+  const panahBulan: React.CSSProperties = { width: 44, height: 44, flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "none", color: t.text2, cursor: "pointer" };
+
   /* Grupkan Lunas/Dibatalkan per ANAK (aturan ganda unionGroups), urut A–Z */
   const riwayatGroups = useMemo(() => {
     const done = transactions.filter(
@@ -305,7 +394,7 @@ export default function Tagihan({
   /** Bangun pesan tagihan. 1 grup = format lama persis; >1 grup (kakak-adik
    * satu nomor WA) = satu pesan dengan bagian per anak + Subtotal, lalu
    * SATU Total Pembayaran gabungan. */
-  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[]) => {
+  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string) => {
     const txBlocksOf = (g: (typeof gs)[number]) => g.txs.map((tx) => {
       const itemLines = tx.items
         .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
@@ -325,22 +414,24 @@ export default function Tagihan({
     const total = gs.reduce((s, g) => s + g.total, 0);
     // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
     // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
-    return `${settings.waOpening}\n\n${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En`;
+    const judulPekan = label ? `Tagihan minggu ${label}\n\n` : "";
+    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En`;
   };
-  const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }) => {
+  /** pool = kartu yang dicari "saudara"-nya (satu nomor WA) — di dalam satu pekan hanya kartu pekan itu. */
+  const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }, pool: Grup[] = groups, label?: string) => {
     const wa = g.customer.wa?.replace(/\D/g, "");
     if (!wa) { setToast("Nomor WhatsApp belum ada untuk pemesan ini."); return; }
     // Anak lain (nama beda) yang nomor WA-nya sama → tawarkan gabung tagihan
     const meNama = g.customer.nama.trim().replace(/\s+/g, " ").toLowerCase();
-    const siblings = groups.filter(
+    const siblings = pool.filter(
       (o) => o.customer.nama.trim().replace(/\s+/g, " ").toLowerCase() !== meNama
         && normWa(o.customer.wa) === normWa(g.customer.wa)
     );
     setWaDraft({
       wa: wa.startsWith("0") ? "62" + wa.slice(1) : wa,
-      text: buildWaMsg([g]),
+      text: buildWaMsg([g], label),
       txIds: g.txs.map((tx) => tx.id),
-      base: g, siblings, merged: false,
+      base: g, siblings, merged: false, label,
     });
   };
   const toggleMergeWa = () => {
@@ -349,7 +440,7 @@ export default function Tagihan({
     const gs = merged ? [waDraft.base, ...waDraft.siblings] : [waDraft.base];
     setWaDraft({
       ...waDraft, merged,
-      text: buildWaMsg(gs),
+      text: buildWaMsg(gs, waDraft.label),
       txIds: gs.flatMap((g) => g.txs.map((tx) => tx.id)),
     });
   };
@@ -360,8 +451,84 @@ export default function Tagihan({
     setWaDraft(null);
   };
 
+  /** Satu kartu Belum Dibayar (satu anak). ns = awalan kunci supaya anak yang sama di dua pekan tidak berbagi status buka-tutup. */
+  const kartuBelum = (g: Grup, ns = "", pool: Grup[] = groups, label?: string) => {
+    const key = ns + groupKey(g.customer);
+    const expanded = expandedGroups.has(key);
+    return (
+      <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
+
+        {/* Header grup — klik untuk expand/collapse */}
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+          <div className="flex items-center justify-between" style={{ gap: 10 }}>
+            <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
+              <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
+                {g.customer.kelas || g.customer.tingkat}
+              </span>
+            </div>
+            <div className="flex items-center gap-2" style={{ flex: "none" }}>
+              <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(g.total)}</span>
+              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
+            </div>
+          </div>
+          <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
+            {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
+            <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
+          </div>
+        </button>
+
+        {/* Daftar transaksi (hanya kalau expanded) — SELURUH baris
+            bisa diketuk untuk lihat detail, bukan cuma tanggalnya;
+            biar ketukan tak sengaja tetap langsung kelihatan "ini
+            transaksi apa" bukan cuma dead-tap. Tombol aksi pakai
+            stopPropagation supaya tidak ikut membuka detail. */}
+        {expanded && g.txs.map((tx) => (
+          <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
+            style={{ width: "100%", gap: 10, minHeight: 56, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, textAlign: "left", fontFamily: "inherit", cursor: "pointer",
+              background: tx.id === highlightedTxId ? "#FFF4BF" : "transparent", transition: "background 0.4s ease" }}>
+            <StatusDot unpaid />
+            <SourceTag source={tx.source} />
+            <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
+              {fmtTxOp(tx).split(" · ")[0]}
+              {isAkhirPekan(opDate(tx)) && (
+                <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.warnText, background: t.warnFill, borderRadius: 999, padding: "1px 8px" }}>{namaHari(opDate(tx))}</span>
+              )}
+            </span>
+            <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
+            <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
+          </button>
+        ))}
+
+        {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
+            "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
+        <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+          {g.txs.every((tx) => tx.billedAt) ? (() => {
+            const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
+            return (
+              <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
+                className="flex items-center justify-center gap-2"
+                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+                <Share2 size={17} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+              </button>
+            );
+          })() : (
+            <button onClick={() => shareWA(g, pool, label)} aria-label="Tagih via WA" className="flex items-center justify-center gap-2"
+              style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
+              <Share2 size={17} /> Tagih via WA
+            </button>
+          )}
+          <button onClick={() => setConfirmLunas(g)}
+            style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+            Lunaskan Semua
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+    <div ref={rootRef} style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
@@ -472,75 +639,119 @@ export default function Tagihan({
         {/* ---- Tab: Belum Dibayar ---- */}
         {tab === "unpaid" && (
           <div style={{ padding: "4px 20px" }}>
-            {groups.length === 0 ? <Empty q={q} /> : groups.map((g) => {
-              const key = groupKey(g.customer);
-              const expanded = expandedGroups.has(key);
-              return (
-                <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
-
-                  {/* Header grup — klik untuk expand/collapse */}
-                  <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
-                    <div className="flex items-center justify-between" style={{ gap: 10 }}>
-                      <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
-                        <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
-                          {g.customer.kelas || g.customer.tingkat}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2" style={{ flex: "none" }}>
-                        <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(g.total)}</span>
-                        {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
-                      {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
-                      <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
-                    </div>
-                  </button>
-
-                  {/* Daftar transaksi (hanya kalau expanded) — SELURUH baris
-                      bisa diketuk untuk lihat detail, bukan cuma tanggalnya;
-                      biar ketukan tak sengaja tetap langsung kelihatan "ini
-                      transaksi apa" bukan cuma dead-tap. Tombol aksi pakai
-                      stopPropagation supaya tidak ikut membuka detail. */}
-                  {expanded && g.txs.map((tx) => (
-                    <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
-                      style={{ width: "100%", gap: 10, minHeight: 56, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, textAlign: "left", fontFamily: "inherit", cursor: "pointer",
-                        background: tx.id === highlightedTxId ? "#FFF4BF" : "transparent", transition: "background 0.4s ease" }}>
-                      <StatusDot unpaid />
-                      <SourceTag source={tx.source} />
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
-                      <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
-                      <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
-                    </button>
-                  ))}
-
-                  {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
-                      "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
-                  <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
-                    {g.txs.every((tx) => tx.billedAt) ? (() => {
-                      const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
-                      return (
-                        <button onClick={() => shareWA(g)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
-                          className="flex items-center justify-center gap-2"
-                          style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-                          <Share2 size={17} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
-                        </button>
-                      );
-                    })() : (
-                      <button onClick={() => shareWA(g)} aria-label="Tagih via WA" className="flex items-center justify-center gap-2"
-                        style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
-                        <Share2 size={17} /> Tagih via WA
-                      </button>
-                    )}
-                    <button onClick={() => setConfirmLunas(g)}
-                      style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-                      Lunaskan Semua
+            {modeDaftar ? (
+              <>
+                {/* Filter yang tersembunyi di popover dibuat kelihatan — dulu bikin "pesanan tidak ketemu" */}
+                {(dateFilter !== "semua" || onlyUnbilled) && (
+                  <div className="flex items-center justify-between" style={{ gap: 10, margin: "2px 0 12px", padding: "8px 8px 8px 14px", background: t.primaryLight, border: `1.5px solid ${t.primaryLine}`, borderRadius: 14 }}>
+                    <span style={{ fontSize: 14.5, fontWeight: 700, minWidth: 0 }}>
+                      Filter aktif: {[
+                        dateFilter === "hari" ? "Hari Ini" : dateFilter === "7" ? "7 Hari Terakhir" : dateFilter === "tanggal" ? (pickDate ? `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}` : "Pilih Tanggal") : "",
+                        onlyUnbilled ? "Hanya Belum Ditagih" : "",
+                      ].filter(Boolean).join(" · ")}
+                    </span>
+                    <button onClick={() => { setDateFilter("semua"); setPickDate(""); setOnlyUnbilled(false); }}
+                      style={{ flex: "none", height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
+                      Hapus filter
                     </button>
                   </div>
+                )}
+                {groups.length === 0
+                  ? <Empty q={q} lain={cariLain} bukaTab={setTab} />
+                  : groups.map((g) => kartuBelum(g))}
+              </>
+            ) : pekanDibuka ? (
+              <>
+                <button onClick={() => setPekanBuka(null)} className="flex items-center gap-1"
+                  style={{ height: 44, margin: "0 0 4px -8px", padding: "0 10px", background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 15.5, cursor: "pointer", fontFamily: "inherit" }}>
+                  <ChevronLeft size={20} /> Daftar minggu
+                </button>
+                <div className="flex items-center justify-between" style={{ gap: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Minggu {labelPekan(pekanDibuka.senin)}</div>
+                  {pekanDibuka.berjalan && <PilBerjalan />}
                 </div>
-              );
-            })}
+                {pekanDibuka.berjalan ? (
+                  <div style={{ marginBottom: 14, padding: "12px 14px", background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 14, fontSize: 14.5, lineHeight: 1.5, color: t.text2, fontWeight: 600 }}>
+                    Minggu ini masih berjalan. Tagih setelah Jumat supaya cukup sekali.
+                  </div>
+                ) : pekanDibuka.belum > 0 && (
+                  <button onClick={() => mulaiTagih(pekanDibuka.senin)} className="flex items-center justify-center gap-2"
+                    style={{ width: "100%", height: 56, marginBottom: 16, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+                    <MessageCircle size={20} /> Tagih satu per satu ({pekanDibuka.belum})
+                  </button>
+                )}
+                {groupsPekan.length === 0
+                  ? <div style={{ textAlign: "center", padding: "40px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan di minggu ini.</div>
+                  : groupsPekan.map((g) => kartuBelum(g, `${pekanDibuka.senin}|`, groupsPekan, labelPekan(pekanDibuka.senin)))}
+              </>
+            ) : pekanList.every((p) => p.anak === 0) ? (
+              <Empty q="" />
+            ) : (
+              <>
+                <div className="flex items-center justify-center" style={{ gap: 4, marginTop: 4 }}>
+                  {bulanIdx > 0
+                    ? <button onClick={() => setBulanLihat(bulanAda[bulanIdx - 1])} aria-label="Bulan sebelumnya" style={panahBulan}><ChevronLeft size={22} /></button>
+                    : <span style={{ width: 44, flex: "none" }} />}
+                  <span style={{ fontSize: 18, fontWeight: 800, minWidth: 170, textAlign: "center" }}>{labelBulan(bulanAktif)}</span>
+                  {bulanIdx < bulanAda.length - 1
+                    ? <button onClick={() => setBulanLihat(bulanAda[bulanIdx + 1])} aria-label="Bulan berikutnya" style={panahBulan}><ChevronRight size={22} /></button>
+                    : <span style={{ width: 44, flex: "none" }} />}
+                </div>
+
+                {/* Satu hal besar: minggu tertua yang belum ditagih. Selesai satu, tombol pindah ke minggu berikutnya. */}
+                {pekanTagih ? (
+                  <div style={{ margin: "12px 0 0", background: t.primaryLight, border: `1.5px solid ${t.primaryLine}`, borderRadius: 18, padding: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: t.text2 }}>Perlu ditagih sekarang</div>
+                    <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1.15, marginTop: 2 }}>{pekanTagih.belum} anak</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>Minggu {labelPekan(pekanTagih.senin)}</div>
+                    {pekanList.filter((p) => !p.berjalan && p.belum > 0).length > 1 && (
+                      <div style={{ fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 2 }}>
+                        Setelah ini masih ada {pekanList.filter((p) => !p.berjalan && p.belum > 0).length - 1} minggu lagi.
+                      </div>
+                    )}
+                    <button onClick={() => mulaiTagih(pekanTagih.senin)}
+                      style={{ width: "100%", height: 56, marginTop: 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 18, cursor: "pointer" }}>
+                      Mulai tagih
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3" style={{ margin: "12px 0 0", background: t.successBg, borderRadius: 18, padding: 16 }}>
+                    <span style={{ width: 44, height: 44, borderRadius: "50%", flex: "none", background: t.success, color: "#fff", display: "grid", placeItems: "center" }}><Check size={24} strokeWidth={3} /></span>
+                    <div>
+                      <div style={{ fontSize: 17, fontWeight: 800, color: t.successText }}>
+                        {pekanList.some((p) => !p.berjalan && p.anak > 0) ? "Semua minggu lalu sudah ditagih" : "Belum ada yang perlu ditagih"}
+                      </div>
+                      <div style={{ fontSize: 14, color: t.text2, fontWeight: 600, marginTop: 2 }}>
+                        {pekanList.some((p) => !p.berjalan && p.anak > 0) ? "Tinggal menunggu pembayaran." : "Minggu ini ditagih setelah Jumat."}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, margin: "20px 2px 2px" }}>Semua minggu</div>
+                {pekanBulanIni.map((p) => (
+                  <button key={p.senin} onClick={() => setPekanBuka(p.senin)} className="flex items-center justify-between"
+                    style={{ width: "100%", minHeight: 66, padding: "8px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 17, fontWeight: 800 }}>{labelPekan(p.senin)}</span>
+                      <span style={{ display: "block", fontSize: 13.5, color: t.text2, fontWeight: 600, marginTop: 1 }}>
+                        {p.berjalan ? "Bisa ditagih setelah Jumat"
+                          : p.anak === 0 ? "Belum ada tagihan"
+                          : p.belum === 0 ? "Semua sudah ditagih, menunggu bayar"
+                          : `${p.belum} belum ditagih${p.sudah > 0 ? ` · ${p.sudah} sudah` : ""}`}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-2" style={{ flex: "none" }}>
+                      {p.berjalan ? <PilBerjalan />
+                        : p.belum > 0 ? <span style={{ fontSize: 15, fontWeight: 800, color: t.error }}>{p.belum} belum</span>
+                        : p.anak > 0 ? <span style={{ width: 24, height: 24, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={14} strokeWidth={3} /></span>
+                        : null}
+                      <ChevronRight size={18} color={t.text2} />
+                    </span>
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
 
@@ -600,9 +811,15 @@ export default function Tagihan({
         )}
       </div>
 
+      {/* Tagih satu per satu (layar penuh); popup rincian/ubah tanggal (z 85) tetap di atasnya */}
+      {tagih && (
+        <TagihSatuSatu pekan={tagih.pekan} antrean={tagih.antrean} byId={byId}
+          bangunPesan={buildWaMsg} onKirim={onMarkBilled} onUbahTanggal={setDetailTx} onTutup={() => setTagih(null)} />
+      )}
+
       {/* Undo bar */}
       {undo && (
-        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
               {undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
@@ -617,7 +834,7 @@ export default function Tagihan({
         </div>
       )}
       {toast && !undo && (
-        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
           <div style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
         </div>
       )}
@@ -839,14 +1056,25 @@ function StatusDot({ cancelled, unpaid }: { cancelled?: boolean; unpaid?: boolea
     </span>
   );
 }
-function Empty({ q }: { q: string }) {
+function Empty({ q, lain, bukaTab }: { q: string; lain?: { lunas: number; batal: number } | null; bukaTab?: (tab: Tab) => void }) {
+  const tombol: React.CSSProperties = { height: 48, padding: "0 16px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" };
   return (
     <div style={{ textAlign: "center", padding: "56px 20px" }}>
       <div style={{ width: 60, height: 60, borderRadius: 16, background: t.successBg, color: t.successText, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
         <Check size={28} />
       </div>
-      <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : "Semua tagihan lunas"}</div>
+      <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ada di Belum Dibayar" : "Semua tagihan lunas"}</div>
       <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Tidak ada yang belum dibayar. Kerja bagus."}</div>
+      {q && lain && (lain.lunas > 0 || lain.batal > 0) && bukaTab && (
+        <div className="flex items-center justify-center gap-2" style={{ marginTop: 16, flexWrap: "wrap" }}>
+          {lain.lunas > 0 && <button onClick={() => bukaTab("riwayat")} style={tombol}>Ada {lain.lunas} di Lunas</button>}
+          {lain.batal > 0 && <button onClick={() => bukaTab("batal")} style={tombol}>Ada {lain.batal} di Dibatalkan</button>}
+        </div>
+      )}
     </div>
   );
+}
+/** Penanda minggu yang belum selesai. */
+function PilBerjalan() {
+  return <span style={{ flex: "none", fontSize: 13, fontWeight: 700, color: t.text, background: t.primaryLight, border: `1.5px solid ${t.primaryLine}`, borderRadius: 999, padding: "2px 11px" }}>Berjalan</span>;
 }

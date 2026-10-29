@@ -6,6 +6,7 @@ import {
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel, toTitleCase } from "../../lib/format";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
+import { isAkhirPekan, namaHari, labelHariTgl, hariKerjaSebelum } from "../../lib/pekan";
 import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
 /* ============================================================
@@ -57,6 +58,18 @@ export default function Penjualan({
   const todayIso = todayISO();
   const [txDate, setTxDate] = useState(todayIso);
   const isBackdate = txDate !== todayIso;
+  /* Sabtu/Minggu: kantin biasanya tutup, jadi pesanan yang diketik hari itu hampir pasti untuk hari kerja.
+     Tanyakan SEKALI per hari (diingat di tab ini) supaya tidak tercatat di tanggal yang salah. */
+  const kunciTanya = `ganen_tanya_tgl_${todayIso}`;
+  const [tanyaTgl, setTanyaTgl] = useState(() => {
+    if (!isAkhirPekan(todayIso)) return false;
+    try { return sessionStorage.getItem(kunciTanya) !== "1"; } catch { return true; }
+  });
+  const jawabTgl = (tgl: string) => {
+    try { sessionStorage.setItem(kunciTanya, "1"); } catch { /* tanpa penyimpanan: tanya lagi di muat ulang */ }
+    setTxDate(tgl);
+    setTanyaTgl(false);
+  };
   const snapTx = menuHarian[txDate];
   useEffect(() => {
     if (isBackdate && menuHarianReady && snapTx === undefined) onLoadDate(txDate);
@@ -258,6 +271,31 @@ export default function Penjualan({
   return (
     <div style={{ background: t.bg, color: t.text, height: "100%", position: "relative", display: "flex", flexDirection: "column" }}>
       <style>{`.pos-scroll::-webkit-scrollbar{display:none}`}</style>
+      {tanyaTgl && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 90, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+          <div role="dialog" aria-label="Tanggal penjualan" style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: "22px 20px calc(20px + env(safe-area-inset-bottom, 0px))", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
+            <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.25 }}>Hari ini {namaHari(todayIso)}. Input untuk tanggal berapa?</div>
+            {hariKerjaSebelum(todayIso, 2).map((d, i) => (
+              <button key={d} onClick={() => jawabTgl(d)}
+                style={{ display: "block", width: "100%", height: 56, marginTop: 12, borderRadius: 14, border: i === 0 ? "none" : `1.5px solid ${t.border}`, background: i === 0 ? t.primary : t.surface, color: t.text, fontWeight: 800, fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
+                {labelHariTgl(d)}
+              </button>
+            ))}
+            <div style={{ position: "relative", marginTop: 12, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontWeight: 800, fontSize: 17 }}>
+              <Calendar size={18} /> Pilih tanggal lain
+              <input type="date" max={todayIso} aria-label="Pilih tanggal lain"
+                onChange={(e) => e.target.value && jawabTgl(e.target.value)}
+                onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+            </div>
+            <button onClick={() => jawabTgl(todayIso)}
+              style={{ display: "block", width: "100%", minHeight: 48, marginTop: 8, background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 15, textDecoration: "underline", cursor: "pointer", fontFamily: "inherit" }}>
+              Memang hari ini
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
         {/* Header — selalu terlihat; hanya dua kolom di bawah yang scroll */}
