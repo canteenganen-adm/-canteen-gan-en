@@ -156,12 +156,11 @@ export default function Tagihan({
    * pekanBuka = Senin pekan yang sedang dibuka (null = daftar pekan); bulanLihat = "YYYY-MM" (null = bulan pekan ini). */
   const [pekanBuka, setPekanBuka] = useState<string | null>(null);
   const [bulanLihat, setBulanLihat] = useState<string | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-  /** Pindah daftar minggu ↔ isi minggu: mulai dari atas, bukan dari posisi gulir sebelumnya. */
+  /** Satu minggu terbuka sekali; membuka yang lain menutup sebelumnya, jadi baris yang baru dibuka digulir ke bawah header. */
   useEffect(() => {
-    let el: HTMLElement | null = rootRef.current?.parentElement ?? null;
-    while (el && !/(auto|scroll)/.test(getComputedStyle(el).overflowY)) el = el.parentElement;
-    el?.scrollTo({ top: 0 });
+    if (!pekanBuka) return;
+    const id = requestAnimationFrame(() => document.getElementById(`pekan-${pekanBuka}`)?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    return () => cancelAnimationFrame(id);
   }, [pekanBuka]);
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
   const [tagih, setTagih] = useState<{ pekan: string; antrean: string[][][] } | null>(null);
@@ -281,8 +280,6 @@ export default function Tagihan({
   const bulanAktif = bulanLihat && bulanAda.includes(bulanLihat) ? bulanLihat : bulanDefault;
   const bulanIdx = bulanAda.indexOf(bulanAktif);
   const pekanBulanIni = pekanList.filter((p) => bulanPekan(p.senin) === bulanAktif);
-  /** Kartu besar mengikuti BULAN yang sedang dilihat: minggu tertua yang sudah lewat dan masih ada yang belum ditagih. */
-  const pekanTagih = [...pekanBulanIni].reverse().find((p) => !p.berjalan && p.belum > 0) || null;
   const bulanAdaBelum = (ym: string) => pekanList.some((p) => bulanPekan(p.senin) === ym && !p.berjalan && p.belum > 0);
   const adaBelumSebelum = bulanAda.slice(0, Math.max(bulanIdx, 0)).some(bulanAdaBelum);
   const adaBelumSesudah = bulanAda.slice(bulanIdx + 1).some(bulanAdaBelum);
@@ -320,6 +317,10 @@ export default function Tagihan({
   };
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
   useEffect(() => { if (pekanBuka && !pekanDibuka) setPekanBuka(null); }, [pekanBuka, pekanDibuka]);
+  useEffect(() => { setPekanBuka(null); }, [bulanAktif]);
+  /** Minggu yang dibuka memuat 20 kartu dulu (satu minggu bisa >150 anak) — sisanya lewat "Tampilkan lagi". */
+  const [kartuTampil, setKartuTampil] = useState(20);
+  useEffect(() => { setKartuTampil(20); }, [pekanBuka]);
   /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
   const cariLain = useMemo(() => {
     if (!q.trim()) return null;
@@ -538,7 +539,7 @@ export default function Tagihan({
   };
 
   return (
-    <div ref={rootRef} style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
+    <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
@@ -670,28 +671,6 @@ export default function Tagihan({
                   ? <Empty q={q} lain={cariLain} bukaTab={setTab} />
                   : groups.map((g) => kartuBelum(g))}
               </>
-            ) : pekanDibuka ? (
-              <>
-                <button onClick={() => setPekanBuka(null)} className="flex items-center gap-1"
-                  style={{ height: 44, margin: "0 0 4px -8px", padding: "0 10px", background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 15.5, cursor: "pointer", fontFamily: "inherit" }}>
-                  <ChevronLeft size={20} /> Kembali
-                </button>
-                <div className="flex items-center justify-between" style={{ gap: 10, marginBottom: 12 }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>{labelPekan(pekanDibuka.senin)}</div>
-                  {pekanDibuka.berjalan && <PilBerjalan />}
-                </div>
-                {pekanDibuka.berjalan ? (
-                  <div style={{ marginBottom: 14, fontSize: 15, color: t.text2, fontWeight: 600 }}>Tagih setelah Jumat.</div>
-                ) : pekanDibuka.belum > 0 && (
-                  <button onClick={() => mulaiTagih(pekanDibuka.senin)} className="flex items-center justify-center gap-2"
-                    style={{ width: "100%", height: 56, marginBottom: 16, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
-                    <MessageCircle size={20} /> Tagih satu per satu ({pekanDibuka.belum})
-                  </button>
-                )}
-                {groupsPekan.length === 0
-                  ? <div style={{ textAlign: "center", padding: "40px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
-                  : groupsPekan.map((g) => kartuBelum(g, `${pekanDibuka.senin}|`, groupsPekan, labelPekan(pekanDibuka.senin)))}
-              </>
             ) : pekanList.every((p) => p.anak === 0) ? (
               <Empty q="" />
             ) : (
@@ -711,38 +690,46 @@ export default function Tagihan({
                     : <span style={{ width: 44, flex: "none" }} />}
                 </div>
 
-                {/* Mengikuti bulan yang dilihat: minggu tertua yang belum ditagih. Hanya angka dan satu tombol. */}
-                {pekanTagih ? (
-                  <div style={{ margin: "10px 0 6px", background: t.primaryLight, border: `1.5px solid ${t.primaryLine}`, borderRadius: 18, padding: "14px 16px 16px" }}>
-                    <div className="flex items-baseline justify-between" style={{ gap: 10 }}>
-                      <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.01em" }}>{labelPekan(pekanTagih.senin)}</span>
-                      <span><span style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-.03em" }}>{pekanTagih.belum}</span> <span style={{ fontSize: 15, fontWeight: 700 }}>belum</span></span>
+                {/* Satu minggu = satu dropdown. Membuka yang lain menutup yang sebelumnya. */}
+                {pekanBulanIni.map((p) => {
+                  const buka = pekanBuka === p.senin;
+                  return (
+                    <div key={p.senin} id={`pekan-${p.senin}`} style={{ borderBottom: `1px solid ${t.divider}`, scrollMarginTop: 176 }}>
+                      <button onClick={() => setPekanBuka(buka ? null : p.senin)} aria-expanded={buka} className="flex items-center justify-between"
+                        style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+                        <span style={{ fontSize: 17, fontWeight: 800 }}>{labelPekan(p.senin)}</span>
+                        <span className="flex items-center gap-2" style={{ flex: "none" }}>
+                          {p.berjalan ? <PilBerjalan />
+                            : p.belum > 0 ? <span style={{ fontSize: 15, fontWeight: 800, color: t.error }}>{p.belum} belum</span>
+                            : p.anak > 0 ? <span style={{ width: 24, height: 24, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={14} strokeWidth={3} /></span>
+                            : null}
+                          {buka ? <ChevronUp size={20} color={t.text2} /> : <ChevronDown size={20} color={t.text2} />}
+                        </span>
+                      </button>
+                      {buka && (
+                        <div style={{ padding: "2px 0 10px" }}>
+                          {p.berjalan ? (
+                            <div style={{ margin: "0 2px 12px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Tagih setelah Jumat.</div>
+                          ) : p.belum > 0 && (
+                            <button onClick={() => mulaiTagih(p.senin)} className="flex items-center justify-center gap-2"
+                              style={{ width: "100%", height: 56, marginBottom: 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+                              <MessageCircle size={20} /> Tagih satu per satu ({p.belum})
+                            </button>
+                          )}
+                          {groupsPekan.length === 0
+                            ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
+                            : groupsPekan.slice(0, kartuTampil).map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
+                          {groupsPekan.length > kartuTampil && (
+                            <button onClick={() => setKartuTampil((n) => n + 40)}
+                              style={{ width: "100%", height: 50, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
+                              Tampilkan lagi ({groupsPekan.length - kartuTampil})
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <button onClick={() => mulaiTagih(pekanTagih.senin)}
-                      style={{ width: "100%", height: 54, marginTop: 12, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 18, cursor: "pointer" }}>
-                      Mulai tagih
-                    </button>
-                  </div>
-                ) : pekanBulanIni.some((p) => !p.berjalan && p.anak > 0) && (
-                  <div className="flex items-center gap-3" style={{ margin: "10px 0 6px", background: t.successBg, borderRadius: 18, padding: "14px 16px" }}>
-                    <span style={{ width: 36, height: 36, borderRadius: "50%", flex: "none", background: t.success, color: "#fff", display: "grid", placeItems: "center" }}><Check size={20} strokeWidth={3} /></span>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: t.successText }}>Semua sudah ditagih</span>
-                  </div>
-                )}
-
-                {pekanBulanIni.map((p) => (
-                  <button key={p.senin} onClick={() => setPekanBuka(p.senin)} className="flex items-center justify-between"
-                    style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
-                    <span style={{ fontSize: 17, fontWeight: 800 }}>{labelPekan(p.senin)}</span>
-                    <span className="flex items-center gap-2" style={{ flex: "none" }}>
-                      {p.berjalan ? <PilBerjalan />
-                        : p.belum > 0 ? <span style={{ fontSize: 15, fontWeight: 800, color: t.error }}>{p.belum} belum</span>
-                        : p.anak > 0 ? <span style={{ width: 24, height: 24, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={14} strokeWidth={3} /></span>
-                        : null}
-                      <ChevronRight size={18} color={t.text2} />
-                    </span>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
