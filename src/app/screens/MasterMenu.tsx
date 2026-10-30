@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
+import RailGeser from "../components/RailGeser";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
@@ -449,7 +450,8 @@ export default function MasterMenu({
               </div>
 
               {/* Kategori: tab bergaris bawah (bukan kapsul) */}
-              <div className="flex hscroll" style={{ gap: 20, marginTop: 10, overflowX: "auto", borderBottom: `1px solid ${t.divider}` }}>
+              <div style={{ marginTop: 10 }}>
+              <RailGeser bawah={1} style={{ gap: 20, borderBottom: `1px solid ${t.divider}` }}>
                 {categories.map((c) => {
                   const on = c === cat;
                   return (
@@ -460,6 +462,7 @@ export default function MasterMenu({
                     </button>
                   );
                 })}
+              </RailGeser>
               </div>
             </>
           )}

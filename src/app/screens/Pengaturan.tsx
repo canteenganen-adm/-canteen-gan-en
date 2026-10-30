@@ -848,7 +848,7 @@ export default function Pengaturan({
             )}
           </button>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "22px 10px", paddingTop: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
             <Kartu Ic={BookOpen} label="Panduan" onClick={() => setPanduanOpen(true)} />
             <Kartu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
             <Kartu Ic={Clock} label="Waktu Ambil" onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }} />
@@ -906,18 +906,16 @@ export default function Pengaturan({
   );
 }
 
-/* Menu Kantin gaya layar utama iPhone: ubin kotak membulat (kuning pucat), nama di bawah, lencana angka opsional. */
+/* Menu Kantin: ubin yang MENGISI kolom (tepi kiri-kanan sejajar kartu Laporan di atasnya), isi kuning pucat + sudut 20 sama dengan kartu besar; ikon di atas, nama di bawah, lencana angka opsional. */
 function Kartu({ Ic, label, onClick, merah, badge }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; merah?: boolean; badge?: number }) {
   return (
-    <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex flex-col items-center"
-      style={{ minWidth: 0, gap: 8, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
-      <span style={{ position: "relative", width: 76, height: 76, borderRadius: 24, background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, display: "grid", placeItems: "center" }}>
-        <Ic size={34} />
-        {!!badge && (
-          <span style={{ position: "absolute", top: -7, right: -7, minWidth: 24, height: 24, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13, fontWeight: 800, display: "grid", placeItems: "center", border: `2px solid ${t.bg}` }}>{badge}</span>
-        )}
-      </span>
-      <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, textAlign: "center" }}>{label}</span>
+    <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex flex-col items-center justify-center"
+      style={{ position: "relative", minWidth: 0, aspectRatio: "1 / 0.92", gap: 10, padding: "0 6px", border: "none", borderRadius: 20, background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, cursor: "pointer", fontFamily: "inherit" }}>
+      <Ic size={32} />
+      <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, textAlign: "center", color: t.text }}>{label}</span>
+      {!!badge && (
+        <span style={{ position: "absolute", top: 8, right: 8, minWidth: 24, height: 24, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13, fontWeight: 800, display: "grid", placeItems: "center" }}>{badge}</span>
+      )}
     </button>
   );
 }

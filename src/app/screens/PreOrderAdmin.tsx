@@ -4,6 +4,7 @@ import {
   Box, Check, X, Search, Power, AlertCircle,
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
+import RailGeser from "../components/RailGeser";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
 import { tingkatColor } from "../../lib/constants";
@@ -730,34 +731,11 @@ export default function PreOrderAdmin({
 }
 
 /* ---- bits ---- */
-/** Baris chip kelas yang bisa digeser. Tanda ">" / "<" redup muncul di sisi
- * yang masih menyimpan chip di luar layar, hilang di ujungnya. Ketuk tanda
- * itu = geser lebih jauh. */
+/** Baris chip kelas yang bisa digeser; tanda geser mengambang setengah transparan (RailGeser). */
 function KelasChips({ value, onChange, rapat }: { value: KelasGroup; onChange: (v: KelasGroup) => void; rapat?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState(false);
-  const [before, setBefore] = useState(false);
-  const update = () => {
-    const el = ref.current; if (!el) return;
-    setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    setBefore(el.scrollLeft > 4);
-  };
-  useEffect(() => {
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  // Tanda geser punya RUANG SENDIRI di tepi (tidak menimpa chip). Chip yang tidak
-  // dipilih polos tanpa kotak; hanya yang dipilih berisi warna.
-  const arrow: React.CSSProperties = { flex: "none", width: 28, height: 36, border: "none", background: "none", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, color: t.text2 };
   return (
-    <div className="flex items-center" style={{ marginTop: rapat ? 0 : 6 }}>
-      {before && (
-        <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser kembali ke kelas sebelumnya" style={arrow}>
-          <ChevronLeft size={20} />
-        </button>
-      )}
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ flex: 1, minWidth: 0, overflowX: "auto", gap: 2, padding: "0" }}>
+    <div style={{ marginTop: rapat ? 0 : 6 }}>
+      <RailGeser style={{ gap: 2 }}>
         {KELAS_TABS.map((k) => {
           const on = k.id === value;
           return (
@@ -769,12 +747,7 @@ function KelasChips({ value, onChange, rapat }: { value: KelasGroup; onChange: (
             </button>
           );
         })}
-      </div>
-      {more && (
-        <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser untuk melihat kelas lain" style={arrow}>
-          <ChevronRight size={20} />
-        </button>
-      )}
+      </RailGeser>
     </div>
   );
 }
