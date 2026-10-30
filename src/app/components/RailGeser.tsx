@@ -3,10 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { t } from "../../lib/theme";
 
 /* Baris yang bisa digeser menyamping (kelas di Pre-order, kategori di Menu).
-   Tanda ‹ › setengah transparan MENGAMBANG di tepi: tidak mengambil ruang, dan
-   hanya muncul di sisi yang masih menyimpan isi di luar layar. Tulisan MEMUDAR sampai hilang di
-   bawah tanda (bukan diblur: blur terlihat seperti bercak) supaya tanda dan huruf tidak bertabrakan.
-   Ketuk = geser lebih jauh. */
+   Tanda ‹ › = bulatan kecil krem (pilihan pemilik 30 Okt) yang MENGAMBANG di tepi, di atas
+   tulisan: tidak mengambil ruang barisnya dan hanya muncul di sisi yang masih menyimpan isi di luar layar.
+   Area ketuk 40px x tinggi baris, bulatannya 32px. Ketuk = geser lebih jauh. */
 export default function RailGeser({ children, style, bawah = 0 }: { children: ReactNode; style?: CSSProperties; bawah?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [kiri, setKiri] = useState(false);
@@ -23,24 +22,24 @@ export default function RailGeser({ children, style, bawah = 0 }: { children: Re
     return () => window.removeEventListener("resize", update);
   }, []);
   const panah = (sisi: "left" | "right"): CSSProperties => ({
-    position: "absolute", top: 0, bottom: bawah, [sisi]: 0, width: 30, padding: 0, border: "none", background: "transparent",
-    cursor: "pointer", display: "grid", placeItems: "center", color: t.text, opacity: 0.5,
+    position: "absolute", top: 0, bottom: bawah, [sisi]: 0, width: 40, padding: 0, border: "none", background: "transparent",
+    cursor: "pointer", display: "grid", placeItems: "center", color: t.text,
   });
-  /* Pudar: kosong di bawah tanda (0–26px), penuh di 62px. */
-  const pudar = kiri || kanan
-    ? `linear-gradient(to right, ${kiri ? "transparent 26px, #000 62px" : "#000 0"}, ${kanan ? "#000 calc(100% - 62px), transparent calc(100% - 26px)" : "#000 100%"})`
-    : undefined;
+  const bulat: CSSProperties = {
+    width: 32, height: 32, borderRadius: 999, background: "rgba(255,252,247,.94)", border: `1.5px solid ${t.border}`,
+    boxShadow: "0 1px 4px rgba(60,48,20,.12)", display: "grid", placeItems: "center",
+  };
   return (
     <div style={{ position: "relative" }}>
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...style, maskImage: pudar, WebkitMaskImage: pudar }}>{children}</div>
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...style }}>{children}</div>
       {kiri && (
         <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser ke kiri" style={panah("left")}>
-          <ChevronLeft size={22} />
+          <span style={bulat}><ChevronLeft size={20} /></span>
         </button>
       )}
       {kanan && (
         <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser ke kanan" style={panah("right")}>
-          <ChevronRight size={22} />
+          <span style={bulat}><ChevronRight size={20} /></span>
         </button>
       )}
     </div>
