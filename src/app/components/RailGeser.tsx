@@ -4,8 +4,9 @@ import { t } from "../../lib/theme";
 
 /* Baris yang bisa digeser menyamping (kelas di Pre-order, kategori di Menu).
    Tanda ‹ › setengah transparan MENGAMBANG di tepi: tidak mengambil ruang, dan
-   hanya muncul di sisi yang masih menyimpan isi di luar layar. Tulisan di bawah tanda DIBLUR TIPIS
-   (lapisan terpisah, memudar ke tengah) supaya tanda dan huruf tidak bertabrakan. Ketuk = geser lebih jauh. */
+   hanya muncul di sisi yang masih menyimpan isi di luar layar. Tulisan MEMUDAR sampai hilang di
+   bawah tanda (bukan diblur: blur terlihat seperti bercak) supaya tanda dan huruf tidak bertabrakan.
+   Ketuk = geser lebih jauh. */
 export default function RailGeser({ children, style, bawah = 0 }: { children: ReactNode; style?: CSSProperties; bawah?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [kiri, setKiri] = useState(false);
@@ -25,16 +26,13 @@ export default function RailGeser({ children, style, bawah = 0 }: { children: Re
     position: "absolute", top: 0, bottom: bawah, [sisi]: 0, width: 30, padding: 0, border: "none", background: "transparent",
     cursor: "pointer", display: "grid", placeItems: "center", color: t.text, opacity: 0.5,
   });
-  const blur = (sisi: "left" | "right"): CSSProperties => {
-    const mask = `linear-gradient(to ${sisi === "left" ? "right" : "left"}, #000 35%, transparent)`;
-    return { position: "absolute", top: 0, bottom: bawah, [sisi]: 0, width: 40, pointerEvents: "none",
-      backdropFilter: "blur(2.5px)", WebkitBackdropFilter: "blur(2.5px)", maskImage: mask, WebkitMaskImage: mask };
-  };
+  /* Pudar: kosong di bawah tanda (0–26px), penuh di 62px. */
+  const pudar = kiri || kanan
+    ? `linear-gradient(to right, ${kiri ? "transparent 26px, #000 62px" : "#000 0"}, ${kanan ? "#000 calc(100% - 62px), transparent calc(100% - 26px)" : "#000 100%"})`
+    : undefined;
   return (
     <div style={{ position: "relative" }}>
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...style }}>{children}</div>
-      {kiri && <div aria-hidden style={blur("left")} />}
-      {kanan && <div aria-hidden style={blur("right")} />}
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...style, maskImage: pudar, WebkitMaskImage: pudar }}>{children}</div>
       {kiri && (
         <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser ke kiri" style={panah("left")}>
           <ChevronLeft size={22} />
