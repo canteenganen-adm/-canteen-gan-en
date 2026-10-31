@@ -755,7 +755,7 @@ export default function Tagihan({
               <div onTouchStart={(e) => { sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
-                <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "12px 12px 12px", marginBottom: 6 }}>
+                <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
                 <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
                   {kelompokBulan.map((k) => (
                     <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
@@ -780,8 +780,8 @@ export default function Tagihan({
                           {p.belum > 0 && (
                             <>
                               <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
-                                style={{ width: "100%", height: 52, marginTop: 10, marginBottom: calonGabung.length ? 2 : 0, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
-                                <MessageCircle size={20} />
+                                style={{ width: "100%", height: 44, marginTop: 8, marginBottom: calonGabung.length ? 0 : 0, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                                <MessageCircle size={17} />
                                 {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu (${antreanMinggu([p.senin, ...gabungDipilih]).reduce((s, e) => s + e.length, 0)})` : `Tagih satu per satu (${p.belum})`}
                               </button>
                               {/* Gabung dengan minggu sebelumnya: satu pesan per anak, bukan dua WhatsApp. Baris berikutnya muncul setelah yang ini dicentang. */}
@@ -789,11 +789,11 @@ export default function Tagihan({
                                 const on = i < gabungN;
                                 return (
                                   <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} role="checkbox" aria-checked={on} className="flex items-center gap-3"
-                                    style={{ width: "100%", minHeight: 48, padding: "0 4px", marginBottom: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
-                                    <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
-                                      {on && <Check size={17} strokeWidth={3} />}
+                                    style={{ width: "100%", minHeight: 40, padding: "0 2px", marginBottom: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
+                                    <span style={{ width: 20, height: 20, borderRadius: 6, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
+                                      {on && <Check size={14} strokeWidth={3} />}
                                     </span>
-                                    <span style={{ fontSize: 15.5, fontWeight: 700 }}>Gabung dengan {labelPekan(c.senin)} <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
+                                    <span style={{ fontSize: 14, fontWeight: 600 }}>Gabung dengan {labelPekan(c.senin)} <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
                                   </button>
                                 );
                               })}
