@@ -784,7 +784,10 @@ export default function Tagihan({
                 <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
                   {kelompokBulan.map((k) => (
                     <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>{k.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>
+                        {k.label}
+                        {k.pekan.some((x) => x.anak > 0) && <span aria-label="Masih ada yang belum dibayar" title="Masih ada yang belum dibayar" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: t.error, marginLeft: 6, verticalAlign: 1 }} />}
+                      </div>
                       <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka;
