@@ -11,6 +11,7 @@ import PaperTabs from "../components/PaperTabs";
 import TagihSatuSatu from "../components/TagihSatuSatu";
 import RailAbjad from "../components/RailAbjad";
 import IkonDitagih from "../components/IkonDitagih";
+import GeserBaris from "../components/GeserBaris";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -110,6 +111,7 @@ const buatGrup = (txs: Transaction[]): Grup[] =>
   unionGroups(txs).map((g) => ({ customer: g.customer, txs: g.txs, newestAt: g.newestAt, total: g.txs.reduce((s, tx) => s + tx.total, 0) }));
 type UndoAction =
   | { type: "paid"; tx: Transaction }
+  | { type: "paidMany"; txs: Transaction[] }
   | { type: "unpaid"; tx: Transaction }
   | { type: "cancel"; tx: Transaction };
 
@@ -429,6 +431,8 @@ export default function Tagihan({
   );
 
   const markPaid = (tx: Transaction) => { onMarkPaid(tx.id); setUndo({ type: "paid", tx }); };
+  /** Lunas satu anak sekaligus (geser baris): semua transaksinya, satu Urungkan membatalkan semuanya. */
+  const markPaidMany = (txs: Transaction[]) => { if (!txs.length) return; txs.forEach((tx) => onMarkPaid(tx.id)); setUndo({ type: "paidMany", txs }); };
   /** Kebalikan Tandai Lunas — jalan keluar untuk salah pencet Lunas yang
    * baru ketahuan SETELAH jendela Urungkan lewat. Sebelumnya tidak ada
    * jalannya sama sekali: "Batalkan" di tab Lunas membatalkan TRANSAKSI
@@ -447,6 +451,7 @@ export default function Tagihan({
   const doUndo = () => {
     if (!undo) return;
     if (undo.type === "paid") onUnmarkPaid(undo.tx.id);
+    else if (undo.type === "paidMany") undo.txs.forEach((x) => onUnmarkPaid(x.id));
     else if (undo.type === "unpaid") onMarkPaid(undo.tx.id);
     else onRestore(undo.tx);
     setUndo(null);
@@ -564,7 +569,9 @@ export default function Tagihan({
         ? { background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, margin: "6px 0 12px", overflow: "hidden" }
         : { borderBottom: `1px solid ${t.divider}` }}>
 
-        {/* Header grup — klik untuk expand/collapse */}
+        {/* Header grup — klik untuk expand/collapse; saat tertutup bisa DIGESER ke kiri: Tagih + Lunas (geser penuh = Lunas) */}
+        {(() => {
+        const kepala = (
         <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: expanded ? "14px 16px" : "14px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
@@ -588,6 +595,11 @@ export default function Tagihan({
             </div>
           )}
         </button>
+        );
+        return expanded ? kepala : (
+          <GeserBaris onTagih={() => shareWA(g, pool, label)} onLunas={() => markPaidMany(g.txs)}>{kepala}</GeserBaris>
+        );
+        })()}
 
         {/* Daftar transaksi (hanya kalau expanded) — SELURUH baris
             bisa diketuk untuk lihat detail, bukan cuma tanggalnya;
@@ -618,7 +630,7 @@ export default function Tagihan({
                 <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
                 <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
               </button>
-            </div>
+</div>
           );
         })}
 
@@ -945,7 +957,8 @@ export default function Tagihan({
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
           <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
-              {undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
+              {undo.type === "paidMany" ? `Lunas — ${undo.txs[0].customer.nama} · ${rupiah(undo.txs.reduce((a, x) => a + x.total, 0))}`
+                : undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
                 : undo.type === "unpaid" ? `Dikembalikan ke Belum Dibayar — ${undo.tx.customer.nama}`
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
