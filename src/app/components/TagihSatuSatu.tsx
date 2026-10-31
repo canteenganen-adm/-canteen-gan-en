@@ -213,7 +213,7 @@ export default function TagihSatuSatu({
                       </span>
                       <span className="flex items-center gap-2" style={{ flex: "none" }}>
                         <span style={{ fontSize: 15, fontWeight: 700 }}>{rupiah(gsx.reduce((s, g) => s + g.total, 0))}</span>
-                        {sudah && <span aria-label="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={26} /></span>}
+                        {sudah && <span aria-label="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={18} strokeWidth={2.4} /></span>}
                       </span>
                     </button>
                   );

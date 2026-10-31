@@ -556,7 +556,7 @@ export default function Tagihan({
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
-                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={26} /></span>
+                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={18} strokeWidth={2.4} /></span>
               )}
               <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
@@ -612,7 +612,7 @@ export default function Tagihan({
               <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
                 style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
-                <IkonDitagih size={22} color={t.ditagih} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
               </button>
             );
           })() : (
