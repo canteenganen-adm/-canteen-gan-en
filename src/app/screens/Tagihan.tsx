@@ -494,14 +494,16 @@ export default function Tagihan({
     const expanded = expandedGroups.has(key);
     const terpilih = g.txs.filter((tx) => pilihTx.has(tx.id));
     return (
-      <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 12, overflow: "hidden" }}>
+      <div key={key} style={expanded
+        ? { background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, margin: "6px 0 12px", overflow: "hidden" }
+        : { borderBottom: `1px solid ${t.divider}` }}>
 
         {/* Header grup — klik untuk expand/collapse */}
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: expanded ? "14px 16px" : "12px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: expanded ? "14px 16px" : "14px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
-            <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
-              <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
+            <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
+              <span style={{ fontSize: 17, fontWeight: 600 }}>{g.customer.nama}</span>
+              <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.text2, border: "1.5px solid #A59B80", borderRadius: 999, padding: "0 8px", whiteSpace: "nowrap", verticalAlign: 1 }}>
                 {g.customer.kelas || g.customer.tingkat}
               </span>
             </div>
@@ -509,8 +511,8 @@ export default function Tagihan({
               {g.txs.every((tx) => tx.billedAt) && (
                 <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ width: 22, height: 22, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={13} strokeWidth={3} /></span>
               )}
-              <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(g.total)}</span>
-              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
+              <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
+              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
             </div>
           </div>
           {expanded && (
@@ -789,17 +791,14 @@ export default function Tagihan({
                                       const kepala = abjad && h !== prev;
                                       if (abjad) prev = h;
                                       const isi = b.length > 1 ? (
-                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ marginBottom: 12, paddingLeft: 10, borderLeft: `3px solid ${t.primaryLine}` }}>
+                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 10, marginBottom: 10, borderLeft: `2px solid ${t.primaryLine}` }}>
                                           {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
                                         </div>
                                       ) : kartuBelum(b[0], `${p.senin}|`, groupsPekan, labelPekan(p.senin));
                                       return (
-                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 1 ? 24 : 0 }}>
+                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 3 ? 22 : 0 }}>
                                           {kepala && (
-                                            <div id={`abj-${p.senin}-${h}`} className="flex items-center gap-2" style={{ margin: "6px 0 8px", scrollMarginTop: 176 }}>
-                                              <span style={{ width: 26, height: 26, borderRadius: "50%", background: t.primary, display: "grid", placeItems: "center", fontSize: 14, fontWeight: 800 }}>{h}</span>
-                                              <span style={{ flex: 1, height: 1, background: t.border }} />
-                                            </div>
+                                            <div id={`abj-${p.senin}-${h}`} style={{ margin: "16px 0 0", scrollMarginTop: 176, fontSize: 14, fontWeight: 800, color: t.text2, letterSpacing: ".04em" }}>{h}</div>
                                           )}
                                           {isi}
                                         </div>

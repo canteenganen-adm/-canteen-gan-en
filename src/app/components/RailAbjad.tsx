@@ -19,9 +19,9 @@ export default function RailAbjad({ huruf, onPilih, bawah }: { huruf: string[]; 
     <div ref={ref} aria-label="Loncat ke huruf"
       onTouchStart={(e) => dariY(e.touches[0].clientY)} onTouchMove={(e) => dariY(e.touches[0].clientY)} onTouchEnd={() => { terakhir.current = ""; }}
       onClick={(e) => { terakhir.current = ""; dariY(e.clientY); }}
-      style={{ position: "fixed", right: 3, top: 196, bottom: bawah, width: 24, zIndex: 30, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center",
-        padding: "8px 0", borderRadius: 999, background: "rgba(255,252,247,.92)", border: `1px solid ${t.border}`, touchAction: "none", userSelect: "none", cursor: "pointer" }}>
-      {huruf.map((h) => <span key={h} style={{ fontSize: 11, fontWeight: 800, color: t.text2, lineHeight: 1 }}>{h}</span>)}
+      style={{ position: "fixed", right: 2, top: 196, bottom: bawah, width: 20, zIndex: 30, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center",
+        padding: "6px 0", touchAction: "none", userSelect: "none", cursor: "pointer" }}>
+      {huruf.map((h) => <span key={h} style={{ fontSize: 11, fontWeight: 700, color: t.text2, lineHeight: 1 }}>{h}</span>)}
     </div>
   );
 }
