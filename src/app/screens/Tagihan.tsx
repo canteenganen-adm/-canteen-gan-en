@@ -615,26 +615,25 @@ export default function Tagihan({
 
         {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
             "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
-        {expanded && <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+        {expanded && <div className="flex gap-2" style={{ padding: "12px 12px", borderTop: `1px solid ${t.divider}` }}>
           {g.txs.every((tx) => tx.billedAt) ? (() => {
-            const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
             return (
-              <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
+              <button onClick={() => shareWA(g, pool, label)} title={`Sudah ditagih ${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)} — ketuk untuk kirim ulang`} aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
-                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.ditagihLine}`, background: t.ditagihBg, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
-                <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                style={{ flex: "none", padding: "0 10px", gap: 6, height: 48, borderRadius: 14, border: `1.5px solid ${t.ditagihLine}`, background: t.ditagihBg, color: t.text, cursor: "pointer", fontWeight: 600, fontSize: 13.5, whiteSpace: "nowrap" }}>
+                <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} /> Ditagih
               </button>
             );
           })() : (
             <button onClick={() => shareWA(g, pool, label)} aria-label="Tagih via WA" className="flex items-center justify-center gap-2"
-              style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
-              <Share2 size={17} /> Tagih via WA
+              style={{ flex: "none", padding: "0 14px", gap: 6, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap" }}>
+              Tagih via WA
             </button>
           )}
           <button onClick={() => (terpilih.length ? setConfirmLunas({ customer: g.customer, txs: terpilih, total: terpilih.reduce((s, x) => s + x.total, 0), sebagian: true })
             : lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((s, x) => s + x.total, 0), sebagian: true, minggu: jmlMinggu })
             : setConfirmLunas(g))}
-            style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+            style={{ flex: 1, minWidth: 0, padding: "0 12px", height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap" }}>
             {terpilih.length ? `Lunaskan ${terpilih.length} tanggal` : lintas ? `Lunaskan ${jmlMinggu} minggu` : "Lunaskan Semua"}
           </button>
         </div>}
