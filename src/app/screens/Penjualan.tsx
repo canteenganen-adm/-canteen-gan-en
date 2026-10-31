@@ -288,27 +288,26 @@ export default function Penjualan({
     <div style={{ background: t.bg, color: t.text, height: "100%", position: "relative", display: "flex", flexDirection: "column" }}>
       <style>{`.pos-scroll::-webkit-scrollbar{display:none}`}</style>
       {tanyaTgl && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 90, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        /* Pop-up MELAYANG di tengah (opsi A pilihan pemilik 1 Nov): satu saran + satu ketukan, tanggal lain lewat ikon kalender. */
+        <div style={{ position: "fixed", inset: 0, zIndex: 90, display: "grid", placeItems: "center", padding: 24 }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
-          <div role="dialog" aria-label="Tanggal penjualan" style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", padding: "22px 20px calc(20px + env(safe-area-inset-bottom, 0px))", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.25 }}>Hari ini {namaHari(todayIso)}. Input untuk tanggal berapa?</div>
-            {hariKerjaSebelum(todayIso, 2).map((d, i) => (
-              <button key={d} onClick={() => jawabTgl(d)}
-                style={{ display: "block", width: "100%", height: 56, marginTop: 12, borderRadius: 14, border: i === 0 ? "none" : `1.5px solid ${t.border}`, background: i === 0 ? t.primary : t.surface, color: t.text, fontWeight: 800, fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
-                {labelHariTgl(d)}
+          <div role="dialog" aria-label="Tanggal penjualan" style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 22, width: "100%", maxWidth: 340, padding: "22px 20px 18px", boxShadow: "0 18px 50px rgba(47,42,36,.3)" }}>
+            <div style={{ fontSize: 14.5, color: t.text2, fontWeight: 600 }}>Hari ini {namaHari(todayIso)}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.2, margin: "4px 0 18px" }}>Catat untuk<br />{labelHariTgl(hariKerjaSebelum(todayIso, 1)[0])}?</div>
+            {/* Dua tombol sama besar, kiri-kanan: Tanggal lain (kiri) dan Ya (kanan) — pemilik 1 Nov */}
+            <div className="flex gap-2">
+              <div style={{ position: "relative", flex: 1, minWidth: 0, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: t.text, fontWeight: 700, fontSize: 15.5 }}>
+                <Calendar size={18} /> Tanggal lain
+                <input type="date" max={todayIso} aria-label="Pilih tanggal lain"
+                  onChange={(e) => e.target.value && jawabTgl(e.target.value)}
+                  onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+              </div>
+              <button onClick={() => jawabTgl(hariKerjaSebelum(todayIso, 1)[0])}
+                style={{ flex: 1, minWidth: 0, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 18, cursor: "pointer", fontFamily: "inherit" }}>
+                Ya
               </button>
-            ))}
-            <div style={{ position: "relative", marginTop: 12, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontWeight: 800, fontSize: 17 }}>
-              <Calendar size={18} /> Pilih tanggal lain
-              <input type="date" max={todayIso} aria-label="Pilih tanggal lain"
-                onChange={(e) => e.target.value && jawabTgl(e.target.value)}
-                onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
             </div>
-            <button onClick={() => jawabTgl(todayIso)}
-              style={{ display: "block", width: "100%", minHeight: 48, marginTop: 8, background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 15, textDecoration: "underline", cursor: "pointer", fontFamily: "inherit" }}>
-              Memang hari ini
-            </button>
           </div>
         </div>
       )}
@@ -434,7 +433,7 @@ export default function Penjualan({
       {view === "summary" && (
         <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan">
           {/* Penanda ala struk (pemilik 1 Nov): hari, tanggal bulan tahun + jam:menit, garis putus-putus, daftar, garis putus-putus, Kosongkan Semua, Total */}
-          <div style={{ textAlign: "center", fontSize: 14.5, fontWeight: 700, color: t.text2 }}>
+          <div style={{ textAlign: "left", fontSize: 14.5, fontWeight: 700, color: t.text2 }}>
             {serviceDateLabel(txDate)} · {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
           </div>
           <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 0" }} />
