@@ -262,6 +262,12 @@ export default function Tagihan({
   }, [unpaid, q, sortMode, onlyUnbilled]);
 
   const grandTotal = groups.reduce((s, g) => s + g.total, 0);
+  /** Transaksi -> kartu anak (semua minggu). Dicari sekali di sini, bukan di tiap baris: dulu `groups.find(...)` per baris = ribuan x ribuan saat Semua dibuka (lambat di HP lemah). */
+  const grupDariTx = useMemo(() => {
+    const m = new Map<string, (typeof groups)[number]>();
+    for (const x of groups) for (const tx of x.txs) m.set(tx.id, x);
+    return m;
+  }, [groups]);
 
   /* ---- Per pekan ---- */
   const hariIni = todayISO();
@@ -560,7 +566,7 @@ export default function Tagihan({
     /* Tagihan gabungan: tanggal anak ini yang ikut SATU pesan WhatsApp (cap waktu ditagih sama), termasuk dari minggu lain —
        dilunaskan sekali ketuk, tanpa pindah-pindah minggu. */
     const capTagih = g.txs.every((tx) => tx.billedAt) ? g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), "") : "";
-    const semuaAnak = capTagih ? groups.find((x) => x.txs.some((tx) => g.txs.some((y) => y.id === tx.id))) : undefined;
+    const semuaAnak = capTagih ? grupDariTx.get(g.txs[0].id) : undefined;
     const paket = semuaAnak ? semuaAnak.txs.filter((tx) => tx.billedAt === capTagih) : [];
     const lintas = paket.some((tx) => !g.txs.some((y) => y.id === tx.id));
     const jmlMinggu = new Set(paket.map((tx) => mondayOf(opDate(tx)))).size;
