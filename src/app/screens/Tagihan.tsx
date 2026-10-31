@@ -754,12 +754,10 @@ export default function Tagihan({
                       <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka;
-                          const warna = x.belum > 0 ? "#D95D5D" : x.anak > 0 ? t.success : "#DDD4C0";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => setPekanBuka(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", minWidth: 58, padding: "8px 6px 7px", borderRadius: 12, border: "1.5px solid transparent", background: on ? t.primary : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", minWidth: 58, padding: "9px 6px", borderRadius: 12, border: "1.5px solid transparent", background: on ? t.primary : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {rentangPendek(x.senin)}
-                              <span style={{ display: "block", height: 3, borderRadius: 2, margin: "7px 4px 0", background: warna }} />
                             </button>
                           );
                         })}
