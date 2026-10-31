@@ -92,18 +92,17 @@ export default function TagihSatuSatu({
     <div role="dialog" aria-label={`Tagih ${judul}`} style={{ position: "fixed", inset: 0, zIndex: 75, background: t.bg, color: t.text, display: "flex", flexDirection: "column" }}>
       <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
-        <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
-          <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Cari anak" className="flex items-center gap-1"
-              style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-              <Search size={17} /> Cari
-            </button>
-            <button onClick={onTutup} aria-label="Tutup" className="flex items-center gap-1"
-              style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-              <X size={17} /> Tutup
-            </button>
-          </div>
+        {/* Tutup (kiri) dan Cari (kanan) dipisah, hanya ikon (usul pemilik 1 Nov: "gausah banyak tulisan cukup icon") */}
+        <div className="flex items-center" style={{ padding: "20px 20px 8px", minHeight: 70, gap: 12 }}>
+          <button onClick={onTutup} aria-label="Tutup" title="Tutup" className="flex items-center justify-center"
+            style={{ flex: "none", width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer" }}>
+            <X size={22} />
+          </button>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
+          <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Cari anak" title="Cari anak" className="flex items-center justify-center"
+            style={{ flex: "none", width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer" }}>
+            <Search size={22} />
+          </button>
         </div>
 
         {!selesai && gs.length > 0 && (
@@ -156,7 +155,7 @@ export default function TagihSatuSatu({
               </button>
               {lihat && (
                 <textarea value={pesan} onChange={(e) => setTeks(e.target.value)} rows={10}
-                  style={{ width: "100%", fontSize: 16, color: t.text, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.55, boxSizing: "border-box" }} />
+                  style={{ width: "100%", fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.55, boxSizing: "border-box" }} />
               )}
             </div>
 
