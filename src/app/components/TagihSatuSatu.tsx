@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, List, Search } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, Search } from "lucide-react";
 import IkonDitagih from "./IkonDitagih";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
@@ -95,9 +95,9 @@ export default function TagihSatuSatu({
         <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
           <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Pilih nama" className="flex items-center gap-1"
+            <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Cari anak" className="flex items-center gap-1"
               style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-              <List size={17} /> Nama
+              <Search size={17} /> Cari
             </button>
             <button onClick={onTutup} aria-label="Tutup" className="flex items-center gap-1"
               style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
