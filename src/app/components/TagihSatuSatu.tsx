@@ -36,7 +36,7 @@ export default function TagihSatuSatu({
   onTutup: () => void;
 }) {
   const labels = [...pekan].sort().map(labelPekan);
-  const label = labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
+  const label = labels.length > 3 ? `${labels[0]} sampai ${labels[labels.length - 1]}` : labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
   const judul = pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
   const [i, setI] = useState(0);
   const [terkirim, setTerkirim] = useState(0);

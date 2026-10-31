@@ -170,7 +170,8 @@ export default function Tagihan({
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
   const [tagih, setTagih] = useState<{ pekan: string[]; antrean: string[][][] } | null>(null);
   /** Berapa minggu sebelumnya (yang belum ditagih) digabung dengan minggu yang dibuka — satu pesan per anak. */
-  const [gabungN, setGabungN] = useState(0);
+  /** Cakupan tagihan di Belum Dibayar: "ini" = minggu yang dibuka, "semua" = semua anak yang masih ada yang belum ditagih dari minggu mana pun. */
+  const [cakupan, setCakupan] = useState<"ini" | "semua">("ini");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   /** Draf WA. `siblings` = grup lain (anak lain) dengan nomor WA sama —
@@ -314,6 +315,7 @@ export default function Tagihan({
   const pilihPekan = (senin: string) => {
     const a = urutPekan.findIndex((x) => x.senin === pekanBuka);
     const b = urutPekan.findIndex((x) => x.senin === senin);
+    setCakupan("ini");
     if (b === a) return;
     setArahGeser(b > a ? "kiri" : "kanan");
     setPekanBuka(senin);
@@ -328,8 +330,10 @@ export default function Tagihan({
   };
   const pekanDibuka = pekanBuka ? pekanList.find((p) => p.senin === pekanBuka) || null : null;
   const groupsPekan = useMemo(
-    () => (pekanDibuka ? sortGroups(buatGrup(pekanDibuka.txs), sortMode) : []),
-    [pekanDibuka, sortMode]
+    () => (cakupan === "semua"
+      ? sortGroups(buatGrup(pekanList.filter((x) => x.belum > 0).flatMap((x) => x.txs)), sortMode)
+      : pekanDibuka ? sortGroups(buatGrup(pekanDibuka.txs), sortMode) : []),
+    [pekanDibuka, sortMode, cakupan, pekanList]
   );
   const byId = useMemo(() => new Map(transactions.map((x) => [x.id, x])), [transactions]);
 
@@ -354,11 +358,8 @@ export default function Tagihan({
     const antrean = antreanMinggu(daftar);
     if (antrean.length) setTagih({ pekan: daftar, antrean });
   };
-  /** Minggu sebelum yang dibuka yang sudah lewat dan masih ada yang belum ditagih, terdekat dulu. */
-  const calonGabung = pekanDibuka
-    ? pekanList.filter((x) => !x.berjalan && x.belum > 0 && x.senin < pekanDibuka.senin).sort((a, b) => b.senin.localeCompare(a.senin))
-    : [];
-  const gabungDipilih = calonGabung.slice(0, gabungN).map((x) => x.senin);
+  /** Senin semua minggu yang masih punya anak belum ditagih. */
+  const semuaSenin = pekanList.filter((x) => x.belum > 0).map((x) => x.senin).sort();
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
   /** Tab Transaksi tetap terpasang tetapi disembunyikan (display:none) saat tab lain aktif — gulir ke chip terpilih TIDAK jalan saat tersembunyi.
    * Maka begitu barisan chip benar-benar tampil (lebar 0 -> >0), gulir sekali ke minggu terpilih (minggu ini). */
@@ -385,7 +386,6 @@ export default function Tagihan({
     const pilih = asal.find((x) => x.senin === mondayOf(todayISO())) || asal[asal.length - 1];
     setPekanBuka(pilih ? pilih.senin : null);
   }, [pekanList, pekanBuka]);
-  useEffect(() => { setGabungN(0); }, [pekanBuka]);
   /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
   const cariLain = useMemo(() => {
     if (!q.trim()) return null;
@@ -789,7 +789,7 @@ export default function Tagihan({
                       </div>
                       <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
-                          const on = x.senin === pekanBuka;
+                          const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
                               style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
@@ -801,31 +801,28 @@ export default function Tagihan({
                       </div>
                     </div>
                   ))}
+                  {semuaSenin.length > 1 && (
+                    <div style={{ flex: "none" }}>
+                      <div style={{ fontSize: 13, padding: "0 3px 2px", margin: "0 2px 6px", borderBottom: "1.5px solid transparent" }}>&nbsp;</div>
+                      <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
+                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${cakupan === "semua" ? t.primaryLine : "transparent"}` }}>Semua</span>
+                      </button>
+                    </div>
+                  )}
                 </RailGeser>
                 {pekanDibuka && ((p) => (
                   <>
-                    {p.belum > 0 && <div style={{ height: 1, background: t.divider, margin: "2px 0 0" }} />}
-                          {p.belum > 0 && (
+                    {semuaSenin.length > 0 && <div style={{ height: 1, background: t.divider, margin: "2px 0 0" }} />}
+                          {semuaSenin.length > 0 && (
                             <>
-                              <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
-                                style={{ width: "100%", height: 44, marginTop: 8, marginBottom: calonGabung.length ? 0 : 0, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                                <MessageCircle size={17} />
-                                {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu` : `Tagih minggu ${labelPekan(p.senin)}`}
-                              </button>
-                              {/* Minggu lama yang ikut SATU pesan WhatsApp = pil "+ 19–23 Okt" (opsi A pilihan pemilik 1 Nov). Pil berikutnya muncul setelah yang ini diketuk; ketuk pil terpilih = lepas dia dan yang sesudahnya. */}
-                              {calonGabung.length > 0 && (
-                                <div className="flex" style={{ gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-                                  {calonGabung.slice(0, gabungN + 1).map((c, i) => {
-                                    const on = i < gabungN;
-                                    return (
-                                      <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} aria-pressed={on}
-                                        className="flex items-center"
-                                        style={{ gap: 6, height: 38, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${on ? t.primaryLine : t.borderStrong}`, background: on ? t.primaryLight : "transparent", color: t.text, fontFamily: "inherit", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
-                                        {on ? <Check size={15} strokeWidth={3} /> : "+"} {labelPekan(c.senin)}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+                              {/* Cakupan: chip "Semua" di ujung barisan tanggal (saklar dua sisi dan pil ditolak: "kebanyakan blok-blok") */}
+                              {(cakupan === "semua" || p.belum > 0) && (
+                                <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} className="flex items-center justify-center gap-2"
+                                  style={{ width: "100%", height: 48, marginTop: 8, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+                                  <MessageCircle size={17} />
+                                  {cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}
+                                </button>
                               )}
                             </>
                           )}
@@ -854,7 +851,7 @@ export default function Tagihan({
                                       if (abjad) prev = h;
                                       const isi = (
                                         <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 12, marginBottom: 6, borderLeft: `4px solid ${t.garisKelompok}`, borderRadius: 1 }}>
-                                          {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
+                                          {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, cakupan === "semua" ? undefined : labelPekan(p.senin)))}
                                         </div>
                                       );
                                       return (
