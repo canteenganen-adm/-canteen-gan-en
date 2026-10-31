@@ -56,13 +56,29 @@ export default function Penjualan({
      snapshot menu_harian tanggal itu, transaksi tercatat atas tanggal
      itu, dan sesi PO live tidak pernah tersentuh. */
   const todayIso = todayISO();
-  const [txDate, setTxDate] = useState(todayIso);
+  /* Tanggal pilihan DIINGAT per hari di HP ini: dulu muat ulang membuatnya diam-diam kembali ke "hari ini" (Sabtu) dan
+     pertanyaan Sabtu/Minggu tidak muncul lagi, jadi penjualan tercatat di tanggal yang salah (laporan pemilik 1 Nov). */
+  const kunciTgl = "ganen_tgl_penjualan";
+  const tglTersimpan = (): string | null => {
+    try {
+      const v = JSON.parse(localStorage.getItem(kunciTgl) || "null");
+      if (v && v.hari === todayIso && typeof v.tgl === "string" && v.tgl <= todayIso) return v.tgl;
+    } catch { /* tanpa penyimpanan: kembali ke hari ini */ }
+    return null;
+  };
+  const [txDate, setTxDateState] = useState(() => tglTersimpan() || todayIso);
+  const setTxDate = (tgl: string) => {
+    setTxDateState(tgl);
+    try { localStorage.setItem(kunciTgl, JSON.stringify({ hari: todayIso, tgl })); } catch { /* abaikan */ }
+  };
   const isBackdate = txDate !== todayIso;
+  /* Sabtu/Minggu diberi tanda sama seperti input susulan supaya tidak terlewat. */
+  const perhatianTgl = isBackdate || isAkhirPekan(txDate);
   /* Sabtu/Minggu: kantin biasanya tutup, jadi pesanan yang diketik hari itu hampir pasti untuk hari kerja.
      Tanyakan SEKALI per hari (diingat di tab ini) supaya tidak tercatat di tanggal yang salah. */
   const kunciTanya = `ganen_tanya_tgl_${todayIso}`;
   const [tanyaTgl, setTanyaTgl] = useState(() => {
-    if (!isAkhirPekan(todayIso)) return false;
+    if (!isAkhirPekan(todayIso) || tglTersimpan()) return false;
     try { return sessionStorage.getItem(kunciTanya) !== "1"; } catch { return true; }
   });
   const jawabTgl = (tgl: string) => {
@@ -304,7 +320,7 @@ export default function Penjualan({
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{isBackdate ? serviceDateLabel(txDate) : "Hari ini"}</div>
+                <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{serviceDateLabel(txDate)}{isBackdate ? "" : " · hari ini"}</div>
                 <div style={{ fontSize: 14, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
             </div>
@@ -318,10 +334,10 @@ export default function Penjualan({
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
               style={{ position: "relative", flex: "none", height: 44, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 12px 12px 0", cursor: "pointer",
-                background: isBackdate ? "#FFF4BF" : t.surface, border: `1px solid ${isBackdate ? t.primaryLine : t.border}`, borderLeft: "none" }}>
+                background: perhatianTgl ? "#FFF4BF" : t.surface, border: `1px solid ${perhatianTgl ? t.primaryLine : t.border}`, borderLeft: "none" }}>
               <Calendar size={14} color={t.amberText} />
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: isBackdate ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
-                {isBackdate ? txDate.slice(8, 10) + "/" + txDate.slice(5, 7) : "Hari Ini"}
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
+                {namaHari(txDate).slice(0, 3)} {txDate.slice(8, 10)}/{txDate.slice(5, 7)}
               </span>
               <input type="date" value={txDate} max={todayIso}
                 onChange={(e) => e.target.value && setTxDate(e.target.value)}

@@ -519,15 +519,10 @@ export default function Tagihan({
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
     /* Berita transfer WAJIB diisi, SINGKAT (batas karakter bank pengirim ±18; pemilik 1 Nov: "wajib, jangan mohon"; kode acak dan "+1" ditolak):
-       satu anak = nama depan + kelas + tanggal Jumat minggu terakhir ("Keola 3B 30Okt"); kakak-adik satu pesan = nama depan semuanya + tanggal ("Acelynn Alice 30Okt"). Hanya bila ada rekening. */
+       satu anak = nama depan + kelas + TANGGAL TAGIH (hari pesan dikirim; "Keola 3B 31Okt"); kakak-adik satu pesan = nama depan semuanya + tanggal tagih ("Acelynn Alice 31Okt"). Hanya bila ada rekening. */
     const BLN3 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-    const jumatTerakhir = (() => {
-      const sn = gs.flatMap((g) => g.txs.map((tx) => mondayOf(opDate(tx)))).sort().pop();
-      if (!sn) return "";
-      const d = new Date(sn + "T00:00:00");
-      d.setDate(d.getDate() + 4);
-      return `${d.getDate()}${BLN3[d.getMonth()]}`;
-    })();
+    /* Tanggal TAGIH = hari pesan ini dikirim (sama dengan tanggal di tombol "Ditagih"). */
+    const tglTagih = (() => { const d = new Date(); return `${d.getDate()}${BLN3[d.getMonth()]}`; })();
     const depan = (nama: string) => toTitleCase(nama).replace(/s+/g, " ").trim().split(" ")[0].slice(0, 8);
     const namaBerita = gs.length > 1
       ? gs.map((g) => depan(g.customer.nama)).join(" ")
@@ -536,7 +531,7 @@ export default function Tagihan({
       ? `
 
 Berita transfer (wajib diisi):
-${namaBerita} ${jumatTerakhir}
+${namaBerita} ${tglTagih}
 
 Setelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
       : "";
