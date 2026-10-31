@@ -621,7 +621,11 @@ export default function Tagihan({
               <button onClick={() => shareWA(g, pool, label)} title={`Sudah ditagih ${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)} — ketuk untuk kirim ulang`} aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
                 style={{ flex: "none", padding: "0 10px", gap: 6, height: 48, borderRadius: 14, border: `1.5px solid ${t.ditagihLine}`, background: t.ditagihBg, color: t.text, cursor: "pointer", fontWeight: 600, fontSize: 13.5, whiteSpace: "nowrap" }}>
-                <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} /> Ditagih
+                <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} />
+                <span style={{ display: "block", textAlign: "left", lineHeight: 1.2 }}>
+                  Ditagih
+                  <span style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: t.text2 }}>{capTagih.slice(8, 10)}/{capTagih.slice(5, 7)}</span>
+                </span>
               </button>
             );
           })() : (
