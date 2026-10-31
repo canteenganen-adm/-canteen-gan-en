@@ -503,13 +503,13 @@ export default function Tagihan({
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
               <span style={{ fontSize: 17, fontWeight: 600 }}>{g.customer.nama}</span>
-              <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.text2, border: "1.5px solid #A59B80", borderRadius: 999, padding: "0 8px", whiteSpace: "nowrap", verticalAlign: 1 }}>
+              <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.text2, border: "1.5px solid #CFC6AE", borderRadius: 999, padding: "0 8px", whiteSpace: "nowrap", verticalAlign: 1 }}>
                 {g.customer.kelas || g.customer.tingkat}
               </span>
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
-                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ width: 22, height: 22, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={13} strokeWidth={3} /></span>
+                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ width: 20, height: 20, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={12} strokeWidth={3} /></span>
               )}
               <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
@@ -790,15 +790,15 @@ export default function Tagihan({
                                       const h = abjad ? hurufDari(b) : "";
                                       const kepala = abjad && h !== prev;
                                       if (abjad) prev = h;
-                                      const isi = b.length > 1 ? (
-                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 10, marginBottom: 10, borderLeft: `2px solid ${t.primaryLine}` }}>
+                                      const isi = (
+                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 12, marginBottom: 6, borderLeft: `3px solid ${t.primaryLine}`, borderRadius: 1 }}>
                                           {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
                                         </div>
-                                      ) : kartuBelum(b[0], `${p.senin}|`, groupsPekan, labelPekan(p.senin));
+                                      );
                                       return (
                                         <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 3 ? 22 : 0 }}>
                                           {kepala && (
-                                            <div id={`abj-${p.senin}-${h}`} style={{ margin: "16px 0 0", scrollMarginTop: 176, fontSize: 14, fontWeight: 800, color: t.text2, letterSpacing: ".04em" }}>{h}</div>
+                                            <div id={`abj-${p.senin}-${h}`} style={{ margin: "24px 0 6px 2px", scrollMarginTop: 176, fontSize: 16, fontWeight: 800, color: t.text2, letterSpacing: ".04em" }}>{h}</div>
                                           )}
                                           {isi}
                                         </div>
