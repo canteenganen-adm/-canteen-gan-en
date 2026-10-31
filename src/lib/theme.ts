@@ -24,6 +24,7 @@ export const t = {
   successText: "#1F7A2E", // angka/tulisan Sudah (hijau murni, kontras >= 4.5 di krem dan di pita kuning)
   successPill: "#ECF39E", // pil Dibuka
   successPillLine: "#BFE35A",
+  ditagih: "#2AA7E0", // pesawat kertas "sudah ditagih" (biru centang WhatsApp, diperdalam sedikit agar terbaca di krem); BUKAN hijau — hijau hanya untuk Lunas
   warnFill: "#FFE9CC",
   warnText: "#8F4E08",
   error: "#A82F24",

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
-  Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
+  Search, X, Check, Trash2, Share2, Send, ShoppingCart, Utensils,
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Calendar, SlidersHorizontal, MessageCircle,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
@@ -555,7 +555,7 @@ export default function Tagihan({
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
-                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ width: 20, height: 20, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={12} strokeWidth={3} /></span>
+                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><Send size={20} strokeWidth={2.2} /></span>
               )}
               <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
@@ -610,8 +610,8 @@ export default function Tagihan({
             return (
               <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
-                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "1.5px solid #D8E6D4", background: t.successBg, color: t.successText, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-                <Share2 size={17} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
+                <Send size={17} color={t.ditagih} strokeWidth={2.2} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
               </button>
             );
           })() : (
@@ -793,7 +793,7 @@ export default function Tagihan({
                                     <span style={{ width: 20, height: 20, borderRadius: 6, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
                                       {on && <Check size={14} strokeWidth={3} />}
                                     </span>
-                                    <span style={{ fontSize: 14, fontWeight: 600 }}>Gabung dengan {labelPekan(c.senin)} <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
+                                    <span style={{ fontSize: 14, fontWeight: 600 }}>Sertakan {labelPekan(c.senin)} dalam pesan <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
                                   </button>
                                 );
                               })}
