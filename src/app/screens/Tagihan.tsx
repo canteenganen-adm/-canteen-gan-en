@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
-  Search, X, Check, Trash2, Share2, Send, ShoppingCart, Utensils,
+  Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Calendar, SlidersHorizontal, MessageCircle,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
@@ -10,6 +10,7 @@ import RailGeser from "../components/RailGeser";
 import PaperTabs from "../components/PaperTabs";
 import TagihSatuSatu from "../components/TagihSatuSatu";
 import RailAbjad from "../components/RailAbjad";
+import IkonDitagih from "../components/IkonDitagih";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -555,7 +556,7 @@ export default function Tagihan({
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
-                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><Send size={20} strokeWidth={2.2} /></span>
+                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={26} /></span>
               )}
               <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
@@ -611,7 +612,7 @@ export default function Tagihan({
               <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
                 style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
-                <Send size={17} color={t.ditagih} strokeWidth={2.2} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
+                <IkonDitagih size={22} color={t.ditagih} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
               </button>
             );
           })() : (

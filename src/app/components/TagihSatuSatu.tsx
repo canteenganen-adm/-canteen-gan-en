@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, List, Search, Send } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, List, Search } from "lucide-react";
+import IkonDitagih from "./IkonDitagih";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { mondayOf, isAkhirPekan, namaHari, labelPekan } from "../../lib/pekan";
@@ -212,7 +213,7 @@ export default function TagihSatuSatu({
                       </span>
                       <span className="flex items-center gap-2" style={{ flex: "none" }}>
                         <span style={{ fontSize: 15, fontWeight: 700 }}>{rupiah(gsx.reduce((s, g) => s + g.total, 0))}</span>
-                        {sudah && <span aria-label="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><Send size={20} strokeWidth={2.2} /></span>}
+                        {sudah && <span aria-label="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={26} /></span>}
                       </span>
                     </button>
                   );
