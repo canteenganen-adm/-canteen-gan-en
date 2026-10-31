@@ -24,6 +24,7 @@ export const t = {
   successText: "#1F7A2E", // angka/tulisan Sudah (hijau murni, kontras >= 4.5 di krem dan di pita kuning)
   successPill: "#ECF39E", // pil Dibuka
   successPillLine: "#BFE35A",
+  garisKelompok: "#B9AE92", // garis kiri pengelompokan kakak-adik (satu nomor WA) di daftar Transaksi; BUKAN kuning (kuning = terpilih/tombol)
   ditagihBg: "#E6F4FB", // isi tombol "Ditagih dd/mm" (biru muda pucat)
   ditagihLine: "#BFE3F5",
   ditagih: "#2AA7E0", // pesawat kertas "sudah ditagih" (biru centang WhatsApp, diperdalam sedikit agar terbaca di krem); BUKAN hijau — hijau hanya untuk Lunas

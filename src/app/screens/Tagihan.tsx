@@ -833,7 +833,7 @@ export default function Tagihan({
                                       const kepala = abjad && h !== prev;
                                       if (abjad) prev = h;
                                       const isi = (
-                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 12, marginBottom: 6, borderLeft: `3px solid ${t.primaryLine}`, borderRadius: 1 }}>
+                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 12, marginBottom: 6, borderLeft: `4px solid ${t.garisKelompok}`, borderRadius: 1 }}>
                                           {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
                                         </div>
                                       );
