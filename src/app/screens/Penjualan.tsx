@@ -431,37 +431,37 @@ export default function Penjualan({
 
       {/* Ringkasan */}
       {view === "summary" && (
-        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan">
-          {/* Penanda ala struk (pemilik 1 Nov): hari, tanggal bulan tahun + jam:menit, garis putus-putus, daftar, garis putus-putus, Kosongkan Semua, Total */}
-          <div style={{ textAlign: "left", fontSize: 14.5, fontWeight: 700, color: t.text2 }}>
-            {serviceDateLabel(txDate)} · {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
+        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan" tanpaGaris>
+          {/* Opsi E (pemilik 1 Nov): lega tanpa garis, hanya harga per pcs; urutan Kosongkan Semua → Total → Masuk Tagihan (kiri) | Dibayar (kanan) */}
+          <div style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{serviceDateLabel(txDate)}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text2, marginTop: 2 }}>
+            {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
           </div>
-          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 0" }} />
+          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "14px 0 6px" }} />
           {cart.map((l) => (
-            <div key={l.key} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
+            <div key={l.key} className="flex items-center gap-3" style={{ padding: "11px 0" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
-                <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah(l.price)}</div>
+                <div style={{ fontSize: 17, fontWeight: 700 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
+                <div style={{ fontSize: 14, color: t.text2, marginTop: 2, fontWeight: 600 }}>{rupiah(l.price)}</div>
               </div>
               {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
-              <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
-              <div style={{ minWidth: 68, flex: "none", textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+              <Stepper lega onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
             </div>
           ))}
 
-          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "0 0 2px" }} />
           {cart.length > 0 && (
-            <button onClick={clearCart} className="flex items-center gap-1" style={{ marginTop: 10, background: "transparent", border: "none", color: t.error, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-              <Trash2 size={14} /> Kosongkan Semua
+            <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center justify-center" style={{ marginTop: 4, width: 48, height: 48, background: "transparent", border: "none", color: t.error, cursor: "pointer", padding: 0, justifyContent: "flex-start" }}>
+              <Trash2 size={22} />
             </button>
           )}
 
-          <div className="flex items-center justify-between" style={{ padding: "16px 0 4px" }}>
-            <span style={{ fontSize: 15, color: t.text2, fontWeight: 600 }}>Total</span>
-            <span style={{ fontSize: 24, fontWeight: 800 }}>{rupiah(total)}</span>
+          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "2px 0 0" }} />
+          <div className="flex items-center justify-between" style={{ background: t.primaryLight, borderRadius: 18, padding: "16px 18px", margin: "14px 0 16px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: t.amberText }}>Total</span>
+            <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
           </div>
 
-          <div className="flex gap-3" style={{ marginTop: 14 }}>
+          <div className="flex gap-3">
             <button onClick={() => setBilling(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
               <Receipt size={20} /> Masuk Tagihan
             </button>
@@ -575,14 +575,14 @@ export default function Penjualan({
 }
 
 /* ---- shared bits ---- */
-function Sheet({ title, children, onClose, leftIcon, onLeft }: {
-  title: string; children: React.ReactNode; onClose: () => void; leftIcon?: React.ReactNode; onLeft?: () => void;
+function Sheet({ title, children, onClose, leftIcon, onLeft, tanpaGaris }: {
+  title: string; children: React.ReactNode; onClose: () => void; leftIcon?: React.ReactNode; onLeft?: () => void; tanpaGaris?: boolean;
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center gap-2">
+        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: tanpaGaris ? "none" : `1px solid ${t.divider}` }} className="flex items-center gap-2">
           {leftIcon && <button onClick={onLeft} style={{ border: "none", background: "transparent", cursor: "pointer", color: t.text, display: "grid", placeItems: "center" }}>{leftIcon}</button>}
           <div style={{ fontSize: 18, fontWeight: 800, flex: 1 }}>{title}</div>
           <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
@@ -592,12 +592,13 @@ function Sheet({ title, children, onClose, leftIcon, onLeft }: {
     </div>
   );
 }
-function Stepper({ onMinus, onPlus, val }: { onMinus: () => void; onPlus: () => void; val: number }) {
-  const b: React.CSSProperties = { width: 34, height: 34, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
+function Stepper({ onMinus, onPlus, val, lega }: { onMinus: () => void; onPlus: () => void; val: number; lega?: boolean }) {
+  const u = lega ? 40 : 34;
+  const b: React.CSSProperties = { width: u, height: u, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
   return (
-    <div className="flex items-center gap-1" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3, flex: "none" }}>
+    <div className="flex items-center gap-1" style={{ background: lega ? "transparent" : t.surfaceSoft, border: lega ? "none" : `1px solid ${t.border}`, borderRadius: 999, padding: lega ? 0 : 3, flex: "none" }}>
       <button onClick={onMinus} style={b}><Minus size={16} /></button>
-      <span style={{ minWidth: 20, textAlign: "center", fontWeight: 800, fontSize: 15 }}>{val}</span>
+      <span style={{ minWidth: lega ? 30 : 20, textAlign: "center", fontWeight: 800, fontSize: lega ? 18 : 15 }}>{val}</span>
       <button onClick={onPlus} style={b}><Plus size={16} /></button>
     </div>
   );
