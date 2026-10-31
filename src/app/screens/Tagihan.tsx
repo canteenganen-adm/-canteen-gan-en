@@ -518,6 +518,17 @@ export default function Tagihan({
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
+    /* Berita transfer WAJIB diisi: nama anak + kelas + periode tagihan, supaya Mama tahu siapa membayar untuk minggu mana
+       (pemilik 1 Nov: "wajib diisi, jangan mohon"). Hanya bila ada rekening. */
+    const periodeTeks = (() => {
+      if (label) return label;
+      const mg = [...new Set(gs.flatMap((g) => g.txs.map((tx) => mondayOf(opDate(tx)))))].sort().map(labelPekan);
+      return mg.length > 3 ? `${mg[0]} sampai ${mg[mg.length - 1]}` : mg.length > 1 ? `${mg.slice(0, -1).join(", ")} dan ${mg[mg.length - 1]}` : mg[0] || "";
+    })();
+    const namaBerita = gs.map((g) => `${toTitleCase(g.customer.nama).replace(/\s+/g, " ").trim()}${g.customer.kelas || g.customer.tingkat ? ` ${g.customer.kelas || g.customer.tingkat}` : ""}`).join(", ");
+    const beritaSection = bankLine
+      ? `\n\nBerita transfer (wajib diisi):\n${namaBerita}, ${periodeTeks}\n\nSetelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
+      : "";
     const sections = gs.map((g) =>
       `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
     ).join("\n\n--------------------\n\n");
@@ -525,7 +536,7 @@ export default function Tagihan({
     // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
     // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
     const judulPekan = label ? `Tagihan minggu ${label}\n\n` : "";
-    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}\n\nGan En`;
+    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}${beritaSection}\n\nGan En`;
   };
   /** pool = kartu yang dicari "saudara"-nya (satu nomor WA) — di dalam satu pekan hanya kartu pekan itu. */
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }, pool: Grup[] = groups, label?: string) => {
