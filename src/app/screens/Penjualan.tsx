@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import {
   Search, X, Plus, Minus, ShoppingCart, Check, Receipt,
-  Layers, ChevronRight, Wallet, Settings, Trash2, Undo2, Calendar,
+  Layers, ChevronRight, Wallet, Settings, Trash2, Undo2, Calendar, Clock, History,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel, toTitleCase } from "../../lib/format";
@@ -353,13 +353,13 @@ export default function Penjualan({
             </div>
           </div>
           {isBackdate && (
-            <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-              <span style={{ flex: 1, fontSize: 12, color: t.amberText, fontWeight: 600, lineHeight: 1.45 }}>
-                Input susulan {serviceDateLabel(txDate)}{pakaiSnapshot ? " — menu & harga sesuai tanggal itu" : " — menu tanggal ini tidak tersimpan, memakai daftar saat ini"}
+            <div className="flex items-center justify-between gap-2" style={{ marginTop: 8 }}>
+              <span className="flex items-center gap-2" style={{ fontSize: 14, color: t.amberText, fontWeight: 700 }}>
+                <History size={16} /> Input susulan
               </span>
               <button onClick={() => setTxDate(todayIso)}
-                style={{ flex: "none", height: 34, padding: "0 11px", borderRadius: 10, border: `1px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                Kembali ke Hari Ini
+                style={{ flex: "none", height: 40, padding: "0 16px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                Hari ini
               </button>
             </div>
           )}
@@ -433,35 +433,38 @@ export default function Penjualan({
       {view === "summary" && (
         <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan">
           {/* Penanda ala struk (pemilik 1 Nov): hari, tanggal bulan tahun + jam:menit, garis putus-putus, daftar, garis putus-putus, Kosongkan Semua, Total */}
-          <div style={{ textAlign: "left", fontSize: 14.5, fontWeight: 700, color: t.text2 }}>
-            {serviceDateLabel(txDate)} · {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
+          <div className="flex items-center gap-4" style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>
+            <span className="flex items-center gap-2"><Calendar size={16} /> {serviceDateLabel(txDate)}</span>
+            <span className="flex items-center gap-2"><Clock size={16} /> {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}</span>
           </div>
-          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 0" }} />
-          {cart.map((l) => (
-            <div key={l.key} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
-                <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>{rupiah(l.price)}</div>
+          <div style={{ borderTop: `1px dashed ${t.border}`, margin: "14px 0 4px" }} />
+          {cart.map((l, i) => (
+            <div key={l.key} style={{ padding: "14px 0", borderBottom: i < cart.length - 1 ? `1px solid ${t.divider}` : "none" }}>
+              <div className="flex items-baseline justify-between gap-3">
+                <div style={{ fontSize: 16, fontWeight: 700, minWidth: 0 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
+                <div style={{ flex: "none", fontWeight: 800, fontSize: 16, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
               </div>
-              {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
-              <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
-              <div style={{ minWidth: 68, flex: "none", textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+              <div className="flex items-center justify-between gap-3" style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 14, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price)}</div>
+                {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
+                <Stepper besar onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
+              </div>
             </div>
           ))}
 
-          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "0 0 2px" }} />
+          <div style={{ borderTop: `1px dashed ${t.border}`, margin: "4px 0 0" }} />
           {cart.length > 0 && (
-            <button onClick={clearCart} className="flex items-center gap-1" style={{ marginTop: 10, background: "transparent", border: "none", color: t.error, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-              <Trash2 size={14} /> Kosongkan Semua
+            <button onClick={clearCart} className="flex items-center gap-2" style={{ marginTop: 6, height: 44, background: "transparent", border: "none", color: t.error, fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+              <Trash2 size={16} /> Kosongkan Semua
             </button>
           )}
 
-          <div className="flex items-center justify-between" style={{ padding: "16px 0 4px" }}>
-            <span style={{ fontSize: 15, color: t.text2, fontWeight: 600 }}>Total</span>
-            <span style={{ fontSize: 24, fontWeight: 800 }}>{rupiah(total)}</span>
+          <div className="flex items-baseline justify-between" style={{ padding: "10px 0 4px" }}>
+            <span style={{ fontSize: 15, color: t.text2, fontWeight: 700 }}>Total</span>
+            <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
           </div>
 
-          <div className="flex gap-3" style={{ marginTop: 14 }}>
+          <div className="flex gap-3" style={{ marginTop: 16 }}>
             <button onClick={() => setBilling(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
               <Receipt size={20} /> Masuk Tagihan
             </button>
@@ -592,12 +595,13 @@ function Sheet({ title, children, onClose, leftIcon, onLeft }: {
     </div>
   );
 }
-function Stepper({ onMinus, onPlus, val }: { onMinus: () => void; onPlus: () => void; val: number }) {
-  const b: React.CSSProperties = { width: 34, height: 34, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
+function Stepper({ onMinus, onPlus, val, besar }: { onMinus: () => void; onPlus: () => void; val: number; besar?: boolean }) {
+  const u = besar ? 44 : 34;
+  const b: React.CSSProperties = { width: u, height: u, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
   return (
     <div className="flex items-center gap-1" style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 999, padding: 3, flex: "none" }}>
       <button onClick={onMinus} style={b}><Minus size={16} /></button>
-      <span style={{ minWidth: 20, textAlign: "center", fontWeight: 800, fontSize: 15 }}>{val}</span>
+      <span style={{ minWidth: besar ? 32 : 20, textAlign: "center", fontWeight: 800, fontSize: besar ? 17 : 15 }}>{val}</span>
       <button onClick={onPlus} style={b}><Plus size={16} /></button>
     </div>
   );
