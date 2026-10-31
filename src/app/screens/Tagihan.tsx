@@ -786,14 +786,14 @@ export default function Tagihan({
                     <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>
                         {k.label}
-                        {k.pekan.some((x) => x.anak > 0) && <span aria-label="Masih ada yang belum dibayar" title="Masih ada yang belum dibayar" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: t.error, marginLeft: 6, verticalAlign: 1 }} />}
                       </div>
                       <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka;
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
                             </button>
                           );
