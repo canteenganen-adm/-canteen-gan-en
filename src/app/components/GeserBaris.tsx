@@ -79,14 +79,15 @@ export default function GeserBaris({ children, onTagih, onLunas, sudahTagih }: {
       onPointerDown={turun} onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={lepas}
       onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
       <div aria-hidden={!terbuka} style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: lebarAksi, display: "flex", overflow: "hidden" }}>
+        {/* Dua tombol pucat, satu baris tiap tombol (pilihan pemilik 1 Nov: A/C; "kepenuhan" dibersihkan). Lunas jadi hijau penuh hanya saat digeser sampai ambang. */}
         <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onTagih(); }} aria-label={sudahTagih ? `Sudah ditagih ${sudahTagih}, kirim ulang via WhatsApp` : "Tagih via WhatsApp"}
-          style={{ flex: "none", width: LEBAR_TAGIH, border: "none", background: sudahTagih ? t.ditagihBg : "#8C8575", color: sudahTagih ? t.text : "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>
-          <MessageCircle size={20} color={sudahTagih ? t.ditagih : "#fff"} strokeWidth={sudahTagih ? 2.4 : 2} />
-          <span style={{ lineHeight: 1.15, textAlign: "center" }}>{sudahTagih ? "Ditagih" : "Tagih"}{sudahTagih && <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: t.text2 }}>{sudahTagih}</span>}</span>
+          style={{ flex: "none", width: LEBAR_TAGIH, border: "none", background: sudahTagih ? t.ditagihBg : "#EFE9DC", color: t.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
+          <MessageCircle size={18} color={sudahTagih ? t.ditagih : t.text2} strokeWidth={2.4} />
+          {sudahTagih || "Tagih"}
         </button>
         <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onLunas(); }} aria-label="Lunas"
-          style={{ flex: 1, minWidth: 0, border: "none", background: t.success, color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: 0, opacity: penuh ? 1 : 0.96 }}>
-          <Check size={22} strokeWidth={3} />Lunas
+          style={{ flex: 1, minWidth: 0, border: "none", background: penuh ? t.success : "#E4F0D6", color: penuh ? "#fff" : t.successText, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap", transition: "background .12s" }}>
+          <Check size={18} strokeWidth={3} />Lunas
         </button>
       </div>
       <div onClickCapture={(e) => { if (bergeser.current) { e.stopPropagation(); e.preventDefault(); bergeser.current = false; } else if (terbuka) { e.stopPropagation(); e.preventDefault(); setDx(0); } }}
