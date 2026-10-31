@@ -187,6 +187,9 @@ export default function Tagihan({
     label?: string;
   } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  /** Lunas/Dibatalkan: hanya sebagian kartu digambar dulu (HP lemah: membuka tab ini dulu ±2 detik karena ratusan baris sekaligus). */
+  const [batasRiwayat, setBatasRiwayat] = useState(30);
+  useEffect(() => { setBatasRiwayat(30); }, [tab, q]);
   const [highlightedTxId, setHighlightedTxId] = useState<string | null>(null);
   const [trashConfirmTx, setTrashConfirmTx] = useState<Transaction | null>(null);
   const prevTxIdsRef = useRef<Set<string>>(new Set());
@@ -895,7 +898,7 @@ export default function Tagihan({
                 <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : tab === "batal" ? "Tidak ada yang dibatalkan" : "Belum ada riwayat"}</div>
                 <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : tab === "batal" ? "Transaksi yang dibatalkan akan muncul di sini." : "Transaksi Lunas akan muncul di sini."}</div>
               </div>
-            ) : riwayatGroups.map((g) => (
+            ) : riwayatGroups.slice(0, q ? Math.max(batasRiwayat, 60) : batasRiwayat).map((g) => (
               <div key={groupKey(g.customer)} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
                 {/* Header nama */}
                 <div style={{ padding: "14px 16px 10px" }}>
@@ -930,6 +933,12 @@ export default function Tagihan({
                 })}
               </div>
             ))}
+            {riwayatGroups.length > (q ? Math.max(batasRiwayat, 60) : batasRiwayat) && (
+              <button onClick={() => setBatasRiwayat((n) => n + 30)}
+                style={{ width: "100%", height: 52, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer", margin: "2px 0 12px" }}>
+                Tampilkan lagi ({riwayatGroups.length - (q ? Math.max(batasRiwayat, 60) : batasRiwayat)})
+              </button>
+            )}
           </div>
         )}
       </div>
