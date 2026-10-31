@@ -3,7 +3,10 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks } from "lucide-react";
 import RailGeser from "../components/RailGeser";
-import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
+import { t, NAV_HEIGHT } from "../../lib/theme";
+
+/** Huruf titik-titik ala printer thermal, khusus kertas Menu PO (pilihan pemilik 1 Nov). */
+const STRUK_TITIK = "'DotGothic16', 'DM Mono', ui-monospace, 'Courier New', monospace";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
@@ -546,49 +549,44 @@ export default function MasterMenu({
                         ? ps.map(hargaK).join("/")
                         : `${hargaK(Math.min(...ps))}~${hargaK(Math.max(...ps))}`;
                     };
-                    const garis = (c: string) => (
-                      <div style={{ overflow: "hidden", whiteSpace: "nowrap", color: t.textDis, userSelect: "none" }}>{c.repeat(72)}</div>
-                    );
                     const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
-                      <div style={{ background: t.surface, margin: "0 6px", padding: "18px 16px 22px",
-                        fontFamily: STRUK_MONO,
-                        fontSize: 13, fontWeight: 600, lineHeight: 1.85, color: t.text,
+                      <div style={{ background: t.surface, margin: "0 6px", padding: "20px 16px 22px",
+                        fontFamily: STRUK_TITIK, textTransform: "uppercase",
+                        fontSize: 15, fontWeight: 400, lineHeight: 1.75, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
-                        <div style={{ position: "relative", textAlign: "center", paddingBottom: 8 }}>
-                          <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: ".04em" }}>Menu PO</div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{serviceDateLabel(tanggal)}</div>
+                        <div style={{ position: "relative", textAlign: "center" }}>
+                          <div style={{ fontSize: 30, letterSpacing: ".08em", lineHeight: 1.2 }}>Menu PO</div>
+                          <div style={{ fontSize: 15 }}>{serviceDateLabel(tanggal)}</div>
                           {/* Muat ulang pratinjau (ikon segarkan kembali — permintaan Mama; sempat terhapus bersama selector ganda) */}
                           <button onClick={doRefresh} aria-label="Muat ulang pratinjau" title="Muat ulang"
-                            style={{ position: "absolute", right: -8, top: "50%", marginTop: -22, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                            style={{ position: "absolute", right: -8, top: -10, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
                             <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
                             <RefreshCw size={20} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
                           </button>
                         </div>
-                        <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "0 0 6px" }} />
+                        <div style={{ textAlign: "center", letterSpacing: ".3em", color: "#B9AE92", overflow: "hidden", whiteSpace: "nowrap" }}>* * * * * * * *</div>
                         {kats.map((k, i) => (
                           <div key={k}>
-                            {i > 0 && garis("-")}
-                            <div style={{ textAlign: "center", fontWeight: 700, letterSpacing: ".06em" }}>
-                              {k.toUpperCase()} ({byKat[k]?.length || 0})
+                            <div className="flex justify-between" style={{ background: t.primary, color: t.onPrimary, padding: "2px 10px", margin: i > 0 ? "14px 0 4px" : "8px 0 4px" }}>
+                              <span>{k}</span><span>{byKat[k]?.length || 0}</span>
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
-                              <div key={m.id} className="flex" style={{ gap: 8, alignItems: "baseline" }}>
-                                {/* Hybrid: nama menu (yang paling lama ditatap saat
-                                    proofread) pakai font standar app; kerangka struk
-                                    (judul/garis/harga) tetap monospace */}
-                                <span style={{ flex: 1, minWidth: 0, fontFamily: "'Onest', -apple-system, 'Segoe UI', system-ui, sans-serif", fontSize: 14, fontWeight: 600 }}>{toTitleCase(m.name)}</span>
-                                <span style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{strukHarga(m)}</span>
+                              <div key={m.id} className="flex" style={{ gap: 6, alignItems: "baseline" }}>
+                                <span style={{ minWidth: 0 }}>{m.name}</span>
+                                <i style={{ flex: 1, minWidth: 8, borderBottom: "2px dotted #CFC6AE", transform: "translateY(-3px)" }} />
+                                <span style={{ flex: "none" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
                               <div style={{ textAlign: "center", color: t.textDis }}>(kosong)</div>
                             )}
                           </div>
                         ))}
-                        {garis("=")}
-                        <div className="flex" style={{ gap: 8, fontWeight: 700 }}>
-                          <span style={{ flex: 1 }}>TOTAL</span>
-                          <span>{tampil.length} ITEM</span>
+                        <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 6px" }} />
+                        <div className="flex" style={{ gap: 6, alignItems: "baseline", fontSize: 18 }}>
+                          <span>Total</span>
+                          <i style={{ flex: 1, minWidth: 8, borderBottom: "2px dotted #CFC6AE", transform: "translateY(-3px)" }} />
+                          <span>{tampil.length} item</span>
                         </div>
                         {tampil.length === 0 && (
                           <div style={{ textAlign: "center", color: t.text2, marginTop: 8 }}>Belum ada menu yang akan tampil ke orang tua.</div>

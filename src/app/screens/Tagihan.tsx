@@ -309,13 +309,22 @@ export default function Tagihan({
     }
     return out;
   })();
+  /** Arah masuk daftar saat minggu berganti (daftar meluncur masuk dari sisi yang searah gerakan, bukan loncat). */
+  const [arahGeser, setArahGeser] = useState<"" | "kiri" | "kanan">("");
+  const pilihPekan = (senin: string) => {
+    const a = urutPekan.findIndex((x) => x.senin === pekanBuka);
+    const b = urutPekan.findIndex((x) => x.senin === senin);
+    if (b === a) return;
+    setArahGeser(b > a ? "kiri" : "kanan");
+    setPekanBuka(senin);
+  };
   /** Geser kanan = minggu sebelumnya, geser kiri = minggu berikutnya. */
   const geserPekan = (dx: number, dy: number) => {
     if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy)) return;
     const i = urutPekan.findIndex((x) => x.senin === pekanBuka);
     if (i < 0) return;
-    if (dx > 0 && i > 0) setPekanBuka(urutPekan[i - 1].senin);
-    else if (dx < 0 && i < urutPekan.length - 1) setPekanBuka(urutPekan[i + 1].senin);
+    if (dx > 0 && i > 0) pilihPekan(urutPekan[i - 1].senin);
+    else if (dx < 0 && i < urutPekan.length - 1) pilihPekan(urutPekan[i + 1].senin);
   };
   const pekanDibuka = pekanBuka ? pekanList.find((p) => p.senin === pekanBuka) || null : null;
   const groupsPekan = useMemo(
@@ -768,7 +777,7 @@ export default function Tagihan({
             ) : pekanList.every((p) => p.anak === 0) ? (
               <Empty q="" />
             ) : (
-              <div onTouchStart={(e) => { sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+              <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
                 <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
@@ -780,7 +789,7 @@ export default function Tagihan({
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka;
                           return (
-                            <button key={x.senin} id={`chip-${x.senin}`} onClick={() => setPekanBuka(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
+                            <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
                               style={{ flex: "none", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
                             </button>
@@ -819,7 +828,8 @@ export default function Tagihan({
                 ))(pekanDibuka)}
                 </div>
                 {pekanDibuka && ((p) => (
-                        <div style={{ padding: "2px 0 10px" }}>
+                        <div key={p.senin} style={{ padding: "2px 0 10px" }}>
+                          <style>{`@keyframes ganen-geser-kiri{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:none}}@keyframes ganen-geser-kanan{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:none}}`}</style>
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
                             : (() => {
@@ -831,6 +841,8 @@ export default function Tagihan({
                                 let prev = "";
                                 return (
                                   <>
+                                    {/* Hanya daftar yang meluncur; indeks A–Z (position: fixed) di luar pembungkus bertransformasi */}
+                                    <div style={{ animation: arahGeser ? `ganen-geser-${arahGeser} .24s cubic-bezier(.22,.8,.3,1)` : undefined }}>
                                     {bundel.map((b) => {
                                       const h = abjad ? hurufDari(b) : "";
                                       const kepala = abjad && h !== prev;
@@ -849,6 +861,7 @@ export default function Tagihan({
                                         </div>
                                       );
                                     })}
+                                    </div>
                                     {abjad && ada.length > 7 && (
                                       <RailAbjad huruf={ada} bawah={NAV_HEIGHT + 16}
                                         onPilih={(h) => document.getElementById(`abj-${p.senin}-${h}`)?.scrollIntoView({ block: "start" })} />
