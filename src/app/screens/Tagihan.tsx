@@ -447,7 +447,7 @@ export default function Tagihan({
      dicatat kapan) + tombol Ubah Tanggal Layanan. detailTx menyimpan SNAPSHOT
      objek transaksi, jadi reload realtime tidak menutup picker (fix iOS). */
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
-  const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number; sebagian?: boolean } | null>(null);
+  const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number; sebagian?: boolean; minggu?: number } | null>(null);
   /** Tanggal (transaksi) yang dicentang untuk Lunas sebagian — satu ketukan melunaskan semua yang dicentang. */
   const [pilihTx, setPilihTx] = useState<Set<string>>(new Set());
   const togglePilihTx = (id: string) => setPilihTx((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -540,6 +540,13 @@ export default function Tagihan({
     const key = ns + groupKey(g.customer);
     const expanded = expandedGroups.has(key);
     const terpilih = g.txs.filter((tx) => pilihTx.has(tx.id));
+    /* Tagihan gabungan: tanggal anak ini yang ikut SATU pesan WhatsApp (cap waktu ditagih sama), termasuk dari minggu lain —
+       dilunaskan sekali ketuk, tanpa pindah-pindah minggu. */
+    const capTagih = g.txs.every((tx) => tx.billedAt) ? g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), "") : "";
+    const semuaAnak = capTagih ? groups.find((x) => x.txs.some((tx) => g.txs.some((y) => y.id === tx.id))) : undefined;
+    const paket = semuaAnak ? semuaAnak.txs.filter((tx) => tx.billedAt === capTagih) : [];
+    const lintas = paket.some((tx) => !g.txs.some((y) => y.id === tx.id));
+    const jmlMinggu = new Set(paket.map((tx) => mondayOf(opDate(tx)))).size;
     return (
       <div key={key} style={expanded
         ? { background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, margin: "6px 0 12px", overflow: "hidden" }
@@ -611,7 +618,7 @@ export default function Tagihan({
             return (
               <button onClick={() => shareWA(g, pool, label)} title="Sudah ditagih — ketuk untuk kirim ulang" aria-label="Kirim ulang tagihan WA"
                 className="flex items-center justify-center gap-2"
-                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
+                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: `1.5px solid ${t.ditagihLine}`, background: t.ditagihBg, color: t.text, cursor: "pointer", fontWeight: 700, fontSize: 14.5 }}>
                 <IkonDitagih size={18} color={t.ditagih} strokeWidth={2.4} /> Ditagih {b.slice(8, 10)}/{b.slice(5, 7)}
               </button>
             );
@@ -621,9 +628,11 @@ export default function Tagihan({
               <Share2 size={17} /> Tagih via WA
             </button>
           )}
-          <button onClick={() => (terpilih.length ? setConfirmLunas({ customer: g.customer, txs: terpilih, total: terpilih.reduce((s, x) => s + x.total, 0), sebagian: true }) : setConfirmLunas(g))}
+          <button onClick={() => (terpilih.length ? setConfirmLunas({ customer: g.customer, txs: terpilih, total: terpilih.reduce((s, x) => s + x.total, 0), sebagian: true })
+            : lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((s, x) => s + x.total, 0), sebagian: true, minggu: jmlMinggu })
+            : setConfirmLunas(g))}
             style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-            {terpilih.length ? `Lunaskan ${terpilih.length} tanggal` : "Lunaskan Semua"}
+            {terpilih.length ? `Lunaskan ${terpilih.length} tanggal` : lintas ? `Lunaskan ${jmlMinggu} minggu` : "Lunaskan Semua"}
           </button>
         </div>}
       </div>
@@ -1026,7 +1035,7 @@ export default function Tagihan({
           <div onClick={() => setConfirmLunas(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
           <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
             <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600, textAlign: "center" }}>
-              <div style={{ fontSize: 14.5, fontWeight: 800 }}>{confirmLunas.sebagian ? `LUNASKAN ${confirmLunas.txs.length} TANGGAL?` : "LUNASKAN SEMUA?"}</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>{confirmLunas.minggu ? `LUNASKAN ${confirmLunas.minggu} MINGGU?` : confirmLunas.sebagian ? `LUNASKAN ${confirmLunas.txs.length} TANGGAL?` : "LUNASKAN SEMUA?"}</div>
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
               <div style={{ fontSize: 13, lineHeight: 1.7 }}>{confirmLunas.customer.nama}</div>
               <div style={{ fontSize: 12, color: t.text2 }}>{confirmLunas.txs.length} transaksi</div>
