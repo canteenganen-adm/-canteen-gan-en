@@ -518,16 +518,27 @@ export default function Tagihan({
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
       : "";
-    /* Berita transfer WAJIB diisi: nama anak + kelas + periode tagihan, supaya Mama tahu siapa membayar untuk minggu mana
-       (pemilik 1 Nov: "wajib diisi, jangan mohon"). Hanya bila ada rekening. */
-    const periodeTeks = (() => {
-      if (label) return label;
-      const mg = [...new Set(gs.flatMap((g) => g.txs.map((tx) => mondayOf(opDate(tx)))))].sort().map(labelPekan);
-      return mg.length > 3 ? `${mg[0]} sampai ${mg[mg.length - 1]}` : mg.length > 1 ? `${mg.slice(0, -1).join(", ")} dan ${mg[mg.length - 1]}` : mg[0] || "";
+    /* Berita transfer WAJIB diisi, SINGKAT (batas karakter bank pengirim ±18; pemilik 1 Nov: "wajib, jangan mohon"; kode acak dan "+1" ditolak):
+       satu anak = nama depan + kelas + tanggal Jumat minggu terakhir ("Keola 3B 30Okt"); kakak-adik satu pesan = nama depan semuanya + tanggal ("Acelynn Alice 30Okt"). Hanya bila ada rekening. */
+    const BLN3 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const jumatTerakhir = (() => {
+      const sn = gs.flatMap((g) => g.txs.map((tx) => mondayOf(opDate(tx)))).sort().pop();
+      if (!sn) return "";
+      const d = new Date(sn + "T00:00:00");
+      d.setDate(d.getDate() + 4);
+      return `${d.getDate()}${BLN3[d.getMonth()]}`;
     })();
-    const namaBerita = gs.map((g) => `${toTitleCase(g.customer.nama).replace(/\s+/g, " ").trim()}${g.customer.kelas || g.customer.tingkat ? ` ${g.customer.kelas || g.customer.tingkat}` : ""}`).join(", ");
+    const depan = (nama: string) => toTitleCase(nama).replace(/s+/g, " ").trim().split(" ")[0].slice(0, 8);
+    const namaBerita = gs.length > 1
+      ? gs.map((g) => depan(g.customer.nama)).join(" ")
+      : `${depan(gs[0].customer.nama)}${gs[0].customer.kelas || gs[0].customer.tingkat ? ` ${gs[0].customer.kelas || gs[0].customer.tingkat}` : ""}`;
     const beritaSection = bankLine
-      ? `\n\nBerita transfer (wajib diisi):\n${namaBerita}, ${periodeTeks}\n\nSetelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
+      ? `
+
+Berita transfer (wajib diisi):
+${namaBerita} ${jumatTerakhir}
+
+Setelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
       : "";
     const sections = gs.map((g) =>
       `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
