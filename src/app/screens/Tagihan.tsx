@@ -8,6 +8,7 @@ import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format"
 import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari } from "../../lib/pekan";
 import PaperTabs from "../components/PaperTabs";
 import TagihSatuSatu from "../components/TagihSatuSatu";
+import RailAbjad from "../components/RailAbjad";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -328,9 +329,7 @@ export default function Tagihan({
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
   useEffect(() => { if (pekanBuka && !pekanDibuka) setPekanBuka(null); }, [pekanBuka, pekanDibuka]);
   useEffect(() => { setPekanBuka(null); }, [bulanAktif]);
-  /** Minggu yang dibuka memuat 20 kartu dulu (satu minggu bisa >150 anak) — sisanya lewat "Tampilkan lagi". */
-  const [kartuTampil, setKartuTampil] = useState(20);
-  useEffect(() => { setKartuTampil(20); setGabungN(0); }, [pekanBuka]);
+  useEffect(() => { setGabungN(0); }, [pekanBuka]);
   /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
   const cariLain = useMemo(() => {
     if (!q.trim()) return null;
@@ -401,7 +400,24 @@ export default function Tagihan({
      dicatat kapan) + tombol Ubah Tanggal Layanan. detailTx menyimpan SNAPSHOT
      objek transaksi, jadi reload realtime tidak menutup picker (fix iOS). */
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
-  const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number } | null>(null);
+  const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number; sebagian?: boolean } | null>(null);
+  /** Tanggal (transaksi) yang dicentang untuk Lunas sebagian — satu ketukan melunaskan semua yang dicentang. */
+  const [pilihTx, setPilihTx] = useState<Set<string>>(new Set());
+  const togglePilihTx = (id: string) => setPilihTx((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  /** Anak satu nomor WhatsApp dikelompokkan (kakak-adik) supaya terlihat satu keluarga. */
+  const bundelWa = (list: Grup[]) => {
+    const bundel: Grup[][] = [];
+    const perWa = new Map<string, Grup[]>();
+    for (const g of list) {
+      const w = normWa(g.customer.wa);
+      const ada = w ? perWa.get(w) : undefined;
+      if (ada) { ada.push(g); continue; }
+      const b = [g];
+      bundel.push(b);
+      if (w) perWa.set(w, b);
+    }
+    return bundel;
+  };
 
   const dateTap = (tx: Transaction) => (
     <button onClick={() => setDetailTx(tx)}
@@ -476,11 +492,12 @@ export default function Tagihan({
   const kartuBelum = (g: Grup, ns = "", pool: Grup[] = groups, label?: string) => {
     const key = ns + groupKey(g.customer);
     const expanded = expandedGroups.has(key);
+    const terpilih = g.txs.filter((tx) => pilihTx.has(tx.id));
     return (
-      <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
+      <div key={key} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 12, overflow: "hidden" }}>
 
         {/* Header grup — klik untuk expand/collapse */}
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: expanded ? "14px 16px" : "12px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div className="flex items-center gap-2" style={{ minWidth: 0, flexWrap: "wrap", flex: 1 }}>
               <span style={{ fontSize: 18, fontWeight: 800 }}>{g.customer.nama}</span>
@@ -489,14 +506,19 @@ export default function Tagihan({
               </span>
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
+              {g.txs.every((tx) => tx.billedAt) && (
+                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ width: 22, height: 22, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={13} strokeWidth={3} /></span>
+              )}
               <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(g.total)}</span>
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
             </div>
           </div>
-          <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
-            {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
-            <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
-          </div>
+          {expanded && (
+            <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
+              {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
+              <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
+            </div>
+          )}
         </button>
 
         {/* Daftar transaksi (hanya kalau expanded) — SELURUH baris
@@ -504,26 +526,37 @@ export default function Tagihan({
             biar ketukan tak sengaja tetap langsung kelihatan "ini
             transaksi apa" bukan cuma dead-tap. Tombol aksi pakai
             stopPropagation supaya tidak ikut membuka detail. */}
-        {expanded && g.txs.map((tx) => (
-          <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
-            style={{ width: "100%", gap: 10, minHeight: 56, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, textAlign: "left", fontFamily: "inherit", cursor: "pointer",
-              background: tx.id === highlightedTxId ? "#FFF4BF" : "transparent", transition: "background 0.4s ease" }}>
-            <StatusDot unpaid />
-            <SourceTag source={tx.source} />
-            <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
-              {fmtTxOp(tx).split(" · ")[0]}
-              {isAkhirPekan(opDate(tx)) && (
-                <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.warnText, background: t.warnFill, borderRadius: 999, padding: "1px 8px" }}>{namaHari(opDate(tx))}</span>
-              )}
-            </span>
-            <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
-            <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
-          </button>
-        ))}
+        {expanded && [...g.txs].sort((a, b) => opDate(a).localeCompare(opDate(b)) || a.createdAt.localeCompare(b.createdAt)).map((tx) => {
+          const dipilih = pilihTx.has(tx.id);
+          const tglTx = fmtTxOp(tx).split(" · ")[0];
+          return (
+            <div key={tx.id} className="flex items-center"
+              style={{ borderTop: `1px solid ${t.divider}`, background: tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.primaryLight : "transparent", transition: "background 0.4s ease" }}>
+              <button onClick={() => togglePilihTx(tx.id)} role="checkbox" aria-checked={dipilih} aria-label={`Pilih ${tglTx}`}
+                style={{ flex: "none", width: 54, height: 56, padding: 0, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <span style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", background: dipilih ? t.primary : t.surface, border: `2px solid ${dipilih ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
+                  {dipilih && <Check size={17} strokeWidth={3} />}
+                </span>
+              </button>
+              <button onClick={() => setDetailTx(tx)} className="flex items-center"
+                style={{ flex: 1, minWidth: 0, gap: 10, minHeight: 56, padding: "0 16px 0 0", border: "none", background: "transparent", textAlign: "left", fontFamily: "inherit", cursor: "pointer" }}>
+                <SourceTag source={tx.source} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {tglTx}
+                  {isAkhirPekan(opDate(tx)) && (
+                    <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.warnText, background: t.warnFill, borderRadius: 999, padding: "1px 8px" }}>{namaHari(opDate(tx))}</span>
+                  )}
+                </span>
+                <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
+                <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
+              </button>
+            </div>
+          );
+        })}
 
         {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
             "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
-        <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+        {expanded && <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
           {g.txs.every((tx) => tx.billedAt) ? (() => {
             const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
             return (
@@ -539,11 +572,11 @@ export default function Tagihan({
               <Share2 size={17} /> Tagih via WA
             </button>
           )}
-          <button onClick={() => setConfirmLunas(g)}
+          <button onClick={() => (terpilih.length ? setConfirmLunas({ customer: g.customer, txs: terpilih, total: terpilih.reduce((s, x) => s + x.total, 0), sebagian: true }) : setConfirmLunas(g))}
             style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-            Lunaskan Semua
+            {terpilih.length ? `Lunaskan ${terpilih.length} tanggal` : "Lunaskan Semua"}
           </button>
-        </div>
+        </div>}
       </div>
     );
   };
@@ -742,13 +775,43 @@ export default function Tagihan({
                           )}
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
-                            : groupsPekan.slice(0, kartuTampil).map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
-                          {groupsPekan.length > kartuTampil && (
-                            <button onClick={() => setKartuTampil((n) => n + 40)}
-                              style={{ width: "100%", height: 50, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 15.5, cursor: "pointer" }}>
-                              Tampilkan lagi ({groupsPekan.length - kartuTampil})
-                            </button>
-                          )}
+                            : (() => {
+                                /* Daftar A–Z: huruf besar sebagai pemisah + indeks huruf di tepi kanan (pilihan pemilik 31 Okt). */
+                                const bundel = bundelWa(groupsPekan);
+                                const abjad = sortMode === "az" || sortMode === "za";
+                                const hurufDari = (b: Grup[]) => { const h = (b[0].customer.nama.trim()[0] || "#").toUpperCase(); return /[A-Z]/.test(h) ? h : "#"; };
+                                const ada = abjad ? [...new Set(bundel.map(hurufDari))] : [];
+                                let prev = "";
+                                return (
+                                  <>
+                                    {bundel.map((b) => {
+                                      const h = abjad ? hurufDari(b) : "";
+                                      const kepala = abjad && h !== prev;
+                                      if (abjad) prev = h;
+                                      const isi = b.length > 1 ? (
+                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ marginBottom: 12, paddingLeft: 10, borderLeft: `3px solid ${t.primaryLine}` }}>
+                                          {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, labelPekan(p.senin)))}
+                                        </div>
+                                      ) : kartuBelum(b[0], `${p.senin}|`, groupsPekan, labelPekan(p.senin));
+                                      return (
+                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 1 ? 24 : 0 }}>
+                                          {kepala && (
+                                            <div id={`abj-${p.senin}-${h}`} className="flex items-center gap-2" style={{ margin: "6px 0 8px", scrollMarginTop: 176 }}>
+                                              <span style={{ width: 26, height: 26, borderRadius: "50%", background: t.primary, display: "grid", placeItems: "center", fontSize: 14, fontWeight: 800 }}>{h}</span>
+                                              <span style={{ flex: 1, height: 1, background: t.border }} />
+                                            </div>
+                                          )}
+                                          {isi}
+                                        </div>
+                                      );
+                                    })}
+                                    {abjad && ada.length > 3 && (
+                                      <RailAbjad huruf={ada} bawah={NAV_HEIGHT + 16}
+                                        onPilih={(h) => document.getElementById(`abj-${p.senin}-${h}`)?.scrollIntoView({ block: "start" })} />
+                                    )}
+                                  </>
+                                );
+                              })()}
                         </div>
                       )}
                     </div>
@@ -937,7 +1000,7 @@ export default function Tagihan({
           <div onClick={() => setConfirmLunas(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
           <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
             <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600, textAlign: "center" }}>
-              <div style={{ fontSize: 14.5, fontWeight: 800 }}>LUNASKAN SEMUA?</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800 }}>{confirmLunas.sebagian ? `LUNASKAN ${confirmLunas.txs.length} TANGGAL?` : "LUNASKAN SEMUA?"}</div>
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
               <div style={{ fontSize: 13, lineHeight: 1.7 }}>{confirmLunas.customer.nama}</div>
               <div style={{ fontSize: 12, color: t.text2 }}>{confirmLunas.txs.length} transaksi</div>
@@ -947,7 +1010,7 @@ export default function Tagihan({
                   style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                   Tidak
                 </button>
-                <button onClick={() => { confirmLunas.txs.forEach(markPaid); setConfirmLunas(null); }}
+                <button onClick={() => { confirmLunas.txs.forEach(markPaid); setPilihTx((prev) => { const n = new Set(prev); confirmLunas.txs.forEach((x) => n.delete(x.id)); return n; }); setConfirmLunas(null); }}
                   style={{ flex: 1, height: 50, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                   Ya
                 </button>

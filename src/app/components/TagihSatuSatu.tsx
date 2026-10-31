@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, List, Search } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { mondayOf, isAkhirPekan, namaHari, labelPekan } from "../../lib/pekan";
@@ -42,6 +42,9 @@ export default function TagihSatuSatu({
   const [lewat, setLewat] = useState(0);
   const [teks, setTeks] = useState<string | null>(null);
   const [lihat, setLihat] = useState(false);
+  /** Daftar nama: pilih siapa yang ditagih lebih dulu (cari nama, ketuk untuk loncat ke anak itu). */
+  const [daftar, setDaftar] = useState(false);
+  const [cariNama, setCariNama] = useState("");
   const gulirRef = useRef<HTMLDivElement>(null);
 
   /* Isi tiap entri dibaca ULANG dari data terbaru: yang sudah lunas, dibatalkan,
@@ -90,10 +93,16 @@ export default function TagihSatuSatu({
 
         <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
           <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
-          <button onClick={onTutup} aria-label="Tutup" className="flex items-center gap-1"
-            style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-            <X size={17} /> Tutup
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Pilih nama" className="flex items-center gap-1"
+              style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              <List size={17} /> Nama
+            </button>
+            <button onClick={onTutup} aria-label="Tutup" className="flex items-center gap-1"
+              style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              <X size={17} /> Tutup
+            </button>
+          </div>
         </div>
 
         {!selesai && gs.length > 0 && (
@@ -171,6 +180,46 @@ export default function TagihSatuSatu({
               </div>
             </div>
           </>
+        )}
+
+        {daftar && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 5, background: t.bg, display: "flex", flexDirection: "column" }}>
+            <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
+                <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>Siapa dulu?</div>
+                <button onClick={() => setDaftar(false)} aria-label="Tutup daftar" className="flex items-center gap-1"
+                  style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+                  <X size={17} /> Tutup
+                </button>
+              </div>
+              <div className="flex items-center gap-2" style={{ margin: "0 20px 8px", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+                <Search size={18} color={t.text2} style={{ flex: "none" }} />
+                <input value={cariNama} onChange={(e) => setCariNama(e.target.value)} placeholder="Cari nama…"
+                  style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              </div>
+              <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 20px 24px" }}>
+                {entri.map((gsx, idx) => ({ gsx, idx })).filter(({ gsx }) => {
+                  const q = cariNama.trim().toLowerCase();
+                  return gsx.length > 0 && (!q || gsx.some((g) => `${g.customer.nama} ${g.customer.kelas || ""}`.toLowerCase().includes(q)));
+                }).map(({ gsx, idx }) => {
+                  const sudah = gsx.every((g) => g.txs.every((x) => x.billedAt));
+                  return (
+                    <button key={idx} onClick={() => { setI(idx); setDaftar(false); }} className="flex items-center justify-between"
+                      style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
+                      <span style={{ minWidth: 0, fontSize: 17, fontWeight: 800, lineHeight: 1.2 }}>
+                        {gsx.map((g) => g.customer.nama).join(" + ")}
+                        <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700, border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", whiteSpace: "nowrap", verticalAlign: 2 }}>{gsx[0].customer.kelas || gsx[0].customer.tingkat || "-"}</span>
+                      </span>
+                      <span className="flex items-center gap-2" style={{ flex: "none" }}>
+                        <span style={{ fontSize: 15, fontWeight: 700 }}>{rupiah(gsx.reduce((s, g) => s + g.total, 0))}</span>
+                        {sudah && <span style={{ width: 24, height: 24, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={14} strokeWidth={3} /></span>}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         )}
 
         {selesai && (
