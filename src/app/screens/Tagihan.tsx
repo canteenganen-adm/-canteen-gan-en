@@ -450,6 +450,9 @@ export default function Tagihan({
   const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number; sebagian?: boolean; minggu?: number } | null>(null);
   /** Tanggal (transaksi) yang dicentang untuk Lunas sebagian — satu ketukan melunaskan semua yang dicentang. */
   const [pilihTx, setPilihTx] = useState<Set<string>>(new Set());
+  /** Lembar "Lunaskan N minggu": minggu yang dilepas centangnya (awalnya semua tercentang). */
+  const [mingguLepas, setMingguLepas] = useState<Set<string>>(new Set());
+  useEffect(() => { setMingguLepas(new Set()); }, [confirmLunas]);
   const togglePilihTx = (id: string) => setPilihTx((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   /** Anak satu nomor WhatsApp dikelompokkan (kakak-adik) supaya terlihat satu keluarga. */
   const bundelWa = (list: Grup[]) => {
@@ -1029,8 +1032,51 @@ export default function Tagihan({
         </div>
       )}
 
+      {/* Lembar LUNASKAN N MINGGU (tagihan gabungan): satu baris per minggu, awalnya tercentang semua; lepas centang = tidak dilunaskan */}
+      {confirmLunas && confirmLunas.minggu && (() => {
+        const per = new Map<string, Transaction[]>();
+        for (const tx of confirmLunas.txs) { const k = mondayOf(opDate(tx)); (per.get(k) || per.set(k, []).get(k)!).push(tx); }
+        const minggu = [...per.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+        const dipilih = minggu.filter(([k]) => !mingguLepas.has(k));
+        const txDipilih = dipilih.flatMap(([, v]) => v);
+        const total = txDipilih.reduce((s, x) => s + x.total, 0);
+        const tutup = () => setConfirmLunas(null);
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
+            <div onClick={tutup} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
+            <div style={{ position: "relative", width: "100%", maxWidth: 360, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "16px 16px 16px", maxHeight: "90vh", overflowY: "auto" }}>
+              <div className="flex items-center justify-between" style={{ gap: 10 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-.01em" }}>{confirmLunas.customer.nama}</div>
+                <button onClick={tutup} aria-label="Batal lunaskan" style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}><X size={20} /></button>
+              </div>
+              <div style={{ height: 1, background: t.divider, margin: "10px 0 2px" }} />
+              {minggu.map(([k, v], i) => {
+                const on = !mingguLepas.has(k);
+                const sub = v.reduce((s, x) => s + x.total, 0);
+                return (
+                  <button key={k} role="checkbox" aria-checked={on} onClick={() => setMingguLepas((p) => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; })}
+                    className="flex items-center" style={{ width: "100%", gap: 12, padding: "12px 0", minHeight: 56, background: "transparent", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", textAlign: "left", cursor: "pointer", color: on ? t.text : t.text2 }}>
+                    <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : "transparent", border: on ? "none" : `1.5px solid ${t.borderStrong}`, color: t.onPrimary }}>{on && <Check size={17} strokeWidth={3} />}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 16, fontWeight: 600 }}>{labelPekan(k)}</span>
+                      <span style={{ display: "block", fontSize: 13, color: t.text2 }}>{v.length} transaksi</span>
+                    </span>
+                    <span style={{ fontSize: 16, fontWeight: 600, flex: "none" }}>{rupiah(sub)}</span>
+                  </button>
+                );
+              })}
+              <button onClick={() => { if (!txDipilih.length) return; txDipilih.forEach(markPaid); setPilihTx((prev) => { const n = new Set(prev); txDipilih.forEach((x) => n.delete(x.id)); return n; }); tutup(); }}
+                style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 14, border: "none", background: txDipilih.length ? t.primary : t.divider, color: txDipilih.length ? t.onPrimary : t.text2, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+                {txDipilih.length ? `Lunaskan ${dipilih.length} minggu · ${rupiah(total)}` : "Pilih minggu"}
+              </button>
+              <button onClick={tutup} style={{ width: "100%", height: 48, marginTop: 8, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>Batal</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Popup struk KONFIRMASI LUNASKAN (Ya/Tidak) */}
-      {confirmLunas && (
+      {confirmLunas && !confirmLunas.minggu && (
         <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
           <div onClick={() => setConfirmLunas(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
           <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
