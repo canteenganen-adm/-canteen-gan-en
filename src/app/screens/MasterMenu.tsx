@@ -553,11 +553,11 @@ export default function MasterMenu({
                     return (
                       <div style={{ background: t.surface, margin: "0 6px", padding: "20px 16px 22px",
                         fontFamily: STRUK_TITIK, textTransform: "uppercase",
-                        fontSize: 15, fontWeight: 400, lineHeight: 1.75, color: t.text,
+                        fontSize: 13.5, fontWeight: 400, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         <div style={{ position: "relative", textAlign: "center" }}>
-                          <div style={{ fontSize: 30, letterSpacing: ".08em", lineHeight: 1.2 }}>Menu PO</div>
-                          <div style={{ fontSize: 15 }}>{serviceDateLabel(tanggal)}</div>
+                          <div style={{ fontSize: 20, letterSpacing: ".1em", lineHeight: 1.3 }}>Menu PO</div>
+                          <div style={{ fontSize: 13, color: t.text2 }}>{serviceDateLabel(tanggal)}</div>
                           {/* Muat ulang pratinjau (ikon segarkan kembali — permintaan Mama; sempat terhapus bersama selector ganda) */}
                           <button onClick={doRefresh} aria-label="Muat ulang pratinjau" title="Muat ulang"
                             style={{ position: "absolute", right: -8, top: -10, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
@@ -565,16 +565,15 @@ export default function MasterMenu({
                             <RefreshCw size={20} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
                           </button>
                         </div>
-                        <div style={{ textAlign: "center", letterSpacing: ".3em", color: "#B9AE92", overflow: "hidden", whiteSpace: "nowrap" }}>* * * * * * * *</div>
+                        <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "10px 0 0" }} />
                         {kats.map((k, i) => (
                           <div key={k}>
-                            <div className="flex justify-between" style={{ background: t.primary, color: t.onPrimary, padding: "2px 10px", margin: i > 0 ? "14px 0 4px" : "8px 0 4px" }}>
+                            <div className="flex justify-between" style={{ background: t.primaryLight, color: t.text, padding: "1px 10px", margin: i > 0 ? "12px 0 2px" : "10px 0 2px", borderRadius: 4 }}>
                               <span>{k}</span><span>{byKat[k]?.length || 0}</span>
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
-                              <div key={m.id} className="flex" style={{ gap: 6, alignItems: "baseline" }}>
+                              <div key={m.id} className="flex justify-between" style={{ gap: 10, alignItems: "baseline", padding: "0 10px" }}>
                                 <span style={{ minWidth: 0 }}>{m.name}</span>
-                                <i style={{ flex: 1, minWidth: 8, borderBottom: "2px dotted #CFC6AE", transform: "translateY(-3px)" }} />
                                 <span style={{ flex: "none" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
@@ -583,9 +582,8 @@ export default function MasterMenu({
                           </div>
                         ))}
                         <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 6px" }} />
-                        <div className="flex" style={{ gap: 6, alignItems: "baseline", fontSize: 18 }}>
+                        <div className="flex justify-between" style={{ alignItems: "baseline", fontSize: 14.5, padding: "0 10px" }}>
                           <span>Total</span>
-                          <i style={{ flex: 1, minWidth: 8, borderBottom: "2px dotted #CFC6AE", transform: "translateY(-3px)" }} />
                           <span>{tampil.length} item</span>
                         </div>
                         {tampil.length === 0 && (
