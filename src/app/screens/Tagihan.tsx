@@ -718,9 +718,7 @@ export default function Tagihan({
                       </button>
                       {buka && (
                         <div style={{ padding: "2px 0 10px" }}>
-                          {p.berjalan ? (
-                            <div style={{ margin: "0 2px 12px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Tagih setelah Jumat.</div>
-                          ) : p.belum > 0 && (
+                          {p.belum > 0 && (
                             <>
                               <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
                                 style={{ width: "100%", height: 56, marginBottom: calonGabung.length ? 6 : 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
