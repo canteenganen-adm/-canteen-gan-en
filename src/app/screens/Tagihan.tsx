@@ -1036,7 +1036,7 @@ export default function Tagihan({
       )}
 
       {/* Lembar LUNASKAN N MINGGU (tagihan gabungan): satu baris per minggu, awalnya tercentang semua; lepas centang = tidak dilunaskan */}
-      {confirmLunas && confirmLunas.minggu && (() => {
+      {confirmLunas && (() => {
         const per = new Map<string, Transaction[]>();
         for (const tx of confirmLunas.txs) { const k = mondayOf(opDate(tx)); (per.get(k) || per.set(k, []).get(k)!).push(tx); }
         const minggu = [...per.entries()].sort((a, b) => b[0].localeCompare(a[0]));
@@ -1070,43 +1070,13 @@ export default function Tagihan({
               })}
               <button onClick={() => { if (!txDipilih.length) return; txDipilih.forEach(markPaid); setPilihTx((prev) => { const n = new Set(prev); txDipilih.forEach((x) => n.delete(x.id)); return n; }); tutup(); }}
                 style={{ width: "100%", height: 52, marginTop: 12, borderRadius: 14, border: "none", background: txDipilih.length ? t.primary : t.divider, color: txDipilih.length ? t.onPrimary : t.text2, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
-                {txDipilih.length ? `Lunaskan ${dipilih.length} minggu · ${rupiah(total)}` : "Pilih minggu"}
+                {txDipilih.length ? `${dipilih.length > 1 ? `Lunaskan ${dipilih.length} minggu` : "Lunaskan"} · ${rupiah(total)}` : "Pilih minggu"}
               </button>
               <button onClick={tutup} style={{ width: "100%", height: 48, marginTop: 8, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>Batal</button>
             </div>
           </div>
         );
       })()}
-
-      {/* Popup struk KONFIRMASI LUNASKAN (Ya/Tidak) */}
-      {confirmLunas && !confirmLunas.minggu && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
-          <div onClick={() => setConfirmLunas(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
-            <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600, textAlign: "center" }}>
-              <div style={{ fontSize: 14.5, fontWeight: 800 }}>{confirmLunas.minggu ? `LUNASKAN ${confirmLunas.minggu} MINGGU?` : confirmLunas.sebagian ? `LUNASKAN ${confirmLunas.txs.length} TANGGAL?` : "LUNASKAN SEMUA?"}</div>
-              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-              <div style={{ fontSize: 13, lineHeight: 1.7 }}>{confirmLunas.customer.nama}</div>
-              <div style={{ fontSize: 12, color: t.text2 }}>{confirmLunas.txs.length} transaksi</div>
-              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4 }}>{rupiah(confirmLunas.total)}</div>
-              <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
-                <button onClick={() => setConfirmLunas(null)}
-                  style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  Tidak
-                </button>
-                <button onClick={() => { confirmLunas.txs.forEach(markPaid); setPilihTx((prev) => { const n = new Set(prev); confirmLunas.txs.forEach((x) => n.delete(x.id)); return n; }); setConfirmLunas(null); }}
-                  style={{ flex: 1, height: 50, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-                  Ya
-                </button>
-              </div>
-            </div>
-            <button onClick={() => setConfirmLunas(null)} aria-label="Batal lunaskan"
-              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
-              <X size={19} />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Konfirmasi pindah ke Tong Sampah */}
       {trashConfirmTx && (
