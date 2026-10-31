@@ -810,21 +810,23 @@ export default function Tagihan({
                               <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
                                 style={{ width: "100%", height: 44, marginTop: 8, marginBottom: calonGabung.length ? 0 : 0, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                                 <MessageCircle size={17} />
-                                {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu (${antreanMinggu([p.senin, ...gabungDipilih]).reduce((s, e) => s + e.length, 0)})` : `Tagih satu per satu (${p.belum})`}
+                                {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu` : `Tagih minggu ${labelPekan(p.senin)}`}
                               </button>
-                              {/* Gabung dengan minggu sebelumnya: satu pesan per anak, bukan dua WhatsApp. Baris berikutnya muncul setelah yang ini dicentang. */}
-                              {calonGabung.slice(0, gabungN + 1).map((c, i) => {
-                                const on = i < gabungN;
-                                return (
-                                  <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} role="checkbox" aria-checked={on} className="flex items-center gap-3"
-                                    style={{ width: "100%", minHeight: 40, padding: "0 2px", marginBottom: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
-                                    <span style={{ width: 20, height: 20, borderRadius: 6, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
-                                      {on && <Check size={14} strokeWidth={3} />}
-                                    </span>
-                                    <span style={{ fontSize: 14, fontWeight: 600 }}>Sertakan {labelPekan(c.senin)} dalam pesan <span style={{ color: t.text2, fontWeight: 600 }}>({c.belum})</span></span>
-                                  </button>
-                                );
-                              })}
+                              {/* Minggu lama yang ikut SATU pesan WhatsApp = pil "+ 19–23 Okt" (opsi A pilihan pemilik 1 Nov). Pil berikutnya muncul setelah yang ini diketuk; ketuk pil terpilih = lepas dia dan yang sesudahnya. */}
+                              {calonGabung.length > 0 && (
+                                <div className="flex" style={{ gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                                  {calonGabung.slice(0, gabungN + 1).map((c, i) => {
+                                    const on = i < gabungN;
+                                    return (
+                                      <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} aria-pressed={on}
+                                        className="flex items-center"
+                                        style={{ gap: 6, height: 38, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${on ? t.primaryLine : t.borderStrong}`, background: on ? t.primaryLight : "transparent", color: t.text, fontFamily: "inherit", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
+                                        {on ? <Check size={15} strokeWidth={3} /> : "+"} {labelPekan(c.senin)}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </>
                           )}
                   </>
