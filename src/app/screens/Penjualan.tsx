@@ -433,6 +433,11 @@ export default function Penjualan({
       {/* Ringkasan */}
       {view === "summary" && (
         <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan">
+          {/* Penanda ala struk (pemilik 1 Nov): hari, tanggal bulan tahun + jam:menit, garis putus-putus, daftar, garis putus-putus, Kosongkan Semua, Total */}
+          <div style={{ textAlign: "center", fontSize: 14.5, fontWeight: 700, color: t.text2 }}>
+            {serviceDateLabel(txDate)} · {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
+          </div>
+          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 0" }} />
           {cart.map((l) => (
             <div key={l.key} className="flex items-center gap-3" style={{ padding: "12px 0", borderBottom: `1px solid ${t.divider}` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -445,6 +450,7 @@ export default function Penjualan({
             </div>
           ))}
 
+          <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "0 0 2px" }} />
           {cart.length > 0 && (
             <button onClick={clearCart} className="flex items-center gap-1" style={{ marginTop: 10, background: "transparent", border: "none", color: t.error, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
               <Trash2 size={14} /> Kosongkan Semua
