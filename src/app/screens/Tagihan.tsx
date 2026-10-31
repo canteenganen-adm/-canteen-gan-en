@@ -158,17 +158,10 @@ export default function Tagihan({
    * pekanBuka = Senin pekan yang sedang dibuka (null = daftar pekan); bulanLihat = "YYYY-MM" (null = bulan pekan ini). */
   const [pekanBuka, setPekanBuka] = useState<string | null>(null);
   const [bulanLihat, setBulanLihat] = useState<string | null>(null);
-  /** Gulir pertama: barisan chip mulai dari BULAN BERJALAN; bulan lama tetap ada di sebelah kiri. */
-  const awalGulir = useRef(true);
   /** Satu minggu terbuka sekali; membuka yang lain menutup sebelumnya, jadi baris yang baru dibuka digulir ke bawah header. */
   useEffect(() => {
     if (!pekanBuka) return;
     const id = requestAnimationFrame(() => {
-      if (awalGulir.current) {
-        awalGulir.current = false;
-        const bulan = document.getElementById(`bulan-${bulanPekan(mondayOf(todayISO()))}`);
-        if (bulan) { bulan.scrollIntoView({ inline: "start", block: "nearest" }); return; }
-      }
       document.getElementById(`chip-${pekanBuka}`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     });
     return () => cancelAnimationFrame(id);
@@ -303,7 +296,7 @@ export default function Tagihan({
   const kelompokBulan = (() => {
     const out: { ym: string; label: string; pekan: typeof urutPekan }[] = [];
     const bulanIniYm = bulanPekan(mondayOf(hariIni));
-    for (const x of urutPekan.filter((y) => y.belum > 0 || bulanPekan(y.senin) === bulanIniYm || y.senin === pekanBuka)) {
+    for (const x of urutPekan.filter((y) => y.anak > 0 || bulanPekan(y.senin) === bulanIniYm || y.senin === pekanBuka)) {
       const ym = bulanPekan(x.senin);
       let k = out.find((o) => o.ym === ym);
       if (!k) {
@@ -357,14 +350,29 @@ export default function Tagihan({
     : [];
   const gabungDipilih = calonGabung.slice(0, gabungN).map((x) => x.senin);
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
-  /** Minggu terpilih: awalnya yang TERLAMA yang masih ada yang belum ditagih (supaya tidak ada yang terlupa); kalau tidak ada, yang terbaru. */
+  /** Tab Transaksi tetap terpasang tetapi disembunyikan (display:none) saat tab lain aktif — gulir ke chip terpilih TIDAK jalan saat tersembunyi.
+   * Maka begitu barisan chip benar-benar tampil (lebar 0 -> >0), gulir sekali ke minggu terpilih (minggu ini). */
+  useEffect(() => {
+    if (!pekanBuka) return;
+    const chip = document.getElementById(`chip-${pekanBuka}`);
+    const strip = chip?.closest(".hscroll") as HTMLElement | null;
+    if (!chip || !strip) return;
+    const gulir = () => chip.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+    let tampil = strip.clientWidth > 0;
+    if (tampil) gulir();
+    const ro = new ResizeObserver(() => {
+      const kini = strip.clientWidth > 0;
+      if (kini && !tampil) gulir();
+      tampil = kini;
+    });
+    ro.observe(strip);
+    return () => ro.disconnect();
+  }, [pekanBuka]);
+  /** Minggu terpilih awal = MINGGU INI (yang memuat hari ini), seperti kalender yang membuka di hari ini. */
   useEffect(() => {
     if (pekanBuka && pekanList.some((x) => x.senin === pekanBuka)) return;
     const asal = [...pekanList].sort((a, b) => a.senin.localeCompare(b.senin));
-    const bulanIni = bulanPekan(mondayOf(todayISO()));
-    const ini = asal.filter((x) => bulanPekan(x.senin) === bulanIni);
-    const pilih = ini.find((x) => x.belum > 0 && !x.berjalan) || ini.find((x) => x.belum > 0) || ini[ini.length - 1]
-      || asal.find((x) => x.belum > 0) || asal[asal.length - 1];
+    const pilih = asal.find((x) => x.senin === mondayOf(todayISO())) || asal[asal.length - 1];
     setPekanBuka(pilih ? pilih.senin : null);
   }, [pekanList, pekanBuka]);
   useEffect(() => { setGabungN(0); }, [pekanBuka]);
