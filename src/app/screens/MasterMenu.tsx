@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
-  Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks, RotateCcw } from "lucide-react";
+  Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks } from "lucide-react";
 import RailGeser from "../components/RailGeser";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
@@ -390,9 +390,9 @@ export default function MasterMenu({
                 style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
             </div>
             {tanggal !== tanggalBawaan() && (
-              <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan" title="Kembali"
-                style={{ flex: "none", width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", color: t.text, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <RotateCcw size={18} />
+              <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
+                style={{ flex: "none", height: 40, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
+                {tanggalBawaan() === todayISO() ? "Hari ini" : "Kembali"}
               </button>
             )}
             </div>
