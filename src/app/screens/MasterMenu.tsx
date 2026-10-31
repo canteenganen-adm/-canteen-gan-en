@@ -5,8 +5,8 @@ import {
 import RailGeser from "../components/RailGeser";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 
-/** Huruf titik-titik ala printer thermal, khusus kertas Menu PO (pilihan pemilik 1 Nov). */
-const STRUK_TITIK = "'DotGothic16', 'DM Mono', ui-monospace, 'Courier New', monospace";
+/** Huruf kertas Menu PO: IBM Plex Mono (satu jenis, kapital; pilihan pemilik 1 Nov setelah adu dengan Anonymous Pro). */
+const STRUK_TITIK = "'IBM Plex Mono', 'DM Mono', ui-monospace, 'Courier New', monospace";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
@@ -553,7 +553,7 @@ export default function MasterMenu({
                     return (
                       <div style={{ background: t.surface, margin: "0 6px", padding: "20px 16px 22px",
                         fontFamily: STRUK_TITIK, textTransform: "uppercase",
-                        fontSize: 13.5, fontWeight: 400, lineHeight: 1.7, color: t.text,
+                        fontSize: 13.5, fontWeight: 500, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         <div style={{ position: "relative", textAlign: "center" }}>
                           <div style={{ fontSize: 20, letterSpacing: ".1em", lineHeight: 1.3 }}>Menu PO</div>
