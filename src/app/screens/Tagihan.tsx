@@ -754,8 +754,9 @@ export default function Tagihan({
             ) : (
               <div onTouchStart={(e) => { sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
-                {/* Barisan minggu: digeser kanan-kiri; bulan = judul kelompok (ditulis sekali); garis di dasar chip = status (merah ada yang belum ditagih, hijau beres, abu kosong) */}
-                <RailGeser style={{ gap: 12, padding: "2px 2px 8px" }}>
+                {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
+                <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "12px 12px 12px", marginBottom: 6 }}>
+                <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
                   {kelompokBulan.map((k) => (
                     <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>{k.label}</div>
@@ -764,8 +765,8 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka;
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => setPekanBuka(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", minWidth: 58, padding: "9px 6px", borderRadius: 12, border: "1.5px solid transparent", background: on ? t.primary : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
-                              {rentangPendek(x.senin)}
+                              style={{ flex: "none", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
                             </button>
                           );
                         })}
@@ -774,11 +775,12 @@ export default function Tagihan({
                   ))}
                 </RailGeser>
                 {pekanDibuka && ((p) => (
-                        <div style={{ padding: "2px 0 10px" }}>
+                  <>
+                    {p.belum > 0 && <div style={{ height: 1, background: t.divider, margin: "2px 0 0" }} />}
                           {p.belum > 0 && (
                             <>
                               <button onClick={() => mulaiTagih([p.senin, ...gabungDipilih])} className="flex items-center justify-center gap-2"
-                                style={{ width: "100%", height: 56, marginBottom: calonGabung.length ? 6 : 14, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+                                style={{ width: "100%", height: 52, marginTop: 10, marginBottom: calonGabung.length ? 2 : 0, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
                                 <MessageCircle size={20} />
                                 {gabungN > 0 ? `Tagih ${1 + gabungDipilih.length} minggu (${antreanMinggu([p.senin, ...gabungDipilih]).reduce((s, e) => s + e.length, 0)})` : `Tagih satu per satu (${p.belum})`}
                               </button>
@@ -787,7 +789,7 @@ export default function Tagihan({
                                 const on = i < gabungN;
                                 return (
                                   <button key={c.senin} onClick={() => setGabungN(on ? i : i + 1)} role="checkbox" aria-checked={on} className="flex items-center gap-3"
-                                    style={{ width: "100%", minHeight: 48, padding: "0 4px", marginBottom: i === Math.min(gabungN, calonGabung.length - 1) ? 12 : 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
+                                    style={{ width: "100%", minHeight: 48, padding: "0 4px", marginBottom: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
                                     <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : t.surface, border: `2px solid ${on ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
                                       {on && <Check size={17} strokeWidth={3} />}
                                     </span>
@@ -797,6 +799,11 @@ export default function Tagihan({
                               })}
                             </>
                           )}
+                  </>
+                ))(pekanDibuka)}
+                </div>
+                {pekanDibuka && ((p) => (
+                        <div style={{ padding: "2px 0 10px" }}>
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
                             : (() => {
