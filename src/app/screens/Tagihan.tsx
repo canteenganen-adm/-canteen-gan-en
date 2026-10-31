@@ -611,11 +611,11 @@ export default function Tagihan({
           const tglTx = fmtTxOp(tx).split(" · ")[0];
           return (
             <div key={tx.id} className="flex items-center"
-              style={{ borderTop: `1px solid ${t.divider}`, background: tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.primaryLight : "transparent", transition: "background 0.4s ease" }}>
+              style={{ borderTop: `1px solid ${t.divider}`, background: tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : "transparent", transition: "background 0.4s ease" }}>
               <button onClick={() => togglePilihTx(tx.id)} role="checkbox" aria-checked={dipilih} aria-label={`Pilih ${tglTx}`}
                 style={{ flex: "none", width: 54, height: 56, padding: 0, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <span style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", background: dipilih ? t.primary : t.surface, border: `2px solid ${dipilih ? t.primaryLine : t.borderStrong}`, color: t.onPrimary }}>
-                  {dipilih && <Check size={17} strokeWidth={3} />}
+                <span style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: dipilih ? t.successBg : t.surface, border: `${dipilih ? 1.8 : 2}px solid ${dipilih ? t.success : t.borderStrong}`, color: t.successText }}>
+                  {dipilih && <Check size={16} strokeWidth={3} />}
                 </span>
               </button>
               <button onClick={() => setDetailTx(tx)} className="flex items-center"
@@ -1069,7 +1069,7 @@ export default function Tagihan({
                 return (
                   <button key={k} role="checkbox" aria-checked={on} onClick={() => setMingguLepas((p) => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; })}
                     className="flex items-center" style={{ width: "100%", gap: 12, padding: "12px 0", minHeight: 56, background: "transparent", border: "none", borderTop: i ? `1px solid ${t.divider}` : "none", textAlign: "left", cursor: "pointer", color: on ? t.text : t.text2 }}>
-                    <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: on ? t.primary : "transparent", border: on ? "none" : `1.5px solid ${t.borderStrong}`, color: t.onPrimary }}>{on && <Check size={17} strokeWidth={3} />}</span>
+                    <span style={{ width: 28, height: 28, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", background: on ? t.successBg : "transparent", border: on ? `1.8px solid ${t.success}` : `2px solid ${t.borderStrong}`, color: t.successText }}>{on && <Check size={16} strokeWidth={3} />}</span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: "block", fontSize: 16, fontWeight: 600 }}>{labelPekan(k)}</span>
                       <span style={{ display: "block", fontSize: 13, color: t.text2 }}>{v.length} transaksi</span>
