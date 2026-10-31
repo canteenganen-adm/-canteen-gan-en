@@ -59,3 +59,6 @@ export function hariKerjaSebelum(iso: string, n: number) {
   }
   return hasil;
 }
+
+/** "19–23" — rentang Senin–Jumat tanpa nama bulan (bulan ditulis sekali di judul kelompok). Melintasi bulan: "28–2". */
+export const rentangPendek = (senin: string) => `${fromISO(senin).getDate()}–${fromISO(isoAdd(senin, 4)).getDate()}`;

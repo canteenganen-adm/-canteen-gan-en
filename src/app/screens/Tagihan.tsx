@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
-import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari } from "../../lib/pekan";
+import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari, rentangPendek } from "../../lib/pekan";
+import RailGeser from "../components/RailGeser";
 import PaperTabs from "../components/PaperTabs";
 import TagihSatuSatu from "../components/TagihSatuSatu";
 import RailAbjad from "../components/RailAbjad";
@@ -160,7 +161,7 @@ export default function Tagihan({
   /** Satu minggu terbuka sekali; membuka yang lain menutup sebelumnya, jadi baris yang baru dibuka digulir ke bawah header. */
   useEffect(() => {
     if (!pekanBuka) return;
-    const id = requestAnimationFrame(() => document.getElementById(`pekan-${pekanBuka}`)?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    const id = requestAnimationFrame(() => document.getElementById(`chip-${pekanBuka}`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }));
     return () => cancelAnimationFrame(id);
   }, [pekanBuka]);
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
@@ -288,10 +289,29 @@ export default function Tagihan({
   const adaBelumSesudah = bulanAda.slice(bulanIdx + 1).some(bulanAdaBelum);
   /** Geser kiri/kanan = pindah bulan (sama seperti Laporan). */
   const sentuh = useRef<{ x: number; y: number } | null>(null);
-  const geserBulan = (dx: number, dy: number) => {
+  const urutPekan = [...pekanList].sort((a, b) => a.senin.localeCompare(b.senin));
+  /** Minggu dikelompokkan per bulan (menurut Jumat); nama bulan ditulis SEKALI di judul kelompok. */
+  const kelompokBulan = (() => {
+    const out: { ym: string; label: string; pekan: typeof urutPekan }[] = [];
+    for (const x of urutPekan) {
+      const ym = bulanPekan(x.senin);
+      let k = out.find((o) => o.ym === ym);
+      if (!k) {
+        const nama = labelBulan(ym).split(" ")[0];
+        k = { ym, label: ym.slice(0, 4) === hariIni.slice(0, 4) ? nama : `${nama} ${ym.slice(0, 4)}`, pekan: [] };
+        out.push(k);
+      }
+      k.pekan.push(x);
+    }
+    return out;
+  })();
+  /** Geser kanan = minggu sebelumnya, geser kiri = minggu berikutnya. */
+  const geserPekan = (dx: number, dy: number) => {
     if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy)) return;
-    if (dx > 0 && bulanIdx > 0) setBulanLihat(bulanAda[bulanIdx - 1]);
-    else if (dx < 0 && bulanIdx < bulanAda.length - 1) setBulanLihat(bulanAda[bulanIdx + 1]);
+    const i = urutPekan.findIndex((x) => x.senin === pekanBuka);
+    if (i < 0) return;
+    if (dx > 0 && i > 0) setPekanBuka(urutPekan[i - 1].senin);
+    else if (dx < 0 && i < urutPekan.length - 1) setPekanBuka(urutPekan[i + 1].senin);
   };
   const pekanDibuka = pekanBuka ? pekanList.find((p) => p.senin === pekanBuka) || null : null;
   const groupsPekan = useMemo(
@@ -327,8 +347,13 @@ export default function Tagihan({
     : [];
   const gabungDipilih = calonGabung.slice(0, gabungN).map((x) => x.senin);
   /** Pekan yang dibuka sudah habis (semua lunas/dipindah) → kembali ke daftar, jangan loncat sendiri saat ada tagihan baru. */
-  useEffect(() => { if (pekanBuka && !pekanDibuka) setPekanBuka(null); }, [pekanBuka, pekanDibuka]);
-  useEffect(() => { setPekanBuka(null); }, [bulanAktif]);
+  /** Minggu terpilih: awalnya yang TERLAMA yang masih ada yang belum ditagih (supaya tidak ada yang terlupa); kalau tidak ada, yang terbaru. */
+  useEffect(() => {
+    if (pekanBuka && pekanList.some((x) => x.senin === pekanBuka)) return;
+    const asal = [...pekanList].sort((a, b) => a.senin.localeCompare(b.senin));
+    const pilih = asal.find((x) => x.belum > 0 && !x.berjalan) || asal.find((x) => x.belum > 0) || asal[asal.length - 1];
+    setPekanBuka(pilih ? pilih.senin : null);
+  }, [pekanList, pekanBuka]);
   useEffect(() => { setGabungN(0); }, [pekanBuka]);
   /** Pencarian kosong di Belum Dibayar: beri tahu kalau anaknya ada di Lunas/Dibatalkan. */
   const cariLain = useMemo(() => {
@@ -707,45 +732,29 @@ export default function Tagihan({
               <Empty q="" />
             ) : (
               <div onTouchStart={(e) => { sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
-                onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserBulan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
-                <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", marginTop: 8 }}>
-                  <button onClick={() => bulanIdx > 0 && setBulanLihat(bulanAda[bulanIdx - 1])} aria-label="Bulan sebelumnya" aria-disabled={bulanIdx <= 0}
-                    style={{ ...panahBulan, opacity: bulanIdx > 0 ? 1 : 0.25, pointerEvents: bulanIdx > 0 ? "auto" : "none" }}>
-                    <ChevronLeft size={22} />{adaBelumSebelum && <TitikMerah />}
-                  </button>
-                  <span style={{ fontSize: 18, fontWeight: 700, textAlign: "center" }}>{labelBulan(bulanAktif)}</span>
-                  <button onClick={() => bulanIdx < bulanAda.length - 1 && setBulanLihat(bulanAda[bulanIdx + 1])} aria-label="Bulan berikutnya" aria-disabled={bulanIdx >= bulanAda.length - 1}
-                    style={{ ...panahBulan, opacity: bulanIdx < bulanAda.length - 1 ? 1 : 0.25, pointerEvents: bulanIdx < bulanAda.length - 1 ? "auto" : "none" }}>
-                    <ChevronRight size={22} />{adaBelumSesudah && <TitikMerah />}
-                  </button>
-                </div>
-
-                {/* Satu minggu = satu dropdown. Membuka yang lain menutup yang sebelumnya. */}
-                {pekanBulanIni.map((p) => {
-                  const buka = pekanBuka === p.senin;
-                  return (
-                    <div key={p.senin} id={`pekan-${p.senin}`} style={{ borderBottom: `1px solid ${t.divider}`, scrollMarginTop: 176 }}>
-                      <button onClick={() => setPekanBuka(buka ? null : p.senin)} aria-expanded={buka}
-                        style={{ display: "block", width: "100%", padding: "16px 2px 14px", background: "transparent", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
-                        <span className="flex items-center justify-between" style={{ gap: 10 }}>
-                          <span style={{ fontSize: 17, fontWeight: 700 }}>{labelPekan(p.senin)}</span>
-                          <span className="flex items-center gap-2" style={{ flex: "none" }}>
-                            {p.berjalan && <PilBerjalan />}
-                            {p.belum > 0 ? (
-                              <span><span style={{ fontSize: 21, fontWeight: 700, color: t.error }}>{p.belum}</span><span style={{ fontSize: 13, color: t.text2, marginLeft: 4 }}>belum</span></span>
-                            ) : p.anak > 0 ? (
-                              <span style={{ width: 24, height: 24, borderRadius: "50%", display: "grid", placeItems: "center", background: t.successBg, border: `1.8px solid ${t.success}`, color: t.successText }}><Check size={14} strokeWidth={3} /></span>
-                            ) : null}
-                            {buka ? <ChevronUp size={20} color={t.text2} /> : <ChevronDown size={20} color="#B3AF9F" />}
-                          </span>
-                        </span>
-                        {p.anak > 0 && (
-                          <span aria-hidden style={{ display: "block", height: 4, borderRadius: 2, background: t.divider, marginTop: 11, overflow: "hidden" }}>
-                            <span style={{ display: "block", height: "100%", width: `${Math.round((p.sudah / p.anak) * 100)}%`, background: t.success, borderRadius: 2 }} />
-                          </span>
-                        )}
-                      </button>
-                      {buka && (
+                onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
+                {/* Barisan minggu: digeser kanan-kiri; bulan = judul kelompok (ditulis sekali); garis di dasar chip = status (merah ada yang belum ditagih, hijau beres, abu kosong) */}
+                <RailGeser style={{ gap: 14, padding: "2px 2px 10px" }}>
+                  {kelompokBulan.map((k) => (
+                    <div key={k.ym} style={{ flex: "none" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>{k.label}</div>
+                      <div className="flex" style={{ gap: 6 }}>
+                        {k.pekan.map((x) => {
+                          const on = x.senin === pekanBuka;
+                          const warna = x.belum > 0 ? "#D95D5D" : x.anak > 0 ? t.success : "#DDD4C0";
+                          return (
+                            <button key={x.senin} id={`chip-${x.senin}`} onClick={() => setPekanBuka(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
+                              style={{ flex: "none", minWidth: 68, padding: "9px 8px 8px", borderRadius: 13, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primary : t.surface, color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              {rentangPendek(x.senin)}
+                              <span style={{ display: "block", height: 3, borderRadius: 2, margin: "7px 4px 0", background: warna }} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </RailGeser>
+                {pekanDibuka && ((p) => (
                         <div style={{ padding: "2px 0 10px" }}>
                           {p.belum > 0 && (
                             <>
@@ -806,10 +815,7 @@ export default function Tagihan({
                                 );
                               })()}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                ))(pekanDibuka)}
               </div>
             )}
           </div>
