@@ -604,7 +604,7 @@ export default function Tagihan({
 
         {/* Footer: dua tombol berlabel, sama besar (pemilik memilih opsi 2; ikon polos susah ditebak Papa/Mama).
             "Tagih via WA" BERUBAH HIJAU "Ditagih dd/mm" setelah tagihan dikirim; tetap bisa diketuk untuk kirim ulang. */}
-        {expanded && <div className="flex gap-2" style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
+        {expanded && <div className="flex gap-2" style={{ flexWrap: "wrap", padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
           {g.txs.every((tx) => tx.billedAt) ? (() => {
             const b = g.txs.reduce((m, tx) => (tx.billedAt! > m ? tx.billedAt! : m), g.txs[0].billedAt!);
             return (
@@ -621,8 +621,8 @@ export default function Tagihan({
             </button>
           )}
           <button onClick={() => (terpilih.length ? setConfirmLunas({ customer: g.customer, txs: terpilih, total: terpilih.reduce((s, x) => s + x.total, 0), sebagian: true }) : setConfirmLunas(g))}
-            style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
-            {terpilih.length ? `Lunaskan ${terpilih.length} tanggal` : "Lunaskan Semua"}
+            style={{ flex: terpilih.length ? "1 1 100%" : 1, order: terpilih.length ? -1 : 0, minWidth: 0, height: 48, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, cursor: "pointer", fontWeight: 800, fontSize: 14.5 }}>
+            {terpilih.length ? `Lunaskan ${terpilih.length} tanggal · ${rupiah(terpilih.reduce((s, x) => s + x.total, 0))}` : "Lunaskan Semua"}
           </button>
         </div>}
       </div>
