@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, MessageCircle } from "lucide-react";
 import { t } from "../../lib/theme";
+import IkonDitagih from "./IkonDitagih";
 
 /** Lebar dua tombol (Tagih + Lunas) yang terbuka setelah baris digeser sebagian. */
 const LEBAR_AKSI = 168;
@@ -11,7 +12,7 @@ let sudahIntip = false;
 
 /** Baris yang bisa digeser ke kiri: geser sebagian = dua tombol (Tagih, Lunas); geser penuh = Lunas langsung (Urungkan muncul).
  *  Mengikuti kebiasaan iPhone (usul pemilik 1 Nov: Mama capek membuka kartu satu per satu untuk melunaskan). */
-export default function GeserBaris({ children, onTagih, onLunas }: { children: ReactNode; onTagih: () => void; onLunas: () => void }) {
+export default function GeserBaris({ children, onTagih, onLunas, sudahTagih }: { children: ReactNode; onTagih: () => void; onLunas: () => void; sudahTagih?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [dx, setDx] = useState(0);
   const [tarik, setTarik] = useState(false);
@@ -79,9 +80,10 @@ export default function GeserBaris({ children, onTagih, onLunas }: { children: R
       onPointerDown={turun} onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={lepas}
       onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
       <div aria-hidden={!terbuka} style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: lebarAksi, display: "flex", overflow: "hidden" }}>
-        <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onTagih(); }} aria-label="Tagih via WhatsApp"
+        <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onTagih(); }} aria-label={sudahTagih ? `Sudah ditagih ${sudahTagih}, kirim ulang via WhatsApp` : "Tagih via WhatsApp"}
           style={{ flex: "none", width: LEBAR_TAGIH, border: "none", background: "#8C8575", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>
-          <MessageCircle size={20} />Tagih
+          {sudahTagih ? <IkonDitagih size={22} color="#fff" /> : <MessageCircle size={20} />}
+          <span style={{ lineHeight: 1.15, textAlign: "center" }}>{sudahTagih ? "Ditagih" : "Tagih"}{sudahTagih && <span style={{ display: "block", fontSize: 12, fontWeight: 600, opacity: 0.9 }}>{sudahTagih}</span>}</span>
         </button>
         <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onLunas(); }} aria-label="Lunas"
           style={{ flex: 1, minWidth: 0, border: "none", background: t.success, color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: 0, opacity: penuh ? 1 : 0.96 }}>
