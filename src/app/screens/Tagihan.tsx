@@ -158,10 +158,19 @@ export default function Tagihan({
    * pekanBuka = Senin pekan yang sedang dibuka (null = daftar pekan); bulanLihat = "YYYY-MM" (null = bulan pekan ini). */
   const [pekanBuka, setPekanBuka] = useState<string | null>(null);
   const [bulanLihat, setBulanLihat] = useState<string | null>(null);
+  /** Gulir pertama: barisan chip mulai dari BULAN BERJALAN; bulan lama tetap ada di sebelah kiri. */
+  const awalGulir = useRef(true);
   /** Satu minggu terbuka sekali; membuka yang lain menutup sebelumnya, jadi baris yang baru dibuka digulir ke bawah header. */
   useEffect(() => {
     if (!pekanBuka) return;
-    const id = requestAnimationFrame(() => document.getElementById(`chip-${pekanBuka}`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }));
+    const id = requestAnimationFrame(() => {
+      if (awalGulir.current) {
+        awalGulir.current = false;
+        const bulan = document.getElementById(`bulan-${bulanPekan(mondayOf(todayISO()))}`);
+        if (bulan) { bulan.scrollIntoView({ inline: "start", block: "nearest" }); return; }
+      }
+      document.getElementById(`chip-${pekanBuka}`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    });
     return () => cancelAnimationFrame(id);
   }, [pekanBuka]);
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
@@ -293,7 +302,8 @@ export default function Tagihan({
   /** Minggu dikelompokkan per bulan (menurut Jumat); nama bulan ditulis SEKALI di judul kelompok. */
   const kelompokBulan = (() => {
     const out: { ym: string; label: string; pekan: typeof urutPekan }[] = [];
-    for (const x of urutPekan) {
+    const bulanIniYm = bulanPekan(mondayOf(hariIni));
+    for (const x of urutPekan.filter((y) => y.belum > 0 || bulanPekan(y.senin) === bulanIniYm || y.senin === pekanBuka)) {
       const ym = bulanPekan(x.senin);
       let k = out.find((o) => o.ym === ym);
       if (!k) {
@@ -351,7 +361,10 @@ export default function Tagihan({
   useEffect(() => {
     if (pekanBuka && pekanList.some((x) => x.senin === pekanBuka)) return;
     const asal = [...pekanList].sort((a, b) => a.senin.localeCompare(b.senin));
-    const pilih = asal.find((x) => x.belum > 0 && !x.berjalan) || asal.find((x) => x.belum > 0) || asal[asal.length - 1];
+    const bulanIni = bulanPekan(mondayOf(todayISO()));
+    const ini = asal.filter((x) => bulanPekan(x.senin) === bulanIni);
+    const pilih = ini.find((x) => x.belum > 0 && !x.berjalan) || ini.find((x) => x.belum > 0) || ini[ini.length - 1]
+      || asal.find((x) => x.belum > 0) || asal[asal.length - 1];
     setPekanBuka(pilih ? pilih.senin : null);
   }, [pekanList, pekanBuka]);
   useEffect(() => { setGabungN(0); }, [pekanBuka]);
@@ -734,17 +747,17 @@ export default function Tagihan({
               <div onTouchStart={(e) => { sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Barisan minggu: digeser kanan-kiri; bulan = judul kelompok (ditulis sekali); garis di dasar chip = status (merah ada yang belum ditagih, hijau beres, abu kosong) */}
-                <RailGeser style={{ gap: 14, padding: "2px 2px 10px" }}>
+                <RailGeser style={{ gap: 12, padding: "2px 2px 8px" }}>
                   {kelompokBulan.map((k) => (
-                    <div key={k.ym} style={{ flex: "none" }}>
+                    <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>{k.label}</div>
-                      <div className="flex" style={{ gap: 6 }}>
+                      <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka;
                           const warna = x.belum > 0 ? "#D95D5D" : x.anak > 0 ? t.success : "#DDD4C0";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => setPekanBuka(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", minWidth: 68, padding: "9px 8px 8px", borderRadius: 13, border: `1.5px solid ${on ? t.primary : t.border}`, background: on ? t.primary : t.surface, color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", minWidth: 58, padding: "8px 6px 7px", borderRadius: 12, border: "1.5px solid transparent", background: on ? t.primary : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {rentangPendek(x.senin)}
                               <span style={{ display: "block", height: 3, borderRadius: 2, margin: "7px 4px 0", background: warna }} />
                             </button>
@@ -799,7 +812,7 @@ export default function Tagihan({
                                         </div>
                                       );
                                       return (
-                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 3 ? 22 : 0 }}>
+                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 7 ? 22 : 0 }}>
                                           {kepala && (
                                             <div id={`abj-${p.senin}-${h}`} style={{ margin: "24px 0 6px 2px", scrollMarginTop: 176, fontSize: 16, fontWeight: 800, color: t.text2, letterSpacing: ".04em" }}>{h}</div>
                                           )}
@@ -807,7 +820,7 @@ export default function Tagihan({
                                         </div>
                                       );
                                     })}
-                                    {abjad && ada.length > 3 && (
+                                    {abjad && ada.length > 7 && (
                                       <RailAbjad huruf={ada} bawah={NAV_HEIGHT + 16}
                                         onPilih={(h) => document.getElementById(`abj-${p.senin}-${h}`)?.scrollIntoView({ block: "start" })} />
                                     )}
