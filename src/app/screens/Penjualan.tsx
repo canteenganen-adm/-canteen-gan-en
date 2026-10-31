@@ -446,7 +446,7 @@ export default function Penjualan({
               </div>
               {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
               <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
-              <div style={{ width: 68, textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+              <div style={{ minWidth: 68, flex: "none", textAlign: "right", fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
             </div>
           ))}
 
