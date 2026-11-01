@@ -523,7 +523,7 @@ export default function Tagihan({
     const BLN3 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     /* Tanggal TAGIH = hari pesan ini dikirim (sama dengan tanggal di tombol "Ditagih"). */
     const tglTagih = (() => { const d = new Date(); return `${d.getDate()}${BLN3[d.getMonth()]}`; })();
-    const depan = (nama: string) => toTitleCase(nama).replace(/s+/g, " ").trim().split(" ")[0].slice(0, 8);
+    const depan = (nama: string) => toTitleCase(nama).replace(/\s+/g, " ").trim().split(" ")[0].slice(0, 8);
     const namaBerita = gs.length > 1
       ? gs.map((g) => depan(g.customer.nama)).join(" ")
       : `${depan(gs[0].customer.nama)}${gs[0].customer.kelas || gs[0].customer.tingkat ? ` ${gs[0].customer.kelas || gs[0].customer.tingkat}` : ""}`;
