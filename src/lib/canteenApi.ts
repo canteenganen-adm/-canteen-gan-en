@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { WA_TRANSFER_STANDAR, WA_AKHIR_STANDAR } from "./waTemplate";
 import type {
   MenuItem,
   Transaction,
@@ -60,6 +61,9 @@ interface AppStateRow {
   nama_bank: string | null;
   no_rekening: string | null;
   nama_rekening: string | null;
+  /** Kolom baru (migration_10); baris lama / kolom belum dibuat = undefined → teks standar. */
+  wa_transfer?: string | null;
+  wa_akhir?: string | null;
 }
 
 interface KelasRow {
@@ -157,6 +161,8 @@ const appStateRowToData = (r: AppStateRow): AppStateData => ({
     namaBank: r.nama_bank ?? "BCA",
     noRekening: r.no_rekening ?? "7347028990",
     namaRekening: r.nama_rekening ?? "Roswinarti",
+    waTransfer: r.wa_transfer ?? WA_TRANSFER_STANDAR,
+    waAkhir: r.wa_akhir ?? WA_AKHIR_STANDAR,
   },
 });
 
@@ -498,6 +504,8 @@ export const appStatePatch = {
   namaBank: (v: string) => updateAppState({ nama_bank: v }),
   noRekening: (v: string) => updateAppState({ no_rekening: v }),
   namaRekening: (v: string) => updateAppState({ nama_rekening: v }),
+  waTransfer: (v: string) => updateAppState({ wa_transfer: v }),
+  waAkhir: (v: string) => updateAppState({ wa_akhir: v }),
 };
 
 /* ---------------- Kelas (per Tingkat, dikelola admin) ---------------- */

@@ -14,6 +14,7 @@ import IkonDitagih from "../components/IkonDitagih";
 import GeserBaris from "../components/GeserBaris";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { LIVE_DAYS } from "../../lib/canteenApi";
+import { isiTemplateTransfer } from "../../lib/waTemplate";
 import type { Transaction, CanteenSettings } from "../../types";
 
 /* ============================================================
@@ -524,17 +525,14 @@ export default function Tagihan({
     /* Tanggal TAGIH = hari pesan ini dikirim (sama dengan tanggal di tombol "Ditagih"). */
     const tglTagih = (() => { const d = new Date(); return `${d.getDate()}${BLN3[d.getMonth()]}`; })();
     const depan = (nama: string) => toTitleCase(nama).replace(/\s+/g, " ").trim().split(" ")[0].slice(0, 8);
-    const namaBerita = gs.length > 1
-      ? gs.map((g) => depan(g.customer.nama)).join(" ")
-      : `${depan(gs[0].customer.nama)}${gs[0].customer.kelas || gs[0].customer.tingkat ? ` ${gs[0].customer.kelas || gs[0].customer.tingkat}` : ""}`;
-    const beritaSection = bankLine
-      ? `
-
-Berita transfer (wajib diisi):
-${namaBerita} ${tglTagih}
-
-Setelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
-      : "";
+    /* Teks blok ini dari Pengaturan → Tagihan (settings.waTransfer, kata kunci {nama} {kelas} {tanggal}); kosong = tidak dipasang. */
+    const isiBerita = isiTemplateTransfer(settings.waTransfer, {
+      nama: gs.length > 1 ? gs.map((g) => depan(g.customer.nama)).join(" ") : depan(gs[0].customer.nama),
+      kelas: gs.length > 1 ? "" : (gs[0].customer.kelas || gs[0].customer.tingkat || ""),
+      tanggal: tglTagih,
+    });
+    const beritaSection = bankLine && isiBerita ? `\n\n${isiBerita}` : "";
+    const akhir = settings.waAkhir.trim() ? `\n\n${settings.waAkhir.trim()}` : "";
     const sections = gs.map((g) =>
       `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
     ).join("\n\n--------------------\n\n");
@@ -542,7 +540,7 @@ Setelah transfer, wajib kirim bukti transfer ke WhatsApp ini.`
     // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
     // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
     const judulPekan = label ? `Tagihan minggu ${label}\n\n` : "";
-    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}${beritaSection}\n\nGan En`;
+    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}${beritaSection}${akhir}`;
   };
   /** pool = kartu yang dicari "saudara"-nya (satu nomor WA) — di dalam satu pekan hanya kartu pekan itu. */
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }, pool: Grup[] = groups, label?: string) => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Info, X, Check, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
@@ -8,6 +8,7 @@ import { t, NAV_HEIGHT } from "../../lib/theme";
 import { fetchMasukBulan } from "../../lib/canteenApi";
 import CadanganBulanLalu from "../components/CadanganBulanLalu";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
+import { BERITA_KUNCI, rakitBerita, uraiBerita } from "../../lib/waTemplate";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
@@ -182,7 +183,6 @@ export default function Pengaturan({
   const [eTried, setETried] = useState(false);
   const [showKelasSheet, setShowKelasSheet] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 2200);
@@ -733,30 +733,63 @@ export default function Pengaturan({
             <div style={{ fontSize: 19, fontWeight: 800 }}>Tagihan</div>
           </div>
           <div style={{ padding: "0 20px" }}>
-            <Group label="Template WA Tagihan">
-              <div style={{ padding: "12px 16px" }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Pembuka</div>
-                <textarea value={settings.waOpening} onChange={(e) => onChange({ waOpening: e.target.value })}
-                  rows={3} style={tarea} />
+            {/* Satu kertas pesan (pemilik 1 Nov, pilihan P2): semua bagian diketik langsung di tempat; rincian & total diisi otomatis. */}
+            <div style={{ filter: "drop-shadow(0 1px 1px rgba(47,42,36,.10))" }}>
+              <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderBottom: "none", borderRadius: "20px 20px 0 0", padding: "22px 20px 4px" }}>
+                <BagianWa label="Pembuka" first>
+                  <AutoTa value={settings.waOpening} onChange={(v) => onChange({ waOpening: v })} />
+                </BagianWa>
+                <div className="flex items-center gap-2.5" style={{ fontSize: 13.5, color: t.text2, fontStyle: "italic", margin: "2px 0" }}>
+                  <span style={{ flex: 1, borderTop: `1.5px dashed ${t.border}` }} />rincian pesanan dan total<span style={{ flex: 1, borderTop: `1.5px dashed ${t.border}` }} />
+                </div>
+                <BagianWa label="Cara Bayar">
+                  <AutoTa value={settings.waClosing} onChange={(v) => onChange({ waClosing: v })} />
+                </BagianWa>
+                <BagianWa label="Rekening">
+                  <div className="flex gap-2.5">
+                    <div style={{ width: 92 }}>
+                      <div style={fLabel}>Bank</div>
+                      <input value={settings.namaBank} onChange={(e) => onChange({ namaBank: e.target.value })} placeholder="BCA" style={{ ...inp, height: 48 }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={fLabel}>Nomor Rekening</div>
+                      <input value={settings.noRekening} onChange={(e) => onChange({ noRekening: e.target.value })} placeholder="7347028990" inputMode="numeric" style={{ ...inp, height: 48 }} />
+                    </div>
+                  </div>
+                  <div style={{ ...fLabel, marginTop: 12 }}>Atas Nama</div>
+                  <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })} placeholder="Nama pemilik rekening" style={{ ...inp, height: 48 }} />
+                </BagianWa>
+                <BagianWa label="Berita Transfer">
+                  {(() => {
+                    const b = uraiBerita(settings.waTransfer);
+                    const ubah = (p: Partial<typeof b>) => onChange({ waTransfer: rakitBerita({ ...b, ...p }) });
+                    return (
+                      <>
+                        <AutoTa value={b.judul} onChange={(v) => ubah({ judul: v.split("\n").join(" ") })} />
+                        <div className="flex flex-wrap gap-2" style={{ margin: "8px 0 10px" }}>
+                          {BERITA_KUNCI.map((k) => {
+                            const on = b.kunci.includes(k.kunci);
+                            return (
+                              <button key={k.kunci} onClick={() => ubah({ kunci: BERITA_KUNCI.filter((x) => (x.kunci === k.kunci ? !on : b.kunci.includes(x.kunci))).map((x) => x.kunci) })}
+                                aria-pressed={on} className="flex items-center gap-1.5"
+                                style={{ height: 48, padding: "0 13px", borderRadius: 999, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                                  background: on ? t.primaryLight : "transparent", border: `1.5px solid ${on ? t.primaryLine : t.border}`, color: on ? t.text : t.text2 }}>
+                                {on && <Check size={16} strokeWidth={3} />}{k.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <AutoTa value={b.bukti} onChange={(v) => ubah({ bukti: v })} />
+                      </>
+                    );
+                  })()}
+                </BagianWa>
+                <BagianWa label="Penutup">
+                  <AutoTa value={settings.waAkhir} onChange={(v) => onChange({ waAkhir: v })} placeholder="Gan En" />
+                </BagianWa>
               </div>
-              <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.divider}` }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2, marginBottom: 6 }}>Kalimat Penutup</div>
-                <textarea value={settings.waClosing} onChange={(e) => onChange({ waClosing: e.target.value })}
-                  rows={3} style={tarea} />
-              </div>
-              <FieldRow icon={<Landmark size={20} />} label="Bank">
-                <input value={settings.namaBank} onChange={(e) => onChange({ namaBank: e.target.value })}
-                  placeholder="BCA" style={inp} />
-              </FieldRow>
-              <FieldRow icon={<Landmark size={20} />} label="Nomor Rekening">
-                <input value={settings.noRekening} onChange={(e) => onChange({ noRekening: e.target.value })}
-                  placeholder="7347028990" inputMode="numeric" style={inp} />
-              </FieldRow>
-              <FieldRow icon={<Landmark size={20} />} label="Atas Nama">
-                <input value={settings.namaRekening} onChange={(e) => onChange({ namaRekening: e.target.value })}
-                  placeholder="Nama pemilik rekening" style={inp} />
-              </FieldRow>
-            </Group>
+              <div style={{ height: 10, backgroundImage: GERIGI_STRUK, backgroundRepeat: "repeat-x" }} />
+            </div>
           </div>
         </div>
       </div>
@@ -950,6 +983,41 @@ const iconBtn = (bg: string, color: string): React.CSSProperties => ({
 });
 
 /* ---- sub-components ---- */
+const fLabel: React.CSSProperties = { fontSize: 13, fontWeight: 800, color: t.text2, margin: "0 0 6px" };
+/** Tepi bawah bergerigi seperti struk (warna = t.surface). */
+const GERIGI_STRUK = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M0 0H16L8 10Z' fill='%23FFFCF7'/%3E%3C/svg%3E")`;
+
+/** Satu bagian di kertas pesan Tagihan: judul kecil + isi, dipisah garis tipis. */
+function BagianWa({ label, first, children }: { label: string; first?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{ padding: first ? "0 0 16px" : "16px 0", borderTop: first ? "none" : `1px solid ${t.divider}` }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", color: t.labelAmber, marginBottom: 8 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+/** Kolom ketik tanpa bingkai yang tingginya mengikuti isi (diketik langsung di kertas). */
+function AutoTa({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [fokus, setFokus] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <textarea ref={ref} rows={1} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setFokus(true)} onBlur={() => setFokus(false)}
+      style={{
+        display: "block", width: "100%", border: "none", outline: "none", resize: "none", overflow: "hidden", fontFamily: "inherit",
+        fontSize: 16.5, lineHeight: 1.6, color: t.text, padding: 0, borderRadius: 8,
+        background: fokus ? t.surfaceSoft : "transparent", boxShadow: fokus ? `0 0 0 6px ${t.surfaceSoft}` : "none",
+      }} />
+  );
+}
+
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   const kids = Array.isArray(children) ? children : [children];
   return (

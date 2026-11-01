@@ -569,6 +569,8 @@ function useCanteenStore() {
     if (patch.namaBank !== undefined) kirimApp(appStatePatch.namaBank(patch.namaBank), "patchSettings.namaBank");
     if (patch.noRekening !== undefined) kirimApp(appStatePatch.noRekening(patch.noRekening), "patchSettings.noRekening");
     if (patch.namaRekening !== undefined) kirimApp(appStatePatch.namaRekening(patch.namaRekening), "patchSettings.namaRekening");
+    if (patch.waTransfer !== undefined) kirimApp(appStatePatch.waTransfer(patch.waTransfer), "patchSettings.waTransfer");
+    if (patch.waAkhir !== undefined) kirimApp(appStatePatch.waAkhir(patch.waAkhir), "patchSettings.waAkhir");
   };
 
   return {

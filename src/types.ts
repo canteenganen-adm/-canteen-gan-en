@@ -89,6 +89,10 @@ export interface CanteenSettings {
   namaBank: string;
   noRekening: string;
   namaRekening: string;
+  /** Blok berita transfer + permintaan bukti, setelah rekening. Kata kunci {nama} {kelas} {tanggal}. Kosong = tidak dipasang. */
+  waTransfer: string;
+  /** Baris terakhir pesan tagihan (default "Gan En"). */
+  waAkhir: string;
 }
 
 /** Kelas per Tingkat — dikelola admin (Pengaturan), jadi sumber picker
