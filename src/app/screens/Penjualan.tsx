@@ -431,13 +431,8 @@ export default function Penjualan({
 
       {/* Ringkasan */}
       {view === "summary" && (
-        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan" tanpaGaris>
-          {/* Opsi E (pemilik 1 Nov): lega tanpa garis, hanya harga per pcs; urutan Kosongkan Semua → Total → Masuk Tagihan (kiri) | Dibayar (kanan) */}
-          <div style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{serviceDateLabel(txDate)}</div>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text2, marginTop: 2 }}>
-            {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
-          </div>
-          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "14px 0 6px" }} />
+        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan" sub={tglJamPendek(txDate)}>
+          {/* Pemilik 1 Nov: tanggal·jam pendek di bawah judul, harga per pcs saja, tong sampah sejajar Total, tombol Tagihan (kiri) | Tunai (kanan) */}
           {cart.map((l) => (
             <div key={l.key} className="flex items-center gap-3" style={{ padding: "11px 0" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -449,24 +444,26 @@ export default function Penjualan({
             </div>
           ))}
 
-          {cart.length > 0 && (
-            <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center justify-center" style={{ marginTop: 4, width: 48, height: 48, background: "transparent", border: "none", color: t.error, cursor: "pointer", padding: 0, justifyContent: "flex-start" }}>
-              <Trash2 size={22} />
-            </button>
-          )}
-
-          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "2px 0 0" }} />
-          <div className="flex items-center justify-between" style={{ background: t.primaryLight, borderRadius: 18, padding: "16px 18px", margin: "14px 0 16px" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: t.amberText }}>Total</span>
-            <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
+          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "6px 0 0" }} />
+          {/* Tong sampah sejajar Total (pemilik 1 Nov) */}
+          <div className="flex items-center justify-between" style={{ padding: "10px 0 16px" }}>
+            {cart.length > 0 ? (
+              <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center" style={{ width: 48, height: 48, marginLeft: -12, background: "transparent", border: "none", color: t.error, cursor: "pointer", padding: 0, justifyContent: "center" }}>
+                <Trash2 size={22} />
+              </button>
+            ) : <span />}
+            <span className="flex items-baseline gap-3">
+              <span style={{ fontSize: 16, fontWeight: 600, color: t.text2 }}>Total</span>
+              <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
+            </span>
           </div>
 
           <div className="flex gap-3">
             <button onClick={() => setBilling(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              <Receipt size={20} /> Masuk Tagihan
+              <Receipt size={20} /> Tagihan
             </button>
             <button onClick={() => commit(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
-              <Wallet size={20} /> Dibayar
+              <Wallet size={20} /> Tunai
             </button>
           </div>
         </Sheet>
@@ -575,22 +572,32 @@ export default function Penjualan({
 }
 
 /* ---- shared bits ---- */
-function Sheet({ title, children, onClose, leftIcon, onLeft, tanpaGaris }: {
-  title: string; children: React.ReactNode; onClose: () => void; leftIcon?: React.ReactNode; onLeft?: () => void; tanpaGaris?: boolean;
+function Sheet({ title, sub, children, onClose, leftIcon, onLeft }: {
+  title: string; sub?: string; children: React.ReactNode; onClose: () => void; leftIcon?: React.ReactNode; onLeft?: () => void;
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: tanpaGaris ? "none" : `1px solid ${t.divider}` }} className="flex items-center gap-2">
+        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center gap-2">
           {leftIcon && <button onClick={onLeft} style={{ border: "none", background: "transparent", cursor: "pointer", color: t.text, display: "grid", placeItems: "center" }}>{leftIcon}</button>}
-          <div style={{ fontSize: 18, fontWeight: 800, flex: 1 }}>{title}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div>
+            {sub && <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text2, marginTop: 2 }}>{sub}</div>}
+          </div>
           <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>
     </div>
   );
+}
+const BLN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+/** "29 Okt 2026 · 01:54" — tanggal yang dicatat + jam sekarang, tanpa nama hari. */
+function tglJamPendek(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const jam = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":");
+  return `${d} ${BLN_PENDEK[m - 1]} ${y} · ${jam}`;
 }
 function Stepper({ onMinus, onPlus, val, lega }: { onMinus: () => void; onPlus: () => void; val: number; lega?: boolean }) {
   const u = lega ? 40 : 34;
