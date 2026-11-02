@@ -54,12 +54,13 @@ export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih
             <button key={iso} data-hari={iso} onClick={() => onPilih(iso)} aria-pressed={aktif}
               aria-label={`${namaHari(iso)} ${Number(iso.slice(8))}`}
               style={{ flex: "none", width: 52, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "2px 0" }}>
+              {/* Titik hari ini DI ATAS huruf hari (sesuai contoh Mama) */}
+              <i style={{ width: 6, height: 6, borderRadius: "50%", background: iso === hariIni ? t.text : "transparent", display: "block" }} />
               <span style={{ fontSize: 12.5, fontWeight: aktif ? 800 : 600, color: aktif ? t.text : t.text2 }}>{namaHari(iso).slice(0, 1).toUpperCase()}</span>
               <span style={{ width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 17, fontWeight: aktif ? 800 : 700,
                 background: aktif ? t.primary : "transparent", border: `1.5px solid ${aktif ? t.primary : t.border}`, color: akhir && !aktif ? t.text2 : t.text }}>
                 {Number(iso.slice(8))}
               </span>
-              <i style={{ width: 6, height: 6, borderRadius: "50%", background: iso === hariIni ? t.text : "transparent", display: "block" }} />
             </button>
           );
         })}
