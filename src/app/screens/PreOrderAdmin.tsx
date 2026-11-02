@@ -652,7 +652,7 @@ export default function PreOrderAdmin({
       {sheet === "bagikan" && (
         <Sheet title="Bagikan Link Pemesanan" onClose={() => setSheet(null)}>
           <div style={{ fontSize: 14, color: t.text2, marginBottom: 12 }}>
-            Link untuk {serviceDateLabel(serviceDate)}. {open ? "Pre-order sedang dibuka." : "Saat ini ditutup."}
+            Link untuk {serviceDateLabel(serviceDate)}.
           </div>
           <div style={{ background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", fontSize: 14, color: t.text2, wordBreak: "break-all", marginBottom: 14 }}>{poLink}</div>
           <div className="flex gap-2">
@@ -690,7 +690,7 @@ export default function PreOrderAdmin({
         <Sheet title="Cetak" onClose={() => setSheet(null)}>
           {([["Rekap per Kelas", Box], ["Rekap per Menu", CookingPot], ["Label Pesanan", Box]] as const).map(([label, Ic]) => (
             <button key={label} className="flex items-center gap-3" style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", padding: "0 16px", color: t.text }}>
-              <Ic size={20} color={t.amberText} /><span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 700 }}>{label}</span><Printer size={18} color={t.textDis} />
+              <Ic size={20} color={t.amberText} /><span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 700 }}>{label}</span>
             </button>
           ))}
           <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 6 }}>Cetak thermal — segera hadir.</div>

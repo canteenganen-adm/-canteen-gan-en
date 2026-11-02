@@ -471,7 +471,6 @@ export default function Penjualan({
       {/* Popup Tagihan */}
       {billing && (
         <Sheet onClose={() => setBilling(false)} title="Masuk Tagihan">
-          <div style={{ fontSize: 13, color: t.text2, marginBottom: 14 }}>Catat atas nama siapa tagihannya:</div>
           <Field label="Nama Lengkap" req tried={tried} val={form.nama}>
             <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
             {/* Saran dari riwayat transaksi — satu ketuk mengisi nama, tingkat,

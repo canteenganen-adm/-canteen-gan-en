@@ -7,6 +7,7 @@ import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
+import DerekTanggal from "../components/DerekTanggal";
 import { useKunciGulir } from "../components/useKunciGulir";
 import type { MenuItem, Variant, PickupSchedule } from "../../types";
 
@@ -367,7 +368,7 @@ export default function MasterMenu({
         {/* Yang MENEMPEL di atas hanya judul + tab (±110px). Cari, tanggal, Menu Tetap,
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
-        <div style={{ padding: "20px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+        <div style={{ padding: "20px 20px 0", background: t.bg }}>
           <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             <div className="flex items-center gap-2">
@@ -378,35 +379,28 @@ export default function MasterMenu({
               terlihat). Chip berbingkai, BUKAN kuning (tombol + di bawah sudah kuning). Seluruh chip bisa
               diketuk — input tanggal menutupi chip (inset 0). */}
           {menuHarianReady && (
-            <div className="flex items-center" style={{ gap: 8, marginTop: 8 }}>
-            <div className="flex items-center" style={{ position: "relative", height: 40, padding: "0 2px", gap: 8, boxSizing: "border-box", flex: 1, minWidth: 0 }}>
-              <Calendar size={19} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)}</span>
-              <ChevronDown size={17} color={t.text2} style={{ flex: "none" }} />
-              <input ref={ubahTanggalRef} type="date" value={tanggal} min={todayISO()}
-                onChange={(e) => e.target.value && setTanggal(e.target.value)}
-                onClick={() => { try { ubahTanggalRef.current?.showPicker?.(); } catch { /* fallback native */ } }}
-                aria-label="Ganti tanggal yang diatur"
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-            </div>
-            {tanggal !== tanggalBawaan() && (
-              <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
-                style={{ flex: "none", height: 40, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
-                {tanggalBawaan() === todayISO() ? "Hari ini" : "Kembali"}
-              </button>
-            )}
+            <div style={{ marginTop: 8 }}>
+              {/* Deretan hari yang digeser (gaya Flo); ketuk hari = pilih tanggal (lewat setTanggal: draft belum disimpan tetap terlindungi) */}
+              <DerekTanggal nilai={tanggal} hariIni={todayISO()} awal={tanggal < todayISO() ? tanggal : todayISO()} onPilih={setTanggal}
+                kanan={tanggal !== tanggalBawaan() ? (
+                  <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
+                    style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
+                    {tanggalBawaan() === todayISO() ? "Hari ini" : "Kembali"}
+                  </button>
+                ) : undefined} />
             </div>
           )}
 
           {/* Dua "kertas" ala tab Chrome: Buku Menu · Preview PO. Tanggal yang diatur
               ada di chip di bawah judul (di atas kertas ini). */}
-          <div style={{ marginTop: 16, position: "relative" }}>
-            <PaperTabs
-              tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
-              value={view}
-              onChange={onViewChange}
-            />
-          </div>
+        </div>
+        {/* Hanya TAB yang menempel di atas (judul + deretan hari ikut tergulir supaya tidak memakan separuh layar HP) */}
+        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 20px 10px" }}>
+          <PaperTabs
+            tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
+            value={view}
+            onChange={onViewChange}
+          />
         </div>
         <div style={{ padding: "0 20px 4px" }}>
           {view === "menu" && (
@@ -551,21 +545,22 @@ export default function MasterMenu({
                       <div style={{ background: t.surface, margin: "0 6px", padding: "20px 18px 22px",
                         fontFamily: STRUK_MONO, fontSize: 13, fontWeight: 600, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
-                        <div style={{ position: "relative", textAlign: "center" }}>
-                          <div style={{ fontSize: 14.5, fontWeight: 800 }}>MENU PO</div>
-                          <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{serviceDateLabel(tanggal)}</div>
-                          {/* Muat ulang pratinjau (ikon segarkan kembali — permintaan Mama; sempat terhapus bersama selector ganda) */}
-                          <button onClick={doRefresh} aria-label="Muat ulang pratinjau" title="Muat ulang"
-                            style={{ position: "absolute", right: -8, top: -10, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
-                            <style>{`@keyframes ganen-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
-                            <RefreshCw size={20} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
+                        {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
+                            Tanpa tulisan "Menu PO" / "Muat ulang" / "Segarkan" (terlalu banyak huruf M). */}
+                        <div className="flex items-center" style={{ gap: 12 }}>
+                          <style>{`@keyframes ganen-denyut{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}`}</style>
+                          <button onClick={doRefresh} aria-label="Segarkan pratinjau menu"
+                            style={{ width: 44, height: 44, flex: "none", borderRadius: "50%", border: "none", background: t.primaryLight, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                            <Utensils size={20} style={{ animation: refreshing ? "ganen-denyut .5s ease-in-out 2" : undefined }} />
                           </button>
+                          <div style={{ fontSize: 14.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
                         </div>
                         <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0 0" }} />
                         {kats.map((k, i) => (
                           <div key={k}>
-                            <div className="flex justify-between" style={{ background: t.primaryLight, color: t.text, padding: "1px 10px", margin: i > 0 ? "12px 0 2px" : "10px 0 2px", borderRadius: 4 }}>
-                              <span>{k}</span><span>{byKat[k]?.length || 0}</span>
+                            {/* Judul kategori: teks tebal + jumlah redup + garis putus (tanpa pita kuning — "warnanya nabrak", Mama) */}
+                            <div className="flex justify-between" style={{ fontSize: 14.5, fontWeight: 800, color: t.text, padding: "0 10px 2px", margin: i > 0 ? "16px 0 6px" : "12px 0 6px", borderBottom: `1.5px dashed ${t.border}` }}>
+                              <span>{k}</span><span style={{ fontWeight: 600, color: t.text2 }}>({byKat[k]?.length || 0})</span>
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
                               <div key={m.id} className="flex justify-between" style={{ gap: 10, alignItems: "baseline", padding: "0 10px" }}>
@@ -946,9 +941,7 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
             <div style={{ fontSize: 18, fontWeight: 800 }}>{isNew ? "Menu Baru" : "Edit Menu"}</div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onClose} style={{ background: "transparent", color: t.text2, border: `1.5px solid ${t.border}`, borderRadius: 10, height: 40, padding: "0 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              Batal
-            </button>
+            {/* Tombol "Batal" dihapus: X di kiri sudah melakukan hal yang sama */}
             <button
               onClick={canSaveNew ? onSaveNew : undefined}
               className="flex items-center gap-2"
