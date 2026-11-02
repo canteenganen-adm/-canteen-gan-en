@@ -167,7 +167,7 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
 
   const [q, setQ] = useState("");
-  /** Kartu Lunas/Dibatalkan: ^ v untuk melipat. Bawaan: terbuka bila ≤3 transaksi atau sedang mencari, selain itu terlipat (supaya daftar tidak panjang). */
+  /** Kartu Lunas/Dibatalkan: ^ v untuk melipat. Bawaan: SEMUA TERLIPAT, terbuka hanya bila dibuka manual. */
   const [bukaLunas, setBukaLunas] = useState<Record<string, boolean>>({});
   /** Riwayat lama (> 30 hari) ditarik sekali per sesi, hanya saat tab Lunas/Dibatalkan dibuka atau saat mencari. */
   useEffect(() => {
@@ -948,7 +948,7 @@ export default function Tagihan({
                 {/* Header nama — ketuk = lipat/buka (^ v) */}
                 {(() => {
                   const kunciKartu = groupKey(g.customer);
-                  const buka = bukaLunas[kunciKartu] ?? (g.txs.length <= 3 || !!q.trim());
+                  const buka = bukaLunas[kunciKartu] ?? false;
                   return (<>
                 <div role="button" aria-expanded={buka} onClick={() => setBukaLunas((p) => ({ ...p, [kunciKartu]: !buka }))} style={{ padding: "14px 16px 10px", cursor: "pointer" }}>
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
