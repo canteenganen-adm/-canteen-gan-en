@@ -167,6 +167,8 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
 
   const [q, setQ] = useState("");
+  /** Kartu Lunas/Dibatalkan: ^ v untuk melipat. Bawaan: terbuka bila ≤3 transaksi atau sedang mencari, selain itu terlipat (supaya daftar tidak panjang). */
+  const [bukaLunas, setBukaLunas] = useState<Record<string, boolean>>({});
   /** Riwayat lama (> 30 hari) ditarik sekali per sesi, hanya saat tab Lunas/Dibatalkan dibuka atau saat mencari. */
   useEffect(() => {
     if (tab !== "unpaid" || q.trim()) onMuatRiwayatLama();
@@ -943,8 +945,12 @@ export default function Tagihan({
               </div>
             ) : riwayatGroups.slice(0, q ? Math.max(batasRiwayat, 60) : batasRiwayat).map((g) => (
               <div key={groupKey(g.customer)} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
-                {/* Header nama */}
-                <div style={{ padding: "14px 16px 10px" }}>
+                {/* Header nama — ketuk = lipat/buka (^ v) */}
+                {(() => {
+                  const kunciKartu = groupKey(g.customer);
+                  const buka = bukaLunas[kunciKartu] ?? (g.txs.length <= 3 || !!q.trim());
+                  return (<>
+                <div role="button" aria-expanded={buka} onClick={() => setBukaLunas((p) => ({ ...p, [kunciKartu]: !buka }))} style={{ padding: "14px 16px 10px", cursor: "pointer" }}>
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
                       {/* Penjualan tanpa nama = jualan kantin langsung (tunai) */}
@@ -958,11 +964,12 @@ export default function Tagihan({
                     <span style={{ fontSize: 15, fontWeight: 800, color: riwayatFilter === "batal" ? t.text2 : t.successText, flex: "none" }}>
                       {rupiah(riwayatFilter === "batal" ? g.txs.reduce((s, tx) => s + tx.total, 0) : g.totalMasuk)}
                     </span>
+                    {buka ? <ChevronUp size={18} color={t.text2} style={{ flex: "none" }} /> : <ChevronDown size={18} color={t.text2} style={{ flex: "none" }} />}
                   </div>
                   {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
                 </div>
                 {/* Per transaksi: SATU baris ringkas. Ketuk = struk (isi pesanan + aksi). */}
-                {(() => {
+                {buka && (() => {
                   const barisTx = (tx: Transaction) => {
                     const cancelled = !!tx.cancelledAt;
                     return (
@@ -979,6 +986,8 @@ export default function Tagihan({
                     );
                   };
                   return g.txs.map(barisTx);
+                })()}
+                  </>);
                 })()}
               </div>
             ))}
