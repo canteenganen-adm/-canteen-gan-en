@@ -985,9 +985,9 @@ export default function Tagihan({
                       <div key={kunci}>
                         <button onClick={() => setBukaTagihan((prev) => { const n = new Set(prev); n.has(kunci) ? n.delete(kunci) : n.add(kunci); return n; })}
                           aria-expanded={buka} className="flex items-center"
-                          style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: buka ? t.surfaceSoft : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800 }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tunai / langsung"}</span>
-                          <span style={{ flex: "none", fontSize: 13, fontWeight: 500, color: t.text2 }}>{txs.length} tanggal</span>
+                          style={{ width: "100%", gap: 8, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: k ? t.ditagihBg : t.surfaceSoft, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tunai / langsung"}</span>
+                          <span style={{ flex: "none", fontSize: 13, fontWeight: 500, color: t.text2 }}>{txs.length} tgl</span>
                           <span style={{ flex: "none", fontSize: 15, fontWeight: 800, fontFamily: MONO }}>{rupiah(txs.reduce((s, x) => s + x.total, 0))}</span>
                           <ChevronDown size={16} color={t.text2} style={{ flex: "none", transform: buka ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
                         </button>
