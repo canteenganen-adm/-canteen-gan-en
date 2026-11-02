@@ -33,7 +33,8 @@ create table if not exists transaksi (
   packed_at timestamptz,                            -- jam server saat ditandai Sudah Dikemas (migration_11)
   order_no text,                                    -- PO-XXXXXX, hanya untuk source='preorder'
   cancelled_at timestamptz,                         -- diisi saat "Batalkan Transaksi" (soft-delete, untuk Riwayat/audit)
-  billed_at timestamptz                             -- jam kirim tagihan WA (migration_10)
+  billed_at timestamptz,                            -- jam kirim tagihan WA (migration_10)
+  paid_at timestamptz                               -- jam ditandai Lunas (migration_14)
 );
 
 create index if not exists idx_transaksi_paid on transaksi (paid);

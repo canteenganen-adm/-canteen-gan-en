@@ -78,6 +78,9 @@ export interface Transaction {
   /** Diisi saat tagihan DIKIRIM via WhatsApp — penanda "sudah ditagih"
    * supaya tidak dobel menagih. Sinkron antar perangkat (kolom DB). */
   billedAt?: string | null;
+  /** Jam transaksi ditandai Lunas (dicatat otomatis; migration_14). Kosong untuk
+   * yang Lunas sebelum fitur ini ada, dan dikosongkan lagi saat Lunas dibatalkan. */
+  paidAt?: string | null;
 }
 
 export interface CanteenSettings {

@@ -43,6 +43,7 @@ interface TransaksiRow {
   cancelled_at: string | null;
   deleted_at: string | null;
   billed_at?: string | null;
+  paid_at?: string | null;
 }
 
 interface AppStateRow {
@@ -114,6 +115,7 @@ const txRowToTransaction = (r: TransaksiRow): Transaction => ({
   cancelledAt: r.cancelled_at ?? undefined,
   deletedAt: r.deleted_at ?? undefined,
   billedAt: r.billed_at ?? undefined,
+  paidAt: r.paid_at ?? undefined,
 });
 
 const transactionToRow = (tx: Transaction): Record<string, unknown> => {
@@ -461,7 +463,13 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   if (patch.cancelledAt !== undefined) row.cancelled_at = patch.cancelledAt;
   if (patch.serviceDate !== undefined) row.service_date = patch.serviceDate;
   if (patch.billedAt !== undefined) row.billed_at = patch.billedAt;
-  const { error } = await supabase.from("transaksi").update(row).eq("id", id);
+  if (patch.paidAt !== undefined) row.paid_at = patch.paidAt;
+  let { error } = await supabase.from("transaksi").update(row).eq("id", id);
+  // Sebelum migration_14 dijalankan kolom paid_at belum ada: Lunas tetap harus tersimpan, jamnya saja yang dilewati.
+  if (error && "paid_at" in row && /paid_at/.test(error.message)) {
+    delete row.paid_at;
+    ({ error } = await supabase.from("transaksi").update(row).eq("id", id));
+  }
   if (error) throw error;
 }
 

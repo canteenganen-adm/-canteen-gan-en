@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -58,6 +58,22 @@ function buildReport(txs: Transaction[]) {
   const hari = [...perHari.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1));
   const menuList = [...menu.entries()].sort((a, b) => b[1].qty - a[1].qty);
   return { masuk, nMasuk, belum, nBelum, nBatal, masukPO, masukPJ, hari, menuList };
+}
+
+/** Per orang (A–Z): siapa yang sudah Lunas / masih Belum Dibayar di bulan itu. Dibatalkan tidak dihitung; tanpa nama (Penjualan tunai biasa) dilewati. */
+function perOrang(txs: Transaction[]) {
+  const m = new Map<string, { nama: string; kelas: string; lunas: number; belum: number }>();
+  for (const tx of txs) {
+    // "(Pakai Wadah Kantin)" dkk. hanya catatan pesanan, bukan orang lain
+    const nama = tx.customer.nama?.replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    if (tx.cancelledAt || !nama) continue;
+    const key = nama.toLowerCase() + "|" + (tx.customer.kelas ?? "");
+    const { tingkat, kelas } = tx.customer;
+    const o = m.get(key) ?? { nama: toTitleCase(nama), kelas: kelas && (!tingkat || kelas.startsWith(tingkat)) ? kelas : [tingkat, kelas].filter(Boolean).join(" "), lunas: 0, belum: 0 };
+    if (tx.paid) o.lunas += tx.total; else o.belum += tx.total;
+    m.set(key, o);
+  }
+  return [...m.values()].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
 }
 
 /* ---------- Bahan laporan: SATU sumber untuk layar, Excel, dan PDF ---------- */
@@ -465,6 +481,9 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
 
   const r = useMemo(() => (txs ? buildReport(txs) : null), [txs]);
   const u = useMemo(() => (txs ? buildUlasan(txs, pickupSchedules.map((x) => x.name)) : null), [txs, pickupSchedules]);
+  const [cariOrang, setCariOrang] = useState("");
+  const orangSemua = useMemo(() => (txs ? perOrang(txs) : []), [txs]);
+  const orang = useMemo(() => { const q = cariOrang.trim().toLowerCase(); return q ? orangSemua.filter((o) => `${o.nama} ${o.kelas}`.toLowerCase().includes(q)) : orangSemua; }, [orangSemua, cariOrang]);
   const pk = useMemo(() => (txs ? hitungPacking(txs, pickupSchedules, ym.y, ym.m) : null), [txs, pickupSchedules, ym]);
   const perHariMap = useMemo(() => new Map(r ? r.hari : []), [r]);
 
@@ -688,6 +707,22 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                       <div style={{ ...judulKartu, marginBottom: 8 }}>Per tingkat</div>
                       <Tabel kolom="minmax(0,1fr) 62px 96px" kepala={["Tingkat", "Pesanan", "Nilai"]}
                         baris={u.tingkat.map(([k, v]) => [k, v.n.toLocaleString("id-ID"), rupiah(v.nilai)])} />
+                    </div>
+                  )}
+
+                  {orangSemua.length > 0 && (
+                    <div style={sek}>
+                      <div style={{ ...judulKartu, marginBottom: 8 }}>Per orang</div>
+                      <div className="flex items-center" style={{ height: 44, gap: 8, padding: "0 12px", marginBottom: 6, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12 }}>
+                        <Search size={18} color={t.text2} style={{ flex: "none" }} />
+                        <input value={cariOrang} onChange={(e) => setCariOrang(e.target.value)} placeholder="Cari nama" aria-label="Cari nama"
+                          style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 16, color: t.text, fontFamily: "inherit" }} />
+                      </div>
+                      <Tabel kolom="minmax(0,1fr) 84px 84px" kepala={["Nama", "Lunas", "Belum"]}
+                        baris={[
+                          ...orang.map((o) => [o.kelas ? `${o.nama} · ${o.kelas}` : o.nama, o.lunas > 0 ? rupiah(o.lunas) : "–", o.belum > 0 ? rupiah(o.belum) : "–"]),
+                          ["Total", rupiah(orang.reduce((s, o) => s + o.lunas, 0)), rupiah(orang.reduce((s, o) => s + o.belum, 0))],
+                        ]} totalAkhir />
                     </div>
                   )}
 

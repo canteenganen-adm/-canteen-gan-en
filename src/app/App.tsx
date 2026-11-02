@@ -334,12 +334,13 @@ function useCanteenStore() {
     insertTransaction(tx).catch((e) => reportError("addTransaction", e));
   };
   const markPaid = (id: string) => {
-    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: true } : tx)));
-    updateTransaction(id, { paid: true }).catch((e) => reportError("markPaid", e));
+    const paidAt = new Date().toISOString();
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: true, paidAt } : tx)));
+    updateTransaction(id, { paid: true, paidAt }).catch((e) => reportError("markPaid", e));
   };
   const unmarkPaid = (id: string) => {
-    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false } : tx)));
-    updateTransaction(id, { paid: false }).catch((e) => reportError("unmarkPaid", e));
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, paid: false, paidAt: null } : tx)));
+    updateTransaction(id, { paid: false, paidAt: null }).catch((e) => reportError("unmarkPaid", e));
   };
   /** Tandai "sudah ditagih via WA" — dicatat saat Kirim ke WhatsApp ditekan.
    * Error DITELAN diam-diam: sebelum migration_10 dijalankan kolomnya belum

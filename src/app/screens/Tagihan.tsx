@@ -83,7 +83,7 @@ function unionGroups(txs: Transaction[]) {
 
 type Tab = "unpaid" | "riwayat" | "batal";
 type SourceFilter = "semua" | "preorder" | "penjualan";
-type DateFilter = "semua" | "hari" | "7" | "tanggal";
+type DateFilter = "semua" | "hari" | "tanggal";
 type SortMode = "az" | "za" | "newest" | "oldest";
 const SORT_LABEL: Record<SortMode, string> = { az: "A–Z", za: "Z–A", newest: "Terbaru", oldest: "Terlama" };
 /** Satu fungsi urut dipakai kartu Belum Dibayar & Lunas/Dibatalkan supaya
@@ -101,11 +101,6 @@ function sortGroups<G extends { customer: Transaction["customer"]; newestAt: str
 /** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
  * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
 const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
-const isoShift = (days: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 /** Kartu Belum Dibayar satu anak. */
 type Grup = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; total: number };
 const buatGrup = (txs: Transaction[]): Grup[] =>
@@ -144,7 +139,9 @@ export default function Tagihan({
   const [dateFilter, setDateFilter] = useState<DateFilter>("semua");
   /** Tab Dibatalkan berdiri sendiri; kode grup riwayat dipakai bersama. */
   const riwayatFilter: "lunas" | "batal" = tab === "batal" ? "batal" : "lunas";
+  /** Rentang tanggal: pickDate = Dari, pickDateEnd = Sampai (satu hari = keduanya sama). */
   const [pickDate, setPickDate] = useState("");
+  const [pickDateEnd, setPickDateEnd] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("az");
   /** Kartu yang SEMUA transaksinya sudah ditagih (hijau) disembunyikan —
    * hanya berlaku di tab Belum Dibayar, supaya yang belum dihubungi tidak
@@ -241,8 +238,7 @@ export default function Tagihan({
     if (dateFilter === "semua") return true;
     const d = opDate(tx);
     if (dateFilter === "hari") return d === todayISO();
-    if (dateFilter === "7") return d >= isoShift(6) && d <= todayISO();
-    return !pickDate || d === pickDate;
+    return (!pickDate || d >= pickDate) && (!pickDateEnd || d <= pickDateEnd);
   };
   const matchQuery = (nama: string, kelas: string, wa?: string) => {
     const ql = q.toLowerCase().trim();
@@ -253,7 +249,7 @@ export default function Tagihan({
   const unpaid = useMemo(
     () => transactions.filter((x) => !x.paid && !x.cancelledAt && bySource(x) && byDate(x)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, sourceFilter, dateFilter, pickDate]
+    [transactions, sourceFilter, dateFilter, pickDate, pickDateEnd]
   );
 
   /* Grupkan Belum Dibayar per ANAK (aturan ganda unionGroups), urut sesuai sortMode */
@@ -423,7 +419,7 @@ export default function Tagihan({
     }));
     return sortGroups(built, sortMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, sourceFilter, q, dateFilter, pickDate, riwayatFilter, sortMode]);
+  }, [transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd, riwayatFilter, sortMode]);
 
   // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
   const historyMasuk = useMemo(
@@ -431,7 +427,7 @@ export default function Tagihan({
       .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa))
       .reduce((s, x) => s + x.total, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, sourceFilter, q, dateFilter, pickDate]
+    [transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd]
   );
 
   // Total tab Dibatalkan (abu-abu, sekadar informasi)
@@ -733,7 +729,7 @@ export default function Tagihan({
                   {([
                     ["Sumber", ([["semua", "Semua"], ["preorder", "Pre-order"], ["penjualan", "Penjualan"]] as const).map(([v, l]) => ({ key: v, label: l, on: sourceFilter === v, pilih: () => setSourceFilter(v) }))],
                     ["Urutkan", (["az", "za", "newest", "oldest"] as const).map((v) => ({ key: v, label: v === "az" ? "A–Z" : v === "za" ? "Z–A" : v === "newest" ? "Terbaru dulu" : "Terlama dulu", on: sortMode === v, pilih: () => setSortMode(v) }))],
-                    ["Tanggal", ([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["7", "7 Hari Terakhir"], ["tanggal", "Pilih Tanggal…"]] as const).map(([v, l]) => ({ key: v, label: l, on: dateFilter === v, pilih: () => setDateFilter(v) }))],
+                    ["Tanggal", ([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["tanggal", "Pilih Rentang…"]] as const).map(([v, l]) => ({ key: v, label: l, on: dateFilter === v, pilih: () => setDateFilter(v) }))],
                   ] as const).map(([judul, baris], gi) => (
                     <div key={judul} style={{ borderTop: gi ? `1px solid ${t.divider}` : "none", paddingTop: gi ? 4 : 0, marginTop: gi ? 4 : 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, padding: "8px 10px 4px" }}>{judul}</div>
@@ -745,10 +741,17 @@ export default function Tagihan({
                         </button>
                       ))}
                       {judul === "Tanggal" && dateFilter === "tanggal" && (
-                        <input type="date" value={pickDate} onChange={(e) => setPickDate(e.target.value)}
-                          onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
-                          aria-label="Pilih tanggal"
-                          style={{ width: "calc(100% - 20px)", height: 44, margin: "4px 10px 6px", fontSize: 15, fontWeight: 700, color: pickDate ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 10, padding: "0 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                        <div style={{ margin: "4px 10px 6px" }}>
+                          {([["Dari", pickDate, (v: string) => { setPickDate(v); if (!pickDateEnd || pickDateEnd < v) setPickDateEnd(v); }], ["Sampai", pickDateEnd, (v: string) => { setPickDateEnd(v); if (!pickDate || pickDate > v) setPickDate(v); }]] as const).map(([label, nilai, ubah]) => (
+                            <label key={label} className="flex items-center" style={{ gap: 8, marginBottom: 6 }}>
+                              <span style={{ width: 54, flex: "none", fontSize: 13.5, fontWeight: 700, color: t.text2 }}>{label}</span>
+                              <input type="date" value={nilai} onChange={(e) => ubah(e.target.value)}
+                                onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                                aria-label={label}
+                                style={{ flex: 1, minWidth: 0, height: 44, fontSize: 15, fontWeight: 700, color: nilai ? t.text : t.textDis, background: t.surface, border: `1.5px solid ${t.primaryLine}`, borderRadius: 10, padding: "0 8px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                            </label>
+                          ))}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -778,11 +781,11 @@ export default function Tagihan({
                   <div className="flex items-center justify-between" style={{ gap: 10, margin: "2px 0 12px", padding: "8px 8px 8px 14px", background: t.primaryLight, border: `1.5px solid ${t.primaryLine}`, borderRadius: 14 }}>
                     <span style={{ fontSize: 14.5, fontWeight: 700, minWidth: 0 }}>
                       Filter aktif: {[
-                        dateFilter === "hari" ? "Hari Ini" : dateFilter === "7" ? "7 Hari Terakhir" : dateFilter === "tanggal" ? (pickDate ? `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}` : "Pilih Tanggal") : "",
+                        dateFilter === "hari" ? "Hari Ini" : dateFilter === "tanggal" ? (pickDate ? (pickDateEnd && pickDateEnd !== pickDate ? `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}–${pickDateEnd.slice(8, 10)}/${pickDateEnd.slice(5, 7)}` : `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}`) : "Pilih Rentang") : "",
                         onlyUnbilled ? "Hanya Belum Ditagih" : "",
                       ].filter(Boolean).join(" · ")}
                     </span>
-                    <button onClick={() => { setDateFilter("semua"); setPickDate(""); setOnlyUnbilled(false); }}
+                    <button onClick={() => { setDateFilter("semua"); setPickDate(""); setPickDateEnd(""); setOnlyUnbilled(false); }}
                       style={{ flex: "none", height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
                       Hapus filter
                     </button>
@@ -1013,6 +1016,14 @@ export default function Tagihan({
               <div style={{ fontSize: 12, lineHeight: 1.8 }}>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Untuk</span><span style={{ fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
+                {/* Penjualan Tunai langsung lunas saat dicatat (tanpa paidAt) — barisnya tidak perlu */}
+                {detailTx.paid && !detailTx.cancelledAt && (detailTx.paidAt || detailTx.source === "preorder" || detailTx.billedAt) && (
+                  <div className="flex justify-between"><span style={{ color: t.text2 }}>Dilunaskan</span>
+                    <span>{detailTx.paidAt
+                      ? `${detailTx.paidAt.slice(8, 10)}/${detailTx.paidAt.slice(5, 7)} · ${new Date(detailTx.paidAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.paidAt).getMinutes().toString().padStart(2, "0")}`
+                      : "tidak tercatat"}</span>
+                  </div>
+                )}
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
