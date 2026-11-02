@@ -57,9 +57,7 @@ export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih
   return (
     <div>
       <div className="flex items-center justify-between" style={{ padding: "0 2px 6px" }}>
-        {/* Nama bulan berganti mengikuti hari di tengah; berkedip sebentar saat bulan berubah supaya terlihat */}
-        <style>{`@keyframes ganen-bulan{0%{background:#FFE66D;transform:scale(1.06)}100%{background:transparent;transform:none}}`}</style>
-        <span key={`${y}-${m}`} style={{ fontSize: 14.5, fontWeight: 700, color: t.text, borderRadius: 8, padding: "2px 6px", margin: "0 -6px", animation: "ganen-bulan .7s ease-out" }}>{BULAN[m - 1]} {y}</span>
+        <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{BULAN[m - 1]} {y}</span>
         <div className="flex items-center" style={{ gap: 4 }}>
         {kanan ?? (tujuanKembali ? (
           <button onClick={() => keHari(tujuanKembali, true)} aria-label={tujuanKembali === hariIni ? "Ke hari ini" : "Kembali ke tanggal terpilih"}
@@ -77,7 +75,7 @@ export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih
         </div>
         </div>
       </div>
-      <div ref={barisRef} className="hscroll" onScroll={saatGeser} style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", padding: "2px 0 6px", margin: "0 -4px" }}>
+      <div ref={barisRef} className="hscroll" onScroll={saatGeser} style={{ position: "relative", display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", padding: "2px 0 6px", margin: "0 -4px" }}>
         {daftar.map((iso) => {
           const aktif = iso === nilai;
           const akhir = isAkhirPekan(iso);
