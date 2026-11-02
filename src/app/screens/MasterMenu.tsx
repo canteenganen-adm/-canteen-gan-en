@@ -3,10 +3,7 @@ import {
   Plus, Search, X, Utensils, ShoppingCart, Trash2,
   Check, Tag, Layers, Pencil, Users, Banknote, LayoutGrid, Settings, Calendar, Lock, RefreshCw, Pin, Package, ChevronDown, ListChecks } from "lucide-react";
 import RailGeser from "../components/RailGeser";
-import { t, NAV_HEIGHT } from "../../lib/theme";
-
-/** Huruf kertas Menu PO: IBM Plex Mono (satu jenis, kapital; pilihan pemilik 1 Nov setelah adu dengan Anonymous Pro). */
-const STRUK_TITIK = "'IBM Plex Mono', 'DM Mono', ui-monospace, 'Courier New', monospace";
+import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
 import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
@@ -541,7 +538,7 @@ export default function MasterMenu({
                     /* Format harga ala struk: ".000" jadi "k" (10.000 -> 10k).
                        Varian ditulis berjejer "3k 5k 7k" (urutan S/M/L sesuai
                        data); lebih dari 3 varian diringkas jadi rentang. */
-                    const hargaK = (n: number) => n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString("id-ID");
+                    const hargaK = (n: number) => n % 1000 === 0 ? `${n / 1000}K` : n.toLocaleString("id-ID");
                     const strukHarga = (m: MenuItem) => {
                       if (!m.variants.length) return hargaK(m.price ?? 0);
                       const ps = m.variants.map((v) => v.price);
@@ -551,13 +548,12 @@ export default function MasterMenu({
                     };
                     const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
-                      <div style={{ background: t.surface, margin: "0 6px", padding: "20px 16px 22px",
-                        fontFamily: STRUK_TITIK, textTransform: "uppercase",
-                        fontSize: 13.5, fontWeight: 500, lineHeight: 1.7, color: t.text,
+                      <div style={{ background: t.surface, margin: "0 6px", padding: "20px 18px 22px",
+                        fontFamily: STRUK_MONO, fontSize: 13, fontWeight: 600, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         <div style={{ position: "relative", textAlign: "center" }}>
-                          <div style={{ fontSize: 20, letterSpacing: ".1em", lineHeight: 1.3 }}>Menu PO</div>
-                          <div style={{ fontSize: 13, color: t.text2 }}>{serviceDateLabel(tanggal)}</div>
+                          <div style={{ fontSize: 14.5, fontWeight: 800 }}>MENU PO</div>
+                          <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{serviceDateLabel(tanggal)}</div>
                           {/* Muat ulang pratinjau (ikon segarkan kembali — permintaan Mama; sempat terhapus bersama selector ganda) */}
                           <button onClick={doRefresh} aria-label="Muat ulang pratinjau" title="Muat ulang"
                             style={{ position: "absolute", right: -8, top: -10, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
@@ -565,7 +561,7 @@ export default function MasterMenu({
                             <RefreshCw size={20} style={{ animation: refreshing ? "ganen-spin .9s linear" : undefined }} />
                           </button>
                         </div>
-                        <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "10px 0 0" }} />
+                        <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0 0" }} />
                         {kats.map((k, i) => (
                           <div key={k}>
                             <div className="flex justify-between" style={{ background: t.primaryLight, color: t.text, padding: "1px 10px", margin: i > 0 ? "12px 0 2px" : "10px 0 2px", borderRadius: 4 }}>
@@ -573,7 +569,7 @@ export default function MasterMenu({
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
                               <div key={m.id} className="flex justify-between" style={{ gap: 10, alignItems: "baseline", padding: "0 10px" }}>
-                                <span style={{ minWidth: 0 }}>{m.name}</span>
+                                <span style={{ minWidth: 0 }}>{toTitleCase(m.name)}</span>
                                 <span style={{ flex: "none" }}>{strukHarga(m)}</span>
                               </div>
                             )) : (
@@ -581,9 +577,9 @@ export default function MasterMenu({
                             )}
                           </div>
                         ))}
-                        <div style={{ borderTop: `2px dashed ${t.borderStrong}`, margin: "12px 0 6px" }} />
-                        <div className="flex justify-between" style={{ alignItems: "baseline", fontSize: 14.5, padding: "0 10px" }}>
-                          <span>Total</span>
+                        <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "12px 0 6px" }} />
+                        <div className="flex justify-between" style={{ alignItems: "baseline", fontSize: 13.5, fontWeight: 800, padding: "0 10px" }}>
+                          <span>TOTAL</span>
                           <span>{tampil.length} item</span>
                         </div>
                         {tampil.length === 0 && (
@@ -853,11 +849,11 @@ function MenuCard({ m, onEdit, onToggle, stok, onStok }: {
       </div>
       {/* Stok untuk tanggal yang diatur — hanya menu yang sedang tersedia di Pre-order */}
       {onStok && stok !== undefined && (
-        <button onClick={(e) => { e.stopPropagation(); onStok(); }}
+        <button onClick={(e) => { e.stopPropagation(); onStok(); }} aria-label="Atur stok"
           className="flex items-center gap-1"
-          style={{ marginTop: 4, padding: "0 2px", minHeight: 36, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, color: stok && stok.sisa <= 0 ? t.error : t.text2 }}>
-          <Package size={15} />
-          {stok ? (stok.sisa <= 0 ? "Habis" : "Sisa " + stok.sisa) + " dari " + stok.stok : "Atur stok"}
+          style={{ marginTop: 4, padding: "0 2px", minHeight: 36, minWidth: 40, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, color: stok && stok.sisa <= 0 ? t.error : t.text2 }}>
+          <Package size={stok ? 15 : 18} />
+          {stok ? (stok.sisa <= 0 ? "Habis" : "Sisa " + stok.sisa) + " dari " + stok.stok : null}
         </button>
       )}
     </div>

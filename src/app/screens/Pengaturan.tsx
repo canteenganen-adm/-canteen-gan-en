@@ -390,9 +390,6 @@ export default function Pengaturan({
           </div>
 
           <div style={{ padding: "0 20px" }}>
-            <div style={{ fontSize: 13, color: t.text2, marginBottom: 16 }}>
-              Dipakai sebagai pilihan Waktu Ambil saat ortu pesan. Isi jam untuk deteksi pesanan belum dikemas yang sudah terlambat.
-            </div>
             <button onClick={() => { setWaktuAmbilOpen(false); setEditingPresetIdx(null); setNewPreset(""); setDaftarKelasOpen(true); }}
               className="flex items-center gap-3"
               style={{ width: "100%", minHeight: 56, padding: "0 16px", marginBottom: 16, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", color: t.text }}>
@@ -406,8 +403,8 @@ export default function Pengaturan({
               const isExpanded = expandedSchedules.has(p);
               return (
                 <div key={idx} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14, marginBottom: 12, overflow: "hidden" }}>
-                  {/* Baris nama */}
-                  <div className="flex items-center gap-2" style={{ padding: "0 14px", height: 52 }}>
+                  {/* SATU baris: nama · jam (ketuk untuk mengisi) · panah buka rincian per tingkat */}
+                  <div className="flex items-center gap-2" style={{ padding: "0 8px 0 14px", height: 56 }}>
                     {editingPresetIdx === idx ? (
                       <>
                         <input value={editPresetVal} onChange={(e) => setEditPresetVal(e.target.value)} autoFocus
@@ -420,32 +417,19 @@ export default function Pengaturan({
                     ) : (
                       <>
                         <Clock size={15} color={t.amberText} style={{ flex: "none" }} />
-                        <span style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{p}</span>
-                        <button onClick={() => startPresetEdit(idx)} style={iconBtn(t.surface, t.text)}><Pencil size={15} /></button>
-                        <button onClick={() => removePreset(idx)} style={iconBtn(t.errorBg, t.error)}
-                          title={pickupPresets.length <= 1 ? "Minimal 1 waktu ambil" : "Hapus"}>
-                          <Trash2 size={15} />
+                        <span style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0 }}>{p}</span>
+                        <input type="time" value={sched.defaultTime || ""} aria-label={`Jam ${p}`}
+                          onChange={(e) => setDefaultTime(p, e.target.value)}
+                          style={{ border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 15, fontWeight: 700, color: sched.defaultTime ? t.text : t.textDis, background: t.surfaceSoft, fontFamily: "inherit" }} />
+                        <button onClick={() => toggleScheduleExpand(p)} aria-label="Atur per tingkat" aria-expanded={isExpanded}
+                          style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </button>
                       </>
                     )}
                   </div>
 
-                  {/* Jam default */}
-                  <div className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${t.divider}` }}>
-                    <span style={{ flex: 1, fontSize: 14, color: t.text2 }}>Jam default</span>
-                    <input type="time" value={sched.defaultTime || ""}
-                      onChange={(e) => setDefaultTime(p, e.target.value)}
-                      style={{ border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 8px", fontSize: 14, fontWeight: 700, color: sched.defaultTime ? t.text : t.textDis, background: t.bg, fontFamily: "inherit" }} />
-                  </div>
-
-                  {/* Atur per tingkat toggle */}
-                  <button onClick={() => toggleScheduleExpand(p)} className="flex items-center"
-                    style={{ width: "100%", padding: "10px 14px", background: isExpanded ? t.surfaceSoft : "transparent", border: "none", borderTop: `1px solid ${t.divider}`, cursor: "pointer" }}>
-                    <span style={{ flex: 1, textAlign: "left", fontSize: 13.5, color: t.text2, fontWeight: 600, fontFamily: "inherit" }}>Atur per tingkat</span>
-                    {isExpanded ? <ChevronUp size={16} color={t.text2} /> : <ChevronDown size={16} color={t.text2} />}
-                  </button>
-
-                  {/* Per-tingkat jam */}
+                  {/* Rincian: jam per tingkat + ubah nama / hapus (jarang dipakai, jadi tersembunyi sampai dibuka) */}
                   {isExpanded && (
                     <div style={{ borderTop: `1px solid ${t.divider}` }}>
                       {TINGKAT_LIST.map((tingkat, ti) => {
@@ -465,6 +449,17 @@ export default function Pengaturan({
                           </div>
                         );
                       })}
+                      <div className="flex" style={{ borderTop: `1px solid ${t.divider}`, padding: "4px 8px" }}>
+                        <button onClick={() => startPresetEdit(idx)} className="flex items-center justify-center gap-1.5"
+                          style={{ flex: 1, minHeight: 48, border: "none", background: "transparent", color: t.text2, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                          <Pencil size={15} /> Ubah nama
+                        </button>
+                        <button onClick={() => removePreset(idx)} className="flex items-center justify-center gap-1.5"
+                          title={pickupPresets.length <= 1 ? "Minimal 1 waktu ambil" : "Hapus"}
+                          style={{ flex: 1, minHeight: 48, border: "none", background: "transparent", color: t.error, fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                          <Trash2 size={15} /> Hapus
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

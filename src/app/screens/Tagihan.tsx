@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Calendar, SlidersHorizontal, MessageCircle,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Pencil, SlidersHorizontal, MessageCircle,
 } from "lucide-react";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
@@ -104,6 +104,15 @@ const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
 const BLN_P = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const kunciTanggalLokal = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const tglPendekIso = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN_P[d.getMonth()]}`; };
+/** Aksi di struk: ikon polos + tulisan kecil di bawahnya (tanpa garis/kotak), area ketuk ≥48px. */
+function AksiStruk({ Ic, label, warna, onClick }: { Ic: React.ComponentType<{ size?: number }>; label: string; warna: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center justify-center"
+      style={{ flex: 1, minHeight: 56, gap: 3, border: "none", background: "transparent", color: warna, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 2px", whiteSpace: "nowrap" }}>
+      <Ic size={22} />{label}
+    </button>
+  );
+}
 /** Kartu Belum Dibayar satu anak. */
 type Grup = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; total: number };
 const buatGrup = (txs: Transaction[]): Grup[] =>
@@ -1061,69 +1070,54 @@ export default function Tagihan({
               </div>
               <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
               <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-                <div className="flex justify-between"><span style={{ color: t.text2 }}>Untuk</span><span style={{ fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}</span></div>
+                {/* Ketuk baris "Untuk" = ubah Tanggal Layanan (input tanggal menutupi SELURUH baris — pola wajib CLAUDE.md, andal di iOS) */}
+                <div className="flex justify-between items-center" style={{ position: "relative" }}>
+                  <span style={{ color: t.text2 }}>Untuk</span>
+                  <span className="flex items-center" style={{ gap: 6, fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}<Pencil size={13} color={t.text2} /></span>
+                  <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
+                    onChange={(e) => {
+                      if (!e.target.value || e.target.value === opDate(detailTx)) return;
+                      onChangeDate(detailTx.id, e.target.value);
+                      setDetailTx(null);
+                      setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
+                    }}
+                    onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                    aria-label="Ubah Tanggal Layanan"
+                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+                </div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
-                {/* Penjualan Tunai langsung lunas saat dicatat (tanpa paidAt) — barisnya tidak perlu */}
-                {detailTx.paid && !detailTx.cancelledAt && (detailTx.paidAt || detailTx.source === "preorder" || detailTx.billedAt) && (
+                {/* Hanya tampil bila jamnya tercatat (transaksi lama tidak punya — tidak perlu tulisan "tidak tercatat") */}
+                {detailTx.paid && !detailTx.cancelledAt && detailTx.paidAt && (
                   <div className="flex justify-between"><span style={{ color: t.text2 }}>Dilunaskan</span>
-                    <span>{detailTx.paidAt
-                      ? `${detailTx.paidAt.slice(8, 10)}/${detailTx.paidAt.slice(5, 7)} · ${new Date(detailTx.paidAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.paidAt).getMinutes().toString().padStart(2, "0")}`
-                      : "tidak tercatat"}</span>
+                    <span>{`${detailTx.paidAt.slice(8, 10)}/${detailTx.paidAt.slice(5, 7)} · ${new Date(detailTx.paidAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.paidAt).getMinutes().toString().padStart(2, "0")}`}</span>
                   </div>
                 )}
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
               </div>
+              {/* Aksi struk: ikon polos + tulisan kecil (tanpa garis/kotak). Satu-satunya tombol penuh = Tandai Lunas. */}
               {tab === "unpaid" && (
-                <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                <div className="flex items-center gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
                   <button onClick={() => { const x = detailTx; setDetailTx(null); markPaid(x); }} className="flex items-center justify-center gap-1.5"
-                    style={{ flex: 2, height: 48, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+                    style={{ flex: 2.2, height: 52, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
                     <Check size={18} /> Tandai Lunas
                   </button>
-                  <button onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} className="flex items-center justify-center gap-1"
-                    style={{ flex: 1.2, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                    <Trash2 size={16} style={{ flex: "none" }} /> Batalkan
-                  </button>
+                  <AksiStruk Ic={Ban} label="Batalkan" warna={t.error} onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} />
                 </div>
               )}
               {tab !== "unpaid" && (
-                <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                <div className="flex" style={{ marginTop: 10, fontFamily: "'Onest', sans-serif" }}>
                   {detailTx.cancelledAt ? (
-                    <button onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} className="flex items-center justify-center gap-1.5"
-                      style={{ flex: 1.4, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                      <RotateCcw size={15} /> Pulihkan
-                    </button>
+                    <AksiStruk Ic={RotateCcw} label="Pulihkan" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} />
                   ) : (
                     <>
-                      <button onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} className="flex items-center justify-center gap-1"
-                        style={{ flex: 2.1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "0 2px", whiteSpace: "nowrap" }}>
-                        <Undo2 size={15} style={{ flex: "none" }} /> Belum Dibayar
-                      </button>
-                      <button onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} className="flex items-center justify-center gap-1"
-                        style={{ flex: 1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                        <Ban size={15} style={{ flex: "none" }} /> Batalkan
-                      </button>
+                      <AksiStruk Ic={Undo2} label="Belum Dibayar" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} />
+                      <AksiStruk Ic={Ban} label="Batalkan" warna={t.text2} onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} />
                     </>
                   )}
-                  <button onClick={() => { const x = detailTx; setDetailTx(null); setTrashConfirmTx(x); }} className="flex items-center justify-center gap-1"
-                    style={{ flex: 1, height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>
-                    <Trash2 size={15} style={{ flex: "none" }} /> Hapus
-                  </button>
+                  <AksiStruk Ic={Trash2} label="Hapus" warna={t.error} onClick={() => { const x = detailTx; setDetailTx(null); setTrashConfirmTx(x); }} />
                 </div>
               )}
-              <div style={{ position: "relative", marginTop: 14, height: 52, borderRadius: 12, border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Onest', sans-serif", fontWeight: 800, fontSize: 14.5, color: t.amberText }}>
-                <Calendar size={16} /> Ubah Tanggal Layanan
-                <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
-                  onChange={(e) => {
-                    if (!e.target.value || e.target.value === opDate(detailTx)) return;
-                    onChangeDate(detailTx.id, e.target.value);
-                    setDetailTx(null);
-                    setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
-                  }}
-                  onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
-                  aria-label="Ubah Tanggal Layanan"
-                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
-              </div>
             </div>
             <button onClick={() => setDetailTx(null)} aria-label="Tutup rincian"
               style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>

@@ -319,7 +319,6 @@ export default function Penjualan({
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>{serviceDateLabel(txDate)}{isBackdate ? "" : " · hari ini"}</div>
                 <div style={{ fontSize: 14, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
             </div>

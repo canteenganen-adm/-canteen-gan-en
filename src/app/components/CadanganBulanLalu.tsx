@@ -31,27 +31,24 @@ export default function CadanganBulanLalu() {
   };
 
   if (selesai) return null;
-  const nama = `${BULAN[m]} ${y}`;
   return (
-    <div style={{ border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "14px 16px", marginBottom: 12, background: t.surface }}>
-      <div className="flex items-center gap-3">
-        <span style={{ width: 40, height: 40, borderRadius: "50%", background: baruSaja ? t.successBg : t.primaryLight, display: "grid", placeItems: "center", flex: "none", color: baruSaja ? t.successText : t.text }}>
+    /* SATU baris tipis (bukan kartu besar): ikon · "Excel {bulan} belum diunduh" · tombol kecil Unduh */
+    <div style={{ marginBottom: 12 }}>
+      <div className="flex items-center gap-3" style={{ minHeight: 52, padding: "0 6px 0 4px" }}>
+        <span style={{ color: baruSaja ? t.successText : t.text2, display: "grid", placeItems: "center", flex: "none" }}>
           {baruSaja ? <Check size={20} /> : <FileSpreadsheet size={20} />}
         </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{baruSaja ? "Laporan tersimpan" : `Laporan ${nama}`}</div>
-          <div style={{ fontSize: 14, color: t.text2, marginTop: 1 }}>{baruSaja ? "Cek folder Unduhan." : "Belum diunduh. Simpan sebagai cadangan."}</div>
-        </div>
-      </div>
-      {!baruSaja && (
-        <>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700 }}>
+          {baruSaja ? "Excel tersimpan. Cek folder Unduhan." : `Excel ${BULAN[m]} belum diunduh`}
+        </span>
+        {!baruSaja && (
           <button onClick={unduh} disabled={busy}
-            style={{ width: "100%", height: 48, marginTop: 12, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15.5, cursor: busy ? "default" : "pointer", fontFamily: "inherit", opacity: busy ? 0.7 : 1 }}>
-            {busy ? "Membuat file…" : "Unduh Excel"}
+            style={{ flex: "none", height: 44, padding: "0 16px", borderRadius: 12, border: "none", background: t.primaryLight, color: t.onPrimary, fontWeight: 800, fontSize: 14.5, cursor: busy ? "default" : "pointer", fontFamily: "inherit", opacity: busy ? 0.7 : 1 }}>
+            {busy ? "Membuat…" : "Unduh"}
           </button>
-          {err && <div style={{ fontSize: 14, color: t.error, marginTop: 8 }}>Gagal. Periksa koneksi lalu coba lagi.</div>}
-        </>
-      )}
+        )}
+      </div>
+      {err && <div style={{ fontSize: 14, color: t.error, padding: "0 4px" }}>Gagal. Periksa koneksi lalu coba lagi.</div>}
     </div>
   );
 }
