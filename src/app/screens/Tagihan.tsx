@@ -100,10 +100,6 @@ function sortGroups<G extends { customer: Transaction["customer"]; newestAt: str
 /** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
  * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
 const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
-/** Tanggal (zona perangkat, WIB di HP kasir) dari ISO: kunci "YYYY-MM-DD" dan label "10 Okt". Dipakai mengelompokkan Lunas per tagihan. */
-const BLN_P = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-const kunciTanggalLokal = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-const tglPendekIso = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN_P[d.getMonth()]}`; };
 /** Aksi di struk: ikon polos + tulisan kecil di bawahnya (tanpa garis/kotak), area ketuk ≥48px. */
 function AksiStruk({ Ic, label, warna, onClick }: { Ic: React.ComponentType<{ size?: number }>; label: string; warna: string; onClick: () => void }) {
   return (
@@ -171,8 +167,6 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
 
   const [q, setQ] = useState("");
-  /** Kelompok tagihan yang dibuka di tab Lunas (kunci "anak|tanggal tagih"); tertutup secara bawaan. */
-  const [bukaTagihan, setBukaTagihan] = useState<Set<string>>(new Set());
   /** Riwayat lama (> 30 hari) ditarik sekali per sesi, hanya saat tab Lunas/Dibatalkan dibuka atau saat mencari. */
   useEffect(() => {
     if (tab !== "unpaid" || q.trim()) onMuatRiwayatLama();
@@ -752,22 +746,23 @@ export default function Tagihan({
                 <style>{`@keyframes ganen-pop{from{opacity:0;transform:translateY(-8px) scale(.94)}to{opacity:1;transform:none}}`}</style>
                 <div onClick={() => setFilterSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 44, background: "rgba(47,42,36,.18)" }} />
                 {/* Filter ringkas & mengalir: muncul tepat di bawah tombol, langsung berlaku (tanpa tombol Terapkan), ketuk di luar = tutup */}
-                <div role="dialog" aria-label="Filter dan urutan" style={{ position: "absolute", top: 52, right: 0, zIndex: 45, width: "min(260px, calc(100vw - 40px))", maxHeight: "60vh", overflowY: "auto", overscrollBehavior: "contain", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: 6, transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
-                  {/* Daftar seperti filter Excel: urut ke bawah, satu pilihan per baris, centang di yang aktif; bisa digulir */}
+                <div role="dialog" aria-label="Filter dan urutan" style={{ position: "absolute", top: 52, right: 0, zIndex: 45, width: "min(340px, calc(100vw - 40px))", maxHeight: "70vh", overflowY: "auto", overscrollBehavior: "contain", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, boxShadow: "0 14px 34px rgba(60,48,20,.22)", padding: "6px 14px", transformOrigin: "top right", animation: "ganen-pop .16s ease-out" }}>
+                  {/* Tiga baris CHIP (bukan daftar panjang): langsung berlaku, ketuk di luar = tutup */}
                   {([
                     ["Sumber", ([["semua", "Semua"], ["preorder", "Pre-order"], ["penjualan", "Penjualan"]] as const).map(([v, l]) => ({ key: v, label: l, on: sourceFilter === v, pilih: () => setSourceFilter(v) }))],
-                    ["Urutkan", (["az", "za", "newest", "oldest"] as const).map((v) => ({ key: v, label: v === "az" ? "A–Z" : v === "za" ? "Z–A" : v === "newest" ? "Terbaru dulu" : "Terlama dulu", on: sortMode === v, pilih: () => setSortMode(v) }))],
-                    ["Tanggal", ([["semua", "Semua Tanggal"], ["hari", "Hari Ini"], ["tanggal", "Pilih Rentang…"]] as const).map(([v, l]) => ({ key: v, label: l, on: dateFilter === v, pilih: () => setDateFilter(v) }))],
+                    ["Urutan", ([["az", "A–Z"], ["newest", "Terbaru"]] as const).map(([v, l]) => ({ key: v, label: l, on: sortMode === v, pilih: () => setSortMode(v) }))],
+                    ["Tanggal", ([["semua", "Semua"], ["hari", "Hari ini"], ["tanggal", "Rentang…"]] as const).map(([v, l]) => ({ key: v, label: l, on: dateFilter === v, pilih: () => setDateFilter(v) }))],
                   ] as const).map(([judul, baris], gi) => (
-                    <div key={judul} style={{ borderTop: gi ? `1px solid ${t.divider}` : "none", paddingTop: gi ? 4 : 0, marginTop: gi ? 4 : 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, padding: "8px 10px 4px" }}>{judul}</div>
-                      {baris.map((o) => (
-                        <button key={o.key} onClick={o.pilih} role="menuitemradio" aria-checked={o.on} className="flex items-center justify-between"
-                          style={{ width: "100%", minHeight: 44, padding: "0 10px", border: "none", borderRadius: 10, background: o.on ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
-                          <span style={{ fontSize: 15, fontWeight: o.on ? 800 : 600 }}>{o.label}</span>
-                          {o.on && <Check size={18} color={t.amberText} />}
-                        </button>
-                      ))}
+                    <div key={judul} style={{ borderTop: gi ? `1px solid ${t.divider}` : "none", padding: "10px 0" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, marginBottom: 8 }}>{judul}</div>
+                      <div className="flex" style={{ gap: 6, flexWrap: "wrap" }}>
+                        {baris.map((o) => (
+                          <button key={o.key} onClick={o.pilih} role="menuitemradio" aria-checked={o.on}
+                            style={{ minHeight: 44, padding: "0 13px", borderRadius: 999, border: `1.5px solid ${o.on ? t.primaryLine : t.border}`, background: o.on ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, fontSize: 14.5, fontWeight: o.on ? 800 : 600 }}>
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
                       {judul === "Tanggal" && dateFilter === "tanggal" && (
                         <div style={{ margin: "4px 10px 6px" }}>
                           {([["Dari", pickDate, (v: string) => { setPickDate(v); if (!pickDateEnd || pickDateEnd < v) setPickDateEnd(v); }], ["Sampai", pickDateEnd, (v: string) => { setPickDateEnd(v); if (!pickDate || pickDate > v) setPickDate(v); }]] as const).map(([label, nilai, ubah]) => (
@@ -784,11 +779,10 @@ export default function Tagihan({
                     </div>
                   ))}
                   {tab === "unpaid" && (
-                    <div style={{ borderTop: `1px solid ${t.divider}`, marginTop: 4, paddingTop: 4 }}>
-                      <button onClick={() => setOnlyUnbilled((v) => !v)} role="menuitemcheckbox" aria-checked={onlyUnbilled} className="flex items-center justify-between"
-                        style={{ width: "100%", minHeight: 44, padding: "0 10px", border: "none", borderRadius: 10, background: onlyUnbilled ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, textAlign: "left" }}>
-                        <span style={{ fontSize: 15, fontWeight: onlyUnbilled ? 800 : 600 }}>Hanya Belum Ditagih</span>
-                        {onlyUnbilled && <Check size={18} color={t.amberText} />}
+                    <div style={{ borderTop: `1px solid ${t.divider}`, padding: "10px 0" }}>
+                      <button onClick={() => setOnlyUnbilled((v) => !v)} role="menuitemcheckbox" aria-checked={onlyUnbilled}
+                        style={{ minHeight: 44, padding: "0 16px", borderRadius: 999, border: `1.5px solid ${onlyUnbilled ? t.primaryLine : t.border}`, background: onlyUnbilled ? t.primaryLight : "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, fontSize: 15, fontWeight: onlyUnbilled ? 800 : 600 }}>
+                        Belum ditagih saja
                       </button>
                     </div>
                   )}
@@ -810,7 +804,7 @@ export default function Tagihan({
                     <span style={{ fontSize: 14.5, fontWeight: 700, minWidth: 0 }}>
                       Filter aktif: {[
                         dateFilter === "hari" ? "Hari Ini" : dateFilter === "tanggal" ? (pickDate ? (pickDateEnd && pickDateEnd !== pickDate ? `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}–${pickDateEnd.slice(8, 10)}/${pickDateEnd.slice(5, 7)}` : `${pickDate.slice(8, 10)}/${pickDate.slice(5, 7)}`) : "Pilih Rentang") : "",
-                        onlyUnbilled ? "Hanya Belum Ditagih" : "",
+                        onlyUnbilled ? "Belum ditagih saja" : "",
                       ].filter(Boolean).join(" · ")}
                     </span>
                     <button onClick={() => { setDateFilter("semua"); setPickDate(""); setPickDateEnd(""); setOnlyUnbilled(false); }}
@@ -984,32 +978,7 @@ export default function Tagihan({
                       </button>
                     );
                   };
-                  // Lunas: kelompokkan per TAGIHAN (tanggal kirim WA), tertutup dulu. Anak dengan ≤3 transaksi tetap daftar biasa (kelompok hanya menambah ketukan).
-                  if (riwayatFilter !== "lunas" || g.txs.length <= 3 || !g.customer.nama?.trim()) return g.txs.map(barisTx);
-                  const per = new Map<string, Transaction[]>();
-                  for (const tx of g.txs) {
-                    const k = tx.billedAt ? kunciTanggalLokal(tx.billedAt) : "";
-                    const arr = per.get(k);
-                    if (arr) arr.push(tx); else per.set(k, [tx]);
-                  }
-                  const urut = [...per.entries()].sort((a, b) => (a[0] === "" ? 1 : b[0] === "" ? -1 : b[0].localeCompare(a[0])));
-                  return urut.map(([k, txs]) => {
-                    const kunci = `${groupKey(g.customer)}|${k}`;
-                    const buka = bukaTagihan.has(kunci);
-                    return (
-                      <div key={kunci}>
-                        <button onClick={() => setBukaTagihan((prev) => { const n = new Set(prev); n.has(kunci) ? n.delete(kunci) : n.add(kunci); return n; })}
-                          aria-expanded={buka} className="flex items-center"
-                          style={{ width: "100%", gap: 8, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: k ? t.ditagihBg : t.surfaceSoft, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tanpa tagihan WA"}</span>
-                          <span style={{ flex: "none", fontSize: 13, fontWeight: 500, color: t.text2 }}>{txs.length} tgl</span>
-                          <span style={{ flex: "none", fontSize: 15, fontWeight: 800, fontFamily: MONO }}>{rupiah(txs.reduce((s, x) => s + x.total, 0))}</span>
-                          <ChevronDown size={16} color={t.text2} style={{ flex: "none", transform: buka ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
-                        </button>
-                        {buka && txs.map(barisTx)}
-                      </div>
-                    );
-                  });
+                  return g.txs.map(barisTx);
                 })()}
               </div>
             ))}
@@ -1092,6 +1061,12 @@ export default function Tagihan({
                     style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
                 </div>
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
+                {/* Pelacakan: kapan ditagih lewat WA (hanya bila ada) — satu baris di struk, bukan di daftar */}
+                {detailTx.billedAt && (
+                  <div className="flex justify-between"><span style={{ color: t.text2 }}>Ditagih</span>
+                    <span>{`${detailTx.billedAt.slice(8, 10)}/${detailTx.billedAt.slice(5, 7)} · ${new Date(detailTx.billedAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.billedAt).getMinutes().toString().padStart(2, "0")}`}</span>
+                  </div>
+                )}
                 {/* Hanya tampil bila jamnya tercatat (transaksi lama tidak punya — tidak perlu tulisan "tidak tercatat") */}
                 {detailTx.paid && !detailTx.cancelledAt && detailTx.paidAt && (
                   <div className="flex justify-between"><span style={{ color: t.text2 }}>Dilunaskan</span>
