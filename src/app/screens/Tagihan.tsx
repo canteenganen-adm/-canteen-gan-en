@@ -446,10 +446,13 @@ export default function Tagihan({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd, riwayatFilter, sortMode]);
 
-  // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
+  // Total header tab Lunas: tanpa cari/filter = "Masuk bulan ini" (seluruh riwayat bisa ratusan juta dan membingungkan);
+  // dengan cari/filter = jumlah Lunas dari hasil yang tampil.
+  const lunasTanpaFilter = !q.trim() && dateFilter === "semua" && sourceFilter === "semua";
   const historyMasuk = useMemo(
     () => tab !== "riwayat" ? 0 : transactions
-      .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa))
+      .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
+        && (!lunasTanpaFilter || opDate(x).startsWith(todayISO().slice(0, 7))))
       .reduce((s, x) => s + x.total, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tab, transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd]
@@ -704,7 +707,7 @@ export default function Tagihan({
           <div className="flex items-center gap-2">
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>
-                {tab === "unpaid" ? "Total Belum Dibayar" : tab === "riwayat" ? "Masuk (Lunas)" : "Dibatalkan"}
+                {tab === "unpaid" ? "Total Belum Dibayar" : tab === "riwayat" ? (lunasTanpaFilter ? "Masuk bulan ini" : "Masuk (Lunas)") : "Dibatalkan"}
               </div>
               <div style={{ fontSize: 14.5, fontWeight: 800, color: tab === "unpaid" ? t.amberText : tab === "riwayat" ? t.successText : t.text2 }}>
                 {rupiah(tab === "unpaid" ? grandTotal : tab === "riwayat" ? historyMasuk : batalTotal)}
@@ -950,10 +953,13 @@ export default function Tagihan({
                 <div style={{ padding: "14px 16px 10px" }}>
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
-                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
-                        {g.customer.kelas || g.customer.tingkat}
-                      </span>
+                      {/* Penjualan tanpa nama = jualan kantin langsung (tunai) */}
+                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama?.trim() ? g.customer.nama : "Penjualan Tunai"}</span>
+                      {(g.customer.kelas || g.customer.tingkat) && (
+                        <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
+                          {g.customer.kelas || g.customer.tingkat}
+                        </span>
+                      )}
                     </div>
                     <span style={{ fontSize: 15, fontWeight: 800, color: riwayatFilter === "batal" ? t.text2 : t.successText, flex: "none" }}>
                       {rupiah(riwayatFilter === "batal" ? g.txs.reduce((s, tx) => s + tx.total, 0) : g.totalMasuk)}
@@ -979,7 +985,7 @@ export default function Tagihan({
                     );
                   };
                   // Lunas: kelompokkan per TAGIHAN (tanggal kirim WA), tertutup dulu. Anak dengan ≤3 transaksi tetap daftar biasa (kelompok hanya menambah ketukan).
-                  if (riwayatFilter !== "lunas" || g.txs.length <= 3) return g.txs.map(barisTx);
+                  if (riwayatFilter !== "lunas" || g.txs.length <= 3 || !g.customer.nama?.trim()) return g.txs.map(barisTx);
                   const per = new Map<string, Transaction[]>();
                   for (const tx of g.txs) {
                     const k = tx.billedAt ? kunciTanggalLokal(tx.billedAt) : "";
@@ -995,7 +1001,7 @@ export default function Tagihan({
                         <button onClick={() => setBukaTagihan((prev) => { const n = new Set(prev); n.has(kunci) ? n.delete(kunci) : n.add(kunci); return n; })}
                           aria-expanded={buka} className="flex items-center"
                           style={{ width: "100%", gap: 8, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: k ? t.ditagihBg : t.surfaceSoft, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tunai / langsung"}</span>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800, whiteSpace: "nowrap" }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tanpa tagihan WA"}</span>
                           <span style={{ flex: "none", fontSize: 13, fontWeight: 500, color: t.text2 }}>{txs.length} tgl</span>
                           <span style={{ flex: "none", fontSize: 15, fontWeight: 800, fontFamily: MONO }}>{rupiah(txs.reduce((s, x) => s + x.total, 0))}</span>
                           <ChevronDown size={16} color={t.text2} style={{ flex: "none", transform: buka ? "rotate(180deg)" : "none", transition: "transform .15s" }} />

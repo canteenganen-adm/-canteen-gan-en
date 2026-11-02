@@ -9,7 +9,7 @@ import { fetchMasukBulan } from "../../lib/canteenApi";
 import CadanganBulanLalu from "../components/CadanganBulanLalu";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { BERITA_KUNCI, rakitBerita, uraiBerita } from "../../lib/waTemplate";
-import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
 /* ============================================================
@@ -438,7 +438,7 @@ export default function Pengaturan({
                         return (
                           <div key={tingkat} className="flex items-center gap-3"
                             style={{ padding: "9px 14px", borderBottom: ti < TINGKAT_LIST.length - 1 ? `1px solid ${t.divider}` : undefined }}>
-                            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: tingkatColor(tingkat) }}>{tingkat}</span>
+                            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: t.text }}>{tingkat}</span>
                             <span style={{ fontSize: 11.5, color: t.textDis }}>
                               {!tingkatTime && !isGK && sched.defaultTime ? sched.defaultTime : ""}
                               {!tingkatTime && isGK ? "Tidak dicek" : ""}
