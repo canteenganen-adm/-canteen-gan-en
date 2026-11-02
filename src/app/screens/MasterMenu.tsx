@@ -369,19 +369,21 @@ export default function MasterMenu({
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
         <div style={{ padding: "20px 20px 0", background: t.bg }}>
-          <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
-            <div className="flex items-center gap-2">
+          {/* Judul "Menu" SEJAJAR dengan tanggal (satu baris) bila deretan hari tampil */}
+          {!menuHarianReady && (
+            <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>
             </div>
-          </div>
+          )}
 
           {/* Tanggal menu yang sedang diatur: subjudul BESAR di bawah judul (pilihan pemilik "C", dibesarkan agar
               terlihat). Chip berbingkai, BUKAN kuning (tombol + di bawah sudah kuning). Seluruh chip bisa
               diketuk — input tanggal menutupi chip (inset 0). */}
           {menuHarianReady && (
-            <div style={{ marginTop: 8 }}>
+            <div>
               {/* Deretan hari yang digeser (gaya Flo); ketuk hari = pilih tanggal (lewat setTanggal: draft belum disimpan tetap terlindungi) */}
               <DerekTanggal nilai={tanggal} hariIni={todayISO()} awal={AWAL_OPERASIONAL} onPilih={setTanggal}
+                kiri={<div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>}
                 kanan={tanggal !== tanggalBawaan() ? (
                   <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
                     style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>

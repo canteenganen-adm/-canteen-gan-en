@@ -1,98 +1,122 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Calendar } from "lucide-react";
 import { t } from "../../lib/theme";
-import { namaHari, isAkhirPekan } from "../../lib/pekan";
+import { mondayOf } from "../../lib/pekan";
 
-/* Deretan hari yang digeser kiri-kanan (gaya Flo): bulan di atas, tiap hari = singkatan + bulatan angka.
-   Dipilih = bulatan kuning, hari ini = titik kecil, Sabtu/Minggu lebih redup. Ketuk ikon kalender = pemilih tanggal biasa
-   untuk tanggal yang jauh. Dipakai di tab Menu (tanggal menu yang diatur). */
+/* Deretan hari MINGGUAN (meniru gaya Flo): tampil SATU minggu (Senin–Minggu, 7 kolom penuh), judul di tengah = tanggal yang dipilih
+   ("2 Nov 2026"). Ketuk hari = pilih (bulatan kuning berpindah halus). Geser kiri/kanan = pindah
+   SATU MINGGU per geseran (snap) dan tanggal terpilih ikut pindah ±7 hari di hari yang sama (Senin tetap Senin). Ikon kalender di kanan
+   = pemilih tanggal biasa untuk tanggal yang jauh. Dipakai di tab Menu. */
 
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const HURUF = ["S", "S", "R", "K", "J", "S", "M"]; // Senin … Minggu
 const geser = (iso: string, n: number) => {
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + n);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih, kanan }: { nilai: string; hariIni: string; awal: string; depan?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode }) {
-  // Dari `awal` (hari pertama operasional) sampai `depan` hari setelah hari ini — digeser kiri-kanan.
-  const akhir = geser(hariIni, depan);
-  const daftar: string[] = [];
-  for (let d = awal < nilai ? awal : nilai; d <= akhir && daftar.length < 1000; d = geser(d, 1)) daftar.push(d);
-  if (!daftar.includes(nilai)) { daftar.push(nilai); daftar.sort(); }
+export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih, kanan, kiri }: { nilai: string; hariIni: string; awal: string; depan?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode; kiri?: React.ReactNode }) {
+  // Daftar minggu: dari minggu `awal` (hari pertama operasional) sampai `depan` hari setelah hari ini
+  const minggu: string[] = [];
+  const awalSenin = mondayOf(awal < nilai ? awal : nilai);
+  const akhirSenin = mondayOf(geser(hariIni, depan) > nilai ? geser(hariIni, depan) : nilai);
+  for (let s = awalSenin; s <= akhirSenin && minggu.length < 400; s = geser(s, 7)) minggu.push(s);
+
+  const idxMinggu = (iso: string) => minggu.indexOf(mondayOf(iso));
+  const offset = (iso: string) => Math.round((new Date(iso + "T00:00:00").getTime() - new Date(mondayOf(iso) + "T00:00:00").getTime()) / 86_400_000);
+
   const barisRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nilaiRef = useRef(nilai);
+  nilaiRef.current = nilai;
+  const programatik = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Hari yang sedang ada di TENGAH layar → menentukan nama bulan di atas (berganti saat digeser ke bulan lain)
-  const [tengah, setTengah] = useState(nilai);
-  const rafRef = useRef(0);
-  const saatGeser = () => {
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const el = barisRef.current;
-      if (!el) return;
-      const idx = Math.max(0, Math.min(daftar.length - 1, Math.floor((el.scrollLeft + el.clientWidth / 2) / 58)));
-      setTengah(daftar[idx]);
-    });
+  const keMinggu = (i: number, halus: boolean) => {
+    const el = barisRef.current;
+    if (!el) return;
+    programatik.current = true;
+    // Gulir halus hanya untuk 1 minggu; lompatan jauh langsung (snap-stop "always" menghentikan gulir halus di minggu pertama yang dilewati)
+    const dekat = Math.abs(i - Math.round(el.scrollLeft / (el.clientWidth || 1))) <= 1;
+    el.scrollTo({ left: i * el.clientWidth, behavior: halus && dekat ? "smooth" : "auto" });
+    setTimeout(() => { programatik.current = false; }, halus ? 450 : 80);
   };
 
-  // Gulir ke hari terpilih (tengah) saat dibuka / tanggal berubah / tombol kembali ditekan
-  const keHari = (iso: string, halus = false) => {
-    const el = barisRef.current?.querySelector<HTMLElement>(`[data-hari="${iso}"]`);
-    if (el && barisRef.current) barisRef.current.scrollTo({ left: el.offsetLeft - barisRef.current.clientWidth / 2 + el.clientWidth / 2, behavior: halus ? "smooth" : "auto" });
-  };
+  // Tanggal terpilih berubah (ketuk / tombol Hari ini / dibuka pertama kali) → gulir ke minggunya
   useEffect(() => {
-    setTengah(nilai);
-    keHari(nilai);
+    const i = idxMinggu(nilai);
+    const el = barisRef.current;
+    if (i >= 0 && el && Math.round(el.scrollLeft / (el.clientWidth || 1)) !== i) keMinggu(i, el.scrollLeft > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nilai]);
-  // Petunjuk saat digeser jauh: hari ini keluar dari pandangan → tombol "Hari ini" (menggulir ke hari ini);
-  // hari yang dipilih keluar dari pandangan → tombol "Kembali" (menggulir ke hari terpilih).
-  const idxTengah = daftar.indexOf(tengah);
-  const hariIniJauh = daftar.includes(hariIni) && Math.abs(idxTengah - daftar.indexOf(hariIni)) > 3;
-  const terpilihJauh = Math.abs(idxTengah - daftar.indexOf(nilai)) > 3;
-  const tujuanKembali = hariIniJauh ? hariIni : terpilihJauh ? nilai : null;
 
-  const [y, m] = tengah.split("-").map(Number);
+  // Geseran selesai → tanggal terpilih ikut pindah ke minggu yang tampil (hari yang sama)
+  const saatGeser = () => {
+    if (programatik.current) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      const el = barisRef.current;
+      if (!el || programatik.current) return;
+      const i = Math.max(0, Math.min(minggu.length - 1, Math.round(el.scrollLeft / el.clientWidth)));
+      if (i === idxMinggu(nilaiRef.current)) return;
+      const tujuan = geser(minggu[i], offset(nilaiRef.current));
+      onPilih(tujuan);
+      // Bila pindah ditolak (mis. menu belum disimpan → muncul pertanyaan), kembalikan deretan ke minggu yang masih terpilih
+      setTimeout(() => {
+        const j = idxMinggu(nilaiRef.current);
+        const e2 = barisRef.current;
+        if (e2 && j >= 0 && Math.round(e2.scrollLeft / e2.clientWidth) !== j) keMinggu(j, true);
+      }, 350);
+    }, 120);
+  };
+
+  const [y, m, d] = nilai.split("-").map(Number);
   return (
     <div>
-      <div className="flex items-center justify-between" style={{ padding: "0 2px 6px" }}>
-        <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{BULAN[m - 1]} {y}</span>
-        <div className="flex items-center" style={{ gap: 4 }}>
-        {kanan ?? (tujuanKembali ? (
-          <button onClick={() => keHari(tujuanKembali, true)} aria-label={tujuanKembali === hariIni ? "Ke hari ini" : "Kembali ke tanggal terpilih"}
-            style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
-            {tujuanKembali === hariIni ? "Hari ini" : "Kembali"}
-          </button>
-        ) : null)}
-        <div style={{ position: "relative", width: 44, height: 36, display: "grid", placeItems: "center", color: t.text2 }}>
-          <Calendar size={19} />
-          <input ref={inputRef} type="date" value={nilai} min={awal}
-            onChange={(e) => e.target.value && onPilih(e.target.value)}
-            onClick={() => { try { inputRef.current?.showPicker?.(); } catch { /* picker native */ } }}
-            aria-label="Pilih tanggal lain"
-            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+      <div className="flex items-center" style={{ height: 44, gap: 8 }}>
+        {kiri}
+        <div style={{ flex: 1, textAlign: kiri ? "right" : "center", fontSize: 16, fontWeight: 800, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>
+          {d} {BULAN[m - 1].slice(0, 3)} {y}
         </div>
+        <div className="flex items-center" style={{ gap: 2 }}>
+          {kanan}
+          <div style={{ position: "relative", width: 40, height: 36, display: "grid", placeItems: "center", color: t.text2 }}>
+            <Calendar size={19} />
+            <input ref={inputRef} type="date" value={nilai} min={awal}
+              onChange={(e) => e.target.value && onPilih(e.target.value)}
+              onClick={() => { try { inputRef.current?.showPicker?.(); } catch { /* picker native */ } }}
+              aria-label="Pilih tanggal lain"
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+          </div>
         </div>
       </div>
-      <div ref={barisRef} className="hscroll" onScroll={saatGeser} style={{ position: "relative", display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", padding: "2px 0 6px", margin: "0 -4px" }}>
-        {daftar.map((iso) => {
-          const aktif = iso === nilai;
-          const akhir = isAkhirPekan(iso);
-          return (
-            <button key={iso} data-hari={iso} onClick={() => onPilih(iso)} aria-pressed={aktif}
-              aria-label={`${namaHari(iso)} ${Number(iso.slice(8))}`}
-              style={{ flex: "none", width: 52, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "2px 0" }}>
-              <span style={{ fontSize: 12.5, fontWeight: aktif ? 800 : 600, color: aktif ? t.text : t.text2 }}>{namaHari(iso).slice(0, 1).toUpperCase()}</span>
-              <span style={{ position: "relative", width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 17, fontWeight: aktif ? 800 : 700,
-                background: aktif ? t.primary : "transparent", border: `1.5px solid ${aktif ? t.primary : t.border}`, color: akhir && !aktif ? t.text2 : t.text }}>
-                {Number(iso.slice(8))}
-                {/* Titik hari ini: di KANAN ATAS bulatan, merapat ke garis (permintaan Mama/pemilik) */}
-                {iso === hariIni && <i style={{ position: "absolute", top: 1, right: 1, width: 9, height: 9, borderRadius: "50%", background: t.text, display: "block" }} />}
-              </span>
-            </button>
-          );
-        })}
+      {/* Huruf hari (tetap, 7 kolom) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", marginTop: 2 }}>
+        {HURUF.map((h, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: 11.5, fontWeight: 600, color: t.text2 }}>{h}</div>
+        ))}
+      </div>
+      <div ref={barisRef} onScroll={saatGeser} className="hscroll"
+        style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", overscrollBehaviorX: "contain", position: "relative" }}>
+        {minggu.map((senin) => (
+          <div key={senin} style={{ flex: "0 0 100%", scrollSnapAlign: "start", scrollSnapStop: "always", display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", padding: "3px 0 4px" }}>
+            {Array.from({ length: 7 }, (_, i) => {
+              const iso = geser(senin, i);
+              const aktif = iso === nilai;
+              return (
+                <button key={iso} data-hari={iso} onClick={() => onPilih(iso)} aria-pressed={aktif} aria-label={`${Number(iso.slice(8))} ${BULAN[Number(iso.slice(5, 7)) - 1]}`}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", display: "grid", placeItems: "center", padding: 0, minHeight: 44 }}>
+                  <span style={{ position: "relative", width: 38, height: 38, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 16, fontWeight: aktif ? 800 : 600,
+                    background: aktif ? t.primary : "transparent", color: i >= 5 && !aktif ? t.text2 : t.text, transition: "background .2s ease" }}>
+                    {Number(iso.slice(8))}
+                    {iso === hariIni && <i style={{ position: "absolute", top: 3, right: 3, width: 7, height: 7, borderRadius: "50%", background: t.text, display: "block" }} />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
