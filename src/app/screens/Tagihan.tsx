@@ -100,6 +100,10 @@ function sortGroups<G extends { customer: Transaction["customer"]; newestAt: str
 /** Tanggal operasional transaksi: Tanggal Layanan bila ada (pre-order &
  * penjualan susulan), jatuh ke tanggal input untuk transaksi lama. */
 const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
+/** Tanggal (zona perangkat, WIB di HP kasir) dari ISO: kunci "YYYY-MM-DD" dan label "10 Okt". Dipakai mengelompokkan Lunas per tagihan. */
+const BLN_P = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const kunciTanggalLokal = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const tglPendekIso = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${BLN_P[d.getMonth()]}`; };
 /** Kartu Belum Dibayar satu anak. */
 type Grup = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; total: number };
 const buatGrup = (txs: Transaction[]): Grup[] =>
@@ -158,6 +162,8 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
 
   const [q, setQ] = useState("");
+  /** Kelompok tagihan yang dibuka di tab Lunas (kunci "anak|tanggal tagih"); tertutup secara bawaan. */
+  const [bukaTagihan, setBukaTagihan] = useState<Set<string>>(new Set());
   /** Riwayat lama (> 30 hari) ditarik sekali per sesi, hanya saat tab Lunas/Dibatalkan dibuka atau saat mencari. */
   useEffect(() => {
     if (tab !== "unpaid" || q.trim()) onMuatRiwayatLama();
@@ -212,10 +218,10 @@ export default function Tagihan({
     const prevIds = prevTxIdsRef.current;
 
     if (prevIds.size > 0) {
-      for (const id of currentIds) {
-        if (prevIds.has(id)) continue;
-        const newTx = transactions.find((tx) => tx.id === id);
-        if (!newTx || newTx.paid || newTx.cancelledAt) continue;
+      // Iterasi `transactions` (bukan cari per id): riwayat lama ribuan baris masuk sekaligus dan semuanya Lunas → langsung dilewati.
+      for (const newTx of transactions) {
+        const id = newTx.id;
+        if (prevIds.has(id) || newTx.paid || newTx.cancelledAt) continue;
         const key = groupKey(newTx.customer);
         const hasExisting = transactions.some(
           (tx) => tx.id !== id && !tx.paid && !tx.cancelledAt && groupKey(tx.customer) === key
@@ -416,6 +422,8 @@ export default function Tagihan({
 
   /* Grupkan Lunas/Dibatalkan per ANAK (aturan ganda unionGroups), urut A–Z */
   const riwayatGroups = useMemo(() => {
+    // Tab kerja utama (Belum Dibayar) tidak perlu menghitung riwayat ribuan baris tiap data/ketikan berubah.
+    if (tab === "unpaid") return [];
     const done = transactions.filter(
       (x) => (riwayatFilter === "lunas" ? (x.paid && !x.cancelledAt) : !!x.cancelledAt)
         && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa)
@@ -427,15 +435,15 @@ export default function Tagihan({
     }));
     return sortGroups(built, sortMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd, riwayatFilter, sortMode]);
+  }, [tab, transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd, riwayatFilter, sortMode]);
 
   // Total header tab Lunas = SELALU murni Lunas (tak terpengaruh sub-filter)
   const historyMasuk = useMemo(
-    () => transactions
+    () => tab !== "riwayat" ? 0 : transactions
       .filter((x) => x.paid && !x.cancelledAt && bySource(x) && byDate(x) && matchQuery(x.customer.nama, x.customer.kelas, x.customer.wa))
       .reduce((s, x) => s + x.total, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd]
+    [tab, transactions, sourceFilter, q, dateFilter, pickDate, pickDateEnd]
   );
 
   // Total tab Dibatalkan (abu-abu, sekadar informasi)
@@ -945,21 +953,49 @@ export default function Tagihan({
                   {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
                 </div>
                 {/* Per transaksi: SATU baris ringkas. Ketuk = struk (isi pesanan + aksi). */}
-                {g.txs.map((tx) => {
-                  const cancelled = !!tx.cancelledAt;
-                  return (
-                    <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
-                      style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
-                      <StatusDot cancelled={cancelled} />
-                      <SourceTag source={tx.source} muted={cancelled} />
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: cancelled ? t.text2 : t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
-                      <span style={{ flex: "none", fontSize: 15, fontWeight: 700, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
-                        {rupiah(tx.total)}
-                      </span>
-                      <ChevronRight size={16} color={t.text2} style={{ flex: "none" }} />
-                    </button>
-                  );
-                })}
+                {(() => {
+                  const barisTx = (tx: Transaction) => {
+                    const cancelled = !!tx.cancelledAt;
+                    return (
+                      <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
+                        style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+                        <StatusDot cancelled={cancelled} />
+                        <SourceTag source={tx.source} muted={cancelled} />
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: cancelled ? t.text2 : t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
+                        <span style={{ flex: "none", fontSize: 15, fontWeight: 700, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
+                          {rupiah(tx.total)}
+                        </span>
+                        <ChevronRight size={16} color={t.text2} style={{ flex: "none" }} />
+                      </button>
+                    );
+                  };
+                  // Lunas: kelompokkan per TAGIHAN (tanggal kirim WA), tertutup dulu. Anak dengan ≤3 transaksi tetap daftar biasa (kelompok hanya menambah ketukan).
+                  if (riwayatFilter !== "lunas" || g.txs.length <= 3) return g.txs.map(barisTx);
+                  const per = new Map<string, Transaction[]>();
+                  for (const tx of g.txs) {
+                    const k = tx.billedAt ? kunciTanggalLokal(tx.billedAt) : "";
+                    const arr = per.get(k);
+                    if (arr) arr.push(tx); else per.set(k, [tx]);
+                  }
+                  const urut = [...per.entries()].sort((a, b) => (a[0] === "" ? 1 : b[0] === "" ? -1 : b[0].localeCompare(a[0])));
+                  return urut.map(([k, txs]) => {
+                    const kunci = `${groupKey(g.customer)}|${k}`;
+                    const buka = bukaTagihan.has(kunci);
+                    return (
+                      <div key={kunci}>
+                        <button onClick={() => setBukaTagihan((prev) => { const n = new Set(prev); n.has(kunci) ? n.delete(kunci) : n.add(kunci); return n; })}
+                          aria-expanded={buka} className="flex items-center"
+                          style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: buka ? t.surfaceSoft : "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800 }}>{k ? `Ditagih ${tglPendekIso(txs[0].billedAt!)}` : "Tunai / langsung"}</span>
+                          <span style={{ flex: "none", fontSize: 13, fontWeight: 500, color: t.text2 }}>{txs.length} tanggal</span>
+                          <span style={{ flex: "none", fontSize: 15, fontWeight: 800, fontFamily: MONO }}>{rupiah(txs.reduce((s, x) => s + x.total, 0))}</span>
+                          <ChevronDown size={16} color={t.text2} style={{ flex: "none", transform: buka ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+                        </button>
+                        {buka && txs.map(barisTx)}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             ))}
             {riwayatGroups.length > (q ? Math.max(batasRiwayat, 60) : batasRiwayat) && (
