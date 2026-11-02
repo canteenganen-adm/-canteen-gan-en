@@ -14,10 +14,12 @@ const geser = (iso: string, n: number) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export default function DerekTanggal({ nilai, hariIni, awal, hari = 35, onPilih, kanan }: { nilai: string; hariIni: string; awal: string; hari?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode }) {
-  const daftar = Array.from({ length: hari }, (_, i) => geser(awal, i));
-  if (!daftar.includes(nilai)) daftar.unshift(nilai);
-  daftar.sort();
+export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih, kanan }: { nilai: string; hariIni: string; awal: string; depan?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode }) {
+  // Dari `awal` (hari pertama operasional) sampai `depan` hari setelah hari ini — digeser kiri-kanan.
+  const akhir = geser(hariIni, depan);
+  const daftar: string[] = [];
+  for (let d = awal < nilai ? awal : nilai; d <= akhir && daftar.length < 1000; d = geser(d, 1)) daftar.push(d);
+  if (!daftar.includes(nilai)) { daftar.push(nilai); daftar.sort(); }
   const barisRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -36,7 +38,7 @@ export default function DerekTanggal({ nilai, hariIni, awal, hari = 35, onPilih,
         {kanan}
         <div style={{ position: "relative", width: 44, height: 36, display: "grid", placeItems: "center", color: t.text2 }}>
           <Calendar size={19} />
-          <input ref={inputRef} type="date" value={nilai} min={hariIni}
+          <input ref={inputRef} type="date" value={nilai} min={awal}
             onChange={(e) => e.target.value && onPilih(e.target.value)}
             onClick={() => { try { inputRef.current?.showPicker?.(); } catch { /* picker native */ } }}
             aria-label="Pilih tanggal lain"

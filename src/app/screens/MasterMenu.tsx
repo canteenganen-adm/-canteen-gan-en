@@ -5,7 +5,7 @@ import {
 import RailGeser from "../components/RailGeser";
 import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
 import { priceLabel, uid, serviceDateLabel, todayISO, toTitleCase } from "../../lib/format";
-import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK } from "../../lib/constants";
+import { KATEGORI_ORTU_LIST, KATEGORI_ORTU_ORDER, KATEGORI_ORTU_FALLBACK, AWAL_OPERASIONAL } from "../../lib/constants";
 import PaperTabs from "../components/PaperTabs";
 import DerekTanggal from "../components/DerekTanggal";
 import { useKunciGulir } from "../components/useKunciGulir";
@@ -381,7 +381,7 @@ export default function MasterMenu({
           {menuHarianReady && (
             <div style={{ marginTop: 8 }}>
               {/* Deretan hari yang digeser (gaya Flo); ketuk hari = pilih tanggal (lewat setTanggal: draft belum disimpan tetap terlindungi) */}
-              <DerekTanggal nilai={tanggal} hariIni={todayISO()} awal={tanggal < todayISO() ? tanggal : todayISO()} onPilih={setTanggal}
+              <DerekTanggal nilai={tanggal} hariIni={todayISO()} awal={AWAL_OPERASIONAL} onPilih={setTanggal}
                 kanan={tanggal !== tanggalBawaan() ? (
                   <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
                     style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -543,7 +543,7 @@ export default function MasterMenu({
                     const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
                       <div style={{ background: t.surface, margin: "0 6px", padding: "20px 18px 22px",
-                        fontFamily: STRUK_MONO, fontSize: 13, fontWeight: 600, lineHeight: 1.7, color: t.text,
+                        fontFamily: STRUK_MONO, fontSize: 13, fontWeight: 500, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
                             Tanpa tulisan "Menu PO" / "Muat ulang" / "Segarkan" (terlalu banyak huruf M). */}
@@ -560,7 +560,7 @@ export default function MasterMenu({
                           <div key={k}>
                             {/* Judul kategori: teks tebal + jumlah redup + garis putus (tanpa pita kuning — "warnanya nabrak", Mama) */}
                             <div className="flex justify-between" style={{ fontSize: 14.5, fontWeight: 800, color: t.text, padding: "0 10px 2px", margin: i > 0 ? "16px 0 6px" : "12px 0 6px", borderBottom: `1.5px dashed ${t.border}` }}>
-                              <span>{k}</span><span style={{ fontWeight: 600, color: t.text2 }}>({byKat[k]?.length || 0})</span>
+                              <span>{k}</span><span>({byKat[k]?.length || 0})</span>
                             </div>
                             {byKat[k]?.length ? byKat[k].map((m) => (
                               <div key={m.id} className="flex justify-between" style={{ gap: 10, alignItems: "baseline", padding: "0 10px" }}>

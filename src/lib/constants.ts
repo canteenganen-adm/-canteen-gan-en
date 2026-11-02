@@ -42,3 +42,6 @@ export const KATEGORI_ORTU_EMOJI: Record<string, string> = {
   "Snack": "🍪", "Buah": "🍎", "Dessert": "🧁", "Paket": "🍱", "Lainnya": "🍽️",
 };
 export const KATEGORI_ORTU_ORDER = [...KATEGORI_ORTU_LIST, KATEGORI_ORTU_FALLBACK];
+
+/** Hari pertama kantin beroperasi (pesanan pertama 13 Jul 2026) — batas kiri deretan hari di tab Menu. */
+export const AWAL_OPERASIONAL = "2026-07-13";
