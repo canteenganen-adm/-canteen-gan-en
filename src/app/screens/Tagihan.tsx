@@ -13,7 +13,6 @@ import RailAbjad from "../components/RailAbjad";
 import IkonDitagih from "../components/IkonDitagih";
 import GeserBaris from "../components/GeserBaris";
 import { useKunciGulir } from "../components/useKunciGulir";
-import { LIVE_DAYS } from "../../lib/canteenApi";
 import { isiTemplateTransfer } from "../../lib/waTemplate";
 import type { Transaction, CanteenSettings } from "../../types";
 
@@ -121,6 +120,8 @@ export default function Tagihan({
   onMoveToTrash,
   onChangeDate,
   onMarkBilled,
+  riwayatLamaStatus,
+  onMuatRiwayatLama,
   onOpenSettings,
 }: {
   transactions: Transaction[];
@@ -132,6 +133,8 @@ export default function Tagihan({
   onMoveToTrash: (id: string) => void;
   onChangeDate: (id: string, date: string) => void;
   onMarkBilled: (ids: string[]) => void;
+  riwayatLamaStatus: "idle" | "memuat" | "gagal" | "selesai";
+  onMuatRiwayatLama: () => void;
   onOpenSettings?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("unpaid");
@@ -155,6 +158,11 @@ export default function Tagihan({
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
 
   const [q, setQ] = useState("");
+  /** Riwayat lama (> 30 hari) ditarik sekali per sesi, hanya saat tab Lunas/Dibatalkan dibuka atau saat mencari. */
+  useEffect(() => {
+    if (tab !== "unpaid" || q.trim()) onMuatRiwayatLama();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, q]);
   /** Belum Dibayar dibaca per PEKAN: daftar pekan → (ketuk) kartu anak di pekan itu.
    * pekanBuka = Senin pekan yang sedang dibuka (null = daftar pekan); bulanLihat = "YYYY-MM" (null = bulan pekan ini). */
   const [pekanBuka, setPekanBuka] = useState<string | null>(null);
@@ -902,12 +910,15 @@ export default function Tagihan({
         {/* ---- Tab: Lunas & Dibatalkan (render sama, isi beda) ---- */}
         {tab !== "unpaid" && (
           <div style={{ padding: "4px 20px" }}>
-            {/* Aplikasi harian hanya memuat 30 hari terakhir (supaya cepat dan
-                hemat kuota). Yang lebih lama TIDAK hilang — disebut jelas agar
-                tidak disangka transaksi lenyap. */}
-            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: t.text2, margin: "2px 2px 12px" }}>
-              Menampilkan {LIVE_DAYS} hari terakhir. Transaksi yang lebih lama tetap tersimpan aman di database.
-            </div>
+            {/* Riwayat lama ditarik saat tab dibuka (sekali per sesi): tampil semua, tanpa batas 30 hari. */}
+            {riwayatLamaStatus === "memuat" && (
+              <div style={{ fontSize: 13.5, color: t.text2, margin: "2px 2px 12px" }}>Memuat riwayat lama…</div>
+            )}
+            {riwayatLamaStatus === "gagal" && (
+              <button onClick={onMuatRiwayatLama} style={{ width: "100%", minHeight: 48, margin: "2px 0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.error, fontFamily: "inherit", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+                Riwayat lama belum termuat. Ketuk untuk coba lagi
+              </button>
+            )}
             {riwayatGroups.length === 0 ? (
               <div style={{ textAlign: "center", padding: "56px 20px" }}>
                 <div style={{ width: 60, height: 60, borderRadius: 16, background: t.surfaceSoft, color: t.text2, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>

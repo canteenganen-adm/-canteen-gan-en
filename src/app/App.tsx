@@ -5,7 +5,7 @@ import { t, NAV_HEIGHT } from "../lib/theme";
 import { nowLabel, orderNo, serviceDateLabel, autoClosedNow, reopenActiveNow, todayISO } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase";
 import {
-  fetchMenus, fetchMenuTetap, setMenuTetapItems, fetchStokSisa, setMenuStok, type StokInfo, fetchTransactions, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
+  fetchMenus, fetchMenuTetap, setMenuTetapItems, fetchStokSisa, setMenuStok, type StokInfo, fetchTransactions, fetchRiwayatLama, liveCutoffISO, fetchAppState, fetchKelas, subscribeToCanteenChanges, inLiveWindow,
   upsertMenuItem, deleteMenuItem,
   insertTransaction, updateTransaction,
   submitPreOrderTransaction,
@@ -172,6 +172,27 @@ function useCanteenStore() {
     return txs.map((tx) => (!tx.billedAt && map[tx.id] ? { ...tx, billedAt: map[tx.id] } : tx));
   }, []);
 
+  /** Riwayat lama (Lunas/Dibatalkan > 30 hari) — ditarik sesuai permintaan, sekali per sesi. */
+  const riwayatLamaMuat = useRef(false);
+  const [riwayatLamaStatus, setRiwayatLamaStatus] = useState<"idle" | "memuat" | "gagal" | "selesai">("idle");
+  const riwayatLamaJalan = useRef(false);
+  const muatRiwayatLama = useCallback(() => {
+    if (riwayatLamaMuat.current || riwayatLamaJalan.current) return;
+    riwayatLamaJalan.current = true;
+    setRiwayatLamaStatus("memuat");
+    fetchRiwayatLama()
+      .then((rows) => {
+        riwayatLamaMuat.current = true;
+        setTransactions((prev) => {
+          const ada = new Set(prev.map((x) => x.id));
+          return [...prev, ...applyBilledLocal(rows).filter((x) => !ada.has(x.id))];
+        });
+        setRiwayatLamaStatus("selesai");
+      })
+      .catch(() => setRiwayatLamaStatus("gagal"))
+      .finally(() => { riwayatLamaJalan.current = false; });
+  }, [applyBilledLocal]);
+
   /** `skipTx` = lewati penarikan transaksi (ribuan baris). Dipakai untuk muat
    * ulang ringan saat yang berubah cuma menu/pengaturan/kelas. */
   const loadAll = useCallback(async (opts?: { skipTx?: boolean }) => {
@@ -187,7 +208,14 @@ function useCanteenStore() {
       // (pengguna sedang mengetik di editor) — data server masih versi
       // lama dan akan MENGHAPUS ketikan yang belum tersimpan.
       if (menuWriteTimers.current.size === 0 && menuWritesInFlight.current === 0 && menuWriteEpoch.current === epochAtStart) setMenus(menusData);
-      if (txData) setTransactions(applyBilledLocal(txData));
+      if (txData) setTransactions((prev) => {
+        const segar = applyBilledLocal(txData);
+        if (!riwayatLamaMuat.current) return segar;
+        // Riwayat lama yang sudah ditarik tidak boleh ikut terhapus oleh muat ulang harian.
+        const ada = new Set(segar.map((x) => x.id));
+        const batas = liveCutoffISO();
+        return [...segar, ...prev.filter((x) => !ada.has(x.id) && x.createdAt < batas)];
+      });
       setKelasList(kelasData);
       if (appWritesInFlight.current === 0) {
         setPreorderOpenLocal(appState.preorderOpen);
@@ -579,7 +607,7 @@ function useCanteenStore() {
     menuHarian, menuHarianReady, loadMenuHarianDate, saveDailyMenu,
     menuTetap, menuTetapReady, setMenuTetap,
     stokByDate, stokReady, loadStokDate, setStok,
-    transactions, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate, markBilled,
+    transactions, riwayatLamaStatus, muatRiwayatLama, addTransaction, markPaid, unmarkPaid, cancelTransaction, restoreTransaction, togglePacked, editTransactionCustomer, changeTxDate, markBilled,
     trashTransactions, moveToTrash, restoreFromTrash, hardDeleteFromTrash, loadTrash,
     kelasList, addKelas, patchKelas, removeKelas,
     preorderOpen, togglePreorderOpen,
@@ -765,6 +793,8 @@ function MainShell({ store }: { store: CanteenStore }) {
             onMoveToTrash={store.moveToTrash}
             onChangeDate={store.changeTxDate}
             onMarkBilled={store.markBilled}
+            riwayatLamaStatus={store.riwayatLamaStatus}
+            onMuatRiwayatLama={store.muatRiwayatLama}
           />
         </div>
         {/* Kantin = profil + Laporan + pengaturan (satu pintu). Laporan dibuka di dalamnya dengan tombol kembali. */}

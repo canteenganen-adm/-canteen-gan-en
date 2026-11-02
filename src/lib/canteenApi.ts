@@ -318,7 +318,7 @@ export async function saveMenuHarianSnapshot(tanggal: string, items: MenuItem[])
  * Laporan. Ini yang menjaga pemuatan tetap ringan dan kuota bandwidth
  * tidak habis (tabel sudah >7.000 baris dan terus bertambah). */
 export const LIVE_DAYS = 30;
-const liveCutoffISO = () => new Date(Date.now() - LIVE_DAYS * 86_400_000).toISOString();
+export const liveCutoffISO = () => new Date(Date.now() - LIVE_DAYS * 86_400_000).toISOString();
 
 /** Apakah baris (dari realtime) layak masuk jendela data hidup? */
 export function inLiveWindow(tx: Transaction): boolean {
@@ -347,6 +347,29 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   // Sebelum migration: r.deleted_at undefined → tx.deletedAt undefined → lolos filter (benar).
   // Setelah migration: baris di tong sampah punya deletedAt terisi → dibuang (benar).
   return rows.map(txRowToTransaction).filter((tx) => !tx.deletedAt);
+}
+
+/** Riwayat LAMA (lebih tua dari jendela 30 hari): hanya yang Lunas atau Dibatalkan —
+ * yang Belum Dibayar sudah selalu ikut `fetchTransactions`. Ditarik HANYA saat tab
+ * Lunas/Dibatalkan dibuka atau saat mencari (sekali per sesi), bukan di pemuatan harian. */
+export async function fetchRiwayatLama(): Promise<Transaction[]> {
+  const PAGE_SIZE = 1000;
+  const cutoff = liveCutoffISO();
+  const rows: TransaksiRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transaksi")
+      .select("*")
+      .lt("created_at", cutoff)
+      .is("deleted_at", null)
+      .or("paid.eq.true,cancelled_at.not.is.null")
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data as TransaksiRow[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return rows.map(txRowToTransaction);
 }
 
 /** Semua transaksi satu BULAN (batas bulan menurut WIB, UTC+7) — dipakai Laporan.
