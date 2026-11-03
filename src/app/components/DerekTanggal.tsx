@@ -16,7 +16,7 @@ const geser = (iso: string, n: number) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih, kanan, kiri }: { nilai: string; hariIni: string; awal: string; depan?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode; kiri?: React.ReactNode }) {
+export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih, kanan }: { nilai: string; hariIni: string; awal: string; depan?: number; onPilih: (iso: string) => void; kanan?: React.ReactNode }) {
   // Daftar minggu: dari minggu `awal` (hari pertama operasional) sampai `depan` hari setelah hari ini
   const minggu: string[] = [];
   const awalSenin = mondayOf(awal < nilai ? awal : nilai);
@@ -74,15 +74,16 @@ export default function DerekTanggal({ nilai, hariIni, awal, depan = 35, onPilih
   const [y, m, d] = nilai.split("-").map(Number);
   return (
     <div>
-      <div className="flex items-center" style={{ height: 44, gap: 8 }}>
-        {kiri}
-        <div style={{ flex: 1, textAlign: kiri ? "right" : "center", fontSize: 16, fontWeight: 800, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>
+      {/* Kop SELARAS dengan 7 kolom hari di bawahnya: kiri (tombol Hari ini/Kembali bila perlu) · TANGGAL di TENGAH · ikon kalender
+          tepat di tengah kolom ke-7 (segaris dengan hari Minggu) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", alignItems: "center", height: 44 }}>
+        <div style={{ gridColumn: "1 / span 2", display: "flex", justifyContent: "flex-start" }}>{kanan}</div>
+        <div style={{ gridColumn: "3 / span 3", textAlign: "center", fontSize: 17, fontWeight: 800, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>
           {d} {BULAN[m - 1].slice(0, 3)} {y}
         </div>
-        <div className="flex items-center" style={{ gap: 2 }}>
-          {kanan}
-          <div style={{ position: "relative", width: 40, height: 36, display: "grid", placeItems: "center", color: t.text2 }}>
-            <Calendar size={19} />
+        <div style={{ gridColumn: "6 / span 2", display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ position: "relative", width: "50%", height: 40, display: "grid", placeItems: "center", color: t.text2 }}>
+            <Calendar size={20} />
             <input ref={inputRef} type="date" value={nilai} min={awal}
               onChange={(e) => e.target.value && onPilih(e.target.value)}
               onClick={() => { try { inputRef.current?.showPicker?.(); } catch { /* picker native */ } }}

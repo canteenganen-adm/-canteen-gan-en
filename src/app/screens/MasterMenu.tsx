@@ -383,7 +383,6 @@ export default function MasterMenu({
             <div>
               {/* Deretan hari yang digeser (gaya Flo); ketuk hari = pilih tanggal (lewat setTanggal: draft belum disimpan tetap terlindungi) */}
               <DerekTanggal nilai={tanggal} hariIni={todayISO()} awal={AWAL_OPERASIONAL} onPilih={setTanggal}
-                kiri={<div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Menu</div>}
                 kanan={tanggal !== tanggalBawaan() ? (
                   <button onClick={() => setTanggal(tanggalBawaan())} aria-label="Kembali ke tanggal menu bawaan"
                     style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
