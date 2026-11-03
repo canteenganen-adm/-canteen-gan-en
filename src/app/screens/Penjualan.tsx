@@ -331,10 +331,10 @@ export default function Penjualan({
               Seluruh area tanggal diketuk via input date overlay inset:0 */}
           <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
             <div className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 44, marginLeft: -20, padding: "0 12px 0 20px", borderRadius: "0 12px 12px 0", cursor: "pointer",
-                background: perhatianTgl ? "#FFF4BF" : t.surface, border: `1px solid ${perhatianTgl ? t.primaryLine : t.border}`, borderLeft: "none" }}>
-              <Calendar size={14} color={t.amberText} />
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
+              style={{ position: "relative", flex: "none", height: 44, padding: "0 12px", borderRadius: 12, cursor: "pointer",
+                background: perhatianTgl ? "#FFF4BF" : t.surface, border: `1.5px solid ${perhatianTgl ? t.primaryLine : t.border}` }}>
+              <Calendar size={16} color={t.amberText} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
                 {namaHari(txDate).slice(0, 3)} {txDate.slice(8, 10)}/{txDate.slice(5, 7)}
               </span>
               <input type="date" value={txDate} max={todayIso}
@@ -353,11 +353,11 @@ export default function Penjualan({
           </div>
           {isBackdate && (
             <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-              <span style={{ flex: 1, fontSize: 12, color: t.amberText, fontWeight: 600, lineHeight: 1.45 }}>
-                Input susulan {serviceDateLabel(txDate)}{pakaiSnapshot ? " — menu & harga sesuai tanggal itu" : " — menu tanggal ini tidak tersimpan, memakai daftar saat ini"}
+              <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: t.amberText, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {pakaiSnapshot ? "Input susulan" : "Input susulan · memakai daftar saat ini"}
               </span>
               <button onClick={() => setTxDate(todayIso)}
-                style={{ flex: "none", height: 34, padding: "0 11px", borderRadius: 10, border: `1px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                 Kembali ke Hari Ini
               </button>
             </div>
