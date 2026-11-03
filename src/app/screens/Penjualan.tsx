@@ -261,19 +261,27 @@ export default function Penjualan({
   // cuma 1-2 baris jadi persegi 1:1 kemarin kebanyakan ruang kosong).
   // Semua kartu tetap seragam karena height fixed, bukan lagi ikut
   // panjang nama seperti sebelumnya.
+  // Petak kecil 3 kolom (pilihan pemilik 3 Nov, opsi C): harga singkat "5K–10K" seperti di Preview PO.
+  const hargaK = (n: number) => (n % 1000 === 0 ? `${n / 1000}K` : rupiah(n));
+  const hargaSingkat = (m: MenuItem) => {
+    const ps = m.variants.length > 0 ? m.variants.map((v) => v.price).filter((x): x is number => x != null) : [m.price];
+    if (ps.length === 0) return `${m.variants.length} varian`;
+    const lo = Math.min(...ps), hi = Math.max(...ps);
+    return lo === hi ? hargaK(lo) : `${hargaK(lo)}–${hargaK(hi)}`;
+  };
   const menuCard = (m: MenuItem) => {
     const inCart = qtyOf(m.id);
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: 14, height: 122, gap: 8 }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 14, padding: "9px 8px", height: 92, gap: 4, fontFamily: "inherit" }}>
         {inCart > 0 && (
-          <span style={{ position: "absolute", top: -10, right: -8, minWidth: 30, height: 30, padding: "0 8px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 15, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
+          <span style={{ position: "absolute", top: -9, right: -6, minWidth: 26, height: 26, padding: "0 7px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 14, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
-        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{toTitleCase(m.name)}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>{toTitleCase(m.name)}</div>
         <div className="flex items-center gap-1">
-          {m.variants.length > 0 && <Layers size={13} color={t.amberText} />}
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{priceLabel(m)}</span>
+          {m.variants.length > 0 && <Layers size={12} color={t.amberText} style={{ flex: "none" }} />}
+          <span style={{ fontSize: 13, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{hargaSingkat(m)}</span>
         </div>
       </button>
     );
@@ -367,12 +375,12 @@ export default function Penjualan({
 
         {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
-          <div className="pos-scroll" style={{ width: 112, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 8px 110px 20px" }}>
+          <div className="pos-scroll" style={{ width: 100, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 4px 110px 20px" }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 14px", background: on ? t.primary : "transparent",
+                  style={{ display: "block", width: "100%", padding: "14px 4px 14px 10px", background: on ? t.primary : "transparent",
                     border: "none", borderRadius: 12,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
@@ -383,20 +391,20 @@ export default function Penjualan({
             })}
           </div>
 
-          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 20px 110px 12px" }}>
+          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 14px 110px 4px" }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
             ) : cat === "Semua" ? (
               sectionCats.map((c) => (
                 <div key={c} style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
                     {byCat[c].map(menuCard)}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
                 {filtered.map(menuCard)}
               </div>
             )}
