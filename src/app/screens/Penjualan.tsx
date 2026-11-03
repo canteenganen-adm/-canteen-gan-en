@@ -274,7 +274,7 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: "12px 12px", height: 104, gap: 6, fontFamily: "inherit" }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: "12px 12px", aspectRatio: "1 / 0.92", minHeight: 104, gap: 6, fontFamily: "inherit" }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -9, right: -6, minWidth: 26, height: 26, padding: "0 7px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 14, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
@@ -391,7 +391,7 @@ export default function Penjualan({
             })}
           </div>
 
-          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 14px 110px 4px" }}>
+          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 16px 110px 12px" }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
             ) : cat === "Semua" ? (
