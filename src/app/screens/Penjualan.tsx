@@ -375,14 +375,14 @@ export default function Penjualan({
 
         {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
-          <div className="pos-scroll" style={{ width: 100, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 4px 110px 20px" }}>
+          <div className="pos-scroll" style={{ width: 90, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 2px 110px 20px" }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 4px 14px 10px", background: on ? t.primary : "transparent",
+                  style={{ display: "block", width: "100%", padding: "14px 2px 14px 8px", background: on ? t.primary : "transparent",
                     border: "none", borderRadius: 12,
-                    color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
+                    color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {railLabel(c)}
