@@ -319,7 +319,10 @@ export default function Penjualan({
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{todayCount}× · {rupiah(todaySum)}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, lineHeight: 1.2 }}>
+                  {txDate === todayIso ? "Income hari ini" : `Income ${txDate.slice(8, 10)}/${txDate.slice(5, 7)}`}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
             </div>
           </div>
@@ -329,38 +332,36 @@ export default function Penjualan({
               supaya sejajar tepat dengan tepi kiri rail kategori di
               bawahnya — bukan dengan judul/pencarian di atasnya.
               Seluruh area tanggal diketuk via input date overlay inset:0 */}
-          <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
-            <div className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 44, padding: "0 12px", borderRadius: 12, cursor: "pointer",
-                background: perhatianTgl ? "#FFF4BF" : t.surface, border: `1.5px solid ${perhatianTgl ? t.primaryLine : t.border}` }}>
-              <Calendar size={16} color={t.amberText} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
-                {namaHari(txDate).slice(0, 3)} {txDate.slice(8, 10)}/{txDate.slice(5, 7)}
-              </span>
-              <input type="date" value={txDate} max={todayIso}
-                onChange={(e) => e.target.value && setTxDate(e.target.value)}
-                /* Pengaman: sebagian browser HP tidak membuka kalender dari input transparan — buka paksa lewat showPicker() */
-                onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* sudah terbuka / tidak didukung */ } }}
-                aria-label="Tanggal transaksi"
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+          <div className="flex items-stretch" style={{ marginTop: 10, height: 44, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, overflow: "hidden", boxSizing: "border-box" }}>
+            <div className="flex items-center" style={{ flex: "none", background: perhatianTgl ? "#FFF4BF" : "transparent", borderRight: `1.5px solid ${perhatianTgl ? t.primaryLine : t.divider}` }}>
+              <div className="flex items-center gap-1" style={{ position: "relative", height: "100%", padding: isBackdate ? "0 4px 0 12px" : "0 12px", cursor: "pointer" }}>
+                <Calendar size={16} color={t.amberText} />
+                <span style={{ fontSize: 14, fontWeight: 800, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
+                  {namaHari(txDate).slice(0, 3)} {txDate.slice(8, 10)}/{txDate.slice(5, 7)}
+                </span>
+                <input type="date" value={txDate} max={todayIso}
+                  onChange={(e) => e.target.value && setTxDate(e.target.value)}
+                  /* Pengaman: sebagian browser HP tidak membuka kalender dari input transparan — buka paksa lewat showPicker() */
+                  onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* sudah terbuka / tidak didukung */ } }}
+                  aria-label="Tanggal transaksi"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+              </div>
+              {isBackdate && (
+                <button onClick={() => setTxDate(todayIso)} aria-label="Kembali ke hari ini"
+                  style={{ flex: "none", width: 36, height: "100%", border: "none", background: "transparent", color: t.amberText, display: "grid", placeItems: "center", cursor: "pointer" }}>
+                  <X size={16} />
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, padding: "0 12px" }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
               {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
           </div>
-          {isBackdate && (
-            <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: t.amberText, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {pakaiSnapshot ? "Input susulan" : "Input susulan · memakai daftar saat ini"}
-              </span>
-              <button onClick={() => setTxDate(todayIso)}
-                style={{ flex: "none", height: 36, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-                Kembali ke Hari Ini
-              </button>
-            </div>
+          {isBackdate && !pakaiSnapshot && (
+            <div style={{ marginTop: 6, fontSize: 12.5, color: t.amberText, fontWeight: 700 }}>Input susulan · memakai daftar saat ini</div>
           )}
         </div>
 
