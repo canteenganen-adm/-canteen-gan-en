@@ -274,14 +274,14 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 14, padding: "9px 8px", height: 92, gap: 4, fontFamily: "inherit" }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: "12px 12px", height: 104, gap: 6, fontFamily: "inherit" }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -9, right: -6, minWidth: 26, height: 26, padding: "0 7px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 14, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
         )}
-        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>{toTitleCase(m.name)}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>{toTitleCase(m.name)}</div>
         <div className="flex items-center gap-1">
           {m.variants.length > 0 && <Layers size={12} color={t.amberText} style={{ flex: "none" }} />}
-          <span style={{ fontSize: 13, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{hargaSingkat(m)}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{hargaSingkat(m)}</span>
         </div>
       </button>
     );
@@ -398,13 +398,13 @@ export default function Penjualan({
               sectionCats.map((c) => (
                 <div key={c} style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
                     {byCat[c].map(menuCard)}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
                 {filtered.map(menuCard)}
               </div>
             )}
