@@ -320,7 +320,7 @@ export default function Penjualan({
             <div className="flex items-center gap-2">
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, lineHeight: 1.2 }}>
-                  {txDate === todayIso ? "Income hari ini" : `Income ${txDate.slice(8, 10)}/${txDate.slice(5, 7)}`}
+                  Masuk
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>{todayCount}× · {rupiah(todaySum)}</div>
               </div>
@@ -367,13 +367,13 @@ export default function Penjualan({
 
         {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
-          <div className="pos-scroll" style={{ width: 100, flex: "none", overflowY: "auto", scrollbarWidth: "none", borderRight: `1px solid ${t.divider}`, paddingBottom: 110 }}>
+          <div className="pos-scroll" style={{ width: 112, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 8px 110px 20px" }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 20px", background: on ? t.primary : "transparent",
-                    border: "none", borderLeft: `3px solid ${on ? t.primaryLine : "transparent"}`,
+                  style={{ display: "block", width: "100%", padding: "14px 6px 14px 14px", background: on ? t.primary : "transparent",
+                    border: "none", borderRadius: 12,
                     color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12.5,
                     textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
