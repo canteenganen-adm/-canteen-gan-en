@@ -1,6 +1,6 @@
 import { tandaiSudahDiunduh } from "../../lib/cadangan";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User, Utensils, ShoppingCart } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -598,9 +598,32 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
                 <div className="flex flex-wrap items-center" style={{ gap: "8px 24px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                  <span className="flex items-center gap-2"><span style={{ width: 16, height: 16, borderRadius: 5, background: t.chart[0], flex: "none" }} aria-label="Pre-order" title="Pre-order" />{rpSingkat(r.masukPO)}</span>
-                  <span className="flex items-center gap-2"><span style={{ width: 16, height: 16, borderRadius: 5, background: t.chart[1], flex: "none" }} aria-label="Penjualan" title="Penjualan" />{rpSingkat(r.masukPJ)}</span>
+                  <span className="flex items-center gap-2"><Utensils size={18} color={t.chart[2]} aria-label="Pre-order" />{rpSingkat(r.masukPO)}</span>
+                  <span className="flex items-center gap-2"><ShoppingCart size={18} color={t.chart[1]} aria-label="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
+                {tab === "hari" && (
+                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
+                      <div className="flex items-center justify-between" style={{ gap: 12 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 2 }}>{labelHari(hariAktif)}{hariAktif === todayYmd ? " · hari ini" : ""}</div>
+                          <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
+                        </div>
+                        {tglIni && hariAktif !== todayYmd && (
+                          <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
+                            style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
+                            <RotateCcw size={14} /> Hari ini
+                          </button>
+                        )}
+                      </div>
+                      {hariData && (
+                        <div className="flex items-center flex-wrap" style={{ gap: "6px 18px", marginTop: 10, fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                          <span className="flex items-center gap-1.5" aria-label="Lunas" title="Lunas"><CircleCheck size={18} />{hariData.nMasuk}</span>
+                          <span className="flex items-center gap-1.5" aria-label="Belum dibayar" title="Belum dibayar"><CircleDashed size={18} />{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</span>
+                        </div>
+                      )}
+                      {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
+                    </div>
+                )}
               </div>
 
             </div>
@@ -646,27 +669,6 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                           </button>
                         );
                       })}
-                    </div>
-                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
-                      <div className="flex items-center justify-between" style={{ gap: 12 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 2 }}>{labelHari(hariAktif)}{hariAktif === todayYmd ? " · hari ini" : ""}</div>
-                          <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
-                        </div>
-                        {tglIni && hariAktif !== todayYmd && (
-                          <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
-                            style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
-                            <RotateCcw size={14} /> Hari ini
-                          </button>
-                        )}
-                      </div>
-                      {hariData && (
-                        <div className="flex items-center flex-wrap" style={{ gap: "6px 18px", marginTop: 10, fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                          <span className="flex items-center gap-1.5" aria-label="Lunas" title="Lunas"><CircleCheck size={18} />{hariData.nMasuk}</span>
-                          <span className="flex items-center gap-1.5" aria-label="Belum dibayar" title="Belum dibayar"><CircleDashed size={18} />{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</span>
-                        </div>
-                      )}
-                      {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
                     </div>
                   </div>
 
