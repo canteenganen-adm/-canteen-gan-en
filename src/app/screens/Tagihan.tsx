@@ -538,7 +538,7 @@ export default function Tagihan({
       const perHari = new Map<string, number>();
       for (const tx of [...g.txs].sort((a, b) => opDate(a).localeCompare(opDate(b)))) perHari.set(opDate(tx), (perHari.get(opDate(tx)) ?? 0) + tx.total);
       return [...perHari].map(([op, n]) => `[${serviceDateLabel(op)}] ${rupiah(n)}`).join("\n");
-    })() : g.txs.map((tx) => {
+    })() : [...g.txs].sort((x, y) => opDate(x).localeCompare(opDate(y)) || x.createdAt.localeCompare(y.createdAt)).map((tx) => {
       const itemLines = tx.items
         .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
