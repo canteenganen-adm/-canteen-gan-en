@@ -954,7 +954,7 @@ export default function Tagihan({
                   <div className="flex items-center justify-between" style={{ gap: 10 }}>
                     <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
                       {/* Penjualan tanpa nama = jualan kantin langsung (tunai) */}
-                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama?.trim() ? g.customer.nama : "Penjualan Tunai"}</span>
+                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama?.trim() ? g.customer.nama : "Cash"}</span>
                       {(g.customer.kelas || g.customer.tingkat) && (
                         <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
                           {g.customer.kelas || g.customer.tingkat}

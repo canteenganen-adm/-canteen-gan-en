@@ -25,7 +25,7 @@ export interface Masalah {
 }
 
 const HARI = 86_400_000;
-const nama = (t: Transaction) => t.customer.nama?.trim() || "Penjualan tunai";
+const nama = (t: Transaction) => t.customer.nama?.trim() || "Cash";
 const kelasTeks = (t: Transaction) => [t.customer.tingkat, t.customer.kelas].filter(Boolean).join(" ");
 const BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const wib = (iso: string) => {

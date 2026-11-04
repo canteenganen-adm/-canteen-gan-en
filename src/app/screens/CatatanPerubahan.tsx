@@ -171,9 +171,9 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                     const [jenis, ket, nada] = ringkas(c);
                     const terbuka = buka === c.id;
                     const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
-                    // Penjualan tanpa nama pembeli: ket dari server berawal "· Rp…" → beri judul "Penjualan tunai"
+                    // Penjualan tanpa nama pembeli: ket dari server berawal "· Rp…" → beri judul "Cash"
                     const ketDasar = (c.ket || c.tabel).trim();
-                    const bagian = (ketDasar.startsWith("·") ? `Penjualan tunai ${ketDasar}` : ketDasar).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
+                    const bagian = (ketDasar.startsWith("·") ? `Cash ${ketDasar}` : ketDasar).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
                     const aktifMenu = (c.sesudah ?? c.sebelum)?.aktif_preorder;
                     const tglMenu = c.baris_id && /^\d{4}-\d{2}-\d{2}$/.test(c.baris_id) ? `${Number(c.baris_id.slice(8))} ${BLN_PENDEK[Number(c.baris_id.slice(5, 7)) - 1]} ${c.baris_id.slice(0, 4)}` : "";
                     const judul = c.tabel === "menu_harian" && tglMenu ? `Menu ${tglMenu}` : bagian[0];
