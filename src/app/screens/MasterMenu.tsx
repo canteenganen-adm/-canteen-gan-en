@@ -225,10 +225,13 @@ export default function MasterMenu({
   // Refresh dengan umpan balik visual — ikon berputar sebentar supaya
   // jelas bahwa data benar-benar diambil ulang
   const [refreshing, setRefreshing] = useState(false);
+  const [segarOk, setSegarOk] = useState(false);
   const doRefresh = () => {
+    if (refreshing) return;
     setRefreshing(true);
     onLoadDate(tanggal);
-    setTimeout(() => setRefreshing(false), 900);
+    // Uap naik sebentar, lalu centang hijau ±1 detik = sudah diperbarui (pilihan pemilik 4 Nov: gabungan panci + centang)
+    setTimeout(() => { setRefreshing(false); setSegarOk(true); setTimeout(() => setSegarOk(false), 1100); }, 900);
   };
 
 
@@ -552,10 +555,18 @@ export default function MasterMenu({
                         {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
                             Tanpa tulisan "Menu PO" / "Muat ulang" / "Segarkan" (terlalu banyak huruf M). */}
                         <div className="flex items-center" style={{ gap: 12 }}>
-                          <style>{`@keyframes ganen-denyut{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}`}</style>
+                          <style>{`@keyframes ganen-uap{0%{opacity:0;transform:translateY(3px)}40%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}`}</style>
                           <button onClick={doRefresh} aria-label="Segarkan pratinjau menu"
-                            style={{ width: 44, height: 44, flex: "none", borderRadius: "50%", border: "none", background: t.primaryLight, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
-                            <Utensils size={20} style={{ animation: refreshing ? "ganen-denyut .5s ease-in-out 2" : undefined }} />
+                            style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                            {segarOk ? <Check size={26} color={t.successText} strokeWidth={2.5} /> : (
+                              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M3 12h18" /><path d="M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6" /><path d="M2 12h2M20 12h2" />
+                                {[8, 12, 16].map((x, i) => (
+                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`}
+                                    style={refreshing ? { animation: `ganen-uap .9s ease-in-out ${i * 0.12}s infinite` } : { opacity: 0.4 }} />
+                                ))}
+                              </svg>
+                            )}
                           </button>
                           <div style={{ fontSize: 14.5, fontWeight: 800 }}>{serviceDateLabel(tanggal)}</div>
                         </div>
