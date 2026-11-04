@@ -1,6 +1,6 @@
 import { tandaiSudahDiunduh } from "../../lib/cadangan";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User, Utensils, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User, Utensils, ShoppingCart } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
@@ -454,7 +454,8 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const [menuUnduh, setMenuUnduh] = useState(false);
   const masukRef = useRef<HTMLDivElement>(null);
   useKunciGulir(menuUnduh, masukRef);
-    const [dipilih, setDipilih] = useState<string | null>(null);
+    const [bukaBag, setBukaBag] = useState<string | null>(null);
+  const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
   useEffect(() => {
@@ -555,14 +556,23 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
 
           {siap && txs.length === 0 && <div style={{ textAlign: "center", padding: "40px 0", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di bulan ini.</div>}
 
+          {/* Laporan (pemilik 4 Nov: "clean short simple"): SATU kartu = total, batang, hari terpilih; di bawahnya daftar baris yang dibuka bila perlu. */}
+          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
+            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
+            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
+            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
+          </div>
+
           {siap && txs.length > 0 && (
             <div className="flex flex-col" style={{ gap: 12 }}>
-              {/* 1 · Masuk */}
               <div ref={masukRef} style={{ ...card, position: "relative" }}>
                 <div className="flex items-start justify-between" style={{ gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={kecil}>Masuk (Lunas)</div>
-                    <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.15, marginTop: 2 }}>{rupiah(r.masuk)}</div>
+                    <div className="flex items-baseline flex-wrap" style={{ gap: "0 10px", marginTop: 2 }}>
+                      <span style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>{rupiah(r.masuk)}</span>
+                      {bandingPct !== null && <span className="flex items-center gap-1" style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{bandingPct >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}{Math.abs(bandingPct)}%</span>}
+                    </div>
                   </div>
                   <button onClick={() => setMenuUnduh((v) => !v)} aria-label="Unduh laporan" aria-expanded={menuUnduh}
                     style={{ ...navBtn(true), marginTop: -4 }}>
@@ -587,94 +597,45 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   </>
                 )}
 
-                {bandingPct !== null && (
-                  <div className="flex items-center flex-wrap" style={{ gap: 6, marginTop: 6, fontSize: 14.5, fontWeight: 700 }}>
-                    {bandingPct >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                    {Math.abs(bandingPct)}%
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>dari {banding?.prevLabel ?? "bulan lalu"}</span>
-                  </div>
-                )}
 
-                <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "16px 0 10px" }} role="img" aria-label="Pemasukan dari Pre-order dan Penjualan">
+                <div style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", background: t.divider, margin: "14px 0 8px" }} role="img" aria-label="Pemasukan dari Pre-order dan Penjualan">
                   <div style={{ flex: r.masukPO, background: t.chart[0] }} />
                   <div style={{ flex: r.masukPJ, background: t.chart[1], borderLeft: `2px solid ${t.surface}` }} />
                 </div>
-                <div className="flex flex-wrap items-center" style={{ gap: "8px 24px", fontSize: 14, fontWeight: 600, color: t.text2 }}>
+                <div className="flex flex-wrap items-center" style={{ gap: "8px 24px", fontSize: 14, fontWeight: 500, color: t.text2 }}>
                   <span className="flex items-center gap-2"><Utensils size={18} color={t.chart[2]} aria-label="Pre-order" />{rpSingkat(r.masukPO)}</span>
                   <span className="flex items-center gap-2"><ShoppingCart size={18} color={t.chart[1]} aria-label="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
-                {(
-                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
-                      <div className="flex items-center justify-between" style={{ gap: 12 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 2 }}>{labelHari(hariAktif)}{hariAktif === todayYmd ? " · hari ini" : ""}</div>
-                          <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
-                        </div>
-                        {tglIni && hariAktif !== todayYmd && (
-                          <button onClick={() => setDipilih(todayYmd)} aria-label="Kembali ke hari ini" className="flex items-center gap-1.5"
-                            style={{ height: 36, padding: "0 12px", borderRadius: 999, border: `1.5px solid ${t.borderStrong}`, background: t.surface, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flex: "none" }}>
-                            <RotateCcw size={14} /> Hari ini
-                          </button>
-                        )}
-                      </div>
-                      {hariData && (
-                        <div className="flex items-center flex-wrap" style={{ gap: "6px 18px", marginTop: 10, fontSize: 14, fontWeight: 600, color: t.text2 }}>
-                          <span className="flex items-center gap-1.5" aria-label="Lunas" title="Lunas"><CircleCheck size={18} />{hariData.nMasuk}</span>
-                          <span className="flex items-center gap-1.5" aria-label="Belum dibayar" title="Belum dibayar"><CircleDashed size={18} />{hariData.n - hariData.nMasuk} · {rpSingkat(hariData.belum)}</span>
-                        </div>
-                      )}
-                      {!hariData && <div style={{ ...kecil, marginTop: 4 }}>Tidak ada transaksi</div>}
-                    </div>
-                )}
+
+                <div className="flex items-end" style={{ gap: 4, height: 72, marginTop: 18 }} role="group" aria-label="Pemasukan per hari">
+                  {hariBatang.map((d) => {
+                    const v = perHariMap.get(d.k)?.masuk ?? 0;
+                    const on = d.k === hariAktif;
+                    return (
+                      <button key={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
+                        style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", border: "none", background: "transparent", padding: 0, cursor: "pointer" }}>
+                        <i style={{ display: "block", width: "100%", height: `${Math.max(6, Math.round((v / (maxHari || 1)) * 100))}%`, borderRadius: "5px 5px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-baseline justify-between" style={{ marginTop: 10, gap: 12 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: t.text2 }}>{labelHari(hariAktif)}{hariAktif === todayYmd ? " · hari ini" : ""}</span>
+                  <span style={{ fontSize: 20, fontWeight: 700 }}>{rupiah(hariData?.masuk ?? 0)}</span>
+                </div>
               </div>
 
-            </div>
-          )}
-
-          {/* Urutan (pemilik 4 Nov): Masuk (+ angka hari) → bulan → batang per hari → menu terlaris → rincian. Tanpa kalender, tanpa saklar. */}
-          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
-            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
-            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
-            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
-          </div>
-
-          {siap && txs.length > 0 && (
-            <div className="flex flex-col" style={{ gap: 12 }}>
-              <style>{`.lap-panel > * + * { border-top: 1px solid ${t.divider}; }`}</style>
-              <div className="lap-panel" style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
-                {(
-                  <>
-                  {/* 2 · Batang per hari sekolah (pemilik 4 Nov: kalender dibuang, "penting gaksih?"): ketuk batang = angka harinya muncul di kartu Masuk */}
-                  <div style={sek}>
-                    <div className="flex items-end" style={{ gap: 4, height: 96 }} role="group" aria-label="Pemasukan per hari">
-                      {hariBatang.map((d) => {
-                        const v = perHariMap.get(d.k)?.masuk ?? 0;
-                        const on = d.k === hariAktif;
-                        return (
-                          <button key={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
-                            style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", border: "none", background: "transparent", padding: 0, cursor: "pointer" }}>
-                            <i style={{ display: "block", width: "100%", height: `${Math.max(6, Math.round((v / (maxHari || 1)) * 100))}%`, borderRadius: "5px 5px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-between" style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: t.text2 }}>
-                      <span>{hariBatang.length ? hariBatang[0].n : ""}</span>
-                      <span>{hariBatang.length > 1 ? hariBatang[hariBatang.length - 1].n : ""}</span>
-                    </div>
-                  </div>
-
-                  </>
-                )}
-
-                {(
-                  <>
-                  {/* 3 · Menu terlaris */}
+              <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
+                {([
+                  { id: "menu", label: "Menu terlaris", isi: (<>
                   <div style={sek}>
                     <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
                     <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
 
+
+                  </>) },
+                  ...((pk.dikemas > 0 || u.pemesanTotal > 0) ? [{ id: "packing", label: "Packing & pemesan kembali", isi: (<>
                   {/* 4 · Dua angka persen dengan batang tipis (bukan donat lagi) */}
                   {(pk.dikemas > 0 || u.pemesanTotal > 0) && (
                     <div className="flex flex-col" style={{ ...sek, gap: 16 }}>
@@ -684,6 +645,9 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                     </div>
                   )}
 
+
+                  </>) }] : []),
+                  { id: "rincian", label: "Rincian", isi: (<>
                   <div style={sek}>
                     <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
                     <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
@@ -741,8 +705,18 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                       <BarisRincian a="Belum ditandai dikemas" b={pk.belum.toLocaleString("id-ID")} />
                     </div>
                   )}
-                  </>
-                )}
+
+                  </>) },
+                ]).map((b, i) => (
+                  <div key={b.id} style={{ borderTop: i ? `1px solid ${t.divider}` : "none" }}>
+                    <button onClick={() => setBukaBag((v) => (v === b.id ? null : b.id))} aria-expanded={bukaBag === b.id}
+                      className="flex items-center justify-between" style={{ width: "100%", minHeight: 56, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text, fontSize: 16, fontWeight: 600, textAlign: "left" }}>
+                      {b.label}
+                      {bukaBag === b.id ? <ChevronUp size={20} color={t.text2} /> : <ChevronRight size={20} color={t.text2} />}
+                    </button>
+                    {bukaBag === b.id && b.isi}
+                  </div>
+                ))}
               </div>
             </div>
           )}
