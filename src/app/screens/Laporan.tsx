@@ -497,9 +497,15 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const hariAktif = dipilih ?? (ym.y === nowY && ym.m === nowM ? todayYmd : r && r.hari.length ? r.hari[r.hari.length - 1][0] : ymd(1));
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
   const hariData = perHariMap.get(hariAktif);
-  const hariBatang = Array.from({ length: jumlahHari }, (_, i) => i + 1)
-    .map((n) => ({ n, k: ymd(n), dow: new Date(ym.y, ym.m, n).getDay() }))
-    .filter((d) => (d.dow >= 1 && d.dow <= 5) || perHariMap.has(d.k));
+  const hariBatang = Array.from({ length: jumlahHari }, (_, i) => i + 1).map((n) => ({ n, k: ymd(n), dow: new Date(ym.y, ym.m, n).getDay() }));
+  const derekRef = useRef<HTMLDivElement>(null);
+  // Derek tanggal: gulir ke hari terpilih (di tengah) saat bulan/hari berganti
+  useEffect(() => {
+    const el = derekRef.current; if (!el) return;
+    const kolom = el.querySelector<HTMLElement>(`[data-hari="${hariAktif}"]`); if (!kolom) return;
+    el.scrollTo({ left: Math.max(0, kolom.offsetLeft - el.clientWidth / 2 + kolom.offsetWidth / 2), behavior: "auto" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ym.y, ym.m, !!r]);
   const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
 
   const download = async (jenis: "xlsx" | "pdf") => {
@@ -534,6 +540,13 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   };
   const glyph: React.CSSProperties = { width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 };
   const siap = r && u && txs && pk;
+  const navBulan = (
+    <>
+      <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={22} /></button>
+      <div style={{ fontSize: 17, fontWeight: 700, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
+      <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={22} /></button>
+    </>
+  );
   const tglIni = ym.y === nowY && ym.m === nowM;
 
   return (
@@ -557,18 +570,14 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
           {siap && txs.length === 0 && <div style={{ textAlign: "center", padding: "40px 0", color: t.text2, fontWeight: 600 }}>Tidak ada transaksi di bulan ini.</div>}
 
           {/* Laporan (pemilik 4 Nov: "clean short simple"): SATU kartu = total, batang, hari terpilih; di bawahnya daftar baris yang dibuka bila perlu. */}
-          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
-            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
-            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
-            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
-          </div>
+          {!(siap && txs.length > 0) && <div className="flex items-center justify-center" style={{ marginBottom: 8 }}>{navBulan}</div>}
 
           {siap && txs.length > 0 && (
             <div className="flex flex-col" style={{ gap: 12 }}>
               <div ref={masukRef} style={{ ...card, position: "relative" }}>
                 <div className="flex items-start justify-between" style={{ gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={kecil}>Masuk (Lunas)</div>
+                    <div className="flex items-center" style={{ marginLeft: -10 }}>{navBulan}</div>
                     <div className="flex items-baseline flex-wrap" style={{ gap: "0 10px", marginTop: 2 }}>
                       <span style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>{rupiah(r.masuk)}</span>
                       {bandingPct !== null && <span className="flex items-center gap-1" style={{ fontSize: 14, fontWeight: 600, color: t.text2 }}>{bandingPct >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}{Math.abs(bandingPct)}%</span>}
@@ -607,14 +616,20 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   <span className="flex items-center gap-2"><ShoppingCart size={18} color={t.chart[1]} aria-label="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
 
-                <div className="flex items-end" style={{ gap: 4, height: 72, marginTop: 18 }} role="group" aria-label="Pemasukan per hari">
+                {/* Satu papan: batang per hari + deret tanggal di bawahnya, digeser mendatar seperti deret hari di Menu; ketuk = hari itu */}
+                <div ref={derekRef} role="group" aria-label="Pemasukan per hari" style={{ display: "flex", overflowX: "auto", margin: "18px -16px 0", padding: "0 16px", scrollbarWidth: "none" }}>
                   {hariBatang.map((d) => {
                     const v = perHariMap.get(d.k)?.masuk ?? 0;
                     const on = d.k === hariAktif;
+                    const akhirPekan = d.dow === 0 || d.dow === 6;
                     return (
-                      <button key={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
-                        style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", border: "none", background: "transparent", padding: 0, cursor: "pointer" }}>
-                        <i style={{ display: "block", width: "100%", height: `${Math.max(6, Math.round((v / (maxHari || 1)) * 100))}%`, borderRadius: "5px 5px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
+                      <button key={d.k} data-hari={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
+                        style={{ flex: "0 0 calc(100% / 7)", minWidth: 0, border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                        <span style={{ height: 72, width: "62%", display: "flex", alignItems: "flex-end" }}>
+                          <i style={{ display: "block", width: "100%", height: `${v > 0 ? Math.max(8, Math.round((v / (maxHari || 1)) * 100)) : 5}%`, borderRadius: "6px 6px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: t.text2 }}>{"SSRKJSM"[(d.dow + 6) % 7]}</span>
+                        <span style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", fontSize: 15, fontWeight: on ? 700 : 500, background: on ? t.primary : "transparent", color: akhirPekan && !on ? t.textDis : t.text }}>{d.n}</span>
                       </button>
                     );
                   })}
@@ -629,7 +644,6 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                 {([
                   { id: "menu", label: "Menu terlaris", isi: (<>
                   <div style={sek}>
-                    <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
                     <Donat data={menuOmzet(r)} bulan={BLN_PENDEK[ym.m]} tahun={ym.y} />
                   </div>
 
@@ -649,21 +663,8 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   </>) }] : []),
                   { id: "rincian", label: "Rincian", isi: (<>
                   <div style={sek}>
-                    <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
-                    <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
-                    <BarisRincian a="Pre-order" b={rupiah(r.masukPO)} />
-                    <BarisRincian a="Penjualan" b={rupiah(r.masukPJ)} />
                     <BarisRincian a={`Belum dibayar · ${r.nBelum}`} b={rupiah(r.belum)} />
                     <BarisRincian a="Dibatalkan" b={String(r.nBatal)} />
-                  </div>
-
-                  <div style={sek}>
-                    <div style={{ ...judulKartu, marginBottom: 8 }}>Per hari</div>
-                    <Tabel kolom="46px 34px minmax(0,1fr) minmax(0,1fr)" kepala={["Tgl", "Jml", "Lunas", "Belum"]}
-                      baris={[
-                        ...[...r.hari].reverse().map(([d, v]) => [`${Number(d.slice(8))} ${BLN_PENDEK[Number(d.slice(5, 7)) - 1]}`, String(v.n), rupiah(v.masuk), v.belum > 0 ? rupiah(v.belum) : "–"]),
-                        ["Total", String(r.nMasuk + r.nBelum), rupiah(r.masuk), rupiah(r.belum)],
-                      ]} totalAkhir />
                   </div>
 
                   <div style={sek}>
