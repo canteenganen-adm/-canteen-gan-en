@@ -1,8 +1,9 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
-  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Pencil, SlidersHorizontal, MessageCircle,
+  Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Pencil, SlidersHorizontal, MessageCircle, Copy,
 } from "lucide-react";
+import { salinTeks } from "../../lib/salin";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari, rentangPendek } from "../../lib/pekan";
@@ -193,6 +194,8 @@ export default function Tagihan({
   const [cakupan, setCakupan] = useState<"ini" | "semua">("ini");
   const [undo, setUndo] = useState<UndoAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [tersalin, setTersalin] = useState(false);
+  useEffect(() => { if (!tersalin) return; const id = setTimeout(() => setTersalin(false), 1800); return () => clearTimeout(id); }, [tersalin]);
   /** Draf WA. `siblings` = grup lain (anak lain) dengan nomor WA sama —
    * ditawarkan digabung jadi SATU pesan supaya ortu tidak ditagih dua kali. */
   const [waDraft, setWaDraft] = useState<{
@@ -1225,12 +1228,18 @@ export default function Tagihan({
                 </span>
               </button>
             )}
+            <div style={{ position: "relative" }}>
+            <button onClick={async () => { if (await salinTeks(waDraft.text)) setTersalin(true); else setToast("Gagal menyalin. Tekan lama pada teks lalu pilih Salin."); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
+              style={{ position: "absolute", top: 8, right: 8, zIndex: 1, width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+              {tersalin ? <Check size={20} /> : <Copy size={20} />}
+            </button>
             <textarea
               value={waDraft.text}
               onChange={(e) => setWaDraft({ ...waDraft, text: e.target.value })}
               rows={10}
-              style={{ width: "100%", fontSize: 14, color: t.text, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6 }}
+              style={{ width: "100%", fontSize: 14, color: t.text, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "12px 60px 12px 12px", outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6 }}
             />
+            </div>
             <div className="flex gap-2" style={{ marginTop: 14 }}>
               <button onClick={() => setWaDraft(null)}
                 style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
