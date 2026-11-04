@@ -13,7 +13,7 @@ Aplikasi kantin sekolah keluarga. **Kantin ini VEGAN** — seluruh menu nabati/o
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
-- **Font:** 'Onest' untuk SEMUA teks, 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
+- **Font:** 'Inter' untuk SEMUA teks (DICOBA 4 Nov atas permintaan pemilik, menggantikan Onest; Plus Jakarta Sans, DM Sans, Figtree, Manrope sudah dibandingkan di mockup; ganti = `src/styles/fonts.css`, `src/styles/theme.css`, dua `fontFamily` kecil di MasterMenu/Tagihan, tiga halaman panduan), 'DM Mono' hanya untuk gaya struk/angka (import Google Fonts). Tanpa font display/kartun.
 - **Warna:**
   - Palet referensi pemilik (kuning + hijau alami), versi TERPILIH — jangan tambah warna lain: Mama menolak warna penuh yang banyak, hitam, biru, dan hijau-di-mana-mana. Papa melihat dengan SATU mata → pemisahan antar kartu harus jelas lewat selisih terang-gelap. Sumber tunggal: `src/lib/theme.ts` (jangan hardcode hex baru).
   - Background `#FAF6EE` (versi lama, pilihan Mama; sempat dicoba lebih kuning `#FAF3DF`/`#FAF4E6` — pemilik: "lama aja dulu"; SAMA untuk dapur & halaman orang tua) · Surface (kartu) `#FFFCF7` — JANGAN putih murni `#FFFFFF` · Surface lembut `#FFF8EE`

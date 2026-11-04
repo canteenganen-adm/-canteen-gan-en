@@ -24,7 +24,7 @@ import type { Transaction, CanteenSettings } from "../../types";
 
 const BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 /** Rincian transaksi (tanggal · item · harga) pakai font thermal/mono
- * seperti struk PO — kontras dengan Onest di kartu info anak,
+ * seperti struk PO — kontras dengan Inter di kartu info anak,
  * supaya fokus tidak terbagi. */
 const MONO = "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 /* Tepi zigzag struk thermal — dipakai popup rincian & konfirmasi Lunaskan */
@@ -1087,7 +1087,7 @@ export default function Tagihan({
               </div>
               {/* Aksi struk: ikon polos + tulisan kecil (tanpa garis/kotak). Satu-satunya tombol penuh = Tandai Lunas. */}
               {tab === "unpaid" && (
-                <div className="flex items-center gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                <div className="flex items-center gap-2" style={{ marginTop: 14, fontFamily: "'Inter', sans-serif" }}>
                   <button onClick={() => { const x = detailTx; setDetailTx(null); markPaid(x); }} className="flex items-center justify-center gap-1.5"
                     style={{ flex: 2.2, height: 52, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
                     <Check size={18} /> Tandai Lunas
@@ -1096,7 +1096,7 @@ export default function Tagihan({
                 </div>
               )}
               {tab !== "unpaid" && (
-                <div className="flex" style={{ marginTop: 10, fontFamily: "'Onest', sans-serif" }}>
+                <div className="flex" style={{ marginTop: 10, fontFamily: "'Inter', sans-serif" }}>
                   {detailTx.cancelledAt ? (
                     <AksiStruk Ic={RotateCcw} label="Pulihkan" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} />
                   ) : (

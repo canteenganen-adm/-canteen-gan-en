@@ -50,7 +50,7 @@ export const t = {
 export const NAV_HEIGHT = 76;
 
 /** Font mono struk thermal — dipakai popup gaya struk (rincian transaksi,
- * konfirmasi menu, rekap per-item) supaya kontras dengan Onest. */
+ * konfirmasi menu, rekap per-item) supaya kontras dengan Inter. */
 export const STRUK_MONO = "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 
 /** Tepi zigzag ala struk thermal — dipakai semua popup bergaya struk. */

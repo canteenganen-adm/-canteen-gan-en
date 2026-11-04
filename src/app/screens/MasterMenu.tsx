@@ -560,10 +560,11 @@ export default function MasterMenu({
                             style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
                             {segarOk ? <Check size={26} color={t.successText} strokeWidth={2.5} /> : (
                               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                <path d="M3 12h18" /><path d="M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6" /><path d="M2 12h2M20 12h2" />
-                                {[8, 12, 16].map((x, i) => (
-                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`}
-                                    style={refreshing ? { animation: `ganen-uap .9s ease-in-out ${i * 0.12}s infinite` } : { opacity: 0.4 }} />
+                                <path d="M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6Z" fill={t.primary} stroke={t.text} />
+                                <path d="M3 12h18" stroke={t.text} /><path d="M2 12h2M20 12h2" stroke={t.text} />
+                                {[[8, "#D9382A"], [12, "#F2B53C"], [16, "#5BAF4E"]].map(([x, warna], i) => (
+                                  <path key={String(x)} d={`M${x} 9c-1-1 1-2 0-3.5`} stroke={String(warna)}
+                                    style={refreshing ? { animation: `ganen-uap .9s ease-in-out ${i * 0.12}s infinite` } : { opacity: 0.75 }} />
                                 ))}
                               </svg>
                             )}
@@ -636,7 +637,7 @@ export default function MasterMenu({
                     {serviceDateLabel(tanggal).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Onest', sans-serif" }}>
+                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Inter', sans-serif" }}>
                     {dailyDirty && (
                       <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }} disabled={saving}
                         style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
