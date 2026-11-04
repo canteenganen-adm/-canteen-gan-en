@@ -905,7 +905,11 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
     if (c && on) c.scrollLeft = Math.max(0, on.offsetLeft - 8);
   }, [newCatMode]);
   const [newCat, setNewCat] = useState("");
-  const canSaveNew = m.name.trim().length > 0 && (!isNew || !!m.kategoriOrtu);
+  // Harga minimal Rp1.000 (permintaan Mama 4 Nov: pernah tersimpan Rp0): di bawah itu tidak bisa disimpan
+  const HARGA_MIN = 1000;
+  const hargaKurang = (n: number | null | undefined) => !(Number(n) >= HARGA_MIN);
+  const hargaBermasalah = hasVariants ? m.variants.some((v) => hargaKurang(v.price)) : hargaKurang(m.price);
+  const canSaveNew = m.name.trim().length > 0 && (!isNew || !!m.kategoriOrtu) && !hargaBermasalah;
 
   const setName = (name: string) => onPatch({ name });
   const setPrice = (v: string) => onPatch({ price: v === "" ? null : Number(v) });
@@ -1035,6 +1039,10 @@ function Editor({ m, categories, onClose, onPatch, onRemove, isNew = false, onSa
                 </button>
               </Baris>
             </>
+          )}
+
+          {hargaBermasalah && (
+            <div style={{ padding: "0 20px 8px", color: t.error, fontWeight: 700, fontSize: 14 }}>Harga minimal Rp1.000</div>
           )}
 
           {/* Tampil di: dua ikon yang langsung diketuk (menyala = tampil) */}
