@@ -12,6 +12,7 @@ import type { Transaction } from "../../types";
    pesan siap → kembali → anak berikutnya sudah menunggu.
    ============================================================ */
 
+export type Tunggakan = { label: string; total: number };
 export type GrupTagih = { customer: Transaction["customer"]; txs: Transaction[]; total: number };
 
 const opDate = (tx: Transaction) => tx.serviceDate || tx.createdAt.slice(0, 10);
@@ -30,7 +31,7 @@ export default function TagihSatuSatu({
   /** Antrean dibekukan saat mulai: satu entri = satu pesan = satu atau lebih anak (daftar id transaksi per anak). */
   antrean: string[][][];
   byId: Map<string, Transaction>;
-  bangunPesan: (gs: GrupTagih[], label: string) => string;
+  bangunPesan: (gs: GrupTagih[], label: string, tunggakan?: Tunggakan[]) => string;
   onKirim: (ids: string[]) => void;
   onUbahTanggal: (tx: Transaction) => void;
   onTutup: () => void;
@@ -71,8 +72,28 @@ export default function TagihSatuSatu({
 
   useEffect(() => { setTeks(null); setLihat(false); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
 
+  /* TUNGGAKAN SEBELUMNYA (pemilik 4 Nov: "yang baru dan yang lama belum lunas, mau ditambahkan?"): transaksi anak yang sama, belum lunas, belum dibatalkan,
+     dari minggu LAIN di luar yang sedang ditagih. Bawaan TIDAK disertakan; Mama mengetuk barisnya bila mau (per anak, hanya muncul bila ada). */
+  const [sertakan, setSertakan] = useState(false);
+  useEffect(() => { setSertakan(false); }, [i]);
+  const norm = (n: string) => n.trim().replace(/\s+/g, " ").toLowerCase();
+  const tunggakan: Tunggakan[] = useMemo(() => {
+    if (!gs.length) return [];
+    const namaSet = new Set(gs.map((g) => norm(g.customer.nama)));
+    const perMinggu = new Map<string, number>();
+    for (const x of byId.values()) {
+      if (x.paid || x.cancelledAt || x.deletedAt || !namaSet.has(norm(x.customer.nama))) continue;
+      const senin = mondayOf(opDate(x));
+      if (pekan.includes(senin)) continue;
+      perMinggu.set(senin, (perMinggu.get(senin) ?? 0) + x.total);
+    }
+    return [...perMinggu].sort(([a], [b]) => a.localeCompare(b)).map(([senin, tot]) => ({ label: labelPekan(senin), total: tot }));
+  }, [gs, byId, pekan]);
+  const totalTunggakan = tunggakan.reduce((n, x) => n + x.total, 0);
+  useEffect(() => { setTeks(null); }, [sertakan]);
+
   const wa = gs.length ? waIntl(gs[0].customer.wa) : "";
-  const pesan = teks ?? (gs.length ? bangunPesan(gs, label) : "");
+  const pesan = teks ?? (gs.length ? bangunPesan(gs, label, sertakan && tunggakan.length ? tunggakan : undefined) : "");
   const ids = gs.flatMap((g) => g.txs.map((x) => x.id));
   const maju = () => setI((n) => n + 1);
 
@@ -147,6 +168,19 @@ export default function TagihSatuSatu({
                 <div style={{ fontSize: 13.5, color: t.text2, margin: "0 4px 10px", fontWeight: 600 }}>
                   Satu nomor WA, digabung jadi satu pesan.
                 </div>
+              )}
+
+              {tunggakan.length > 0 && (
+                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                  style={{ gap: 12, width: "100%", minHeight: 56, padding: "8px 14px", marginBottom: 8, borderRadius: 14, border: "none", background: sertakan ? t.successBg : t.surface, boxShadow: sertakan ? "none" : "0 1px 3px rgba(60,48,20,.08)", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                  <span style={{ width: 28, height: 28, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
+                    {sertakan && <Check size={16} strokeWidth={3} />}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 600, lineHeight: 1.3 }}>
+                    Sertakan {tunggakan.length} minggu sebelumnya
+                    <span style={{ display: "block", fontSize: 13.5, fontWeight: 500, color: t.text2 }}>belum dibayar · {rupiah(totalTunggakan)}</span>
+                  </span>
+                </button>
               )}
 
               <button onClick={() => setLihat((v) => !v)} aria-expanded={lihat} className="flex items-center gap-1"

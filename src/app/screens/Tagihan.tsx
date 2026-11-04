@@ -529,11 +529,11 @@ export default function Tagihan({
      Bila pesan lengkap lebih dari BATAS_WA karakter, rincian per item diringkas jadi SATU BARIS PER HARI (tanggal + jumlah) supaya
      seluruh pesan, total, rekening, dan berita transfer pasti sampai utuh. Pesan biasa (satu-dua minggu) tetap lengkap per item. */
   const BATAS_WA = 1800;
-  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string) => {
-    const penuh = rakitWaMsg(gs, label, false);
-    return penuh.length > BATAS_WA ? rakitWaMsg(gs, label, true) : penuh;
+  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string, tunggakan?: { label: string; total: number }[]) => {
+    const penuh = rakitWaMsg(gs, label, false, tunggakan);
+    return penuh.length > BATAS_WA ? rakitWaMsg(gs, label, true, tunggakan) : penuh;
   };
-  const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, ringkas: boolean) => {
+  const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, ringkas: boolean, tunggakan?: { label: string; total: number }[]) => {
     const txBlocksOf = (g: (typeof gs)[number]) => ringkas ? (() => {
       const perHari = new Map<string, number>();
       for (const tx of [...g.txs].sort((a, b) => opDate(a).localeCompare(opDate(b)))) perHari.set(opDate(tx), (perHari.get(opDate(tx)) ?? 0) + tx.total);
@@ -568,11 +568,13 @@ export default function Tagihan({
     const sections = gs.map((g) =>
       `Nama: ${toTitleCase(g.customer.nama)}\nKelas: ${g.customer.kelas || g.customer.tingkat || "-"}\n\n${txBlocksOf(g)}${gs.length > 1 ? `\nSubtotal: ${rupiah(g.total)}` : ""}`
     ).join("\n\n--------------------\n\n");
-    const total = gs.reduce((s, g) => s + g.total, 0);
+    const totalTunggakan = (tunggakan ?? []).reduce((n, x) => n + x.total, 0);
+    const total = gs.reduce((s, g) => s + g.total, 0) + totalTunggakan;
+    const blokTunggakan = tunggakan && tunggakan.length ? `\n\nBelum dibayar sebelumnya:\n${tunggakan.map((x) => `${x.label} · ${rupiah(x.total)}`).join("\n")}` : "";
     // Baris kosong sebelum Total supaya berjarak dari rincian; *tebal* pakai
     // format WhatsApp (bintang) — rincian panjang jadi mudah menemukan totalnya
     const judulPekan = label ? `Tagihan minggu ${label}\n\n` : "";
-    return `${settings.waOpening}\n\n${judulPekan}${sections}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}${beritaSection}${akhir}`;
+    return `${settings.waOpening}\n\n${judulPekan}${sections}${blokTunggakan}\n\n*Total Pembayaran: ${rupiah(total)}*\n\n${settings.waClosing}${bankSection}${beritaSection}${akhir}`;
   };
   /** pool = kartu yang dicari "saudara"-nya (satu nomor WA) — di dalam satu pekan hanya kartu pekan itu. */
   const shareWA = (g: { customer: Transaction["customer"]; txs: Transaction[]; total: number }, pool: Grup[] = groups, label?: string) => {
