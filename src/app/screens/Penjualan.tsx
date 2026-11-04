@@ -341,7 +341,7 @@ export default function Penjualan({
               bawahnya — bukan dengan judul/pencarian di atasnya.
               Seluruh area tanggal diketuk via input date overlay inset:0 */}
           <div className="flex items-stretch" style={{ marginTop: 10, height: 44, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, overflow: "hidden", boxSizing: "border-box" }}>
-            <div className="flex items-center" style={{ flex: "none", background: perhatianTgl ? "#FFF4BF" : "transparent", borderRight: `1.5px solid ${perhatianTgl ? t.primaryLine : t.divider}` }}>
+            <div className="flex items-center" style={{ flex: "none", background: perhatianTgl ? t.primaryLight : "transparent", borderRight: `1.5px solid ${perhatianTgl ? t.primaryLine : t.divider}` }}>
               <div className="flex items-center gap-1" style={{ position: "relative", height: "100%", padding: isBackdate ? "0 4px 0 12px" : "0 12px", cursor: "pointer" }}>
                 <Calendar size={16} color={t.amberText} />
                 <span style={{ fontSize: 14, fontWeight: 800, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>

@@ -260,7 +260,8 @@ export default function MasterMenu({
   /* ============ Menu Tetap ============
      "Pakai Menu Tetap" hanya mengisi DRAFT (menambah centang Pre-order untuk
      semua menu tetap) — tidak mengurangi pilihan lain, dan baru berlaku
-     setelah Simpan. Menu tetap TIDAK otomatis dijual. */
+     setelah Simpan. Menu tetap TIDAK otomatis dijual: tanggal yang belum pernah disimpan terisi menu tetap sebagai DRAFT
+     (efek seed di atas), tetap perlu Simpan. */
   const [tetapSheet, setTetapSheet] = useState(false);
   /** Menu melayang di bawah tombol plus (bukan lembar dari bawah layar). */
   const [aksiMenu, setAksiMenu] = useState(false);
@@ -555,7 +556,7 @@ export default function MasterMenu({
                         {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
                             Tanpa tulisan "Menu PO" / "Muat ulang" / "Segarkan" (terlalu banyak huruf M). */}
                         <div className="flex items-center" style={{ gap: 12 }}>
-                          <style>{`@keyframes ganen-uap-warna{0%,30%{stroke:#F2B53C}36%,100%{stroke:#B9AE92}}`}</style>
+                          <style>{`@keyframes ganen-uap-warna{0%,30%{stroke:${t.chart[2]}}36%,100%{stroke:${t.garisKelompok}}}`}</style>
                           <button onClick={doRefresh} aria-label="Segarkan pratinjau menu"
                             style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
                             {segarOk ? <Check size={26} color={t.successText} strokeWidth={2.5} /> : (
@@ -563,7 +564,7 @@ export default function MasterMenu({
                                 <path d="M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6Z" fill={t.primaryLight} stroke={t.text2} />
                                 <path d="M3 12h18" stroke={t.text2} /><path d="M2 12h2M20 12h2" stroke={t.text2} />
                                 {[8, 12, 16].map((x, i) => (
-                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`} stroke={refreshing ? t.garisKelompok : "#F2B53C"}
+                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`} stroke={refreshing ? t.garisKelompok : t.chart[2]}
                                     style={refreshing ? { animation: `ganen-uap-warna .9s linear ${i * 0.3}s infinite` } : undefined} />
                                 ))}
                               </svg>

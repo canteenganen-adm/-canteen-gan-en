@@ -4,7 +4,7 @@
 -- Mencatat setiap tambah / ubah / hapus pada tabel transaksi, menu, app_state, kelas, menu_tetap:
 -- kapan, siapa (nama yang dipilih di HP + kode HP), dan isi sebelum/sesudahnya.
 -- Hapus permanen pun tercatat LENGKAP dengan isi barisnya, jadi bisa dikembalikan dari layar Catatan Perubahan.
--- (menu_harian dan menu_stok sengaja tidak dicatat: ditulis ulang utuh setiap Simpan, hanya menambah kebisingan.)
+-- (menu_stok dan menu_harian dicatat lewat migration_16_catatan_menu_harian.sql, JALANKAN setelah file ini.)
 --
 -- Nama & kode HP dikirim aplikasi lewat header HTTP x-ganen-siapa / x-ganen-hp dan dibaca trigger dari request.headers.
 -- Catatan DILINDUNGI: kunci publik hanya boleh MEMBACA catatan; tidak bisa menambah, mengubah, atau menghapusnya

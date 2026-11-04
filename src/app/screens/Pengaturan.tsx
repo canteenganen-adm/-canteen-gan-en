@@ -16,7 +16,7 @@ import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
 /* ============================================================
-   PENGATURAN — Canteen Gan En  (dibuka dari ikon gear di header)
+   PENGATURAN — Canteen Gan En  (tab Kantin: profil, Laporan, ubin pengaturan, Catatan, Pengguna)
    HANYA config jarang berubah — Nama Kantin, Printer, WhatsApp,
    Daftar Kelas (per Tingkat), Edit Pesanan, Backup, Tentang.
    ============================================================ */
