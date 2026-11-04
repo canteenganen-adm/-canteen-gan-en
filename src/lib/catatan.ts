@@ -28,7 +28,7 @@ export async function fetchCatatan(opts: { filter: FilterCatatan; q: string; seb
   if (opts.sebelumId) qb = qb.lt("id", opts.sebelumId);
   if (opts.filter === "hapus") qb = qb.eq("aksi", "hapus");
   else if (opts.filter === "lunas") qb = qb.eq("tabel", "transaksi").eq("aksi", "ubah").eq("sesudah->>paid", "true");
-  else if (opts.filter === "menu") qb = qb.eq("tabel", "menu");
+  else if (opts.filter === "menu") qb = qb.in("tabel", ["menu", "menu_harian", "menu_stok"]);
   else if (opts.filter === "pengaturan") qb = qb.in("tabel", ["app_state", "kelas", "menu_tetap"]);
   const q = opts.q.trim();
   if (q) qb = qb.ilike("ket", `%${q.replace(/[%,()]/g, " ")}%`);

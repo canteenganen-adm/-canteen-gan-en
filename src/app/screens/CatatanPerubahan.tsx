@@ -22,9 +22,10 @@ const waktuWib = (iso: string) => {
 const LABEL: Record<string, string> = {
   paid: "Lunas", paid_at: "Jam lunas", billed_at: "Ditagih", cancelled_at: "Dibatalkan", deleted_at: "Tong Sampah",
   service_date: "Tanggal layanan", customer: "Pembeli", items: "Isi pesanan", total: "Total", source: "Sumber",
-  name: "Nama", price: "Harga", variants: "Ukuran", category: "Kategori", channels: "Tampil di", kategori_ortu: "Kelompok ortu",
+  tanggal: "Tanggal", baris: "Jumlah baris", aktif_preorder: "Aktif Pre-order", stok: "Stok", name: "Nama", price: "Harga", variants: "Ukuran", category: "Kategori", channels: "Tampil di", kategori_ortu: "Kelompok ortu",
 };
 const tampil = (v: unknown): string => {
+  if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v.length === 0 ? "kosong" : v.join(", ");
   if (v === null || v === undefined) return "kosong";
   if (typeof v === "boolean") return v ? "ya" : "tidak";
   if (typeof v === "number") return v >= 1000 ? rupiah(v) : String(v);
@@ -33,6 +34,8 @@ const tampil = (v: unknown): string => {
 };
 
 function uraian(c: Catatan): string {
+  if (c.tabel === "menu_harian") return c.aksi === "hapus" ? "Isi lama tanggal ini ditimpa" : "Menu tanggal ini disimpan";
+  if (c.tabel === "menu_stok") return c.aksi === "ubah" ? `Stok ${tampil(c.sebelum?.stok)} → ${tampil(c.sesudah?.stok)}` : c.aksi === "tambah" ? `Stok diisi ${tampil(c.sesudah?.stok)}` : "Stok dihapus";
   if (c.aksi === "tambah") {
     if (c.tabel === "transaksi") return c.sesudah?.source === "preorder" ? "Pesanan Pre-order masuk" : "Penjualan dicatat";
     return c.tabel === "menu" ? "Menu baru" : "Ditambah";
@@ -172,12 +175,14 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                     ))}
                     {c.aksi === "hapus" && c.sebelum && (
                       <div style={{ color: t.text2, overflowWrap: "anywhere" }}>
-                        {Object.entries(c.sebelum).filter(([k]) => ["customer", "items", "total", "service_date", "name", "price", "category"].includes(k)).map(([k, v]) => (
+                        {Object.entries(c.sebelum).filter(([k]) => ["customer", "items", "total", "service_date", "name", "price", "category", "tanggal", "baris", "aktif_preorder"].includes(k)).map(([k, v]) => (
                           <div key={k} style={{ padding: "3px 0" }}><b style={{ color: t.text }}>{LABEL[k] ?? k}</b>: {tampil(v)}</div>
                         ))}
                       </div>
                     )}
-                    {c.aksi === "tambah" && <div style={{ color: t.text2 }}>Baris baru dibuat.</div>}
+                    {c.aksi === "tambah" && (c.tabel === "menu_harian" && c.sesudah
+                      ? <div style={{ color: t.text2, overflowWrap: "anywhere" }}>{["tanggal", "aktif_preorder"].map((k) => <div key={k} style={{ padding: "3px 0" }}><b style={{ color: t.text }}>{LABEL[k]}</b>: {tampil(c.sesudah?.[k])}</div>)}</div>
+                      : <div style={{ color: t.text2 }}>Baris baru dibuat.</div>)}
                     <div style={{ fontSize: 12, color: t.text2, marginTop: 6 }}>Kode HP: {c.hp || "—"}</div>
                     {bisaPulih && (
                       <button onClick={() => kembalikan(c)} className="flex items-center justify-center gap-2"
