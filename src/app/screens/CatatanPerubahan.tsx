@@ -36,6 +36,7 @@ type Nada = "baik" | "buruk" | "biasa";
 function ringkas(c: Catatan): [string, string, Nada] {
   const s = c.sesudah ?? {};
   const b = c.sebelum ?? {};
+  if (c.tabel === "login") return [c.aksi === "keluar" ? "Keluar" : "Masuk", "", c.aksi === "keluar" ? "biasa" : "baik"];
   if (c.tabel === "menu_harian") return c.aksi === "hapus" ? ["Timpa", "", "biasa"] : ["Simpan", "", "baik"];
   if (c.tabel === "menu_stok") return ["Stok", c.aksi === "ubah" ? `${tampil(b.stok)} → ${tampil(s.stok)}` : c.aksi === "tambah" ? `diisi ${tampil(s.stok)}` : "dihapus", c.aksi === "hapus" ? "buruk" : "biasa"];
   if (c.tabel === "app_state") return ["Atur", Object.keys(s).map((k) => LABEL[k] ?? k).join(", "), "biasa"];
@@ -63,7 +64,7 @@ function ringkas(c: Catatan): [string, string, Nada] {
 }
 
 const CHIP: { id: FilterCatatan; label: string }[] = [
-  { id: "semua", label: "Semua" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" },
+  { id: "semua", label: "Semua" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" }, { id: "masuk", label: "Masuk" },
 ];
 
 const hariWib = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
@@ -80,6 +81,7 @@ const JENIS_PANJANG: Record<string, string> = {
   Pesan: "Pesanan masuk", Jual: "Penjualan dicatat", HAPUS: "Dihapus permanen", "Batal Lunas": "Lunas dibatalkan", Batal: "Dibatalkan",
   Sampah: "Ke Tong Sampah", Pulih: "Dipulihkan", Tagih: "Ditagih", Tanggal: "Tanggal diubah", Pembeli: "Data pembeli diubah",
   Isi: "Isi pesanan diubah", Harga: "Harga diubah", Ukuran: "Ukuran diubah", Nama: "Nama diubah", "Menu+": "Menu baru",
+  Masuk: "Masuk aplikasi", Keluar: "Keluar aplikasi",
   Simpan: "Menu disimpan", Timpa: "Menu ditimpa", Stok: "Stok", Atur: "Pengaturan diubah", Kelas: "Kelas", Tetap: "Menu Tetap", Menu: "Menu diubah", Ubah: "Diubah", Lunas: "Lunas",
 };
 const WARNA: Record<Nada, string> = { baik: t.successText, buruk: t.error, biasa: t.text };

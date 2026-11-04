@@ -6,7 +6,7 @@ export interface Catatan {
   id: number;
   waktu: string;
   tabel: string;
-  aksi: "tambah" | "ubah" | "hapus";
+  aksi: "tambah" | "ubah" | "hapus" | "masuk" | "keluar";
   baris_id: string | null;
   ket: string | null;
   siapa: string | null;
@@ -15,7 +15,7 @@ export interface Catatan {
   sesudah: Record<string, unknown> | null;
 }
 
-export type FilterCatatan = "semua" | "hapus" | "lunas" | "menu" | "pengaturan";
+export type FilterCatatan = "semua" | "hapus" | "lunas" | "menu" | "pengaturan" | "masuk";
 export const UKURAN_HALAMAN = 60;
 
 export type HasilCatatan =
@@ -29,6 +29,7 @@ export async function fetchCatatan(opts: { filter: FilterCatatan; q: string; seb
   if (opts.filter === "hapus") qb = qb.eq("aksi", "hapus");
   else if (opts.filter === "lunas") qb = qb.eq("tabel", "transaksi").eq("aksi", "ubah").eq("sesudah->>paid", "true");
   else if (opts.filter === "menu") qb = qb.in("tabel", ["menu", "menu_harian", "menu_stok"]);
+  else if (opts.filter === "masuk") qb = qb.eq("tabel", "login");
   else if (opts.filter === "pengaturan") qb = qb.in("tabel", ["app_state", "kelas", "menu_tetap"]);
   const q = opts.q.trim();
   if (q) qb = qb.ilike("ket", `%${q.replace(/[%,()]/g, " ")}%`);

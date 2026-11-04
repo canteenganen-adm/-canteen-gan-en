@@ -21,6 +21,19 @@ const namaDari = (s: Session | null): string | null => {
   return lokal ? lokal.charAt(0).toUpperCase() + lokal.slice(1) : null;
 };
 
+/** Jenis perangkat + peramban, mis. "Laptop Windows · Chrome" — ikut tercatat di Catatan saat masuk/keluar. */
+const ringkasPerangkat = (): string => {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const alat = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "HP Android" : /Windows/.test(ua) ? "Laptop Windows" : /Mac/.test(ua) ? "Mac" : "Perangkat";
+  const peramban = /Edg\//.test(ua) ? "Edge" : /Chrome|CriOS/.test(ua) ? "Chrome" : /Firefox/.test(ua) ? "Firefox" : /Safari/.test(ua) ? "Safari" : "";
+  return peramban ? `${alat} · ${peramban}` : alat;
+};
+
+/** Catat masuk/keluar di Catatan (migration_19). Gagal/belum ada fungsinya = diam saja, tidak boleh mengganggu login. */
+const catatMasuk = async (aksi: "masuk" | "keluar") => {
+  try { await supabase.rpc("catat_masuk", { p_aksi: aksi, p_info: ringkasPerangkat() }); } catch { /* abaikan */ }
+};
+
 export async function masuk(nama: string, sandi: string): Promise<{ ok: true } | { ok: false; pesan: string }> {
   if (nama.trim().length < 2 || sandi.length < 1) return { ok: false, pesan: "Isi nama dan kata sandi." };
   try {
@@ -29,6 +42,7 @@ export async function masuk(nama: string, sandi: string): Promise<{ ok: true } |
       if (/invalid login|credentials/i.test(error.message)) return { ok: false, pesan: "Nama atau kata sandi salah." };
       return { ok: false, pesan: "Gagal masuk. Periksa internet lalu coba lagi." };
     }
+    await catatMasuk("masuk");
     return { ok: true };
   } catch {
     return { ok: false, pesan: "Gagal masuk. Periksa internet lalu coba lagi." };
@@ -36,6 +50,7 @@ export async function masuk(nama: string, sandi: string): Promise<{ ok: true } |
 }
 
 export async function keluar() {
+  await catatMasuk("keluar"); // sebelum sesi dicabut (butuh login untuk mencatat)
   try { await supabase.auth.signOut(); } catch { /* tetap lanjut: sesi lokal dibersihkan di bawah */ }
   setNamaSesi("");
 }
