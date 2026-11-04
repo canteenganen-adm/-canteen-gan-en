@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, Search, Copy } from "lucide-react";
-import { salinTeks } from "../../lib/salin";
+import { salinTeks, BATAS_LINK_WA } from "../../lib/salin";
 import IkonDitagih from "./IkonDitagih";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
@@ -100,9 +100,16 @@ export default function TagihSatuSatu({
   const ids = gs.flatMap((g) => g.txs.map((x) => x.id));
   const maju = () => setI((n) => n + 1);
 
-  const kirim = () => {
+  const panjang = pesan.length > BATAS_LINK_WA;
+  const kirim = async () => {
     if (!wa) return;
-    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
+    if (panjang) {
+      // terlalu panjang untuk tautan wa.me: salin pesan LENGKAP, buka chat kosong, lalu tempel
+      if (!(await salinTeks(pesan))) return;
+      window.open(`https://wa.me/${wa}`, "_blank");
+    } else {
+      window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
+    }
     onKirim(ids);
     setTerkirim((n) => n + gs.length);
     maju();
@@ -206,7 +213,7 @@ export default function TagihSatuSatu({
               {wa ? (
                 <button onClick={kirim} className="flex items-center justify-center gap-2"
                   style={{ width: "100%", height: 60, borderRadius: 14, border: "none", background: "#25D366", color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer" }}>
-                  <MessageCircle size={22} /> Kirim ke WhatsApp
+                  {panjang ? <Copy size={22} /> : <MessageCircle size={22} />} {panjang ? "Salin & buka chat" : "Kirim ke WhatsApp"}
                 </button>
               ) : (
                 <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: t.error, padding: "6px 0 2px" }}>Nomor WhatsApp belum ada.</div>

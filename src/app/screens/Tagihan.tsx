@@ -3,7 +3,7 @@ import {
   Search, X, Check, Trash2, Share2, ShoppingCart, Utensils,
   Undo2, Wallet, Settings, History, Ban, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, RotateCcw, Pencil, SlidersHorizontal, MessageCircle, Copy,
 } from "lucide-react";
-import { salinTeks } from "../../lib/salin";
+import { salinTeks, BATAS_LINK_WA } from "../../lib/salin";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { rupiah, fmtWaDate, todayISO, serviceDateLabel } from "../../lib/format";
 import { mondayOf, labelPekan, bulanPekan, labelBulan, pekanBerjalan, isAkhirPekan, namaHari, rentangPendek } from "../../lib/pekan";
@@ -528,20 +528,12 @@ export default function Tagihan({
   /** Bangun pesan tagihan. 1 grup = format lama persis; >1 grup (kakak-adik
    * satu nomor WA) = satu pesan dengan bagian per anak + Subtotal, lalu
    * SATU Total Pembayaran gabungan. */
-  /* Tautan wa.me memotong teks yang terlalu panjang (kasus 4 Nov: tagihan 3 minggu terpotong di tengah baris, "• Cah Brokoli + Wortel ×").
-     Bila pesan lengkap lebih dari BATAS_WA karakter, rincian per item diringkas jadi SATU BARIS PER HARI (tanggal + jumlah) supaya
-     seluruh pesan, total, rekening, dan berita transfer pasti sampai utuh. Pesan biasa (satu-dua minggu) tetap lengkap per item. */
-  const BATAS_WA = 1800;
-  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string, tunggakan?: { label: string; total: number }[]) => {
-    const penuh = rakitWaMsg(gs, label, false, tunggakan);
-    return penuh.length > BATAS_WA ? rakitWaMsg(gs, label, true, tunggakan) : penuh;
-  };
-  const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, ringkas: boolean, tunggakan?: { label: string; total: number }[]) => {
-    const txBlocksOf = (g: (typeof gs)[number]) => ringkas ? (() => {
-      const perHari = new Map<string, number>();
-      for (const tx of [...g.txs].sort((a, b) => opDate(a).localeCompare(opDate(b)))) perHari.set(opDate(tx), (perHari.get(opDate(tx)) ?? 0) + tx.total);
-      return [...perHari].map(([op, n]) => `[${serviceDateLabel(op)}] ${rupiah(n)}`).join("\n");
-    })() : [...g.txs].sort((x, y) => opDate(x).localeCompare(opDate(y)) || x.createdAt.localeCompare(y.createdAt)).map((tx) => {
+  /* Pesan SELALU lengkap per item (pemilik 4 Nov: yang disalin harus rincian jelas, bukan ringkasan). Bila lebih panjang dari BATAS_LINK_WA,
+     tombol kirim menyalin pesan lalu membuka chat kosong (lihat sendWA) — bukan memotong atau meringkas. */
+  const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string, tunggakan?: { label: string; total: number }[]) =>
+    rakitWaMsg(gs, label, tunggakan);
+  const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, tunggakan?: { label: string; total: number }[]) => {
+    const txBlocksOf = (g: (typeof gs)[number]) => [...g.txs].sort((x, y) => opDate(x).localeCompare(opDate(y)) || x.createdAt.localeCompare(y.createdAt)).map((tx) => {
       const itemLines = tx.items
         .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
@@ -606,9 +598,16 @@ export default function Tagihan({
       txIds: gs.flatMap((g) => g.txs.map((tx) => tx.id)),
     });
   };
-  const sendWA = () => {
+  const sendWA = async () => {
     if (!waDraft) return;
-    window.open(`https://wa.me/${waDraft.wa}?text=${encodeURIComponent(waDraft.text)}`, "_blank");
+    if (waDraft.text.length > BATAS_LINK_WA) {
+      // terlalu panjang untuk tautan: salin pesan LENGKAP, buka chat kosong, Mama menempel
+      const ok = await salinTeks(waDraft.text);
+      if (!ok) { setToast("Gagal menyalin. Tekan ikon Salin lalu buka WhatsApp."); return; }
+      window.open(`https://wa.me/${waDraft.wa}`, "_blank");
+    } else {
+      window.open(`https://wa.me/${waDraft.wa}?text=${encodeURIComponent(waDraft.text)}`, "_blank");
+    }
     onMarkBilled(waDraft.txIds); // penanda "sudah ditagih" — sinkron antar gadget
     setWaDraft(null);
   };
@@ -1247,7 +1246,7 @@ export default function Tagihan({
               </button>
               <button onClick={sendWA} className="flex items-center justify-center gap-2"
                 style={{ flex: 2, height: 52, borderRadius: 12, border: "none", background: "#25D366", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-                <Share2 size={18} /> Kirim ke WhatsApp
+                {waDraft.text.length > BATAS_LINK_WA ? <Copy size={18} /> : <Share2 size={18} />} {waDraft.text.length > BATAS_LINK_WA ? "Salin & buka chat" : "Kirim ke WhatsApp"}
               </button>
             </div>
           </div>

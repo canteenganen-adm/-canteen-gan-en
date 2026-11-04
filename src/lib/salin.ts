@@ -17,3 +17,7 @@ export async function salinTeks(teks: string): Promise<boolean> {
     return ok;
   } catch { return false; }
 }
+
+/** Batas panjang pesan yang masih aman dikirim lewat tautan wa.me (lebih panjang dipotong WhatsApp/HP — kasus Richie 4 Nov).
+    Lebih dari ini: pesan LENGKAP disalin ke papan klip dan chat dibuka kosong; Mama tinggal menempel. */
+export const BATAS_LINK_WA = 1800;
