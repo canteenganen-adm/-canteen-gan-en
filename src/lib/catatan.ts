@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-/* Catatan Perubahan — dibaca dari tabel `catatan` (supabase/migration_15_catatan.sql). Hanya membaca; pemulihan menulis ke tabel aslinya. */
+/* Catatan Perubahan — dibaca dari tabel `catatan` (supabase/migration_15_catatan.sql). HANYA membaca (log asli, tanpa pemulihan dari layar). */
 
 export interface Catatan {
   id: number;
@@ -40,18 +40,4 @@ export async function fetchCatatan(opts: { filter: FilterCatatan; q: string; seb
   }
   const baris = (data ?? []) as Catatan[];
   return { status: "ok", baris, habis: baris.length < UKURAN_HALAMAN };
-}
-
-/** Kembalikan: hapus → tulis ulang barisnya; ubah → pulihkan nilai lama. Hanya transaksi dan menu. */
-export async function pulihkanDariCatatan(c: Catatan): Promise<void> {
-  if (c.tabel !== "transaksi" && c.tabel !== "menu") throw new Error("Hanya transaksi dan menu yang bisa dikembalikan dari sini.");
-  if (c.aksi === "hapus" && c.sebelum) {
-    const { error } = await supabase.from(c.tabel).insert(c.sebelum);
-    if (error) throw new Error(error.message);
-  } else if (c.aksi === "ubah" && c.sebelum && c.baris_id) {
-    const { error } = await supabase.from(c.tabel).update(c.sebelum).eq("id", c.baris_id);
-    if (error) throw new Error(error.message);
-  } else {
-    throw new Error("Catatan ini tidak bisa dikembalikan.");
-  }
 }

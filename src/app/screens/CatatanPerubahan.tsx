@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, RotateCcw, Search, X } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { bacaNamaCatatan } from "../../lib/siapa";
-import { fetchCatatan, pulihkanDariCatatan, type Catatan, type FilterCatatan, type HasilCatatan } from "../../lib/catatan";
+import { fetchCatatan, type Catatan, type FilterCatatan, type HasilCatatan } from "../../lib/catatan";
 
 /* ============================================================
    CATATAN PERUBAHAN — dibuka dari Kantin → Catatan.
    Gaya LOG (permintaan pemilik 4 Nov): satu baris per kejadian, terbaru dulu:
      04/11 09:52:13 [Lunas] Budi · Rp12000 · preorder — Mama
-   Ketuk satu baris = isi sebelum/sesudah dan, untuk transaksi & menu, "Kembalikan".
+   Ketuk satu baris = isi sebelum/sesudah. HANYA MEMBACA: log asli, tanpa tombol Kembalikan/ubah (pemilik 4 Nov).
    Sumber: tabel `catatan` (supabase/migration_15_catatan.sql + 16).
    ============================================================ */
 
@@ -92,7 +92,6 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
   const [status, setStatus] = useState<"memuat" | "ok" | "belumAktif" | "galat">("memuat");
   const [pesan, setPesan] = useState("");
   const [buka, setBuka] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const seq = useRef(0);
 
   const muat = useCallback(async (tambah: boolean) => {
@@ -114,12 +113,7 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, q]);
 
-  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 2600); return () => clearTimeout(id); }, [toast]);
 
-  const kembalikan = async (c: Catatan) => {
-    try { await pulihkanDariCatatan(c); setToast("Dikembalikan"); void muat(false); }
-    catch (e) { setToast(e instanceof Error ? e.message : "Gagal mengembalikan"); }
-  };
 
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
@@ -174,7 +168,6 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                   {g.isi.map((c) => {
                     const [jenis, ket, nada] = ringkas(c);
                     const terbuka = buka === c.id;
-                    const bisaPulih = (c.tabel === "transaksi" || c.tabel === "menu") && ((c.aksi === "hapus" && c.sebelum) || (c.aksi === "ubah" && c.sebelum && c.baris_id));
                     const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
                     const bagian = (c.ket || c.tabel).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
                     const aktifMenu = (c.sesudah ?? c.sebelum)?.aktif_preorder;
@@ -208,12 +201,6 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                             ))}
                             {c.aksi === "tambah" && c.tabel !== "menu_harian" && <div style={{ color: t.text2 }}>Baris baru dibuat.</div>}
                             <div style={{ fontSize: 12, color: t.text2, marginTop: 6, fontFamily: MONO }}>{jamDetik(c.waktu)} · HP {c.hp || "—"}</div>
-                            {bisaPulih && (
-                              <button onClick={() => kembalikan(c)} className="flex items-center justify-center gap-2"
-                                style={{ marginTop: 10, width: "100%", height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
-                                <RotateCcw size={16} /> {c.aksi === "hapus" ? "Kembalikan data ini" : "Kembalikan ke nilai lama"}
-                              </button>
-                            )}
                           </div>
                         )}
                       </div>
@@ -232,11 +219,6 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
           )}
         </div>
       </div>
-      {toast && (
-        <div role="status" style={{ position: "fixed", left: 0, right: 0, bottom: 96, display: "grid", placeItems: "center", pointerEvents: "none", zIndex: 60 }}>
-          <div style={{ background: t.text, color: "#fff", borderRadius: 12, padding: "10px 16px", fontWeight: 700, fontSize: 14.5 }}>{toast}</div>
-        </div>
-      )}
     </div>
   );
 }
