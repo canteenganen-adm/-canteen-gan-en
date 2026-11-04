@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { bacaNamaCatatan } from "../../lib/siapa";
@@ -94,6 +94,8 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
   const [status, setStatus] = useState<"memuat" | "ok" | "belumAktif" | "galat">("memuat");
   const [pesan, setPesan] = useState("");
   const [buka, setBuka] = useState<number | null>(null);
+  // Hari bisa dilipat (pemilik 4 Nov: "per hari udah selesai kita tutup"): bawaan hanya HARI INI terbuka; saat mencari semua terbuka.
+  const [hariBuka, setHariBuka] = useState<Record<string, boolean>>({});
   const seq = useRef(0);
 
   const muat = useCallback(async (tambah: boolean) => {
@@ -162,10 +164,17 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
               if (g && g.hari === h) g.isi.push(c); else kel.push({ hari: h, isi: [c] });
             }
             const hariIniWib = hariWib(new Date().toISOString());
+            const terbukaHari = (h: string) => hariBuka[h] ?? (h === hariIniWib || q.trim() !== "" || filter !== "semua");
             return kel.map((g) => (
               <div key={g.hari}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: t.text2, margin: "14px 2px 6px" }}>{judulHari(g.hari, hariIniWib)}</div>
-                <div style={{ position: "relative" }}>
+                <button onClick={() => setHariBuka((m) => ({ ...m, [g.hari]: !terbukaHari(g.hari) }))} aria-expanded={terbukaHari(g.hari)}
+                  className="flex items-center" style={{ width: "100%", gap: 8, margin: "10px 0 4px", padding: "6px 2px", minHeight: 44, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: t.text2, textAlign: "left" }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, flex: 1 }}>{judulHari(g.hari, hariIniWib)}</span>
+                  {!terbukaHari(g.hari) && g.isi.some((c) => ringkas(c)[0] === "HAPUS") && <span style={{ fontSize: 12.5, fontWeight: 800, color: t.error }}>{g.isi.filter((c) => ringkas(c)[0] === "HAPUS").length} hapus</span>}
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{g.isi.length}</span>
+                  {terbukaHari(g.hari) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+                {terbukaHari(g.hari) && <div style={{ position: "relative" }}>
                   <div aria-hidden style={{ position: "absolute", left: 66, top: 12, bottom: 12, width: 2, background: t.border }} />
                   {g.isi.map((c) => {
                     const [jenis, ket, nada] = ringkas(c);
@@ -210,7 +219,7 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                       </div>
                     );
                   })}
-                </div>
+                </div>}
               </div>
             ));
           })()}
