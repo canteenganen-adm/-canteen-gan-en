@@ -28,6 +28,8 @@ import Laporan from "./screens/Laporan";
 import BackToTop from "./components/BackToTop";
 import PilihNama from "./components/PilihNama";
 import { bacaSiapa } from "../lib/siapa";
+import { WAJIB_LOGIN, useSesi } from "../lib/auth";
+import MasukKasir from "./components/MasukKasir";
 
 /* ============================================================
    APP SHELL — Canteen Gan En
@@ -82,7 +84,18 @@ const KUNCI_KASIR = "ganen_kasir";
 const bacaKasir = () => { try { return localStorage.getItem(KUNCI_KASIR) === "1"; } catch { return false; } };
 function IngatKasir({ children }: { children: React.ReactNode }) {
   useEffect(() => { try { localStorage.setItem(KUNCI_KASIR, "1"); } catch { /* penyimpanan diblokir: abaikan */ } }, []);
-  // HP kasir yang belum punya nama: tanya sekali (tanpa kata sandi), supaya Catatan Perubahan tahu siapa pelakunya
+  // WAJIB_LOGIN = konstanta saat rakit (VITE_WAJIB_LOGIN=1), jadi pilihan komponen ini tidak pernah berganti di tengah jalan.
+  return WAJIB_LOGIN ? <GerbangLogin>{children}</GerbangLogin> : <GerbangNama>{children}</GerbangNama>;
+}
+/** Login diwajibkan: halaman kosong nama + kata sandi sampai ada sesi. Sesi tersimpan di browser, jadi muat ulang tidak meminta lagi. */
+function GerbangLogin({ children }: { children: React.ReactNode }) {
+  const sesi = useSesi();
+  if (!sesi.siap) return <div style={{ minHeight: "100dvh", background: t.bg }} />;
+  if (!sesi.nama) return <MasukKasir />;
+  return <>{children}</>;
+}
+/** Login belum diwajibkan (bawaan): HP kasir yang belum punya nama ditanya sekali (tanpa kata sandi). */
+function GerbangNama({ children }: { children: React.ReactNode }) {
   const [perluNama, setPerluNama] = useState(() => !bacaSiapa());
   return <>{children}{perluNama && <PilihNama onDone={() => setPerluNama(false)} />}</>;
 }

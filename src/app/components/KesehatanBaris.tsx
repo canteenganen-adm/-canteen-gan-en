@@ -28,12 +28,13 @@ export default function KesehatanBaris({ transactions, menus }: { transactions: 
     <>
       <button onClick={() => setBuka(true)} aria-label="Kesehatan sistem"
         className="flex items-center gap-3"
-        style={{ width: "100%", minHeight: 52, padding: "0 6px 0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, marginBottom: 4 }}>
-        <span style={{ display: "grid", placeItems: "center", flex: "none", color: baik ? t.successText : t.amberText }}>
+        style={{ width: "100%", minHeight: 60, padding: "0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+        <span style={{ display: "grid", placeItems: "center", flex: "none", width: 24, color: baik ? t.successText : t.amberText }}>
           {baik ? <ShieldCheck size={20} /> : <TriangleAlert size={20} />}
         </span>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700 }}>
-          Kesehatan · <span style={{ color: baik ? t.successText : t.warnText }}>{baik ? "Semua baik" : `${perlu} perlu dicek`}</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 14.5, fontWeight: 700 }}>Kesehatan</span>
+          <span style={{ display: "block", fontSize: 13, fontWeight: 600, marginTop: 1, color: baik ? t.successText : t.warnText }}>{baik ? "Semua baik" : `${perlu} perlu dicek`}</span>
         </span>
         <ChevronRight size={18} color={t.text2} />
       </button>

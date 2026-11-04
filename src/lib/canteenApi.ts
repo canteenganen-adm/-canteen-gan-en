@@ -469,6 +469,11 @@ export async function insertTransaction(tx: Transaction): Promise<void> {
  * Melempar Error dengan pesan yang sudah ramah ditampilkan ke orang tua
  * kalau server menolak (sesi ditutup / sudah lewat jam tutup otomatis). */
 export async function submitPreOrderTransaction(tx: Transaction): Promise<Transaction> {
+  // Jalur aman (migration_18): fungsi server `kirim_preorder` memasukkan pesanan tanpa kunci publik perlu boleh MENULIS/MEMBACA tabel transaksi.
+  // Bila fungsinya belum ada (migration_18 belum dijalankan), jatuh ke cara lama.
+  const rpc = await supabase.rpc("kirim_preorder", { p: transactionToRow(tx) });
+  if (!rpc.error && rpc.data) return txRowToTransaction(rpc.data as TransaksiRow);
+  if (rpc.error && !/kirim_preorder|schema cache|PGRST202/i.test(`${rpc.error.code ?? ""} ${rpc.error.message}`)) throw new Error(rpc.error.message);
   const { data, error } = await supabase
     .from("transaksi")
     .insert(transactionToRow(tx))

@@ -1,3 +1,4 @@
+import { tandaiSudahDiunduh } from "../../lib/cadangan";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, PackageCheck, Repeat, Search, FileSpreadsheet, FileText, RotateCcw, ArrowLeft, TrendingDown, TrendingUp, User } from "lucide-react";
 import { t, STRUK_MONO } from "../../lib/theme";
@@ -244,6 +245,7 @@ async function unduhExcel(txs: Transaction[], year: number, month: number, bandi
     { data: rincian, sheet: "Rincian Transaksi", columns: [{ width: 13 }, { width: 8 }, { width: 13 }, { width: 13 }, { width: 28 }, { width: 11 }, { width: 9 }, { width: 18 }, { width: 16 }, { width: 17 }, { width: 18 }, { width: 56 }], stickyRowsCount: 1, showGridLines: false },
   ], { fontFamily: "Arial", fontSize: 13 }).toBlob();
   unduhBlob(blob, `Laporan Gan En ${BULAN[month]} ${year}.xlsx`);
+  tandaiSudahDiunduh(year, month); // dari jalur mana pun (menu Laporan atau pengingat Kantin): pengingat Excel tidak muncul lagi di HP ini
 }
 
 /** Unduh Excel lengkap satu bulan langsung (dipakai pengingat "Cadangan" di tab Kantin). month = 0–11. */

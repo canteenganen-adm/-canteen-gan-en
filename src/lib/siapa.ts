@@ -21,8 +21,13 @@ export const kodeHp = (): string => {
   } catch { return ""; }
 };
 
-/** Nama yang dikirim: nama pilihan HP; halaman orang tua (bukan kasir) = "Pemesan". */
+/** Nama dari sesi login (bila login diwajibkan); diisi lib/auth.ts. Menggantikan nama pilihan HP. */
+let namaSesi = "";
+export const setNamaSesi = (n: string) => { namaSesi = n; };
+
+/** Nama yang dikirim: nama akun (login) atau nama pilihan HP; halaman orang tua (bukan kasir) = "Pemesan". */
 export const namaUntukHeader = (): string => {
+  if (namaSesi) return namaSesi;
   const n = bacaSiapa();
   if (n) return n;
   return window.location.pathname.toLowerCase().startsWith("/dapur-gan-en") ? "" : "Pemesan";

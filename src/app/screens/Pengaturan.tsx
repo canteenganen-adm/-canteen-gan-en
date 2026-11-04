@@ -6,7 +6,9 @@ import {
 } from "lucide-react";
 import CatatanPerubahan from "./CatatanPerubahan";
 import PilihNama from "../components/PilihNama";
-import { bacaSiapa } from "../../lib/siapa";
+import { namaUntukHeader } from "../../lib/siapa";
+import { WAJIB_LOGIN } from "../../lib/auth";
+import AkunSheet from "../components/AkunSheet";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { fetchMasukBulan } from "../../lib/canteenApi";
 import CadanganBulanLalu from "../components/CadanganBulanLalu";
@@ -106,6 +108,7 @@ export default function Pengaturan({
   const [trashOpen, setTrashOpen] = useState(false);
   const [catatanOpen, setCatatanOpen] = useState(false);
   const [gantiNama, setGantiNama] = useState(false);
+  const [akunOpen, setAkunOpen] = useState(false);
   const [, segarNama] = useState(0);
   const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
   // Bagikan Link Pemesanan — dipindah dari PO Admin (dipakai jarang)
@@ -823,85 +826,81 @@ export default function Pengaturan({
   const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BULAN_PANJANG[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
   const hariIni = new Date(Date.now() + 7 * 3_600_000).getUTCDate();
   const bulanLaluPendek = BLN[(new Date(Date.now() + 7 * 3_600_000).getUTCMonth() + 11) % 12];
+  // Grafik 7 hari: pemasukan (Lunas) per Tanggal Layanan, dari transaksi yang SUDAH dimuat (tanpa permintaan baru)
+  const tujuhHari = (() => {
+    const HURUF = ["M", "S", "S", "R", "K", "J", "S"]; // Minggu … Sabtu
+    const kunciHari = (d: Date) => d.toISOString().slice(0, 10);
+    const sekarangWib = new Date(Date.now() + 7 * 3_600_000);
+    const hari = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(Date.UTC(sekarangWib.getUTCFullYear(), sekarangWib.getUTCMonth(), sekarangWib.getUTCDate() - (6 - i)));
+      return { kunci: kunciHari(d), huruf: HURUF[d.getUTCDay()], total: 0, hariIni: i === 6 };
+    });
+    for (const tx of transactions) {
+      if (!tx.paid || tx.cancelledAt || tx.deletedAt) continue;
+      const k = tx.serviceDate ?? kunciHari(new Date(new Date(tx.createdAt).getTime() + 7 * 3_600_000));
+      const h = hari.find((x) => x.kunci === k);
+      if (h) h.total += tx.total;
+    }
+    return hari;
+  })();
   const persen = ringkas && ringkas.prev > 0 ? Math.round(((ringkas.masuk - ringkas.prev) / ringkas.prev) * 100) : null;
   const totalSumber = ringkas ? ringkas.po + ringkas.pj : 0;
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 60px" }}>
 
-        <div className="flex items-center" style={{ padding: "20px 20px 12px", minHeight: 44 + 32 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Kantin</div>
+        <div className="flex items-center justify-between gap-3" style={{ padding: "20px 20px 14px", minHeight: 44 + 32 }}>
+          {/* Nama kantin = judul halaman (tidak ada lagi tulisan "Kantin" + blok profil yang mengulang nama) */}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{settings.namaKantin || "Kantin"}</div>
+            <div style={{ fontSize: 14, color: t.text2, marginTop: 2 }}>{settings.whatsapp || "Nomor WhatsApp"}</div>
+          </div>
+          <button onClick={() => setProfilOpen(true)} aria-label="Ubah nama dan nomor WhatsApp"
+            style={{ width: 44, height: 44, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", flex: "none", color: "#A59B80" }}>
+            <Pencil size={19} />
+          </button>
         </div>
 
         <div style={{ padding: "0 20px" }}>
-          {/* Profil — tanpa bingkai, dipisah garis tipis dari kartu di bawahnya; pensil sangat soft */}
-          <div className="flex items-center gap-3" style={{ padding: "4px 0 18px", borderBottom: `1px solid ${t.divider}`, marginBottom: 16 }}>
-            <span style={{ width: 56, height: 56, borderRadius: "50%", background: t.primary, color: t.onPrimary, display: "grid", placeItems: "center", flex: "none" }}>
-              <Store size={26} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{settings.namaKantin || "Nama Kantin"}</div>
-              <div style={{ fontSize: 14.5, color: t.text2, marginTop: 2 }}>{settings.whatsapp || "Nomor WhatsApp"}</div>
-            </div>
-            <button onClick={() => setProfilOpen(true)} aria-label="Ubah nama dan nomor WhatsApp"
-              style={{ width: 44, height: 44, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", flex: "none", color: "#A59B80" }}>
-              <Pencil size={19} />
-            </button>
-          </div>
-
-          <CadanganBulanLalu />
-          <KesehatanBaris transactions={transactions} menus={menus} />
-
-          {/* Laporan — kartu besar (pilihan pemilik): angka bulan ini, persen vs bulan lalu, pembagian Pre-order / Penjualan */}
+          {/* Laporan: SATU kartu (tiga angka + grafik 7 hari); ketuk = buka Laporan */}
           <button onClick={onOpenLaporan} aria-label="Buka Laporan"
-            style={{ display: "block", width: "100%", padding: "16px 18px 18px", borderRadius: 20, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", textAlign: "left", marginBottom: 12, color: t.text }}>
-            <div className="flex items-center gap-3">
-              <span style={{ width: 36, height: 36, borderRadius: "50%", background: t.surface, display: "grid", placeItems: "center", flex: "none" }}>
-                <ChartColumn size={18} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>Laporan</div>
-                <div style={{ fontSize: 12.5, color: t.text2 }}>{bulanIni}</div>
-              </div>
-              <ChevronRight size={20} color={t.text2} />
+            style={{ display: "block", width: "100%", padding: "16px 16px 14px", borderRadius: 20, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+              <span className="flex items-center gap-2" style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}><ChartColumn size={17} /> Laporan · {bulanIni}</span>
+              <ChevronRight size={18} color={t.text2} />
             </div>
-            <div className="flex items-center" style={{ marginTop: 14, gap: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1.05 }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</span>
-              {persen !== null && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 999, fontSize: 13, fontWeight: 800,
-                  background: persen >= 0 ? t.successBg : t.surface, color: persen >= 0 ? t.successText : t.text2 }}>
-                  {persen >= 0 ? "▲" : "▼"} {Math.abs(persen)}%
-                </span>
-              )}
+            <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr" }}>
+              <AngkaLaporan label="Masuk" nilai={ringkas ? rpRingkas(ringkas.masuk) : "…"} besar />
+              <AngkaLaporan label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
+              <AngkaLaporan label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} />
             </div>
-            <div style={{ fontSize: 13, color: t.text2, margin: "6px 0 0" }}>pemasukan (Lunas){persen !== null ? ` · dibanding 1–${hariIni} ${bulanLaluPendek}` : ""}</div>
-            {ringkas && totalSumber > 0 && (
-              <>
-                <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", gap: 3, marginTop: 12 }} role="img" aria-label="Pembagian Pre-order dan Penjualan">
-                  <i style={{ flex: ringkas.po, background: t.chart[0] }} />
-                  <i style={{ flex: ringkas.pj, background: t.chart[1] }} />
-                </div>
-                <div className="flex" style={{ gap: 14, marginTop: 8, fontSize: 12.5, color: t.text2 }}>
-                  <span><b style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: t.chart[0], marginRight: 6 }} />Pre-order</span>
-                  <span><b style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: t.chart[1], marginRight: 6 }} />Penjualan</span>
-                </div>
-              </>
+            <BatangTujuhHari data={tujuhHari} />
+            {persen !== null && (
+              <div style={{ fontSize: 12.5, color: t.text2, marginTop: 8 }}>{persen >= 0 ? "▲" : "▼"} {Math.abs(persen)}% dibanding 1–{hariIni} {bulanLaluPendek}</div>
             )}
           </button>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-            <Kartu Ic={BookOpen} label="Panduan" onClick={() => setPanduanOpen(true)} />
-            <Kartu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
-            <Kartu Ic={Clock} label="Waktu Ambil" onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }} />
-            <Kartu Ic={MessageCircle} label="Tagihan" onClick={() => setTagihanOpen(true)} />
-            <Kartu Ic={Printer} label="Printer" onClick={() => setPrinterOpen(true)} />
-            <Kartu Ic={Trash2} label="Tong Sampah" merah badge={trashTransactions.length} onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
-            <Kartu Ic={History} label="Catatan" onClick={() => setCatatanOpen(true)} />
-            <Kartu Ic={UserRound} label={bacaSiapa() || "Pengguna"} onClick={() => setGantiNama(true)} />
+          {/* Perhatian: pengingat Excel + Kesehatan dalam SATU kartu, baris sejajar */}
+          <style>{`.baris-perhatian > * + * { border-top: 1px solid ${t.divider}; } .daftar-kantin > * + * { border-top: 1px solid ${t.divider}; }`}</style>
+          <div className="baris-perhatian" style={{ border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, padding: "0 12px", marginTop: 12 }}>
+            <CadanganBulanLalu />
+            <KesehatanBaris transactions={transactions} menus={menus} />
+          </div>
+
+          {/* Daftar menu: satu kartu, baris setinggi sama, ikon sejajar */}
+          <div className="daftar-kantin" style={{ border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, overflow: "hidden", marginTop: 12 }}>
+            <BarisMenu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
+            <BarisMenu Ic={Trash2} label="Tong Sampah" badge={trashTransactions.length} onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
+            <BarisMenu Ic={History} label="Catatan" onClick={() => setCatatanOpen(true)} />
+            <BarisMenu Ic={Clock} label="Waktu Ambil" onClick={() => { setWaktuAmbilOpen(true); setEditingPresetIdx(null); setNewPreset(""); }} />
+            <BarisMenu Ic={MessageCircle} label="Tagihan" onClick={() => setTagihanOpen(true)} />
+            <BarisMenu Ic={Printer} label="Printer" onClick={() => setPrinterOpen(true)} />
+            <BarisMenu Ic={BookOpen} label="Panduan" onClick={() => setPanduanOpen(true)} />
+            <BarisMenu Ic={UserRound} label={WAJIB_LOGIN ? `Akun · ${namaUntukHeader() || "—"}` : `Pengguna · ${namaUntukHeader() || "belum dipilih"}`} onClick={() => (WAJIB_LOGIN ? setAkunOpen(true) : setGantiNama(true))} />
           </div>
         </div>
       </div>
-
+      {akunOpen && <AkunSheet onClose={() => setAkunOpen(false)} />}
       {gantiNama && <PilihNama bisaTutup onDone={() => { setGantiNama(false); segarNama((n) => n + 1); }} />}
 
       {/* Sheet Profil: nama kantin + nomor WhatsApp (tersimpan otomatis) */}
@@ -952,16 +951,41 @@ export default function Pengaturan({
 }
 
 /* Menu Kantin: ubin yang MENGISI kolom (tepi kiri-kanan sejajar kartu Laporan di atasnya), isi kuning pucat + sudut 20 sama dengan kartu besar; ikon di atas, nama di bawah, lencana angka opsional. */
-function Kartu({ Ic, label, onClick, merah, badge }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; merah?: boolean; badge?: number }) {
+/** Satu baris daftar menu Kantin: ikon (24px) · nama · lencana merah bila ada isi · panah. Tinggi sama untuk semua baris. */
+function BarisMenu({ Ic, label, onClick, badge }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; badge?: number }) {
   return (
-    <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex flex-col items-center justify-center"
-      style={{ position: "relative", minWidth: 0, aspectRatio: "1 / 0.92", gap: 10, padding: "0 6px", border: "none", borderRadius: 20, background: merah ? t.errorBg : t.primaryLight, color: merah ? t.error : t.text, cursor: "pointer", fontFamily: "inherit" }}>
-      <Ic size={32} />
-      <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, textAlign: "center", color: t.text }}>{label}</span>
-      {!!badge && (
-        <span style={{ position: "absolute", top: 8, right: 8, minWidth: 24, height: 24, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 13, fontWeight: 800, display: "grid", placeItems: "center" }}>{badge}</span>
-      )}
+    <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex items-center gap-3"
+      style={{ width: "100%", minHeight: 56, padding: "0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+      <span style={{ width: 24, display: "grid", placeItems: "center", flex: "none" }}><Ic size={20} /></span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{label}</span>
+      {!!badge && <span style={{ minWidth: 22, height: 22, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 12.5, fontWeight: 800, display: "grid", placeItems: "center" }}>{badge}</span>}
+      <ChevronRight size={17} color={t.text2} />
     </button>
+  );
+}
+
+/** Satu angka di kartu Laporan; kolom kedua dan ketiga diberi garis tipis di kiri. */
+function AngkaLaporan({ label, nilai, besar }: { label: string; nilai: string; besar?: boolean }) {
+  return (
+    <div style={{ minWidth: 0, ...(besar ? {} : { borderLeft: `1px solid ${t.divider}`, paddingLeft: 12 }) }}>
+      <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: besar ? 24 : 17, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2, whiteSpace: "nowrap" }}>{nilai}</div>
+    </div>
+  );
+}
+
+/** Grafik batang 7 hari: hari ini kuning, hari lain krem bergaris; huruf hari di bawah. */
+function BatangTujuhHari({ data }: { data: { huruf: string; total: number; hariIni: boolean }[] }) {
+  const maks = Math.max(1, ...data.map((d) => d.total));
+  return (
+    <div role="img" aria-label="Pemasukan 7 hari terakhir" style={{ display: "flex", gap: 7, alignItems: "flex-end", height: 56, marginTop: 14 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
+          <i style={{ display: "block", width: "100%", height: `${Math.max(8, Math.round((d.total / maks) * 100))}%`, borderRadius: "6px 6px 3px 3px", background: d.hariIni ? t.primary : t.border }} />
+          <em style={{ fontStyle: "normal", fontSize: 10.5, fontWeight: 600, color: t.text2, height: 12, lineHeight: "12px" }}>{d.huruf}</em>
+        </div>
+      ))}
+    </div>
   );
 }
 
