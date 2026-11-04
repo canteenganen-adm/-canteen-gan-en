@@ -642,6 +642,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
                       <div className="flex items-center justify-between" style={{ gap: 12 }}>
                         <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text2, marginBottom: 2 }}>{labelHari(hariAktif)}{hariAktif === todayYmd ? " · hari ini" : ""}</div>
                           <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{rupiah(hariData?.masuk ?? 0)}</div>
                         </div>
                         {tglIni && hariAktif !== todayYmd && (
