@@ -14,6 +14,7 @@ const kunciMasalah = (m: Masalah) => `${m.id}:${m.jumlah}`;
 
 export default function KesehatanBaris({ transactions, menus }: { transactions: Transaction[]; menus: MenuItem[] }) {
   const [buka, setBuka] = useState(false);
+  const [rinci, setRinci] = useState<string | null>(null);
   const [ok, setOk] = useState<string[]>(bacaOk);
   const semua = useMemo(() => hitungKesehatan(transactions, menus), [transactions, menus]);
   const masalah = semua.filter((m) => !ok.includes(kunciMasalah(m)));
@@ -56,8 +57,22 @@ export default function KesehatanBaris({ transactions, menus }: { transactions: 
                     <div style={{ fontSize: 15.5, fontWeight: 800 }}>{m.judul}</div>
                     <span style={{ flex: "none", minWidth: 28, height: 26, padding: "0 8px", borderRadius: 999, background: m.perlu ? t.warnFill : t.divider, color: m.perlu ? t.warnText : t.text2, fontWeight: 800, fontSize: 13.5, display: "grid", placeItems: "center" }}>{m.jumlah}</span>
                   </div>
-                  <div style={{ fontSize: 13.5, color: t.text2, marginTop: 4, overflowWrap: "anywhere" }}>{m.contoh.join(" · ")}{m.jumlah > m.contoh.length ? " …" : ""}</div>
-                  <div style={{ fontSize: 14, marginTop: 6 }}>{m.langkah}</div>
+                  <div style={{ fontSize: 14, marginTop: 6, color: t.text2 }}>{m.langkah}</div>
+                  <button onClick={() => setRinci(rinci === m.id ? null : m.id)} aria-expanded={rinci === m.id}
+                    style={{ marginTop: 8, height: 44, padding: 0, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
+                    {rinci === m.id ? "Sembunyikan rincian" : "Lihat siapa, kapan, apa"}
+                  </button>
+                  {rinci === m.id && (
+                    <div style={{ borderTop: `1px solid ${t.divider}`, marginTop: 2 }}>
+                      {m.rincian.map((r, i) => (
+                        <div key={i} style={{ padding: "10px 0", borderBottom: i === m.rincian.length - 1 ? "none" : `1px solid ${t.divider}` }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, overflowWrap: "anywhere" }}>{r.judul}</div>
+                          {r.garis.map((g, j) => <div key={j} style={{ fontSize: 13.5, color: t.text2, marginTop: 2, overflowWrap: "anywhere" }}>{g}</div>)}
+                        </div>
+                      ))}
+                      {m.jumlah > m.rincian.length && <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>…dan {m.jumlah - m.rincian.length} lainnya</div>}
+                    </div>
+                  )}
                   <button onClick={() => tandaiCek(m)}
                     style={{ marginTop: 10, height: 44, padding: "0 16px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                     Sudah saya cek
