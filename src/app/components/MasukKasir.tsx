@@ -32,18 +32,19 @@ export default function MasukKasir() {
   return (
     <div style={{ minHeight: "100dvh", background: t.bg, color: t.text, display: "flex", justifyContent: "center", padding: "88px 28px 32px" }}>
       <form onSubmit={kirim} style={{ width: "100%", maxWidth: 380 }}>
-        <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-.025em", lineHeight: 1.1 }}>Masuk</div>
-        <div style={{ fontSize: 16, color: t.text2, marginTop: 6 }}>Kantin Gan En</div>
+        {/* Judul = nama kantin; kata "Masuk" hanya di tombol (pemilik 4 Nov: "kebanyakan masuk") */}
+        <style>{`.masuk-isian:-webkit-autofill,.masuk-isian:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 60px ${t.bg} inset;-webkit-text-fill-color:${t.text};caret-color:${t.text}}`}</style>
+        <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-.025em", lineHeight: 1.1 }}>Kantin Gan En</div>
 
-        <div style={{ marginTop: 44 }}>
+        <div style={{ marginTop: 52 }}>
           <label htmlFor="masuk-nama" style={label}>Nama</label>
-          <input id="masuk-nama" value={nama} onChange={(e) => setNama(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" style={garisBawah} />
+          <input id="masuk-nama" className="masuk-isian" value={nama} onChange={(e) => setNama(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" style={garisBawah} />
         </div>
 
         <div style={{ marginTop: 28 }}>
           <label htmlFor="masuk-pin" style={label}>PIN</label>
           <div style={{ position: "relative" }}>
-            <input id="masuk-pin" type={lihat ? "text" : "password"} inputMode="numeric" pattern="[0-9]*" maxLength={12} value={pin}
+            <input id="masuk-pin" className="masuk-isian" type={lihat ? "text" : "password"} inputMode="numeric" pattern="[0-9]*" maxLength={12} value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} autoComplete="current-password"
               style={{ ...garisBawah, paddingRight: 48, letterSpacing: lihat ? ".12em" : undefined }} />
             <button type="button" onClick={() => setLihat((v) => !v)} aria-label={lihat ? "Sembunyikan PIN" : "Lihat PIN"}

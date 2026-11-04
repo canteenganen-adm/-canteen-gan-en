@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Info, X, Check, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
-  Link2, Copy, Share2, BookOpen, ChartColumn, History, UserRound,
+  Link2, Copy, Share2, BookOpen, ChartColumn, History, UserRound, Utensils, ShoppingCart,
 } from "lucide-react";
 import CatatanPerubahan from "./CatatanPerubahan";
 import PilihNama from "../components/PilihNama";
@@ -869,10 +869,14 @@ export default function Pengaturan({
               <span className="flex items-center gap-2" style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}><ChartColumn size={17} /> Laporan · {bulanIni}</span>
               <ChevronRight size={18} color={t.text2} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr" }}>
-              <AngkaLaporan label="Masuk" nilai={ringkas ? rpRingkas(ringkas.masuk) : "…"} besar />
-              <AngkaLaporan label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
-              <AngkaLaporan label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} />
+            <div>
+              <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>Masuk</div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-.03em", marginTop: 2, lineHeight: 1.1 }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
+            </div>
+            {/* Pre-order | Penjualan: label di atas, ikon + jumlah di bawah (sketsa pemilik 4 Nov) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
+              <SumberLaporan Ic={Utensils} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
+              <SumberLaporan Ic={ShoppingCart} label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} garis />
             </div>
             <BatangTujuhHari data={tujuhHari} />
             {persen !== null && (
@@ -964,12 +968,15 @@ function BarisMenu({ Ic, label, onClick, badge }: { Ic: React.ComponentType<{ si
   );
 }
 
-/** Satu angka di kartu Laporan; kolom kedua dan ketiga diberi garis tipis di kiri. */
-function AngkaLaporan({ label, nilai, besar }: { label: string; nilai: string; besar?: boolean }) {
+/** Satu sumber di kartu Laporan: label kecil di atas; di bawahnya ikon + jumlah. Kolom kedua diberi garis tipis di kiri. */
+function SumberLaporan({ Ic, label, nilai, garis }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string; garis?: boolean }) {
   return (
-    <div style={{ minWidth: 0, ...(besar ? {} : { borderLeft: `1px solid ${t.divider}`, paddingLeft: 12 }) }}>
+    <div style={{ minWidth: 0, ...(garis ? { borderLeft: `1px solid ${t.divider}`, paddingLeft: 14 } : {}) }}>
       <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: besar ? 24 : 17, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2, whiteSpace: "nowrap" }}>{nilai}</div>
+      <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+        <span style={{ display: "grid", placeItems: "center", flex: "none", color: t.text2 }}><Ic size={18} /></span>
+        <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{nilai}</span>
+      </div>
     </div>
   );
 }
