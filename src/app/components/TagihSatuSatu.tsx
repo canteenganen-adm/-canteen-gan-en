@@ -76,9 +76,9 @@ export default function TagihSatuSatu({
   useEffect(() => { setTeks(null); setLihat(false); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
 
   /* TUNGGAKAN SEBELUMNYA (pemilik 4 Nov: "yang baru dan yang lama belum lunas, mau ditambahkan?"): transaksi anak yang sama, belum lunas, belum dibatalkan,
-     dari minggu LAIN di luar yang sedang ditagih. Bawaan TIDAK disertakan; Mama mengetuk barisnya bila mau (per anak, hanya muncul bila ada). */
-  const [sertakan, setSertakan] = useState(false);
-  useEffect(() => { setSertakan(false); }, [i]);
+     dari minggu LAIN di luar yang sedang ditagih. Bawaan DISERTAKAN (tercentang; pemilik 4 Nov: yes); Mama mencabut centangnya bila tidak mau (per anak, hanya muncul bila ada). */
+  const [sertakan, setSertakan] = useState(true);
+  useEffect(() => { setSertakan(true); }, [i]);
   const norm = (n: string) => n.trim().replace(/\s+/g, " ").toLowerCase();
   const tunggakan: Tunggakan[] = useMemo(() => {
     if (!gs.length) return [];
