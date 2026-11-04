@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, CircleCheck, CircleDashed, Ellipsis, Package
 import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah, toTitleCase } from "../../lib/format";
 import { fetchTransactionsMonth, fetchMasukBulan } from "../../lib/canteenApi";
-import PaperTabs from "../components/PaperTabs";
 import { useKunciGulir } from "../components/useKunciGulir";
 import type { Transaction, PickupSchedule } from "../../types";
 
@@ -455,7 +454,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const [menuUnduh, setMenuUnduh] = useState(false);
   const masukRef = useRef<HTMLDivElement>(null);
   useKunciGulir(menuUnduh, masukRef);
-  const [tab, setTab] = useState<"ulasan" | "rincian">("ulasan");
+  const [tab, setTab] = useState<"hari" | "bulan">("hari");
   const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
@@ -549,13 +548,6 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
         </div>
 
         <div style={{ padding: "0 20px", touchAction: "pan-y" }} {...geserBulan}>
-          {/* Bulan: teks + panah polos (tanpa kotak); geser ke kiri/kanan juga mengganti bulan */}
-          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
-            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
-            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
-            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
-          </div>
-
           {err && <div style={{ ...card, background: t.errorBg, borderColor: t.errorBg, color: t.error, fontWeight: 600, fontSize: 14.5, marginBottom: 12 }}>{err}</div>}
           {!txs && !err && <div style={{ textAlign: "center", padding: "48px 0", color: t.text2, fontWeight: 600 }}>Memuat…</div>}
 
@@ -611,16 +603,32 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                 </div>
               </div>
 
-              <PaperTabs tabs={[{ id: "ulasan" as const, label: "Ulasan" }, { id: "rincian" as const, label: "Rincian" }]} value={tab} onChange={setTab} warna={t.surface} />
+            </div>
+          )}
 
-              {/* Tab + isi = SATU panel warna kartu (map folder): kertas aktif sewarna dengan blok tepat di bawah garisnya */}
+          {/* Urutan (pemilik 4 Nov): Masuk di atas → saklar Bulan | Hari → bulan di atas kalender → isi. Bulan selalu bisa diganti, juga saat bulan kosong. */}
+          <div className="flex" style={{ background: t.divider, borderRadius: 13, padding: 4, margin: "12px 0 6px" }} role="tablist">
+            {([["bulan", "Bulan"], ["hari", "Hari"]] as const).map(([id, label]) => (
+              <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+                style={{ flex: 1, height: 44, borderRadius: 10, border: tab === id ? `1.5px solid ${t.border}` : "1.5px solid transparent", background: tab === id ? t.surface : "transparent", color: tab === id ? t.text : t.text2, fontSize: 15.5, fontWeight: tab === id ? 800 : 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
+            <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
+            <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
+            <button onClick={() => adaBerikut && geser(1)} aria-label="Bulan berikutnya" disabled={!adaBerikut} style={{ ...glyph, opacity: adaBerikut ? 1 : 0.22, cursor: adaBerikut ? "pointer" : "default" }}><ChevronRight size={24} /></button>
+          </div>
+
+          {siap && txs.length > 0 && (
+            <div className="flex flex-col" style={{ gap: 12 }}>
               <style>{`.lap-panel > * + * { border-top: 1px solid ${t.divider}; }`}</style>
-              <div className="lap-panel" style={{ marginTop: -12, background: t.surface, border: `1px solid ${t.border}`, borderTop: "none", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
-                {tab === "ulasan" && (
+              <div className="lap-panel" style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
+                {tab === "hari" && (
                   <>
                   {/* 2 · Kalender harian */}
                   <div style={sek}>
-                    <div style={{ ...judulKartu, marginBottom: 10 }}>Pemasukan per hari</div>
                     <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
                       {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
                         <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>
@@ -662,6 +670,11 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                     </div>
                   </div>
 
+                  </>
+                )}
+
+                {tab === "bulan" && (
+                  <>
                   {/* 3 · Menu terlaris */}
                   <div style={sek}>
                     <div style={{ ...judulKartu, marginBottom: 8 }}>Menu terlaris</div>
@@ -676,11 +689,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                       {u.pemesanTotal > 0 && <Meter Ic={OrangKembali} pct={Math.round((u.pemesanKembali / u.pemesanTotal) * 100)} judul="Pemesan kembali" cap={`${u.pemesanKembali.toLocaleString("id-ID")} / ${u.pemesanTotal.toLocaleString("id-ID")}`} />}
                     </div>
                   )}
-                  </>
-                )}
 
-                {tab === "rincian" && (
-                  <>
                   <div style={sek}>
                     <div style={{ ...judulKartu, marginBottom: 8 }}>Ringkasan</div>
                     <BarisRincian a="Masuk (Lunas)" b={rupiah(r.masuk)} tebal />
