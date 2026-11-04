@@ -53,8 +53,8 @@ function ringkas(c: Catatan): [string, string, Nada] {
   if (c.aksi === "tambah") return [s.source === "preorder" ? "Pesan" : "Jual", "", "baik"];
   if (c.aksi === "hapus") return ["HAPUS", "permanen", "buruk"];
   if ("paid" in s) return s.paid ? ["Lunas", "", "baik"] : ["Batal Lunas", "", "buruk"];
-  if ("cancelled_at" in s) return s.cancelled_at ? ["Batal", "", "buruk"] : ["Pulih", "pembatalan", "baik"];
-  if ("deleted_at" in s) return s.deleted_at ? ["Sampah", "ke Tong Sampah", "buruk"] : ["Pulih", "dari Tong Sampah", "baik"];
+  if ("cancelled_at" in s) return s.cancelled_at ? ["Batal", "", "buruk"] : ["Pulih", "", "baik"];
+  if ("deleted_at" in s) return s.deleted_at ? ["Sampah", "", "buruk"] : ["Pulih", "", "baik"];
   if ("billed_at" in s) return ["Tagih", "", "biasa"];
   if ("service_date" in s) return ["Tanggal", `${tampil(b.service_date)} → ${tampil(s.service_date)}`, "biasa"];
   if ("customer" in s) return ["Pembeli", "data diubah", "biasa"];
@@ -169,7 +169,9 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                     const [jenis, ket, nada] = ringkas(c);
                     const terbuka = buka === c.id;
                     const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
-                    const bagian = (c.ket || c.tabel).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
+                    // Penjualan tanpa nama pembeli: ket dari server berawal "· Rp…" → beri judul "Penjualan tunai"
+                    const ketDasar = (c.ket || c.tabel).trim();
+                    const bagian = (ketDasar.startsWith("·") ? `Penjualan tunai ${ketDasar}` : ketDasar).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
                     const aktifMenu = (c.sesudah ?? c.sebelum)?.aktif_preorder;
                     const tglMenu = c.baris_id && /^\d{4}-\d{2}-\d{2}$/.test(c.baris_id) ? `${Number(c.baris_id.slice(8))} ${BLN_PENDEK[Number(c.baris_id.slice(5, 7)) - 1]} ${c.baris_id.slice(0, 4)}` : "";
                     const judul = c.tabel === "menu_harian" && tglMenu ? `Menu ${tglMenu}` : bagian[0];
