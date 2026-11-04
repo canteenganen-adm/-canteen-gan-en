@@ -814,6 +814,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onRemoveKelas={store.removeKelas}
             onOpenLaporan={() => { setLaporanOpen(true); requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0 })); }}
             transactions={store.transactions}
+            menus={store.menus}
             pickupPresets={store.pickupPresets}
             onSetPickupPresets={store.setPickupPresets}
             pickupSchedules={store.pickupSchedules}

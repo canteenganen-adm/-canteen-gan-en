@@ -13,7 +13,8 @@ import CadanganBulanLalu from "../components/CadanganBulanLalu";
 import { uid, rupiah, serviceDateLabel } from "../../lib/format";
 import { BERITA_KUNCI, rakitBerita, uraiBerita } from "../../lib/waTemplate";
 import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
-import type { CanteenSettings, Kelas, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
+import KesehatanBaris from "../components/KesehatanBaris";
+import type { CanteenSettings, Kelas, MenuItem, Transaction, TransactionCustomer, PickupSchedule } from "../../types";
 
 /* ============================================================
    PENGATURAN — Canteen Gan En  (tab Kantin: profil, Laporan, ubin pengaturan, Catatan, Pengguna)
@@ -39,6 +40,7 @@ export default function Pengaturan({
   onClose: _onClose,
   onOpenLaporan,
   transactions,
+  menus,
   pickupPresets,
   onSetPickupPresets,
   pickupSchedules,
@@ -61,6 +63,7 @@ export default function Pengaturan({
   onClose?: () => void;
   onOpenLaporan: () => void;
   transactions: Transaction[];
+  menus: MenuItem[];
   pickupPresets: string[];
   onSetPickupPresets: (presets: string[]) => void;
   pickupSchedules: PickupSchedule[];
@@ -847,6 +850,7 @@ export default function Pengaturan({
           </div>
 
           <CadanganBulanLalu />
+          <KesehatanBaris transactions={transactions} menus={menus} />
 
           {/* Laporan — kartu besar (pilihan pemilik): angka bulan ini, persen vs bulan lalu, pembagian Pre-order / Penjualan */}
           <button onClick={onOpenLaporan} aria-label="Buka Laporan"

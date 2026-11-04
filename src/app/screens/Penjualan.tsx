@@ -250,7 +250,7 @@ export default function Penjualan({
     setCart([]); setView("shop"); setBilling(false); setForm({ nama: "", tingkat: "", kelas: "", wa: "" }); setTried(false);
     const utk = isBackdate ? ` untuk ${serviceDateLabel(txDate)}` : "";
     setToast(paid ? { ok: true, msg: `Penjualan dicatat${utk} — ${rupiah(total)} · Lunas` }
-                   : { ok: false, msg: `Masuk Tagihan${utk} — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
+                   : { ok: false, msg: `Tagihan${utk} — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
   };
   const submitTagihan = () => {
     if (!form.nama.trim() || !form.tingkat || (kelasNeeded && !form.kelas)) { setTried(true); return; }
@@ -479,7 +479,7 @@ export default function Penjualan({
 
       {/* Popup Tagihan */}
       {billing && (
-        <Sheet onClose={() => setBilling(false)} title="Masuk Tagihan">
+        <Sheet onClose={() => setBilling(false)} title="Tagihan">
           <Field label="Nama Lengkap" req tried={tried} val={form.nama}>
             <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
             {/* Saran dari riwayat transaksi — satu ketuk mengisi nama, tingkat,
