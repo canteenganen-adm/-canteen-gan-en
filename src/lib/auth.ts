@@ -35,11 +35,11 @@ const catatMasuk = async (aksi: "masuk" | "keluar") => {
 };
 
 export async function masuk(nama: string, sandi: string): Promise<{ ok: true } | { ok: false; pesan: string }> {
-  if (nama.trim().length < 2 || sandi.length < 1) return { ok: false, pesan: "Isi nama dan kata sandi." };
+  if (nama.trim().length < 2 || sandi.length < 1) return { ok: false, pesan: "Isi nama dan PIN." };
   try {
     const { error } = await supabase.auth.signInWithPassword({ email: emailDariNama(nama), password: sandi });
     if (error) {
-      if (/invalid login|credentials/i.test(error.message)) return { ok: false, pesan: "Nama atau kata sandi salah." };
+      if (/invalid login|credentials/i.test(error.message)) return { ok: false, pesan: "Nama atau PIN salah." };
       return { ok: false, pesan: "Gagal masuk. Periksa internet lalu coba lagi." };
     }
     await catatMasuk("masuk");
