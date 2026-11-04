@@ -454,8 +454,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const [menuUnduh, setMenuUnduh] = useState(false);
   const masukRef = useRef<HTMLDivElement>(null);
   useKunciGulir(menuUnduh, masukRef);
-  const [tab, setTab] = useState<"hari" | "bulan">("hari");
-  const [dipilih, setDipilih] = useState<string | null>(null);
+    const [dipilih, setDipilih] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ masuk: number; n: number } | null>(null);
 
   useEffect(() => {
@@ -497,6 +496,9 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   const hariAktif = dipilih ?? (ym.y === nowY && ym.m === nowM ? todayYmd : r && r.hari.length ? r.hari[r.hari.length - 1][0] : ymd(1));
   const idxAktif = Number(hariAktif.slice(8, 10)) - 1;
   const hariData = perHariMap.get(hariAktif);
+  const hariBatang = Array.from({ length: jumlahHari }, (_, i) => i + 1)
+    .map((n) => ({ n, k: ymd(n), dow: new Date(ym.y, ym.m, n).getDay() }))
+    .filter((d) => (d.dow >= 1 && d.dow <= 5) || perHariMap.has(d.k));
   const maxHari = r ? Math.max(0, ...r.hari.map(([, v]) => v.masuk)) : 0;
 
   const download = async (jenis: "xlsx" | "pdf") => {
@@ -601,7 +603,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   <span className="flex items-center gap-2"><Utensils size={18} color={t.chart[2]} aria-label="Pre-order" />{rpSingkat(r.masukPO)}</span>
                   <span className="flex items-center gap-2"><ShoppingCart size={18} color={t.chart[1]} aria-label="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
-                {tab === "hari" && (
+                {(
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.divider}` }}>
                       <div className="flex items-center justify-between" style={{ gap: 12 }}>
                         <div style={{ minWidth: 0 }}>
@@ -629,15 +631,7 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
             </div>
           )}
 
-          {/* Urutan (pemilik 4 Nov): Masuk di atas → saklar Bulan | Hari → bulan di atas kalender → isi. Bulan selalu bisa diganti, juga saat bulan kosong. */}
-          <div className="flex" style={{ background: t.divider, borderRadius: 13, padding: 4, margin: "12px 0 6px" }} role="tablist">
-            {([["bulan", "Bulan"], ["hari", "Hari"]] as const).map(([id, label]) => (
-              <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-                style={{ flex: 1, height: 44, borderRadius: 10, border: tab === id ? `1.5px solid ${t.border}` : "1.5px solid transparent", background: tab === id ? t.surface : "transparent", color: tab === id ? t.text : t.text2, fontSize: 15.5, fontWeight: tab === id ? 800 : 700, cursor: "pointer", fontFamily: "inherit" }}>
-                {label}
-              </button>
-            ))}
-          </div>
+          {/* Urutan (pemilik 4 Nov): Masuk (+ angka hari) → bulan → batang per hari → menu terlaris → rincian. Tanpa kalender, tanpa saklar. */}
           <div className="flex items-center justify-center" style={{ gap: 4, marginBottom: 8 }}>
             <button onClick={() => geser(-1)} aria-label="Bulan sebelumnya" style={glyph}><ChevronLeft size={24} /></button>
             <div style={{ fontSize: 17, fontWeight: 700, minWidth: 150, textAlign: "center" }}>{BULAN[ym.m]} {ym.y}</div>
@@ -648,34 +642,32 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
             <div className="flex flex-col" style={{ gap: 12 }}>
               <style>{`.lap-panel > * + * { border-top: 1px solid ${t.divider}; }`}</style>
               <div className="lap-panel" style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
-                {tab === "hari" && (
+                {(
                   <>
-                  {/* 2 · Kalender harian */}
+                  {/* 2 · Batang per hari sekolah (pemilik 4 Nov: kalender dibuang, "penting gaksih?"): ketuk batang = angka harinya muncul di kartu Masuk */}
                   <div style={sek}>
-                    <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, textAlign: "center" }}>
-                      {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((h) => (
-                        <div key={h} style={{ fontSize: 12, fontWeight: 600, color: t.text2, paddingBottom: 2 }}>{h}</div>
-                      ))}
-                      {Array.from({ length: (new Date(ym.y, ym.m, 1).getDay() + 6) % 7 }, (_, i) => <div key={"k" + i} />)}
-                      {Array.from({ length: jumlahHari }, (_, i) => {
-                        const ada = perHariMap.has(ymd(i + 1));
-                        const v = perHariMap.get(ymd(i + 1))?.masuk ?? 0;
-                        const on = i === idxAktif;
-                        const bg = !ada ? "transparent" : !v ? t.divider : `rgba(255,230,109,${(0.3 + 0.7 * Math.sqrt(v / (maxHari || 1))).toFixed(2)})`;
+                    <div className="flex items-end" style={{ gap: 4, height: 96 }} role="group" aria-label="Pemasukan per hari">
+                      {hariBatang.map((d) => {
+                        const v = perHariMap.get(d.k)?.masuk ?? 0;
+                        const on = d.k === hariAktif;
                         return (
-                          <button key={i} onClick={() => setDipilih(ymd(i + 1))} aria-label={`Pilih ${labelHari(ymd(i + 1))}`}
-                            style={{ height: 44, borderRadius: 10, border: on ? `2.5px solid ${t.text}` : "none", background: bg, color: ada ? t.text : t.textDis, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
-                            {i + 1}
+                          <button key={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
+                            style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", border: "none", background: "transparent", padding: 0, cursor: "pointer" }}>
+                            <i style={{ display: "block", width: "100%", height: `${Math.max(6, Math.round((v / (maxHari || 1)) * 100))}%`, borderRadius: "5px 5px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
                           </button>
                         );
                       })}
+                    </div>
+                    <div className="flex justify-between" style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: t.text2 }}>
+                      <span>{hariBatang.length ? hariBatang[0].n : ""}</span>
+                      <span>{hariBatang.length > 1 ? hariBatang[hariBatang.length - 1].n : ""}</span>
                     </div>
                   </div>
 
                   </>
                 )}
 
-                {tab === "bulan" && (
+                {(
                   <>
                   {/* 3 · Menu terlaris */}
                   <div style={sek}>
