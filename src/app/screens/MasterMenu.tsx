@@ -162,6 +162,8 @@ export default function MasterMenu({
   draftRef.current = draft;
   const seedRef = useRef(seed);
   seedRef.current = seed;
+  const menuTetapRef = useRef(menuTetap);
+  menuTetapRef.current = menuTetap;
   const diseedUntuk = useRef<string | null>(null);
   useEffect(() => {
     // Seed draft saat ganti tanggal / snapshot pertama termuat. SENGAJA tidak
@@ -177,14 +179,15 @@ export default function MasterMenu({
       const on = new Set(snapshot.filter((s) => s.channels.preorder).map((s) => s.id));
       menusRef.current.forEach((m) => { base[m.id] = on.has(m.id); });
     } else {
-      // Tanggal belum pernah disimpan → mulai KOSONG, bukan meniru toggle
-      // hari lain. Tiap tanggal keputusan sendiri; tidak ada warisan menu.
-      menusRef.current.forEach((m) => { base[m.id] = false; });
+      // Tanggal belum pernah disimpan → terisi otomatis dengan MENU TETAP saja (pemilik 4 Nov), bukan meniru toggle hari lain.
+      // Ini hanya DRAFT: belum berlaku sebelum Simpan (bar Simpan selalu tampil untuk tanggal yang belum tersimpan).
+      const tetap = new Set(menuTetapRef.current);
+      menusRef.current.forEach((m) => { base[m.id] = tetap.has(m.id); });
     }
     setDraft(base);
     setSeed(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tanggal, menuHarianReady, isPast, snapLoaded]);
+  }, [tanggal, menuHarianReady, isPast, snapLoaded, menuTetapReady]);
 
   /** Flag Pre-order yang berlaku di kertas PO: draft (mode harian) atau
    * channels live (fallback pra-migration). */
