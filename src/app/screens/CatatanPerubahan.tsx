@@ -15,10 +15,6 @@ import { fetchCatatan, pulihkanDariCatatan, type Catatan, type FilterCatatan, ty
 
 const MONO = "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 const p2 = (n: number) => String(n).padStart(2, "0");
-const waktuLog = (iso: string) => {
-  const d = new Date(new Date(iso).getTime() + 7 * 3_600_000);
-  return `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:${p2(d.getUTCSeconds())}`;
-};
 
 const LABEL: Record<string, string> = {
   paid: "Lunas", paid_at: "Jam lunas", billed_at: "Ditagih", cancelled_at: "Dibatalkan", deleted_at: "Tong Sampah",
@@ -69,6 +65,23 @@ function ringkas(c: Catatan): [string, string, Nada] {
 const CHIP: { id: FilterCatatan; label: string }[] = [
   { id: "semua", label: "Semua" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" },
 ];
+
+const hariWib = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+const jamMenit = (iso: string) => { const d = new Date(new Date(iso).getTime() + 7 * 3_600_000); return `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`; };
+const jamDetik = (iso: string) => { const d = new Date(new Date(iso).getTime() + 7 * 3_600_000); return `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:${p2(d.getUTCSeconds())}`; };
+const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const BLN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const judulHari = (h: string, hariIni: string) => {
+  const d = new Date(h + "T00:00:00Z");
+  const teks = `${NAMA_HARI[d.getUTCDay()]} ${d.getUTCDate()} ${BLN_PENDEK[d.getUTCMonth()]}`;
+  return h === hariIni ? `Hari ini · ${teks}` : teks;
+};
+const JENIS_PANJANG: Record<string, string> = {
+  Pesan: "Pesanan masuk", Jual: "Penjualan dicatat", HAPUS: "Dihapus permanen", "Batal Lunas": "Lunas dibatalkan", Batal: "Dibatalkan",
+  Sampah: "Ke Tong Sampah", Pulih: "Dipulihkan", Tagih: "Ditagih", Tanggal: "Tanggal diubah", Pembeli: "Data pembeli diubah",
+  Isi: "Isi pesanan diubah", Harga: "Harga diubah", Ukuran: "Ukuran diubah", Nama: "Nama diubah", "Menu+": "Menu baru",
+  Simpan: "Menu disimpan", Timpa: "Menu ditimpa", Stok: "Stok", Atur: "Pengaturan diubah", Kelas: "Kelas", Tetap: "Menu Tetap", Menu: "Menu diubah", Ubah: "Diubah", Lunas: "Lunas",
+};
 const WARNA: Record<Nada, string> = { baik: t.successText, buruk: t.error, biasa: t.text };
 
 export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
@@ -144,51 +157,72 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
           {status === "galat" && <div style={{ background: t.errorBg, color: t.error, borderRadius: 14, padding: "14px 16px", fontWeight: 600 }}>{pesan}</div>}
           {status === "ok" && baris.length === 0 && <div style={{ textAlign: "center", color: t.text2, padding: "40px 0" }}>Belum ada catatan.</div>}
 
-          {status === "ok" && baris.length > 0 && (
-            <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
-              {baris.map((c, i) => {
-                const [jenis, ket, nada] = ringkas(c);
-                const terbuka = buka === c.id;
-                const bisaPulih = (c.tabel === "transaksi" || c.tabel === "menu") && ((c.aksi === "hapus" && c.sebelum) || (c.aksi === "ubah" && c.sebelum && c.baris_id));
-                const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "?");
-                const apa = [c.ket, ket].filter(Boolean).join(" · ");
-                return (
-                  <div key={c.id} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.divider}`, background: terbuka ? t.surfaceSoft : "transparent" }}>
-                    <button onClick={() => setBuka(terbuka ? null : c.id)} aria-expanded={terbuka}
-                      style={{ display: "block", width: "100%", padding: "9px 12px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", color: t.text, fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflowWrap: "anywhere" }}>
-                      <span style={{ color: t.text2 }}>{waktuLog(c.waktu)}</span>{" "}
-                      <b style={{ color: WARNA[nada], fontWeight: 600 }}>[{jenis}]</b>{" "}
-                      <span>{apa}</span>{" "}
-                      <span style={{ color: t.text2 }}>· {nama}</span>
-                    </button>
-                    {terbuka && (
-                      <div style={{ padding: "2px 12px 12px", fontSize: 13.5, fontFamily: "inherit" }}>
-                        {c.aksi === "ubah" && c.sesudah && Object.keys(c.sesudah).map((k) => (
-                          <div key={k} style={{ padding: "3px 0", overflowWrap: "anywhere" }}>
-                            <b>{LABEL[k] ?? k}</b>: <span style={{ color: t.text2 }}>{tampil(c.sebelum?.[k])}</span> → <b>{tampil(c.sesudah?.[k])}</b>
+          {status === "ok" && baris.length > 0 && (() => {
+            // Kelompok per hari (WIB), terbaru dulu — garis waktu: jam di kiri, titik berwarna di garis tipis, isi di kanan
+            const kel: { hari: string; isi: Catatan[] }[] = [];
+            for (const c of baris) {
+              const h = hariWib(c.waktu);
+              const g = kel[kel.length - 1];
+              if (g && g.hari === h) g.isi.push(c); else kel.push({ hari: h, isi: [c] });
+            }
+            const hariIniWib = hariWib(new Date().toISOString());
+            return kel.map((g) => (
+              <div key={g.hari}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: t.text2, margin: "14px 2px 6px" }}>{judulHari(g.hari, hariIniWib)}</div>
+                <div style={{ position: "relative" }}>
+                  <div aria-hidden style={{ position: "absolute", left: 66, top: 12, bottom: 12, width: 2, background: t.border }} />
+                  {g.isi.map((c) => {
+                    const [jenis, ket, nada] = ringkas(c);
+                    const terbuka = buka === c.id;
+                    const bisaPulih = (c.tabel === "transaksi" || c.tabel === "menu") && ((c.aksi === "hapus" && c.sebelum) || (c.aksi === "ubah" && c.sebelum && c.baris_id));
+                    const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
+                    const bagian = (c.ket || c.tabel).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
+                    const aktifMenu = (c.sesudah ?? c.sebelum)?.aktif_preorder;
+                    const tglMenu = c.baris_id && /^\d{4}-\d{2}-\d{2}$/.test(c.baris_id) ? `${Number(c.baris_id.slice(8))} ${BLN_PENDEK[Number(c.baris_id.slice(5, 7)) - 1]} ${c.baris_id.slice(0, 4)}` : "";
+                    const judul = c.tabel === "menu_harian" && tglMenu ? `Menu ${tglMenu}` : bagian[0];
+                    const sisa = c.tabel === "menu_harian" && Array.isArray(aktifMenu) ? `${aktifMenu.length} aktif Pre-order` : [...bagian.slice(1), ket].filter(Boolean).join(" · ");
+                    return (
+                      <div key={c.id}>
+                        <button onClick={() => setBuka(terbuka ? null : c.id)} aria-expanded={terbuka}
+                          style={{ display: "flex", width: "100%", padding: "9px 0", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", color: t.text, fontFamily: "inherit" }}>
+                          <span style={{ width: 52, flex: "none", fontFamily: MONO, fontSize: 13, color: t.text2, paddingTop: 2 }}>{jamMenit(c.waktu)}</span>
+                          <span style={{ width: 12, height: 12, borderRadius: "50%", background: WARNA[nada], border: `2px solid ${t.bg}`, flex: "none", margin: "5px 14px 0 8px", position: "relative", zIndex: 1, boxSizing: "content-box" }} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 15, fontWeight: 800, color: WARNA[nada] }}>{JENIS_PANJANG[jenis] ?? jenis}</span>
+                            <span style={{ display: "block", fontSize: 16, fontWeight: 700, marginTop: 1, overflowWrap: "anywhere" }}>{judul}</span>
+                            <span style={{ display: "block", fontSize: 13, color: t.text2, marginTop: 1, overflowWrap: "anywhere" }}>{[sisa, nama].filter(Boolean).join(" · ")}</span>
+                          </span>
+                        </button>
+                        {terbuka && (
+                          <div style={{ margin: "0 0 8px 74px", padding: "10px 12px", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 14, fontSize: 13.5 }}>
+                            {c.aksi === "ubah" && c.sesudah && Object.keys(c.sesudah).map((k) => (
+                              <div key={k} style={{ padding: "3px 0", overflowWrap: "anywhere" }}>
+                                <b>{LABEL[k] ?? k}</b>: <span style={{ color: t.text2 }}>{tampil(c.sebelum?.[k])}</span> → <b>{tampil(c.sesudah?.[k])}</b>
+                              </div>
+                            ))}
+                            {c.aksi === "hapus" && c.sebelum && Object.entries(c.sebelum).filter(([k]) => ["customer", "items", "total", "service_date", "name", "price", "category", "tanggal", "baris", "aktif_preorder"].includes(k)).map(([k, v]) => (
+                              <div key={k} style={{ padding: "3px 0", color: t.text2, overflowWrap: "anywhere" }}><b style={{ color: t.text }}>{LABEL[k] ?? k}</b>: {tampil(v)}</div>
+                            ))}
+                            {c.aksi === "tambah" && c.tabel === "menu_harian" && c.sesudah && ["tanggal", "aktif_preorder"].map((k) => (
+                              <div key={k} style={{ padding: "3px 0", color: t.text2, overflowWrap: "anywhere" }}><b style={{ color: t.text }}>{LABEL[k]}</b>: {tampil(c.sesudah?.[k])}</div>
+                            ))}
+                            {c.aksi === "tambah" && c.tabel !== "menu_harian" && <div style={{ color: t.text2 }}>Baris baru dibuat.</div>}
+                            <div style={{ fontSize: 12, color: t.text2, marginTop: 6, fontFamily: MONO }}>{jamDetik(c.waktu)} · HP {c.hp || "—"}</div>
+                            {bisaPulih && (
+                              <button onClick={() => kembalikan(c)} className="flex items-center justify-center gap-2"
+                                style={{ marginTop: 10, width: "100%", height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
+                                <RotateCcw size={16} /> {c.aksi === "hapus" ? "Kembalikan data ini" : "Kembalikan ke nilai lama"}
+                              </button>
+                            )}
                           </div>
-                        ))}
-                        {c.aksi === "hapus" && c.sebelum && Object.entries(c.sebelum).filter(([k]) => ["customer", "items", "total", "service_date", "name", "price", "category", "tanggal", "baris", "aktif_preorder"].includes(k)).map(([k, v]) => (
-                          <div key={k} style={{ padding: "3px 0", color: t.text2, overflowWrap: "anywhere" }}><b style={{ color: t.text }}>{LABEL[k] ?? k}</b>: {tampil(v)}</div>
-                        ))}
-                        {c.aksi === "tambah" && c.tabel === "menu_harian" && c.sesudah && ["tanggal", "aktif_preorder"].map((k) => (
-                          <div key={k} style={{ padding: "3px 0", color: t.text2, overflowWrap: "anywhere" }}><b style={{ color: t.text }}>{LABEL[k]}</b>: {tampil(c.sesudah?.[k])}</div>
-                        ))}
-                        {c.aksi === "tambah" && c.tabel !== "menu_harian" && <div style={{ color: t.text2 }}>Baris baru dibuat.</div>}
-                        <div style={{ fontSize: 12, color: t.text2, marginTop: 6 }}>Kode HP: {c.hp || "—"}</div>
-                        {bisaPulih && (
-                          <button onClick={() => kembalikan(c)} className="flex items-center justify-center gap-2"
-                            style={{ marginTop: 10, width: "100%", height: 46, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 800, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
-                            <RotateCcw size={16} /> {c.aksi === "hapus" ? "Kembalikan data ini" : "Kembalikan ke nilai lama"}
-                          </button>
                         )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
 
           {status === "ok" && !habis && baris.length > 0 && (
             <button onClick={() => muat(true)}
