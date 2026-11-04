@@ -826,14 +826,13 @@ export default function Pengaturan({
   const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BULAN_PANJANG[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
   const hariIni = new Date(Date.now() + 7 * 3_600_000).getUTCDate();
   const bulanLaluPendek = BLN[(new Date(Date.now() + 7 * 3_600_000).getUTCMonth() + 11) % 12];
-  // Grafik 7 hari: pemasukan (Lunas) per Tanggal Layanan, dari transaksi yang SUDAH dimuat (tanpa permintaan baru)
+  // Grafik mini 7 hari: pemasukan (Lunas) per Tanggal Layanan, dari transaksi yang SUDAH dimuat (tanpa permintaan baru)
   const tujuhHari = (() => {
-    const HURUF = ["M", "S", "S", "R", "K", "J", "S"]; // Minggu … Sabtu
     const kunciHari = (d: Date) => d.toISOString().slice(0, 10);
     const sekarangWib = new Date(Date.now() + 7 * 3_600_000);
     const hari = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(Date.UTC(sekarangWib.getUTCFullYear(), sekarangWib.getUTCMonth(), sekarangWib.getUTCDate() - (6 - i)));
-      return { kunci: kunciHari(d), huruf: HURUF[d.getUTCDay()], total: 0, hariIni: i === 6 };
+      return { kunci: kunciHari(d), total: 0, hariIni: i === 6 };
     });
     for (const tx of transactions) {
       if (!tx.paid || tx.cancelledAt || tx.deletedAt) continue;
@@ -862,26 +861,20 @@ export default function Pengaturan({
         </div>
 
         <div style={{ padding: "0 20px" }}>
-          {/* Laporan: SATU kartu (tiga angka + grafik 7 hari); ketuk = buka Laporan */}
-          <button onClick={onOpenLaporan} aria-label="Buka Laporan"
-            style={{ display: "block", width: "100%", padding: "16px 16px 14px", borderRadius: 20, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-              <span className="flex items-center gap-2" style={{ fontSize: 13.5, fontWeight: 700, color: t.text2 }}><ChartColumn size={17} /> Laporan · {bulanIni}</span>
-              <ChevronRight size={18} color={t.text2} />
+          {/* Laporan: DUA BLOK berdampingan (pemilik 4 Nov: susunan "nomor 2" tanpa gaya karcis): kiri kuning pucat = Masuk + grafik mini 7 hari
+              (hari ini gelap), kanan krem = Pre-order dan Penjualan berikon. Seluruhnya satu tombol: ketuk = layar Laporan. */}
+          <button onClick={onOpenLaporan} aria-label="Buka Laporan" className="flex"
+            style={{ gap: 10, width: "100%", padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+            <div style={{ flex: "0 0 56%", minWidth: 0, background: t.primaryLight, borderRadius: 18, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".08em", color: t.text2 }}>MASUK · {BLN[new Date(Date.now() + 7 * 3_600_000).getUTCMonth()].toUpperCase()}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.03em", margin: "2px 0 8px", lineHeight: 1.1, whiteSpace: "nowrap" }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
+              <MiniTujuhHari data={tujuhHari} />
             </div>
-            <div>
-              <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>Masuk</div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-.03em", marginTop: 2, lineHeight: 1.1 }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
+            <div style={{ flex: 1, minWidth: 0, border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, padding: "12px 12px 12px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, position: "relative" }}>
+              <SumberRingkas Ic={Utensils} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
+              <SumberRingkas Ic={ShoppingCart} label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} />
+              <span style={{ position: "absolute", right: 8, top: 10, color: t.text2, display: "grid", placeItems: "center" }}><ChevronRight size={16} /></span>
             </div>
-            {/* Pre-order | Penjualan: label di atas, ikon + jumlah di bawah (sketsa pemilik 4 Nov) */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${t.divider}` }}>
-              <SumberLaporan Ic={Utensils} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
-              <SumberLaporan Ic={ShoppingCart} label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} garis />
-            </div>
-            <BatangTujuhHari data={tujuhHari} />
-            {persen !== null && (
-              <div style={{ fontSize: 12.5, color: t.text2, marginTop: 8 }}>{persen >= 0 ? "▲" : "▼"} {Math.abs(persen)}% dibanding 1–{hariIni} {bulanLaluPendek}</div>
-            )}
           </button>
 
           {/* Perhatian: pengingat Excel + Kesehatan dalam SATU kartu, baris sejajar */}
@@ -955,6 +948,31 @@ export default function Pengaturan({
 }
 
 /* Menu Kantin: ubin yang MENGISI kolom (tepi kiri-kanan sejajar kartu Laporan di atasnya), isi kuning pucat + sudut 20 sama dengan kartu besar; ikon di atas, nama di bawah, lencana angka opsional. */
+/** Grafik mini 7 hari di blok Masuk: hari ini gelap, hari lain madu pudar; hari tanpa pemasukan = batang tipis. */
+function MiniTujuhHari({ data }: { data: { total: number; hariIni: boolean }[] }) {
+  const maks = Math.max(1, ...data.map((d) => d.total));
+  return (
+    <div role="img" aria-label="Pemasukan 7 hari terakhir" style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 26 }}>
+      {data.map((d, i) => (
+        <i key={i} style={{ flex: 1, display: "block", height: `${Math.max(12, Math.round((d.total / maks) * 100))}%`, borderRadius: "3px 3px 1.5px 1.5px", background: d.hariIni ? t.text : t.chart[2], opacity: d.hariIni ? 1 : 0.55 }} />
+      ))}
+    </div>
+  );
+}
+
+/** Satu sumber di blok kanan: ikon dalam kotak lembut, label kecil di atas jumlah. */
+function SumberRingkas({ Ic, label, nilai }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string }) {
+  return (
+    <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
+      <span style={{ width: 30, height: 30, borderRadius: 10, background: t.surfaceSoft, display: "grid", placeItems: "center", flex: "none", color: t.text2 }}><Ic size={16} /></span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 11.5, color: t.text2, fontWeight: 600 }}>{label}</span>
+        <span style={{ display: "block", fontSize: 15.5, fontWeight: 800, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{nilai}</span>
+      </span>
+    </div>
+  );
+}
+
 /** Satu baris daftar menu Kantin: ikon (24px) · nama · lencana merah bila ada isi · panah. Tinggi sama untuk semua baris. */
 function BarisMenu({ Ic, label, onClick, badge }: { Ic: React.ComponentType<{ size?: number }>; label: string; onClick: () => void; badge?: number }) {
   return (
@@ -965,34 +983,6 @@ function BarisMenu({ Ic, label, onClick, badge }: { Ic: React.ComponentType<{ si
       {!!badge && <span style={{ minWidth: 22, height: 22, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 12.5, fontWeight: 800, display: "grid", placeItems: "center" }}>{badge}</span>}
       <ChevronRight size={17} color={t.text2} />
     </button>
-  );
-}
-
-/** Satu sumber di kartu Laporan: label kecil di atas; di bawahnya ikon + jumlah. Kolom kedua diberi garis tipis di kiri. */
-function SumberLaporan({ Ic, label, nilai, garis }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string; garis?: boolean }) {
-  return (
-    <div style={{ minWidth: 0, ...(garis ? { borderLeft: `1px solid ${t.divider}`, paddingLeft: 14 } : {}) }}>
-      <div style={{ fontSize: 12.5, color: t.text2, fontWeight: 600 }}>{label}</div>
-      <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-        <span style={{ display: "grid", placeItems: "center", flex: "none", color: t.text2 }}><Ic size={18} /></span>
-        <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{nilai}</span>
-      </div>
-    </div>
-  );
-}
-
-/** Grafik batang 7 hari: hari ini kuning, hari lain krem bergaris; huruf hari di bawah. */
-function BatangTujuhHari({ data }: { data: { huruf: string; total: number; hariIni: boolean }[] }) {
-  const maks = Math.max(1, ...data.map((d) => d.total));
-  return (
-    <div role="img" aria-label="Pemasukan 7 hari terakhir" style={{ display: "flex", gap: 7, alignItems: "flex-end", height: 56, marginTop: 14 }}>
-      {data.map((d, i) => (
-        <div key={i} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
-          <i style={{ display: "block", width: "100%", height: `${Math.max(8, Math.round((d.total / maks) * 100))}%`, borderRadius: "6px 6px 3px 3px", background: d.hariIni ? t.primary : t.border }} />
-          <em style={{ fontStyle: "normal", fontSize: 10.5, fontWeight: 600, color: t.text2, height: 12, lineHeight: "12px" }}>{d.huruf}</em>
-        </div>
-      ))}
-    </div>
   );
 }
 
