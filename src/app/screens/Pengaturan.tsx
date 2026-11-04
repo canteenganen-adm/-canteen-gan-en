@@ -864,28 +864,28 @@ export default function Pengaturan({
           {/* Laporan: DUA BLOK berdampingan (pemilik 4 Nov: susunan "nomor 2" tanpa gaya karcis): kiri kuning pucat = Masuk + grafik mini 7 hari
               (hari ini gelap), kanan krem = Pre-order dan Penjualan berikon. Seluruhnya satu tombol: ketuk = layar Laporan. */}
           <button onClick={onOpenLaporan} aria-label="Buka Laporan" className="flex"
-            style={{ gap: 10, width: "100%", padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+            style={{ gap: 10, width: "100%", padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, alignItems: "stretch" }}>
             <div style={{ flex: "0 0 56%", minWidth: 0, background: t.primaryLight, borderRadius: 18, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".08em", color: t.text2 }}>MASUK · {BLN[new Date(Date.now() + 7 * 3_600_000).getUTCMonth()].toUpperCase()}</div>
               <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.03em", margin: "2px 0 8px", lineHeight: 1.1, whiteSpace: "nowrap" }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
               <MiniTujuhHari data={tujuhHari} />
             </div>
-            <div style={{ flex: 1, minWidth: 0, border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, padding: "12px 12px 12px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, position: "relative" }}>
-              <SumberRingkas Ic={Utensils} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
-              <SumberRingkas Ic={ShoppingCart} label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} />
+            <div style={{ flex: 1, minWidth: 0, background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "14px 12px 14px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative" }}>
+              <SumberRingkas Ic={Utensils} warna={t.primaryLight} ikon={t.amberText} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
+              <SumberRingkas Ic={ShoppingCart} warna={t.successBg} ikon={t.successText} label="Penjualan" nilai={ringkas ? rpRingkas(ringkas.pj) : "…"} />
               <span style={{ position: "absolute", right: 8, top: 10, color: t.text2, display: "grid", placeItems: "center" }}><ChevronRight size={16} /></span>
             </div>
           </button>
 
           {/* Perhatian: pengingat Excel + Kesehatan dalam SATU kartu, baris sejajar */}
           <style>{`.baris-perhatian > * + * { border-top: 1px solid ${t.divider}; } .daftar-kantin > * + * { border-top: 1px solid ${t.divider}; }`}</style>
-          <div className="baris-perhatian" style={{ border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, padding: "0 12px", marginTop: 12 }}>
+          <div className="baris-perhatian" style={{ boxShadow: "0 1px 3px rgba(60,48,20,.08)", background: t.surface, borderRadius: 18, padding: "0 12px", marginTop: 12 }}>
             <CadanganBulanLalu />
             <KesehatanBaris transactions={transactions} menus={menus} />
           </div>
 
           {/* Daftar menu: satu kartu, baris setinggi sama, ikon sejajar */}
-          <div className="daftar-kantin" style={{ border: `1.5px solid ${t.border}`, background: t.surface, borderRadius: 18, overflow: "hidden", marginTop: 12 }}>
+          <div className="daftar-kantin" style={{ boxShadow: "0 1px 3px rgba(60,48,20,.08)", background: t.surface, borderRadius: 18, overflow: "hidden", marginTop: 12 }}>
             <BarisMenu Ic={Pencil} label="Edit Pesanan" onClick={() => { setEditPesananOpen(true); setSearchQ(""); setEditingTx(null); }} />
             <BarisMenu Ic={Trash2} label="Tong Sampah" badge={trashTransactions.length} onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
             <BarisMenu Ic={History} label="Catatan" onClick={() => setCatatanOpen(true)} />
@@ -961,13 +961,13 @@ function MiniTujuhHari({ data }: { data: { total: number; hariIni: boolean }[] }
 }
 
 /** Satu sumber di blok kanan: ikon dalam kotak lembut, label kecil di atas jumlah. */
-function SumberRingkas({ Ic, label, nilai }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string }) {
+function SumberRingkas({ Ic, label, nilai, warna, ikon }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string; warna: string; ikon: string }) {
   return (
     <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
-      <span style={{ width: 30, height: 30, borderRadius: 10, background: t.surfaceSoft, display: "grid", placeItems: "center", flex: "none", color: t.text2 }}><Ic size={16} /></span>
+      <span style={{ width: 34, height: 34, borderRadius: 11, background: warna, display: "grid", placeItems: "center", flex: "none", color: ikon }}><Ic size={18} /></span>
       <span style={{ minWidth: 0 }}>
         <span style={{ display: "block", fontSize: 11.5, color: t.text2, fontWeight: 600 }}>{label}</span>
-        <span style={{ display: "block", fontSize: 15.5, fontWeight: 800, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{nilai}</span>
+        <span style={{ display: "block", fontSize: 15.5, fontWeight: 700, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{nilai}</span>
       </span>
     </div>
   );
@@ -979,7 +979,7 @@ function BarisMenu({ Ic, label, onClick, badge }: { Ic: React.ComponentType<{ si
     <button onClick={onClick} aria-label={label + (badge ? `, ${badge} isi` : "")} className="flex items-center gap-3"
       style={{ width: "100%", minHeight: 56, padding: "0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
       <span style={{ width: 24, display: "grid", placeItems: "center", flex: "none" }}><Ic size={20} /></span>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600 }}>{label}</span>
       {!!badge && <span style={{ minWidth: 22, height: 22, padding: "0 6px", boxSizing: "border-box", borderRadius: 999, background: t.error, color: "#fff", fontSize: 12.5, fontWeight: 800, display: "grid", placeItems: "center" }}>{badge}</span>}
       <ChevronRight size={17} color={t.text2} />
     </button>

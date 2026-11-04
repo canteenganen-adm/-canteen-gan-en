@@ -409,7 +409,7 @@ export default function PreOrderAdmin({
               kanan: pil status, tegak lurus di tengah tumpukan
               lalu divider halus, angka (yang aktif berlatar kuning pucat), baris tombol ringan. */}
           {/* SATU bingkai luar untuk seluruh blok (tanggal + angka + tombol); elemen di dalamnya TANPA border sendiri (permintaan pemilik). */}
-          <div style={{ marginTop: 8, border: `1.5px solid ${t.border}`, borderRadius: 18, background: "transparent", padding: "10px 8px 4px" }}>
+          <div style={{ marginTop: 8, borderRadius: 18, background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", padding: "10px 8px 4px" }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
             <div className="flex items-center" style={{ gap: 6 }}>
               <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
@@ -740,7 +740,7 @@ function KelasChips({ value, onChange, rapat }: { value: KelasGroup; onChange: (
           const on = k.id === value;
           return (
             <button key={k.id} onClick={() => onChange(k.id)}
-              style={{ flex: "none", height: 44, padding: "0 10px", border: "none", background: "transparent", fontSize: 16, fontWeight: on ? 800 : 500, cursor: "pointer", fontFamily: "inherit",
+              style={{ flex: "none", height: 44, padding: "0 10px", border: "none", background: "transparent", fontSize: 16, fontWeight: on ? 700 : 500, cursor: "pointer", fontFamily: "inherit",
                 /* Teks polos; yang dipilih ditandai garis kuning tebal di bawahnya (tanpa kotak/pil). */
                 color: on ? t.text : t.text2 }}>
               <span style={{ display: "inline-block", padding: "9px 0 3px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}`, lineHeight: 1.3 }}>{k.label}</span>
@@ -785,7 +785,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
           </span>
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25, overflowWrap: "break-word", textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.25, overflowWrap: "break-word", textDecoration: g.allPacked ? "line-through" : "none", color: g.allPacked ? t.text2 : t.text }}>{g.nama}</div>
           <div style={{ marginTop: 3, fontSize: 14.5, fontWeight: 600, color: t.text2, lineHeight: 1.4 }}>
             <span style={{ fontFamily: STRUK_MONO, fontWeight: 500, color: t.text }}>{g.kelas || g.tingkat}</span> · {g.ambil}{g.ids.length > 1 ? ` · ${g.ids.length} pesanan` : ""}
           </div>
@@ -837,8 +837,8 @@ function StatBox({ n, label, color, active, onClick }: { n: number; label: strin
   return (
     <button onClick={onClick} aria-pressed={active} aria-label={label + " " + n}
       style={{ flex: 1, minWidth: 0, background: active ? t.primaryLight : "transparent", border: "none", borderRadius: 14, padding: "8px 4px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
-      <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.05, color }}>{n}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color }}>{n}</div>
+      <div style={{ fontSize: 14, fontWeight: 500, color: t.text2, marginTop: 2 }}>{label}</div>
     </button>
   );
 }
