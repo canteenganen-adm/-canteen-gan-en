@@ -264,8 +264,8 @@ export default function Penjualan({
   // Petak kecil 3 kolom (pilihan pemilik 3 Nov, opsi C): harga singkat "5K–10K" seperti di Preview PO.
   const hargaK = (n: number) => (n % 1000 === 0 ? `${n / 1000}K` : rupiah(n));
   const hargaSingkat = (m: MenuItem) => {
-    const ps = m.variants.length > 0 ? m.variants.map((v) => v.price).filter((x): x is number => x != null) : [m.price];
-    if (ps.length === 0) return `${m.variants.length} varian`;
+    const ps = (m.variants.length > 0 ? m.variants.map((v) => v.price) : [m.price]).filter((x): x is number => typeof x === "number");
+    if (ps.length === 0) return m.variants.length > 0 ? `${m.variants.length} varian` : "—";
     const lo = Math.min(...ps), hi = Math.max(...ps);
     return lo === hi ? hargaK(lo) : `${hargaK(lo)}–${hargaK(hi)}`;
   };

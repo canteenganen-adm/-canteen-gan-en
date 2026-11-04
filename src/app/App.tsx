@@ -124,7 +124,7 @@ function useCanteenStore() {
   const [reopenUntil, setReopenUntilLocal] = useState<string | null>(null);
   const [pickupPresets, setPickupPresetsLocal] = useState<string[]>([]);
   const [pickupSchedules, setPickupSchedulesLocal] = useState<PickupSchedule[]>([]);
-  const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false });
+  const [settings, setSettingsLocal] = useState<CanteenSettings>({ namaKantin: "", whatsapp: "", printerConnected: false } as CanteenSettings); // nilai awal sebelum app_state termuat (layar "Memuat data…" menutupi)
   const [trashTransactions, setTrashTransactions] = useState<Transaction[]>([]);
   /** Snapshot menu per tanggal (menu_harian). null = tanggal itu belum pernah
    * disimpan; key tidak ada = belum di-fetch. */
