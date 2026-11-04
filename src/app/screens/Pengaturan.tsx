@@ -2,8 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Store, Printer, MessageCircle, Info, X, Check, Plus, Trash2, Pencil,
   Search, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Clock, GraduationCap, RotateCcw, Landmark,
-  Link2, Copy, Share2, BookOpen, ChartColumn,
+  Link2, Copy, Share2, BookOpen, ChartColumn, History, UserRound,
 } from "lucide-react";
+import CatatanPerubahan from "./CatatanPerubahan";
+import PilihNama from "../components/PilihNama";
+import { bacaSiapa } from "../../lib/siapa";
 import { t, NAV_HEIGHT } from "../../lib/theme";
 import { fetchMasukBulan } from "../../lib/canteenApi";
 import CadanganBulanLalu from "../components/CadanganBulanLalu";
@@ -98,6 +101,9 @@ export default function Pengaturan({
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
   const [daftarKelasOpen, setDaftarKelasOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [catatanOpen, setCatatanOpen] = useState(false);
+  const [gantiNama, setGantiNama] = useState(false);
+  const [, segarNama] = useState(0);
   const [hardDeleteConfirmId, setHardDeleteConfirmId] = useState<string | null>(null);
   // Bagikan Link Pemesanan — dipindah dari PO Admin (dipakai jarang)
   const [linkOpen, setLinkOpen] = useState(false);
@@ -622,6 +628,9 @@ export default function Pengaturan({
     );
   }
 
+  /* ===== VIEW: Catatan Perubahan ===== */
+  if (catatanOpen) return <CatatanPerubahan onBack={() => setCatatanOpen(false)} />;
+
   /* ===== VIEW: Tong Sampah ===== */
   if (trashOpen) {
     return (
@@ -883,9 +892,13 @@ export default function Pengaturan({
             <Kartu Ic={MessageCircle} label="Tagihan" onClick={() => setTagihanOpen(true)} />
             <Kartu Ic={Printer} label="Printer" onClick={() => setPrinterOpen(true)} />
             <Kartu Ic={Trash2} label="Tong Sampah" merah badge={trashTransactions.length} onClick={() => { setTrashOpen(true); onLoadTrash(); }} />
+            <Kartu Ic={History} label="Catatan" onClick={() => setCatatanOpen(true)} />
+            <Kartu Ic={UserRound} label={bacaSiapa() || "Pengguna"} onClick={() => setGantiNama(true)} />
           </div>
         </div>
       </div>
+
+      {gantiNama && <PilihNama bisaTutup onDone={() => { setGantiNama(false); segarNama((n) => n + 1); }} />}
 
       {/* Sheet Profil: nama kantin + nomor WhatsApp (tersimpan otomatis) */}
       {profilOpen && (

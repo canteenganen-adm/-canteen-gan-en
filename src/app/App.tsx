@@ -26,6 +26,8 @@ import PreOrderParent, { type PreOrderReceipt } from "./screens/PreOrderParent";
 import Pengaturan from "./screens/Pengaturan";
 import Laporan from "./screens/Laporan";
 import BackToTop from "./components/BackToTop";
+import PilihNama from "./components/PilihNama";
+import { bacaSiapa } from "../lib/siapa";
 
 /* ============================================================
    APP SHELL — Canteen Gan En
@@ -80,7 +82,9 @@ const KUNCI_KASIR = "ganen_kasir";
 const bacaKasir = () => { try { return localStorage.getItem(KUNCI_KASIR) === "1"; } catch { return false; } };
 function IngatKasir({ children }: { children: React.ReactNode }) {
   useEffect(() => { try { localStorage.setItem(KUNCI_KASIR, "1"); } catch { /* penyimpanan diblokir: abaikan */ } }, []);
-  return <>{children}</>;
+  // HP kasir yang belum punya nama: tanya sekali (tanpa kata sandi), supaya Catatan Perubahan tahu siapa pelakunya
+  const [perluNama, setPerluNama] = useState(() => !bacaSiapa());
+  return <>{children}{perluNama && <PilihNama onDone={() => setPerluNama(false)} />}</>;
 }
 function GerbangOrtu({ store }: { store: CanteenStore }) {
   const { pathname } = useLocation();
