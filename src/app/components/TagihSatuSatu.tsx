@@ -186,19 +186,19 @@ export default function TagihSatuSatu({
                 </button>
               )}
 
+              <div className="flex items-center justify-between">
               <button onClick={() => setLihat((v) => !v)} aria-expanded={lihat} className="flex items-center gap-1"
                 style={{ background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 14.5, minHeight: 44, padding: "0 4px", cursor: "pointer", fontFamily: "inherit" }}>
                 {lihat ? <ChevronUp size={17} /> : <ChevronDown size={17} />} Lihat dan ubah pesan
               </button>
+              <button onClick={async () => { if (await salinTeks(pesan)) setTersalin(true); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
+                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                {tersalin ? <Check size={20} /> : <Copy size={20} />}
+              </button>
+              </div>
               {lihat && (
-                <div style={{ position: "relative" }}>
-                <button onClick={async () => { if (await salinTeks(pesan)) setTersalin(true); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
-                  style={{ position: "absolute", top: 8, right: 8, zIndex: 1, width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                  {tersalin ? <Check size={20} /> : <Copy size={20} />}
-                </button>
                 <textarea value={pesan} onChange={(e) => setTeks(e.target.value)} rows={10}
-                  style={{ width: "100%", fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "12px 60px 12px 12px", outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.55, boxSizing: "border-box" }} />
-                </div>
+                  style={{ width: "100%", fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.55, boxSizing: "border-box" }} />
               )}
             </div>
 
