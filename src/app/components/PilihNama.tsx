@@ -6,7 +6,7 @@ import { bacaSiapa, simpanSiapa } from "../../lib/siapa";
 /* Lembar "Siapa yang memakai HP ini?" — pilih sekali per HP, tanpa kata sandi.
    Nama ikut tercatat di Catatan Perubahan. Muncul otomatis di HP kasir yang belum punya nama (tidak bisa ditutup);
    dari Kantin → Pengguna bisa dibuka lagi untuk mengganti (bisa ditutup). */
-const PILIHAN = ["Mama", "Papa"];
+const PILIHAN = ["Mama", "Papa", "Ching"];
 
 export default function PilihNama({ onDone, bisaTutup }: { onDone: () => void; bisaTutup?: boolean }) {
   const [lain, setLain] = useState(() => { const n = bacaSiapa(); return n && !PILIHAN.includes(n) ? n : ""; });
