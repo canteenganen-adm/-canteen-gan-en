@@ -523,19 +523,28 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
   });
   const bandingPct = banding && r && banding.prevMasuk > 0 ? Math.round(((r.masuk - banding.prevMasuk) / banding.prevMasuk) * 100) : null;
   /* Geser kiri/kanan di seluruh isi Laporan (kartu Masuk, tab Ulasan & Rincian) = ganti bulan; tab ikut bulan yang dipilih. Hanya gerakan yang jelas mendatar. */
-  const sentuh = useRef<{ x: number; y: number } | null>(null);
+  const sentuh = useRef<{ x: number; y: number; tepi?: { awal: boolean; akhir: boolean } } | null>(null);
   const geserBulan = {
     onTouchStart: (e: React.TouchEvent) => {
       // jangan rebut gulir mendatar milik tabel/kalender di dalam halaman
+      let tepi: { awal: boolean; akhir: boolean } | undefined;
       for (let el = e.target as HTMLElement | null; el && el !== e.currentTarget; el = el.parentElement) {
-        if (el.scrollWidth > el.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) { sentuh.current = null; return; }
+        if (el.scrollWidth > el.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) {
+          // derek tanggal: bila sudah di ujung dan digeser terus → pindah bulan; gulir mendatar lain (tabel) tetap tidak direbut
+          if (el.getAttribute("role") === "group") tepi = { awal: el.scrollLeft <= 2, akhir: el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 };
+          else { sentuh.current = null; return; }
+          break;
+        }
       }
-      sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      sentuh.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, tepi };
     },
     onTouchEnd: (e: React.TouchEvent) => {
       const a = sentuh.current; sentuh.current = null; if (!a) return;
       const dx = e.changedTouches[0].clientX - a.x, dy = e.changedTouches[0].clientY - a.y;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx > 0) geser(-1); else if (adaBerikut) geser(1); }
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (a.tepi && !(dx > 0 ? a.tepi.awal : a.tepi.akhir)) return; // masih ada isi untuk digulir di derek
+        if (dx > 0) geser(-1); else if (adaBerikut) geser(1);
+      }
     },
   };
   const glyph: React.CSSProperties = { width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", padding: 0 };
@@ -616,20 +625,19 @@ export default function Laporan({ onBack, pickupSchedules }: { onBack: () => voi
                   <span className="flex items-center gap-2"><ShoppingCart size={18} color={t.chart[1]} aria-label="Penjualan" />{rpSingkat(r.masukPJ)}</span>
                 </div>
 
-                {/* Satu papan: batang per hari + deret tanggal di bawahnya, digeser mendatar seperti deret hari di Menu; ketuk = hari itu */}
-                <div ref={derekRef} role="group" aria-label="Pemasukan per hari" style={{ display: "flex", overflowX: "auto", margin: "18px -16px 0", padding: "0 16px", scrollbarWidth: "none" }}>
+                {/* Satu papan: batang per hari yang digeser mendatar seperti deret hari di Menu; digeser sampai UJUNG = pindah ke bulan sebelum/sesudahnya (juga lintas tahun). Ketuk = hari itu. */}
+                <div ref={derekRef} role="group" aria-label="Pemasukan per hari" style={{ display: "flex", overflowX: "auto", margin: "14px -16px 0", padding: "0 16px", scrollbarWidth: "none" }}>
                   {hariBatang.map((d) => {
                     const v = perHariMap.get(d.k)?.masuk ?? 0;
                     const on = d.k === hariAktif;
                     const akhirPekan = d.dow === 0 || d.dow === 6;
                     return (
                       <button key={d.k} data-hari={d.k} onClick={() => setDipilih(d.k)} aria-label={`Pilih ${labelHari(d.k)}`} aria-pressed={on}
-                        style={{ flex: "0 0 calc(100% / 7)", minWidth: 0, border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <span style={{ height: 72, width: "62%", display: "flex", alignItems: "flex-end" }}>
-                          <i style={{ display: "block", width: "100%", height: `${v > 0 ? Math.max(8, Math.round((v / (maxHari || 1)) * 100)) : 5}%`, borderRadius: "6px 6px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
+                        style={{ flex: "0 0 calc(100% / 11)", minWidth: 0, border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <span style={{ height: 56, width: "58%", display: "flex", alignItems: "flex-end" }}>
+                          <i style={{ display: "block", width: "100%", height: `${v > 0 ? Math.max(8, Math.round((v / (maxHari || 1)) * 100)) : 5}%`, borderRadius: "5px 5px 2px 2px", background: on ? t.text : v > 0 ? t.chart[0] : t.divider }} />
                         </span>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: t.text2 }}>{"SSRKJSM"[(d.dow + 6) % 7]}</span>
-                        <span style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", fontSize: 15, fontWeight: on ? 700 : 500, background: on ? t.primary : "transparent", color: akhirPekan && !on ? t.textDis : t.text }}>{d.n}</span>
+                        <span style={{ fontSize: 12.5, fontWeight: on ? 800 : 500, color: on ? t.text : akhirPekan ? t.textDis : t.text2, lineHeight: 1.3 }}>{d.n}</span>
                       </button>
                     );
                   })}

@@ -525,8 +525,20 @@ export default function Tagihan({
   /** Bangun pesan tagihan. 1 grup = format lama persis; >1 grup (kakak-adik
    * satu nomor WA) = satu pesan dengan bagian per anak + Subtotal, lalu
    * SATU Total Pembayaran gabungan. */
+  /* Tautan wa.me memotong teks yang terlalu panjang (kasus 4 Nov: tagihan 3 minggu terpotong di tengah baris, "• Cah Brokoli + Wortel ×").
+     Bila pesan lengkap lebih dari BATAS_WA karakter, rincian per item diringkas jadi SATU BARIS PER HARI (tanggal + jumlah) supaya
+     seluruh pesan, total, rekening, dan berita transfer pasti sampai utuh. Pesan biasa (satu-dua minggu) tetap lengkap per item. */
+  const BATAS_WA = 1800;
   const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string) => {
-    const txBlocksOf = (g: (typeof gs)[number]) => g.txs.map((tx) => {
+    const penuh = rakitWaMsg(gs, label, false);
+    return penuh.length > BATAS_WA ? rakitWaMsg(gs, label, true) : penuh;
+  };
+  const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, ringkas: boolean) => {
+    const txBlocksOf = (g: (typeof gs)[number]) => ringkas ? (() => {
+      const perHari = new Map<string, number>();
+      for (const tx of [...g.txs].sort((a, b) => opDate(a).localeCompare(opDate(b)))) perHari.set(opDate(tx), (perHari.get(opDate(tx)) ?? 0) + tx.total);
+      return [...perHari].map(([op, n]) => `[${serviceDateLabel(op)}] ${rupiah(n)}`).join("\n");
+    })() : g.txs.map((tx) => {
       const itemLines = tx.items
         .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
         .join("\n");
