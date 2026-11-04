@@ -555,7 +555,7 @@ export default function MasterMenu({
                         {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
                             Tanpa tulisan "Menu PO" / "Muat ulang" / "Segarkan" (terlalu banyak huruf M). */}
                         <div className="flex items-center" style={{ gap: 12 }}>
-                          <style>{`@keyframes ganen-uap{0%{opacity:0;transform:translateY(3px)}40%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}`}</style>
+                          <style>{`@keyframes ganen-uap-warna{0%,30%{stroke:#F2B53C}36%,100%{stroke:#B9AE92}}`}</style>
                           <button onClick={doRefresh} aria-label="Segarkan pratinjau menu"
                             style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
                             {segarOk ? <Check size={26} color={t.successText} strokeWidth={2.5} /> : (
@@ -563,8 +563,8 @@ export default function MasterMenu({
                                 <path d="M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6Z" fill={t.primaryLight} stroke={t.text2} />
                                 <path d="M3 12h18" stroke={t.text2} /><path d="M2 12h2M20 12h2" stroke={t.text2} />
                                 {[8, 12, 16].map((x, i) => (
-                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`} stroke={refreshing ? t.borderStrong : "#F2B53C"}
-                                    style={refreshing ? { animation: `ganen-uap .9s ease-in-out ${i * 0.12}s infinite` } : undefined} />
+                                  <path key={x} d={`M${x} 9c-1-1 1-2 0-3.5`} stroke={refreshing ? t.garisKelompok : "#F2B53C"}
+                                    style={refreshing ? { animation: `ganen-uap-warna .9s linear ${i * 0.3}s infinite` } : undefined} />
                                 ))}
                               </svg>
                             )}
