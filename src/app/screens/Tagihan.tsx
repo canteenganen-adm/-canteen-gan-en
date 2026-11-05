@@ -848,11 +848,11 @@ export default function Tagihan({
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
-                <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
+                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
                 <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
                   {kelompokBulan.map((k) => (
-                    <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, borderBottom: "1.5px solid #CFC6AE", padding: "0 3px 2px", margin: "0 2px 6px" }}>
+                    <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none", paddingRight: 8, borderRight: `1px solid ${t.divider}` }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 500, color: t.text2, padding: "0 3px 2px", margin: "0 2px 4px" }}>
                         {k.label}
                       </div>
                       <div className="flex" style={{ gap: 2 }}>
@@ -863,6 +863,7 @@ export default function Tagihan({
                               style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -885,13 +886,33 @@ export default function Tagihan({
                           {semuaSenin.length > 0 && (
                             <>
                               {/* Cakupan: chip "Semua" di ujung barisan tanggal (saklar dua sisi dan pil ditolak: "kebanyakan blok-blok") */}
-                              {(cakupan === "semua" || p.belum > 0) && (
-                                <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} className="flex items-center justify-center gap-2"
-                                  style={{ width: "100%", height: 48, marginTop: 8, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                                  <MessageCircle size={17} />
-                                  {cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}
-                                </button>
-                              )}
+                              {/* Ringkasan: "4/7 belum ditagih" + satu pil bergaris [+ Gabung | Tagih] (Buku Perintah 4.3) */}
+                              {(() => {
+                                const sebelum = urutPekan.filter((x) => x.senin < p.senin && x.txs.length > 0).map((x) => x.senin);
+                                const total = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.anak, 0) : p.anak;
+                                const belumN = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.belum, 0) : p.belum;
+                                const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 };
+                                return (
+                                  <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 8 }}>
+                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500 }}>
+                                      {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
+                                    </span>
+                                    {belumN > 0 && (
+                                      <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden" }}>
+                                        {cakupan === "ini" && sebelum.length > 0 && (
+                                          <>
+                                            <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
+                                            <span aria-hidden="true" style={{ width: 1.5, alignSelf: "stretch", background: t.border }} />
+                                          </>
+                                        )}
+                                        <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
+                                          <MessageCircle size={16} /> Tagih
+                                        </button>
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </>
                           )}
                   </>
