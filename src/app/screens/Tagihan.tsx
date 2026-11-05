@@ -632,26 +632,24 @@ export default function Tagihan({
     const jmlMinggu = new Set(paket.map((tx) => mondayOf(opDate(tx)))).size;
     return (
       <div key={key} style={expanded
-        ? { background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, margin: "6px 0 12px", overflow: "hidden" }
+        ? { background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 16, margin: "6px 0 12px", overflow: "hidden" }
         : { borderBottom: `1px solid ${t.divider}` }}>
 
         {/* Header grup — klik untuk expand/collapse; saat tertutup bisa DIGESER ke kiri: Tagih + Lunas (geser penuh = Lunas) */}
         {(() => {
         const kepala = (
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", padding: expanded ? "14px 16px" : "14px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 60, padding: expanded ? "14px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
-              <span style={{ fontSize: 17, fontWeight: 600 }}>{g.customer.nama}</span>
-              <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, color: t.text2, border: "1.5px solid #CFC6AE", borderRadius: 999, padding: "0 8px", whiteSpace: "nowrap", verticalAlign: 1 }}>
-                {g.customer.kelas || g.customer.tingkat}
-              </span>
+              <div style={{ fontSize: 16.5, fontWeight: 600 }}>{g.customer.nama}</div>
+              <div style={{ fontSize: 13, color: t.text2, fontFamily: MONO }}>{g.customer.kelas || g.customer.tingkat}</div>
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
                 <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={18} strokeWidth={2.4} /></span>
               )}
-              <span style={{ fontSize: 17, fontWeight: 600 }}>{rupiah(g.total)}</span>
-              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color="#B3AF9F" />}
+              <span style={{ fontSize: 16.5, fontWeight: 700 }}>{rupiah(g.total)}</span>
+              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.textDis} />}
             </div>
           </div>
           {expanded && (

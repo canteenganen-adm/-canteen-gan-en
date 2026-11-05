@@ -131,6 +131,7 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
         </div>
 
         <div style={{ padding: "0 20px" }}>
+          <YangBaru />
           <div className="flex items-center gap-2" style={{ height: 44, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", boxSizing: "border-box" }}>
             <Search size={18} color={t.text2} style={{ flex: "none" }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama atau menu…"
@@ -232,6 +233,33 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Ringkasan pembaruan tampilan untuk Mama/Papa (teks statis, bukan log database). Tertutup bawaan. */
+function YangBaru() {
+  const [buka, setBuka] = useState(false);
+  const butir = [
+    "Halaman pesan orang tua tampil baru: langsung menu, ada hitung mundur jam tutup.",
+    "Pre-order: ada cincin jam tutup, tombol Rekap Masak lebih jelas, kolom kelas dan cari menempel di atas saat digulir.",
+    "Penjualan: menu dan struk selalu terlihat. Tunai langsung Lunas, bisa Urungkan 5 detik.",
+    "Penjualan: Tagihan tinggal ketuk nama. Ada tulisan Utang bila anak masih punya tagihan.",
+    "Transaksi: tab sekarang Utang, Lunas, Dibatalkan. Total Utang ada di bawah judul.",
+    "Tagih satu per satu: tampil seperti karcis. Pesan otomatis tersalin saat Kirim WA.",
+  ];
+  return (
+    <div style={{ background: t.surface, borderRadius: 16, boxShadow: "0 1px 3px rgba(60,48,20,.08)", marginBottom: 12 }}>
+      <button onClick={() => setBuka((v) => !v)} aria-expanded={buka} className="flex items-center justify-between"
+        style={{ width: "100%", minHeight: 52, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15.5, fontWeight: 700, color: t.text }}>
+        Yang baru di aplikasi (5 Nov)
+        <span style={{ fontSize: 13, color: t.text2, fontWeight: 500 }}>{buka ? "Tutup" : "Lihat"}</span>
+      </button>
+      {buka && (
+        <ul style={{ margin: 0, padding: "0 16px 14px 34px", fontSize: 15, lineHeight: 1.55, color: t.text }}>
+          {butir.map((b) => <li key={b} style={{ marginBottom: 4 }}>{b}</li>)}
+        </ul>
+      )}
     </div>
   );
 }

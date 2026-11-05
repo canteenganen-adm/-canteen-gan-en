@@ -261,7 +261,7 @@ export default function TagihSatuSatu({
                 {wa ? (
                   <button onClick={kirim} className="flex items-center justify-center gap-2"
                     style={{ flex: 1, minWidth: 0, height: 60, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
-                    {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : "Kirim WA"}
+                    {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : i === total - 1 ? "Kirim & Selesai" : "Kirim WA"}
                   </button>
                 ) : (
                   <div className="flex items-center justify-center" style={{ flex: 1, minWidth: 0, height: 60, fontSize: 14, fontWeight: 700, color: t.error, textAlign: "center" }}>Nomor WA belum ada</div>
