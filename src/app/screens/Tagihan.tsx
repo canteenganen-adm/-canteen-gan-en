@@ -188,7 +188,7 @@ export default function Tagihan({
     return () => cancelAnimationFrame(id);
   }, [pekanBuka]);
   /** Tagih satu per satu: antrean dibekukan saat mulai supaya urutan tidak bergeser. */
-  const [tagih, setTagih] = useState<{ pekan: string[]; antrean: string[][][] } | null>(null);
+  const [tagih, setTagih] = useState<{ pekan: string[]; antrean: string[][][]; ulang?: boolean } | null>(null);
   /** Berapa minggu sebelumnya (yang belum ditagih) digabung dengan minggu yang dibuka — satu pesan per anak. */
   /** Cakupan tagihan di Belum Dibayar: "ini" = minggu yang dibuka, "semua" = semua anak yang masih ada yang belum ditagih dari minggu mana pun. */
   const [cakupan, setCakupan] = useState<"ini" | "semua">("ini");
@@ -370,7 +370,10 @@ export default function Tagihan({
   /** Antrean satu pekan: anak yang masih ada tagihan belum dikirim; kakak-adik satu nomor WA digabung jadi satu pesan. */
   const antreanMinggu = (daftar: string[]) => {
     const txs = pekanList.filter((x) => daftar.includes(x.senin)).flatMap((x) => x.txs);
-    const gs = sortGroups(buatGrup(txs).filter((g) => g.txs.some((tx) => !tx.billedAt)), sortMode);
+    return bentukAntrean(sortGroups(buatGrup(txs).filter((g) => g.txs.some((tx) => !tx.billedAt)), sortMode));
+  };
+  /** Satu entri antrean = satu pesan; kakak-adik satu nomor WA digabung. */
+  const bentukAntrean = (gs: Grup[]) => {
     const antrean: string[][][] = [];
     const perWa = new Map<string, string[][]>();
     for (const g of gs) {
@@ -383,6 +386,21 @@ export default function Tagihan({
       if (w) perWa.set(w, entri);
     }
     return antrean;
+  };
+  /* TAGIH ULANG (pemilik 4 Nov: "asal sudah lewat minggu per sesi aja"): anak yang SEMUA transaksi belum lunasnya sudah ditagih, dan tagihan TERAKHIRNYA
+     jatuh di minggu SEBELUM minggu ini (Senin–Minggu, WIB). Setelah dikirim ulang, tanggal Ditagih = sekarang, jadi baru muncul lagi minggu depan. */
+  const ulangGrup = useMemo(() => {
+    const seninIni = mondayOf(todayISO());
+    const wibHari = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+    const belum = transactions.filter((x) => !x.paid && !x.cancelledAt && !x.deletedAt);
+    return sortGroups(buatGrup(belum).filter((g) => g.txs.every((x) => x.billedAt)
+      && mondayOf(wibHari(g.txs.reduce((m, x) => (x.billedAt! > m ? x.billedAt! : m), ""))) < seninIni), sortMode);
+  }, [transactions, sortMode]);
+  const mulaiUlang = () => {
+    const antrean = bentukAntrean(ulangGrup);
+    if (!antrean.length) return;
+    const pekan = [...new Set(ulangGrup.flatMap((g) => g.txs.map((x) => mondayOf(opDate(x)))))].sort();
+    setTagih({ pekan, antrean, ulang: true });
   };
   const mulaiTagih = (daftar: string[]) => {
     const antrean = antreanMinggu(daftar);
@@ -840,6 +858,17 @@ export default function Tagihan({
             ) : (
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
+                {ulangGrup.length > 0 && (
+                  <button onClick={mulaiUlang} className="flex items-center" aria-label={`Perlu ditagih lagi, ${ulangGrup.length} anak`}
+                    style={{ gap: 12, width: "100%", minHeight: 60, padding: "8px 16px", marginBottom: 12, borderRadius: 16, border: "none", background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: t.error, flex: "none" }} />
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>
+                      Perlu ditagih lagi
+                      <span style={{ display: "block", fontSize: 13.5, fontWeight: 500, color: t.text2 }}>{ulangGrup.length} anak · {rupiah(ulangGrup.reduce((n, g) => n + g.total, 0))}</span>
+                    </span>
+                    <ChevronRight size={20} color={t.text2} />
+                  </button>
+                )}
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
                 <div style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
                 <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
@@ -1019,7 +1048,7 @@ export default function Tagihan({
 
       {/* Tagih satu per satu (layar penuh); popup rincian/ubah tanggal (z 85) tetap di atasnya */}
       {tagih && (
-        <TagihSatuSatu pekan={tagih.pekan} antrean={tagih.antrean} byId={byId}
+        <TagihSatuSatu pekan={tagih.pekan} antrean={tagih.antrean} ulang={tagih.ulang} byId={byId}
           bangunPesan={buildWaMsg} onKirim={onMarkBilled} onUbahTanggal={setDetailTx} onTutup={() => setTagih(null)} />
       )}
 
