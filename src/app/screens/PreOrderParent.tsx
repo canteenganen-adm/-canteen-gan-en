@@ -463,10 +463,6 @@ export default function PreOrderParent({
     return (
       <Screen showHelp={showHelp} onCloseHelp={() => setShowHelp(false)} footerSpace={0}>
         <div style={{ minHeight: "100dvh", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "min(150px, 18vh)", paddingBottom: 130, boxSizing: "border-box", textAlign: "center", WebkitFontSmoothing: "antialiased" }}>
-          <button onClick={() => setShowHelp(true)} aria-label="Panduan pemesanan"
-            style={{ position: "absolute", top: 18, right: 16, width: 44, height: 44, borderRadius: "50%", border: "none", background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
-            <CircleHelp size={20} />
-          </button>
           <div style={{ width: 250, height: 250, borderRadius: 999, background: t.primaryLight, overflow: "hidden", display: "flex", alignItems: "flex-end", justifyContent: "center", filter: closed ? "grayscale(.6)" : undefined, opacity: closed ? 0.7 : 1 }}>
             <img src="/brand/panda.webp" alt="" width={232} height={232} loading="eager" decoding="async" style={{ height: 232, width: "auto", marginBottom: -6 }} />
           </div>
