@@ -671,6 +671,9 @@ function ParentRoute({ store }: { store: CanteenStore }) {
     <PreOrderParent
       kantin={store.settings.namaKantin}
       serviceDate={serviceDateLabel(store.serviceDate)}
+      serviceISO={store.serviceDate}
+      autoCloseTime={store.autoCloseTime}
+      reopenUntil={store.reopenUntil}
       open={effectiveOpen}
       menus={parentMenus}
       kelasList={store.kelasList}
