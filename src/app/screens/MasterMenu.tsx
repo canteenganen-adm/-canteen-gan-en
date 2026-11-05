@@ -624,40 +624,25 @@ export default function MasterMenu({
               (kertas PO murni pratinjau). Muncul saat ada perubahan belum
               disimpan ATAU tanggal terpilih belum pernah disimpan. */}
           {view === "menu" && menuHarianReady && !isPast && snapLoaded && (dailyDirty || snapshot === null) && (
-            /* SATU struk KONFIRMASI PERUBAHAN MENU — MELAYANG DI TENGAH layar,
-               tanpa lapisan gelap: daftar di belakang tetap bisa digulir &
-               di-toggle. Batal / X = buang perubahan; Simpan = langsung simpan. */
-            <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "grid", placeItems: "center", padding: 20, pointerEvents: "none" }}>
-              <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))", pointerEvents: "auto" }}>
-                <div style={{ background: t.surface, clipPath: STRUK_ZIGZAG, padding: "20px 18px 18px", textAlign: "center",
-                  fontFamily: "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace", fontWeight: 600 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".01em" }}>KONFIRMASI PERUBAHAN MENU</div>
-                  <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-                  <div className="flex items-center justify-center gap-1.5" style={{ fontSize: 13 }}>
-                    <Calendar size={14} color={t.amberText} style={{ flex: "none" }} />
-                    {serviceDateLabel(tanggal).toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 12, color: t.text2, marginTop: 2 }}>{aktifCount} ITEM</div>
-                  <div className="flex gap-2" style={{ marginTop: 14, fontFamily: "'Inter', sans-serif" }}>
-                    {dailyDirty && (
-                      <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }} disabled={saving}
-                        style={{ flex: 1, height: 50, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                        Batal
-                      </button>
-                    )}
-                    <button onClick={doSave} disabled={saving}
-                      style={{ flex: 2, height: 50, borderRadius: 12, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
-                      {saving ? "Menyimpan…" : "Simpan"}
-                    </button>
-                  </div>
+            /* Bar Simpan = sama dengan bar keranjang /pesan (abu-krem transparan, pil), melayang di atas nav; daftar tetap bisa digulir. */
+            <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT + 10, zIndex: 40, padding: "0 16px", pointerEvents: "none" }}>
+              <div className="flex items-center justify-between" style={{ maxWidth: 428, margin: "0 auto", background: "rgba(221,212,192,.86)", WebkitBackdropFilter: "blur(14px)", backdropFilter: "blur(14px)", borderRadius: 999, padding: "8px 8px 8px 22px", gap: 10, pointerEvents: "auto", boxShadow: "0 6px 20px rgba(60,48,20,.14)" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)} · {aktifCount} item</div>
+                  <div style={{ fontSize: 12.5, color: t.text2 }}>{dailyDirty ? "Perubahan belum disimpan" : "Belum pernah disimpan"}</div>
                 </div>
-                {dailyDirty && !saving && (
-                  <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }}
-                    title="Buang perubahan" aria-label="Buang perubahan"
-                    style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
-                    <X size={19} />
+                <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
+                  {dailyDirty && (
+                    <button onClick={() => { setDraft({ ...seed }); setToast("Perubahan dibuang — menu kembali seperti tersimpan"); }} disabled={saving}
+                      style={{ height: 48, padding: "0 14px", border: "none", background: "transparent", color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                      Batal
+                    </button>
+                  )}
+                  <button onClick={doSave} disabled={saving}
+                    style={{ height: 48, padding: "0 24px", borderRadius: 999, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: saving ? 0.7 : 1, fontFamily: "inherit" }}>
+                    {saving ? "Menyimpan…" : "Simpan"}
                   </button>
-                )}
+                </div>
               </div>
             </div>
           )}
