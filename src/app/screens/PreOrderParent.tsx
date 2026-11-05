@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import BackToTop from "../components/BackToTop";
 import JamHitung from "../components/JamHitung";
 import {
-  Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, Pencil,
+  Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, CircleHelp, Pencil,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, orderNo, toTitleCase, wibClock } from "../../lib/format";
@@ -104,7 +104,7 @@ export default function PreOrderParent({
   onStokRefresh?: () => void;
 }) {
   const defaultPickup = pickupOptions[0] || DEFAULT_PICKUP_FALLBACK;
-  const [step, setStep] = useState<"menu" | "checkout" | "done">("menu");
+  const [step, setStep] = useState<"masuk" | "menu" | "checkout" | "done">("masuk");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [ambil, setAmbil] = useState(defaultPickup);
   const [popup, setPopup] = useState<{ menu: MenuItem; varId: string; qty: number; note: string } | null>(null);
@@ -439,6 +439,39 @@ export default function PreOrderParent({
         {showCart && SheetPesanan()}
         {sheetAnak && <SheetDataAnak mulai={sheetAnak} anak={anak} anakLengkap={anakLengkap} savedAnak={savedAnak} kelasList={kelasList}
         onPilih={(a) => { setAnak(a); setSheetAnak(null); }} onSimpan={(a) => { simpanAnak(a); setAnak(a); setSheetAnak(null); }} onClose={() => setSheetAnak(null)} />}
+      </Screen>
+    );
+  }
+
+  /* ---------- LAMAN MASUK (J1) ---------- */
+  if (step === "masuk") {
+    const tglTeks = serviceISO ? tglSingkat(serviceISO) : serviceDate;
+    return (
+      <Screen showHelp={showHelp} onCloseHelp={() => setShowHelp(false)} footerSpace={0}>
+        <div style={{ minHeight: "100dvh", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "min(150px, 18vh)", paddingBottom: 130, boxSizing: "border-box", textAlign: "center", WebkitFontSmoothing: "antialiased" }}>
+          <button onClick={() => setShowHelp(true)} aria-label="Panduan pemesanan"
+            style={{ position: "absolute", top: 18, right: 16, width: 44, height: 44, borderRadius: "50%", border: "none", background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <CircleHelp size={20} />
+          </button>
+          <div style={{ width: 250, height: 250, borderRadius: 999, background: t.primaryLight, overflow: "hidden", display: "flex", alignItems: "flex-end", justifyContent: "center", filter: closed ? "grayscale(.6)" : undefined, opacity: closed ? 0.7 : 1 }}>
+            <img src="/brand/panda.webp" alt="" width={232} height={232} loading="eager" decoding="async" style={{ height: 232, width: "auto", marginBottom: -6 }} />
+          </div>
+          <div style={{ marginTop: 26, fontSize: 26, fontWeight: 800, letterSpacing: "-.5px", color: t.text }}>Canteen Gan En</div>
+          <div style={{ marginTop: 4, fontSize: 15, fontWeight: 400, color: t.text2 }}>Masakan sehangat pelukan Ibu</div>
+          <div style={{ marginTop: 26, width: 40, height: 2, background: closed ? t.borderStrong : t.primary }} />
+          <div style={{ marginTop: 22, fontSize: 16, color: t.text }}>
+            {closed ? <>Pre-order <b style={{ fontWeight: 700 }}>sudah ditutup</b></> : <>Pre-order <b style={{ fontWeight: 700 }}>{tglTeks}</b></>}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 14.5, color: t.text2 }}>
+            {closed ? "Sampai jumpa lagi \u{1F64F}\u{1F3FB}" : `sedang dibuka sampai jam ${jamTutup || "08:00"}\u{1F60A}`}
+          </div>
+        </div>
+        {!closed && (
+          <button onClick={() => setStep("menu")}
+            style={{ position: "fixed", left: 20, right: 20, bottom: "calc(43px + env(safe-area-inset-bottom))", maxWidth: 420, margin: "0 auto", height: 58, borderRadius: 18, border: "none", background: t.primary, color: t.onPrimary, fontSize: 17, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+            Mulai Pesan
+          </button>
+        )}
       </Screen>
     );
   }
