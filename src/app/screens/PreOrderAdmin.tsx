@@ -454,7 +454,7 @@ export default function PreOrderAdmin({
               </div>
             )}
 
-            <div style={{ height: 10 }} />
+            <div style={{ height: 12 }} />
 
             {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
             <div className="flex gap-1">
@@ -467,7 +467,7 @@ export default function PreOrderAdmin({
             </div>
 
             {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
-            <div className="flex items-center" style={{ gap: 4, padding: "0 4px 6px" }}>
+            <div className="flex items-center" style={{ gap: 4, padding: "0 4px 6px", marginTop: 14 }}>
               <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak" className="flex items-center justify-center"
                 style={{ flex: 1.4, gap: 8, height: 48, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
                 <CookingPot size={20} /> Rekap Masak
