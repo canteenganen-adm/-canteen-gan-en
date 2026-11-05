@@ -110,7 +110,19 @@ export default function PreOrderParent({
   const [popup, setPopup] = useState<{ menu: MenuItem; varId: string; qty: number; note: string } | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [noteLine, setNoteLine] = useState<string | null>(null);
-  const [showCari, setShowCari] = useState(false);
+  const [katAktif, setKatAktif] = useState<string | null>(null);
+  useEffect(() => {
+    const onScroll = () => {
+      const els = Array.from(document.querySelectorAll<HTMLElement>('[id^="kat-"]'));
+      let cur: string | null = null;
+      for (const el of els) { if (el.getBoundingClientRect().top <= 140) cur = el.id.slice(4); }
+      setKatAktif(cur ?? (els[0] ? els[0].id.slice(4) : null));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    onScroll();
+    return () => { window.removeEventListener("scroll", onScroll); document.removeEventListener("scroll", onScroll, true); };
+  }, [step]);
   const [sessionClosed, setSessionClosed] = useState(false);
   const [menuQ, setMenuQ] = useState("");
   const [copied, setCopied] = useState(false);
@@ -495,73 +507,66 @@ export default function PreOrderParent({
     <Screen unavailNotice={unavailNotice} footerSpace={count > 0 ? 110 : 24} showHelp={showHelp} onCloseHelp={() => setShowHelp(false)}>
       <style>{`.railscroll::-webkit-scrollbar{display:none}`}</style>
 
-      <div style={{ padding: "18px 16px 8px" }}>
-        <div className="flex items-center justify-between" style={{ gap: 10 }}>
-          <div style={{ fontSize: 19.5, fontWeight: 800, letterSpacing: "-.02em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🪷 {kantin} 🙏🏻✨</div>
-          <div className="flex" style={{ gap: 8, flex: "none" }}>
-            <button onClick={() => { setShowCari((v) => !v); if (showCari) setMenuQ(""); }} aria-label="Cari menu" style={bulatBtn(showCari ? { background: t.primary } : undefined)}><Search size={20} /></button>
-            <button onClick={() => setShowHelp(true)} aria-label="Panduan pemesanan" style={bulatBtn()}><HelpCircle size={21} /></button>
-          </div>
-        </div>
-        <div className="flex items-center" style={{ gap: 7, marginTop: 6, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden" }}>
+      <div style={{ padding: "24px 20px 14px" }}>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.3px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🪷 {kantin} 🙏🏻✨</div>
+        <div className="flex items-center" style={{ gap: 6, marginTop: 6, fontSize: 13.5, color: t.text2, whiteSpace: "nowrap", overflow: "hidden" }}>
           {serviceISO && <JamHitung beku={closed} frac={sisaMs == null ? 1 : Math.max(0, Math.min(1, sisaMs / 86400000))} warn={warn} />}
-          <span style={{ fontWeight: 700 }}>{serviceISO ? tglSingkat(serviceISO) : serviceDate}</span>
+          <span style={{ fontWeight: 700, color: t.text }}>{serviceISO ? tglSingkat(serviceISO) : serviceDate}</span>
           {closed ? <span style={{ color: t.error, fontWeight: 700 }}>· ditutup</span> : (
             <>
-              {jamTutup && <span style={{ color: t.text2 }}>· tutup {jamTutup}</span>}
+              {jamTutup && <span>· tutup {jamTutup}</span>}
               {sisaTeks && <span style={{ fontWeight: 700, color: warn ? t.warnText : t.text }}>· {sisaTeks}</span>}
             </>
           )}
         </div>
-        {showCari && (
-          <div className="flex items-center gap-2" style={{ marginTop: 12, background: t.surface, borderRadius: 14, padding: "0 14px", height: 46, boxShadow: "0 1px 3px rgba(60,48,20,.08)" }}>
-            <Search size={18} color={t.text2} />
-            <input autoFocus value={menuQ} onChange={(e) => setMenuQ(e.target.value)} placeholder="Cari menu…"
-              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", color: t.text, fontFamily: "inherit" }} />
-            {menuQ && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setMenuQ("")} />}
-          </div>
-        )}
       </div>
 
       {closed && (
-        <div style={{ margin: "8px 16px 0", background: t.surface, borderRadius: 16, padding: "16px 18px", color: t.text2, fontSize: 14.5, boxShadow: "0 1px 3px rgba(60,48,20,.08)" }}>
+        <div style={{ margin: "0 16px 10px", background: t.surface, borderRadius: 16, padding: "16px 18px", color: t.text2, fontSize: 14.5 }}>
           Maaf, periode Pre-order untuk tanggal ini sudah ditutup.
         </div>
       )}
 
-      <div className="flex items-center justify-between" style={{ margin: "12px 16px 0", background: t.surface, borderRadius: 16, padding: "12px 16px", boxShadow: "0 1px 3px rgba(60,48,20,.08)", gap: 10 }}>
+      <div className="flex items-center justify-between" style={{ margin: "0 16px 10px", background: t.surface, borderRadius: 16, padding: "12px 16px", gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, color: t.text2 }}>Pesan untuk</div>
-          <div style={{ fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 12, color: t.text2 }}>Pesan untuk</div>
+          <div style={{ fontSize: 16, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {anak ? `${toTitleCase(anak.nama)}${anak.kelas ? ` · ${anak.kelas}` : anak.tingkat ? ` · ${anak.tingkat}` : ""}` : "Isi data anak"}
           </div>
         </div>
         <PilGanti label={anak ? "Ganti" : "Isi"} onClick={() => setSheetAnak(!anak && !savedAnak.length ? "isi" : "pilih")} />
       </div>
 
-      <div className="flex" style={{ alignItems: "flex-start", marginTop: 14 }}>
-        <div className="railscroll" style={{ position: "sticky", top: 0, flex: "none", width: 104, background: t.divider, maxHeight: "100vh", overflowY: "auto", scrollbarWidth: "none", paddingBottom: 24 }}>
+      <label className="flex items-center" style={{ gap: 10, margin: "0 16px 14px", background: t.surface, borderRadius: 14, padding: "0 14px", height: 44 }}>
+        <Search size={18} color={t.text2} />
+        <input value={menuQ} onChange={(e) => setMenuQ(e.target.value)} placeholder="Cari menu…"
+          style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, flex: 1, minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+        {menuQ && <X size={18} color={t.text2} style={{ cursor: "pointer" }} onClick={() => setMenuQ("")} />}
+      </label>
+
+      <div className="flex" style={{ alignItems: "flex-start", background: t.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+        <div className="railscroll" style={{ position: "sticky", top: 0, flex: "none", width: 104, background: t.divider, borderTopLeftRadius: 20, maxHeight: "100vh", overflowY: "auto", scrollbarWidth: "none", paddingBottom: 24 }}>
           {railCats.map((k) => {
             const n = qtyKat(k);
+            const on = (katAktif ?? railCats[0]) === k;
             return (
               <button key={k} onClick={() => gulirKe(k)}
-                style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "14px 10px", position: "relative", minHeight: 56, color: t.text, fontSize: 13.5, fontWeight: 600, lineHeight: 1.25 }}>
-                <span style={{ fontSize: 18, display: "block", marginBottom: 2 }}>{KAT_EMOJI[k]}</span>
-                {k}
-                {n > 0 && <span style={{ position: "absolute", top: 10, right: 8, minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9, background: t.primary, color: t.onPrimary, fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>{n}</span>}
+                style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left", border: "none", background: on ? t.surface : "transparent", borderTopLeftRadius: on ? 20 : 0, cursor: "pointer", fontFamily: "inherit", padding: "0 14px", minHeight: 56, color: on ? t.text : t.text2, fontSize: 13, fontWeight: on ? 800 : 500, lineHeight: 1.25 }}>
+                <span>{k}</span>
+                {n > 0 && <span style={{ flex: "none", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9, background: t.primary, color: t.onPrimary, fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>{n}</span>}
               </button>
             );
           })}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, background: t.surface, borderTopLeftRadius: 18, minHeight: "70vh" }}>
+        <div style={{ flex: 1, minWidth: 0, minHeight: "70vh", padding: "16px 16px 120px" }}>
           {filteredPre.length === 0 && (
-            <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 16px" }}>{q ? "Tidak ada menu yang cocok." : "Belum ada menu untuk tanggal ini."}</div>
+            <div style={{ textAlign: "center", color: t.text2, fontSize: 14.5, padding: "36px 0" }}>{q ? "Tidak ada menu yang cocok." : "Belum ada menu untuk tanggal ini."}</div>
           )}
-          {railCats.map((k) => (
-            <div key={k} id={"kat-" + k} style={{ scrollMarginTop: 8, padding: "16px 14px 4px 14px" }}>
-              <div style={{ fontSize: 16, fontWeight: 500, color: t.text2, marginBottom: 4 }}>{k}</div>
-              {byCatMap[k].map((m, idx) => {
+          {railCats.map((k, ki) => (
+            <div key={k} id={"kat-" + k} style={{ scrollMarginTop: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.text2, margin: ki ? "14px 0 6px" : "0 0 6px" }}>{k}</div>
+              {byCatMap[k].map((m) => {
                 const inCart = qtyOf(m.id);
                 const sisa = stokMap?.[m.id]?.sisa;
                 const habis = sisa !== undefined && sisa <= 0;
@@ -573,17 +578,18 @@ export default function PreOrderParent({
                   : rupiah(m.price);
                 const ket = adaVarian ? m.variants.map((v) => v.name).join(" · ") : "";
                 return (
-                  <div key={m.id} className="flex items-center" style={{ gap: 10, padding: "12px 0", borderTop: idx ? `1px solid ${t.divider}` : "none" }}>
-                    {/* slot foto opsional — tersembunyi bila tidak ada foto */}
+                  <div key={m.id} className="flex items-center justify-between" style={{ gap: 10, padding: "12px 0" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: habis ? t.textDis : t.text }}>{toTitleCase(m.name)}</div>
-                      {(ket || sisa !== undefined) && (
-                        <div style={{ fontSize: 13, color: t.text2, marginTop: 1 }}>
-                          {ket}{ket && sisa !== undefined && !habis ? " · " : ""}
-                          {habis ? <span style={{ color: t.error, fontWeight: 700 }}>Habis</span> : sisa !== undefined ? <span style={{ color: sisa <= 5 ? t.warnText : t.text2, fontWeight: sisa <= 5 ? 700 : 500 }}>Sisa {sisa}</span> : null}
+                      {(ket || (sisa !== undefined && !habis)) && (
+                        <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>
+                          {ket}{ket && sisa !== undefined ? " · " : ""}
+                          {sisa !== undefined ? <span style={{ color: sisa <= 5 ? t.warnText : t.text2, fontWeight: sisa <= 5 ? 700 : 500 }}>Sisa {sisa}</span> : null}
                         </div>
                       )}
-                      <div style={{ fontSize: 15, fontWeight: 500, marginTop: 2, color: habis ? t.textDis : t.text }}>{hrg}</div>
+                      {habis
+                        ? <div style={{ fontSize: 13, fontWeight: 700, color: t.error, marginTop: 3 }}>Habis</div>
+                        : <div style={{ fontSize: 15, fontWeight: 500, marginTop: 2, color: t.text }}>{hrg}</div>}
                     </div>
                     {habis ? null : inCart > 0 && !adaVarian ? (
                       <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
