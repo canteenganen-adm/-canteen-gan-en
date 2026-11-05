@@ -404,7 +404,7 @@ export default function PreOrderParent({
               <div key={keyOf(l)} style={{ padding: "5px 0" }}>
                 <div className="flex items-start justify-between" style={{ gap: 12 }}>
                   <span style={{ fontSize: 15, fontWeight: 500 }}>{toTitleCase(l.menu.name)}{l.variant ? ` · ${l.variant.name}` : ""} ×{l.qty}</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, flex: "none" }}>{rupiah(hargaLine(l) * l.qty)}</span>
+                  <span style={{ fontSize: 15, fontWeight: 500, flex: "none" }}>{rupiah(hargaLine(l) * l.qty)}</span>
                 </div>
                 {l.note && <div style={{ fontSize: 13, color: t.text2 }}>{l.note}</div>}
               </div>
@@ -452,7 +452,7 @@ export default function PreOrderParent({
   const warn = sisaMs != null && sisaMs <= 60 * 60 * 1000;
   const sisaTeks = sisaMs == null || sisaMs <= 0 ? "" : (() => {
     const mnt = Math.floor(sisaMs / 60000);
-    return mnt < 60 ? `${mnt}m` : `${Math.floor(mnt / 60)}j ${mnt % 60}m`;
+    return mnt < 60 ? `${mnt}m lagi` : `${Math.floor(mnt / 60)}j ${mnt % 60}m lagi`;
   })();
   const gulirKe = (k: string) => document.getElementById("kat-" + k)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const qtyKat = (k: string) => pre.filter((m) => katOf(m) === k).reduce((s, m) => s + qtyOf(m.id), 0);
@@ -527,7 +527,7 @@ export default function PreOrderParent({
           )}
           {railCats.map((k) => (
             <div key={k} id={"kat-" + k} style={{ scrollMarginTop: 8, padding: "16px 14px 4px 14px" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{k}</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: t.text2, marginBottom: 4 }}>{k}</div>
               {byCatMap[k].map((m, idx) => {
                 const inCart = qtyOf(m.id);
                 const sisa = stokMap?.[m.id]?.sisa;
@@ -550,7 +550,7 @@ export default function PreOrderParent({
                           {habis ? <span style={{ color: t.error, fontWeight: 700 }}>Habis</span> : sisa !== undefined ? <span style={{ color: sisa <= 5 ? t.warnText : t.text2, fontWeight: sisa <= 5 ? 700 : 500 }}>Sisa {sisa}</span> : null}
                         </div>
                       )}
-                      <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2, color: habis ? t.textDis : t.text }}>{hrg}</div>
+                      <div style={{ fontSize: 15, fontWeight: 500, marginTop: 2, color: habis ? t.textDis : t.text }}>{hrg}</div>
                     </div>
                     {habis ? null : inCart > 0 && !adaVarian ? (
                       <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
@@ -670,7 +670,8 @@ export default function PreOrderParent({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{toTitleCase(l.menu.name)}</div>
                   {l.variant && <div style={{ fontSize: 13, color: t.text2 }}>{l.variant.name}</div>}
-                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2 }}>{rupiah(hargaLine(l) * l.qty)}</div>
+                  <div style={{ fontSize: 15, fontWeight: 500, marginTop: 2 }}>{rupiah(hargaLine(l) * l.qty)}</div>
+                  {l.note && <div style={{ fontSize: 13, color: t.text2 }}>{l.note}</div>}
                 </div>
                 <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
                   <button onClick={() => dec(kk)} aria-label={l.qty <= 1 ? "Hapus" : "Kurangi"} style={{ ...kecil, width: 44, height: 44, background: t.divider }}>{l.qty <= 1 ? <Trash2 size={16} color={t.error} /> : <Minus size={17} />}</button>
@@ -678,15 +679,6 @@ export default function PreOrderParent({
                   <button onClick={() => add(l.menu, l.variant || undefined)} disabled={penuh} aria-label="Tambah" style={{ ...kecil, width: 44, height: 44, background: penuh ? t.divider : t.primary, color: penuh ? t.textDis : t.onPrimary }}><Plus size={18} /></button>
                 </div>
               </div>
-              {noteLine === kk ? (
-                <input autoFocus defaultValue={l.note} placeholder="cth. tidak pedas"
-                  onBlur={(e) => { const v = e.target.value; setCart((c) => (c[kk] ? { ...c, [kk]: { ...c[kk], note: v.trim() } } : c)); setNoteLine(null); }}
-                  style={{ width: "100%", height: 44, marginTop: 8, borderRadius: 12, border: "none", background: t.divider, padding: "0 14px", fontSize: 16, color: t.text, outline: "none", fontFamily: "inherit" }} />
-              ) : (
-                <button onClick={() => setNoteLine(kk)} style={{ minHeight: 32, padding: 0, marginTop: 2, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: l.note ? t.text2 : t.warnText, fontWeight: l.note ? 500 : 600, textAlign: "left" }}>
-                  {l.note ? l.note : "+ Catatan"}
-                </button>
-              )}
             </div>
           );
         })}
