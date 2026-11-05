@@ -789,7 +789,7 @@ export default function MasterMenu({
       {/* Toast hasil simpan */}
       {toast && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 90, display: "flex", justifyContent: "center", zIndex: 70 }}>
-          <div className="flex items-center gap-2" style={{ maxWidth: 400, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 600, boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+          <div className="flex items-center gap-2" style={{ maxWidth: 400, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 600, boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
             <Check size={18} color={t.success} /> {toast}
           </div>
         </div>

@@ -860,8 +860,8 @@ export default function Tagihan({
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
                               style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
-                              <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: t.text2, marginTop: 1 }}>berjalan</span>}
+                              <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on && !x.berjalan ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: on ? 700 : 500, color: on ? t.text : t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -1052,15 +1052,15 @@ export default function Tagihan({
       {/* Undo bar */}
       {undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
-            <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, overflowWrap: "anywhere" }}>
               {undo.type === "paidMany" ? `Lunas — ${undo.txs[0].customer.nama} · ${rupiah(undo.txs.reduce((a, x) => a + x.total, 0))}`
                 : undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
                 : undo.type === "unpaid" ? `Dikembalikan ke Belum Dibayar — ${undo.tx.customer.nama}`
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
-              style={{ background: "transparent", border: "none", color: t.onPrimary, textDecoration: "underline", fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
+              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>
@@ -1068,7 +1068,7 @@ export default function Tagihan({
       )}
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+          <div style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
         </div>
       )}
 
