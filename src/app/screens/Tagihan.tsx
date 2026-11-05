@@ -533,15 +533,21 @@ export default function Tagihan({
   const buildWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label?: string, tunggakan?: { label: string; total: number }[]) =>
     rakitWaMsg(gs, label, tunggakan);
   const rakitWaMsg = (gs: { customer: Transaction["customer"]; txs: Transaction[]; total: number }[], label: string | undefined, tunggakan?: { label: string; total: number }[]) => {
-    const txBlocksOf = (g: (typeof gs)[number]) => [...g.txs].sort((x, y) => opDate(x).localeCompare(opDate(y)) || x.createdAt.localeCompare(y.createdAt)).map((tx) => {
-      const itemLines = tx.items
-        .map((it) => `• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`)
-        .join("\n");
-      // Tanggal di tagihan = TANGGAL LAYANAN; entri susulan tanpa jam input
-      const op = opDate(tx);
-      const tgl = tx.createdAt.slice(0, 10) === op ? fmtWaDate(tx.createdAt) : serviceDateLabel(op);
-      return `[${tgl}]\n${itemLines}`;
-    }).join("\n\n");
+    /* Blok per TANGGAL LAYANAN, tanpa jam (pemilik 4 Nov: "too much tulisan"): tanggal pendek "Senin, 12 Okt"; Pre-order tanpa label,
+       jajan langsung di kantin (source bukan preorder) diberi satu kata "· Jajan"; beberapa transaksi sejenis di tanggal yang sama digabung satu blok. */
+    const txBlocksOf = (g: (typeof gs)[number]) => {
+      const BLN3p = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const urut = [...g.txs].sort((x, y) => opDate(x).localeCompare(opDate(y)) || (x.source === "preorder" ? 0 : 1) - (y.source === "preorder" ? 0 : 1) || x.createdAt.localeCompare(y.createdAt));
+      const blok = new Map<string, { judul: string; baris: string[] }>();
+      for (const tx of urut) {
+        const op = opDate(tx);
+        const jajan = tx.source !== "preorder";
+        const kunci = op + "|" + (jajan ? "j" : "p");
+        if (!blok.has(kunci)) blok.set(kunci, { judul: `[${namaHari(op)}, ${Number(op.slice(8, 10))} ${BLN3p[Number(op.slice(5, 7)) - 1]}${jajan ? " · Jajan" : ""}]`, baris: [] });
+        for (const it of tx.items) blok.get(kunci)!.baris.push(`• ${toTitleCase(it.name.trim())}${it.variant ? ` (${it.variant.trim()})` : ""} ×${it.qty} = ${rupiah(it.price * it.qty)}`);
+      }
+      return [...blok.values()].map((x) => `${x.judul}\n${x.baris.join("\n")}`).join("\n\n");
+    };
     const bankLine = [settings.namaBank, settings.noRekening].filter(Boolean).join(" ");
     const bankSection = bankLine
       ? `\n\n${bankLine}${settings.namaRekening ? `\na.n. ${settings.namaRekening}` : ""}`
