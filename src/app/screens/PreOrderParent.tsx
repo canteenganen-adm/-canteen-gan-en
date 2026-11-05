@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import BackToTop from "../components/BackToTop";
+import JamHitung from "../components/JamHitung";
 import {
   Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, Pencil,
 } from "lucide-react";
@@ -719,17 +720,6 @@ function labelPanjangISO(iso: string) {
 }
 
 /** Ikon hitung mundur: lingkaran titik-titik (waktu terlewat) + busur tegas (sisa) + jarum kecil. */
-function JamHitung({ frac, warn, beku }: { frac: number; warn: boolean; beku?: boolean }) {
-  const r = 8, c = 2 * Math.PI * r, warna = beku ? t.textDis : warn ? t.warnText : t.text;
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden style={{ flex: "none" }}>
-      <circle cx="10" cy="10" r={r} fill="none" stroke={t.textDis} strokeWidth="2" strokeDasharray="1.2 2.5" strokeLinecap="round" />
-      {!beku && <circle cx="10" cy="10" r={r} fill="none" stroke={warna} strokeWidth="2.4" strokeLinecap="round"
-        strokeDasharray={`${Math.max(0.01, c * frac)} ${c}`} transform="rotate(-90 10 10)" />}
-      <path d="M10 6.2V10l2.4 1.4" fill="none" stroke={warna} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 function PilGanti({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{ flex: "none", minHeight: 44, padding: "0 18px", borderRadius: 999, border: "none", background: t.primaryLight, color: t.onPrimary, fontWeight: 700, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>{label}</button>

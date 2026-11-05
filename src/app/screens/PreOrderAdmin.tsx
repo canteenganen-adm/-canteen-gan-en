@@ -5,6 +5,7 @@ import {
   ChevronLeft, ChevronRight, Share2, Copy, Smile, Frown,
 } from "lucide-react";
 import RailGeser from "../components/RailGeser";
+import JamHitung from "../components/JamHitung";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
 import { tingkatColor } from "../../lib/constants";
@@ -211,6 +212,15 @@ export default function PreOrderAdmin({
     return reopenActiveNow(reopenUntil);
   }, [reopenUntil, nowTick]);
 
+  // Sisa waktu ke jam tutup (dasar 24 jam) untuk cincin timer
+  const fracSisa = useMemo(() => {
+    void nowTick;
+    const tutup = reopenNow && reopenUntil ? new Date(reopenUntil).getTime()
+      : new Date(`${serviceDate}T${autoCloseTime.length === 5 ? autoCloseTime + ":00" : autoCloseTime}+07:00`).getTime();
+    if (isNaN(tutup)) return 1;
+    return Math.max(0, Math.min(1, (tutup - Date.now()) / 86400000));
+  }, [serviceDate, autoCloseTime, reopenUntil, reopenNow, nowTick]);
+
   // true jika sesi dibuka tapi jam WIB sudah lewat auto_close_time pada hari
   // serviceDate — dan tidak sedang "Buka Lagi"
   const isAutoClosed = useMemo(() => {
@@ -379,7 +389,7 @@ export default function PreOrderAdmin({
             {/* Judul = status: kiri atas langsung terbaca "Pre-order telah dibuka" (tidak ada tulisan status terpisah) */}
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em", minWidth: 0 }}>
               Pre-order{" "}
-              <span style={{ color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
+              <span style={{ color: isAutoClosed || !open ? t.error : t.successText }}>
                 {isAutoClosed ? "tutup otomatis" : open ? "telah dibuka" : "ditutup"}
               </span>
             </div>
@@ -394,10 +404,9 @@ export default function PreOrderAdmin({
               {/* Saklar PIL: lintasan kapsul + kenop berikon power. Dibuka = hijau, kenop di kanan; ditutup = merah, kenop di kiri;
                   tutup otomatis = merah lembut berbingkai, kenop di kiri. */}
               <span style={{ flex: "none", position: "relative", width: 46, height: 26, borderRadius: 999,
-                background: isAutoClosed ? "#FFDDD7" : open ? t.success : "#D9382A",
-                border: isAutoClosed ? "2px solid #E0392B" : "none", boxSizing: "border-box" }}>
-                <span style={{ position: "absolute", top: isAutoClosed ? 1 : 3, left: open && !isAutoClosed ? 23 : (isAutoClosed ? 1 : 3), width: 20, height: 20, borderRadius: "50%", background: "#FFFFFF", display: "grid", placeItems: "center",
-                  color: isAutoClosed ? "#B3261E" : open ? t.successText : "#A82F24" }}>
+                background: isAutoClosed ? t.errorBg : open ? t.success : t.error }}>
+                <span style={{ position: "absolute", top: 3, left: open && !isAutoClosed ? 23 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", display: "grid", placeItems: "center",
+                  color: isAutoClosed || !open ? t.error : t.successText }}>
                   <Power size={12} strokeWidth={3} />
                 </span>
               </span>
@@ -416,14 +425,17 @@ export default function PreOrderAdmin({
                 style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
-              <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</div>
-                <button onClick={() => setSheet("jamTutup")} className="flex items-center"
-                  style={{ gap: 1, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
-                  Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b> <ChevronRight size={13} />
-                </button>
-              </div>
+              <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label={`Ganti tanggal, ${serviceDateLabel(viewDate)}`}
+                style={{ minWidth: 0, flex: 1, minHeight: 44, textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: "0 0 0 8px", fontFamily: "inherit", fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, letterSpacing: "-.01em" }}>
+                {serviceDateLabel(viewDate)}
+              </button>
             </div>
+            {/* Baris 2: cincin timer (tanpa angka sisa) + jam tutup; ketuk = Jam Tutup Otomatis. Tanggal lain dilihat = tanpa cincin. */}
+            <button onClick={() => setSheet("jamTutup")} className="flex items-center" aria-label={`Jam tutup ${hhmm(autoCloseTime)}, ketuk untuk mengubah`}
+              style={{ gap: 8, minHeight: 44, padding: "0 8px 0 14px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2 }}>
+              {lihatSesi && <JamHitung size={20} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}
+              <span>tutup {hhmm(autoCloseTime)}</span> <ChevronRight size={16} />
+            </button>
             {!lihatSesi && (
               <div style={{ background: t.primaryLight, borderRadius: 12, padding: "10px 12px", margin: "2px 0 4px" }}>
                 <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, lineHeight: 1.45 }}>
@@ -431,7 +443,7 @@ export default function PreOrderAdmin({
                 </div>
                 <div className="flex" style={{ gap: 8, marginTop: 8 }}>
                   <button onClick={() => setViewDate(serviceDate)}
-                    style={{ flex: 1, height: 44, borderRadius: 10, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}>
+                    style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: t.divider, color: t.text, fontWeight: 700, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}>
                     Kembali
                   </button>
                   <button onClick={() => { setPendingDate(viewDate); setSheet("gantiTanggal"); }}
@@ -455,21 +467,29 @@ export default function PreOrderAdmin({
             </div>
 
             {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
-            <div className="flex justify-around">
-              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
-                  style={{ gap: 6, minHeight: 44, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600, color: t.text2 }}>
+            <div className="flex items-center" style={{ gap: 4, padding: "0 4px 6px" }}>
+              <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak" className="flex items-center justify-center"
+                style={{ flex: 1.4, gap: 8, height: 48, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text }}>
+                <CookingPot size={20} /> Rekap Masak
+              </button>
+              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center justify-center"
+                  style={{ flex: 1, gap: 6, minHeight: 48, padding: "0 6px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 500, color: t.text2 }}>
                   <Ic size={18} /> {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* KELAS dulu, baru Cari (urutan permintaan Mama); Cari tetap kolom sendiri, tidak digabung. */}
-          <div style={{ marginTop: 14 }}>
+        </div>
+
+        {/* KELAS dulu, baru Cari (urutan permintaan Mama); menempel di atas saat digulir. Ujung kanan rail memudar = masih bisa digeser. */}
+        <div style={{ position: "sticky", top: 0, zIndex: 11, background: t.bg, padding: "6px 20px 8px" }}>
+          <div style={{ position: "relative" }}>
             <KelasChips value={tingkatFilter} onChange={setTingkatFilter} />
+            <div aria-hidden="true" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 36, pointerEvents: "none", background: `linear-gradient(to right, transparent, ${t.bg})` }} />
           </div>
-          <div className="flex items-center gap-2" style={{ marginTop: 6, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+          <div className="flex items-center gap-2" style={{ marginTop: 4, background: t.surface, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
             <Search size={18} color={t.text2} style={{ flex: "none" }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama pemesan"
               style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
@@ -483,7 +503,7 @@ export default function PreOrderAdmin({
           {/* Guard: menu tanggal sesi belum disimpan → halaman ortu kosong */}
           {menuBelumDisimpan && (
             <button onClick={onLihatMenu} className="flex items-center gap-2"
-              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#FFF4BF", border: "1.5px solid #FFE66D", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: t.primaryLight, border: "none", borderRadius: 12, color: t.amberText, fontWeight: 700, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <AlertCircle size={16} style={{ flex: "none" }} />
               <span style={{ flex: 1 }}>Menu untuk {dateLabel} belum disimpan — ortu belum bisa melihat menu. Ketuk untuk mengatur & Simpan.</span>
             </button>
@@ -492,7 +512,7 @@ export default function PreOrderAdmin({
           {/* Banner pesanan telat — sticky, diketuk untuk toggle filter */}
           {lateCount > 0 && (
             <button onClick={() => setShowLateOnly(v => !v)} className="flex items-center gap-2"
-              style={{ position: "sticky", top: 0, zIndex: 10, width: "100%", padding: "8px 2px", marginBottom: 4, background: t.bg, color: t.error, border: "none", fontWeight: 800, fontSize: 14.5, cursor: "pointer" }}>
+              style={{ width: "100%", minHeight: 44, padding: "0 2px", marginBottom: 4, background: "transparent", color: t.error, border: "none", fontWeight: 600, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
               <AlertCircle size={16} />
               <span style={{ flex: 1, textAlign: "left" }}>
                 {showLateOnly ? "← Semua pesanan" : `${lateCount} pesanan lewat waktu ambil`}
@@ -756,7 +776,7 @@ function ItemLines({ items }: { items: Transaction["items"] }) {
   return (
     <>
       {items.map((it, i) => (
-        <div key={i} style={{ fontFamily: STRUK_MONO, fontWeight: 500, fontSize: 14.5, lineHeight: 1.9, color: "#3A352C" }}>
+        <div key={i} style={{ fontFamily: STRUK_MONO, fontWeight: 500, fontSize: 14.5, lineHeight: 1.9, color: t.text }}>
           {toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}
         </div>
       ))}
@@ -779,7 +799,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
         <button onClick={onTap} aria-label={g.allPacked ? `Kembalikan ${g.nama} ke belum dikemas` : `Tandai ${g.nama} sudah dikemas`} aria-pressed={g.allPacked}
           style={{ width: 44, height: 44, margin: "-8px 0 -8px -10px", border: "none", background: "none", display: "grid", placeItems: "center", padding: 0, flex: "none", cursor: "pointer" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, display: "grid", placeItems: "center",
-            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : "#8F8568"}`, color: "#fff" }}>
+            background: checkBg, border: `2px solid ${g.allPacked || partial ? checkBorder : t.text2}`, color: t.surface }}>
             {g.allPacked && <Check size={17} strokeWidth={3} />}
             {partial && <span style={{ width: 12, height: 2.5, background: t.text, borderRadius: 2, display: "block" }} />}
           </span>
@@ -822,7 +842,7 @@ function MergedOrderCard({ g, alt, onTap, isLate, packedLate, lateTime }: { g: M
                supaya langsung kelihatan kalau ortu tak sengaja pesan 2× */
             /* Satu strip vertikal per pesanan: hanya muncul kalau ada 2 pesanan atau lebih. */
             g.perOrder.map((items, oi) => (
-              <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 12 : 0, paddingLeft: 10, borderLeft: `3px solid ${t.primaryLine}` }}>
+              <div key={oi} style={{ marginBottom: oi < g.perOrder.length - 1 ? 12 : 0, paddingLeft: 10, borderLeft: `4px solid ${t.garisKelompok}` }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text2 }}>Pesanan {oi + 1}</div>
                 <ItemLines items={items} />
               </div>
