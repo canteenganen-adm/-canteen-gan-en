@@ -469,7 +469,7 @@ export default function PreOrderAdmin({
             {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
             <div className="flex items-center" style={{ gap: 4, padding: "0 4px 6px" }}>
               <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak" className="flex items-center justify-center"
-                style={{ flex: 1.4, gap: 8, height: 48, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: t.text }}>
+                style={{ flex: 1.4, gap: 8, height: 48, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
                 <CookingPot size={20} /> Rekap Masak
               </button>
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (

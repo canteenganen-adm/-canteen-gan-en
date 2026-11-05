@@ -376,7 +376,7 @@ function useCanteenStore() {
   /* ---- Transaksi ---- */
   const addTransaction = (tx: Transaction) => {
     setTransactions((prev) => [tx, ...prev]);
-    insertTransaction(tx).catch((e) => reportError("addTransaction", e));
+    return insertTransaction(tx).then(() => {}).catch((e) => reportError("addTransaction", e));
   };
   const markPaid = (id: string) => {
     const paidAt = new Date().toISOString();
@@ -796,6 +796,7 @@ function MainShell({ store }: { store: CanteenStore }) {
             onLoadDate={store.loadMenuHarianDate}
             transactions={store.transactions}
             onTransaction={store.addTransaction}
+            onCancelTransaction={store.cancelTransaction}
           />
         )}
         {/* Tetap mounted (display:none saat tidak aktif) — bukan
@@ -874,7 +875,7 @@ function MainShell({ store }: { store: CanteenStore }) {
       </div>
 
       {/* Bottom nav — 5 tab (Pre-order · Penjualan · Transaksi · Menu · Kantin). Teks/ikon gelap di atas amber. */}
-      <BackToTop key={tab} root={contentRef} bottom={`calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`} />
+      {tab !== "penjualan" && <BackToTop key={tab} root={contentRef} bottom={`calc(${NAV_HEIGHT}px + 20px + env(safe-area-inset-bottom, 0px))`} />}
       <div data-testid="bottom-nav" style={{ flex: "none", borderTop: `1px solid ${t.border}`, background: t.surface, height: NAV_HEIGHT, display: "flex" }}>
         {tabs.map(({ id, label, Icon, badge }) => {
           const active = tab === id;

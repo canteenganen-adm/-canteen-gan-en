@@ -1,19 +1,20 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
-  Search, X, Plus, Minus, ShoppingCart, Check, Receipt,
-  Layers, ChevronRight, Wallet, Settings, Trash2, Undo2, Calendar,
+  Search, X, Plus, Minus, Check, Receipt, UserPlus,
+  Layers, Wallet, Trash2, Undo2, Calendar,
 } from "lucide-react";
-import { t, NAV_HEIGHT } from "../../lib/theme";
-import { rupiah, uid, nowLabel, priceLabel, todayISO, serviceDateLabel, toTitleCase } from "../../lib/format";
-import { TINGKAT_LIST, NO_KELAS_TINGKAT, tingkatColor } from "../../lib/constants";
+import { t, NAV_HEIGHT, STRUK_MONO } from "../../lib/theme";
+import { rupiah, uid, nowLabel, todayISO, serviceDateLabel, toTitleCase } from "../../lib/format";
+import { TINGKAT_LIST, NO_KELAS_TINGKAT } from "../../lib/constants";
 import { isAkhirPekan, namaHari, labelHariTgl, hariKerjaSebelum } from "../../lib/pekan";
 import type { MenuItem, Transaction, Variant, Kelas } from "../../types";
 
 /* ============================================================
-   PENJUALAN — Canteen Gan En (POS tenang)
-   Decision Lock §6: hanya menu channel Penjualan, alur
-   Pilih Menu → Ringkasan → Dibayar / Masuk Tagihan.
-   Popup Tagihan: Nama Siswa*, Kelas*, WhatsApp (opsional).
+   PENJUALAN — Canteen Gan En (Kasir Kilat, Buku Perintah bagian 3)
+   Menu 3 kolom + panel struk yang SELALU terlihat (tanpa layar
+   Ringkasan). Tunai = langsung tercatat Lunas, bisa diurungkan 5 detik
+   (Urungkan = tandai Dibatalkan / soft-delete, TIDAK menghapus).
+   Tagihan = pilih nama dari riwayat (satu ketukan) atau "Anak baru".
    Auto catat Tanggal+Waktu. Snapshot harga saat transaksi.
    ============================================================ */
 
@@ -25,6 +26,9 @@ interface CartLine {
   price: number;
   qty: number;
 }
+
+type Cust = { nama: string; tingkat: string; kelas: string; wa: string };
+type Snack = { msg: string; ok: boolean; undo: () => void };
 
 function isToday(iso: string) {
   const d = new Date(iso);
@@ -40,7 +44,7 @@ export default function Penjualan({
   menuHarianReady,
   onLoadDate,
   onTransaction,
-  onOpenSettings,
+  onCancelTransaction,
 }: {
   menus: MenuItem[];
   transactions: Transaction[];
@@ -48,16 +52,13 @@ export default function Penjualan({
   menuHarian: Record<string, MenuItem[] | null>;
   menuHarianReady: boolean;
   onLoadDate: (tanggal: string) => void;
-  onTransaction: (tx: Transaction) => void;
-  onOpenSettings?: () => void;
+  onTransaction: (tx: Transaction) => void | Promise<void>;
+  /** Urungkan = tandai Dibatalkan (soft-delete), bukan hapus permanen. */
+  onCancelTransaction: (id: string) => void;
 }) {
   /* Tanggal kerja Penjualan — TERPISAH dari sesi PO. Default hari ini;
-     dipilih mundur untuk input OTS susulan: daftar & harga memakai
-     snapshot menu_harian tanggal itu, transaksi tercatat atas tanggal
-     itu, dan sesi PO live tidak pernah tersentuh. */
+     dipilih mundur untuk input OTS susulan. */
   const todayIso = todayISO();
-  /* Tanggal pilihan DIINGAT per hari di HP ini: dulu muat ulang membuatnya diam-diam kembali ke "hari ini" (Sabtu) dan
-     pertanyaan Sabtu/Minggu tidak muncul lagi, jadi penjualan tercatat di tanggal yang salah (laporan pemilik 1 Nov). */
   const kunciTgl = "ganen_tgl_penjualan";
   const tglTersimpan = (): string | null => {
     try {
@@ -72,17 +73,14 @@ export default function Penjualan({
     try { localStorage.setItem(kunciTgl, JSON.stringify({ hari: todayIso, tgl })); } catch { /* abaikan */ }
   };
   const isBackdate = txDate !== todayIso;
-  /* Sabtu/Minggu diberi tanda sama seperti input susulan supaya tidak terlewat. */
   const perhatianTgl = isBackdate || isAkhirPekan(txDate);
-  /* Sabtu/Minggu: kantin biasanya tutup, jadi pesanan yang diketik hari itu hampir pasti untuk hari kerja.
-     Tanyakan SEKALI per hari (diingat di tab ini) supaya tidak tercatat di tanggal yang salah. */
   const kunciTanya = `ganen_tanya_tgl_${todayIso}`;
   const [tanyaTgl, setTanyaTgl] = useState(() => {
     if (!isAkhirPekan(todayIso) || tglTersimpan()) return false;
     try { return sessionStorage.getItem(kunciTanya) !== "1"; } catch { return true; }
   });
   const jawabTgl = (tgl: string) => {
-    try { sessionStorage.setItem(kunciTanya, "1"); } catch { /* tanpa penyimpanan: tanya lagi di muat ulang */ }
+    try { sessionStorage.setItem(kunciTanya, "1"); } catch { /* tanya lagi di muat ulang */ }
     setTxDate(tgl);
     setTanyaTgl(false);
   };
@@ -94,47 +92,44 @@ export default function Penjualan({
   const sourceMenus = pakaiSnapshot ? (snapTx as MenuItem[]) : menus;
 
   const sales = useMemo(() => sourceMenus.filter((m) => m.channels.sales), [sourceMenus]);
-  // "Semua" tetap di atas; sisanya A-Z supaya gampang dicari di rail panjang
   const cats = useMemo(
     () => ["Semua", ...Array.from(new Set(sales.map((m) => m.category))).sort((a, b) => a.localeCompare(b, "id"))],
     [sales]
   );
-  /** Label singkat KHUSUS tampilan rail (data kategori asli tidak berubah,
-   * filter tetap mencocokkan m.category) — "Nasi Goreng" kepanjangan dan
-   * jadi dua baris di kolom sempit. */
-  const railLabel = (c: string) => (c === "Nasi Goreng" ? "Nasgor" : c);
 
   const [cat, setCat] = useState("Semua");
   const [q, setQ] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [view, setView] = useState<"shop" | "summary">("shop");
   const [variantFor, setVariantFor] = useState<MenuItem | null>(null);
-  const [billing, setBilling] = useState(false);
+  const [billing, setBilling] = useState<null | "pilih" | "baru">(null);
+  const [cariNama, setCariNama] = useState("");
   const [form, setForm] = useState({ nama: "", tingkat: "", kelas: "", wa: "" });
   const [tried, setTried] = useState(false);
-  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [snack, setSnack] = useState<Snack | null>(null);
   const [cartUndo, setCartUndo] = useState<{ type: "line"; line: CartLine } | { type: "all"; cart: CartLine[] } | null>(null);
 
   useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(null), 2600);
+    if (!snack) return;
+    const id = setTimeout(() => setSnack(null), 5000);
     return () => clearTimeout(id);
-  }, [toast]);
+  }, [snack]);
   useEffect(() => {
     if (!cartUndo) return;
     const id = setTimeout(() => setCartUndo(null), 5000);
     return () => clearTimeout(id);
   }, [cartUndo]);
 
-  /* Statistik mengikuti tanggal OPERASIONAL (serviceDate jika ada,
-     jatuh ke tanggal input untuk transaksi lama) — transaksi susulan
-     masuk rekap tanggal operasionalnya, bukan tanggal diketiknya. */
-  const { todayCount, todaySum } = useMemo(() => {
-    const opMatch = (tx: Transaction) =>
-      tx.serviceDate ? tx.serviceDate === txDate : (txDate === todayIso && isToday(tx.createdAt));
-    const list = transactions.filter((tx) => tx.source === "penjualan" && opMatch(tx));
-    return { todayCount: list.length, todaySum: list.reduce((s, tx) => s + tx.total, 0) };
-  }, [transactions, txDate, todayIso]);
+  /* Tinggi panel struk diukur supaya petak menu terakhir tidak tertutup. */
+  const [panelH, setPanelH] = useState(150);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setPanelH(el.offsetHeight));
+    ro.observe(el);
+    setPanelH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
 
   const filtered = useMemo(
     () => sales.filter((m) => (cat === "Semua" || m.category === cat) && m.name.toLowerCase().includes(q.toLowerCase())),
@@ -161,7 +156,6 @@ export default function Penjualan({
     if (line && line.qty + d <= 0) { removeCartLine(key); return; }
     setCart((c) => c.map((l) => (l.key === key ? { ...l, qty: l.qty + d } : l)));
   };
-
   const removeCartLine = (key: string) => {
     const line = cart.find((l) => l.key === key);
     if (!line) return;
@@ -183,12 +177,11 @@ export default function Penjualan({
   const kelasNeeded = form.tingkat !== "" && form.tingkat !== NO_KELAS_TINGKAT;
   const kelasOptions = kelasList.filter((k) => k.tingkat === form.tingkat);
 
-  /* Pelanggan dikenal dari riwayat transaksi (pre-order menyimpan nama+WA+
-     tingkat+kelas). Dedupe per (nama, kelas) — dua anak beda kelas dengan
-     nama sama muncul sebagai saran TERPISAH. Data terbaru per pasangan
-     yang menang; tanggal transaksi terakhir ikut disimpan sebagai pembeda. */
+  /* Pelanggan dikenal dari riwayat transaksi. Dedupe per (nama, kelas) — dua
+     anak beda kelas dengan nama sama tampil TERPISAH. Utang = total transaksi
+     belum lunas (tidak dibatalkan) milik pasangan itu. */
   const knownCustomers = useMemo(() => {
-    const map = new Map<string, { nama: string; wa: string; tingkat: string; kelas: string; terakhir: string }>();
+    const map = new Map<string, { nama: string; wa: string; tingkat: string; kelas: string; terakhir: string; utang: number }>();
     [...transactions]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .forEach((tx) => {
@@ -199,39 +192,23 @@ export default function Penjualan({
           map.set(key, {
             nama, wa: tx.customer.wa || "", tingkat: tx.customer.tingkat || "",
             kelas: tx.customer.kelas || "",
-            terakhir: tx.serviceDate || tx.createdAt.slice(0, 10),
+            terakhir: tx.serviceDate || tx.createdAt.slice(0, 10), utang: 0,
           });
         }
+        if (!tx.paid && !tx.cancelledAt) map.get(key)!.utang += tx.total;
       });
     return Array.from(map.values());
   }, [transactions]);
 
-  const BLN_S = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-  const tglSingkat = (d: string) => `${parseInt(d.slice(8, 10), 10)} ${BLN_S[parseInt(d.slice(5, 7), 10) - 1]}`;
+  const daftarNama = useMemo(() => {
+    const k = cariNama.trim().toLowerCase();
+    const list = k ? knownCustomers.filter((c) => c.nama.toLowerCase().includes(k)) : knownCustomers;
+    return list.slice(0, 30);
+  }, [knownCustomers, cariNama]);
 
-  const [saranTertutup, setSaranTertutup] = useState(false);
-  const namaQ = form.nama.trim().toLowerCase();
-  const saranNama = useMemo(() => {
-    if (saranTertutup || namaQ.length < 2) return [];
-    return knownCustomers.filter((c) => c.nama.toLowerCase().includes(namaQ)).slice(0, 5);
-  }, [knownCustomers, namaQ, saranTertutup]);
-
-  const pilihSaran = (c: { nama: string; wa: string; tingkat: string; kelas: string }) => {
-    setForm({ nama: c.nama, tingkat: c.tingkat, kelas: c.kelas, wa: c.wa });
-    setSaranTertutup(true);
-  };
-
-  /** Isi-otomatis kolom KOSONG hanya saat nama persis cocok dengan TEPAT SATU
-   * pelanggan — nama kembar beda kelas dibiarkan dipilih lewat saran. */
-  const namaBerubah = (nama: string) => {
-    setSaranTertutup(false);
-    const matches = knownCustomers.filter((c) => c.nama.toLowerCase() === nama.trim().toLowerCase());
-    setForm((f) => matches.length === 1
-      ? { nama, tingkat: f.tingkat || matches[0].tingkat, kelas: f.kelas || matches[0].kelas, wa: f.wa || matches[0].wa }
-      : { ...f, nama });
-  };
-
-  const commit = (paid: boolean, customer?: { nama: string; tingkat: string; kelas: string; wa: string }) => {
+  const commit = (paid: boolean, customer?: Cust) => {
+    if (cart.length === 0) return;
+    const savedCart = cart;
     const tx: Transaction = {
       id: uid(),
       source: "penjualan",
@@ -241,27 +218,29 @@ export default function Penjualan({
         : { nama: "", kelas: "" },
       createdAt: new Date().toISOString(),
       label: nowLabel(),
-      // Tanggal operasional transaksi — untuk input susulan = tanggal lampau
       serviceDate: txDate,
       items: cart.map((l) => ({ name: l.name, variant: l.variant, price: l.price, qty: l.qty })),
       total,
     };
-    onTransaction(tx);
-    setCart([]); setView("shop"); setBilling(false); setForm({ nama: "", tingkat: "", kelas: "", wa: "" }); setTried(false);
+    const inserted = Promise.resolve(onTransaction(tx)).catch(() => {});
+    setCart([]); setBilling(null); setCariNama(""); setForm({ nama: "", tingkat: "", kelas: "", wa: "" }); setTried(false);
     const utk = isBackdate ? ` untuk ${serviceDateLabel(txDate)}` : "";
-    setToast(paid ? { ok: true, msg: `Penjualan dicatat${utk} — ${rupiah(total)} · Lunas` }
-                   : { ok: false, msg: `Tagihan${utk} — ${customer?.nama} (${customer?.kelas || customer?.tingkat})` });
+    /* Urungkan = tunggu simpan selesai, lalu tandai Dibatalkan (soft-delete) dan kembalikan keranjang. */
+    const undo = () => {
+      inserted.then(() => onCancelTransaction(tx.id));
+      setCart(savedCart);
+      setSnack(null);
+    };
+    setSnack(paid
+      ? { ok: true, msg: `Lunas · ${rupiah(tx.total)}${utk}`, undo }
+      : { ok: false, msg: `Tagihan${utk} · ${customer?.nama} (${customer?.kelas || customer?.tingkat})`, undo });
   };
-  const submitTagihan = () => {
+  const submitBaru = () => {
     if (!form.nama.trim() || !form.tingkat || (kelasNeeded && !form.kelas)) { setTried(true); return; }
     commit(false, { ...form, kelas: kelasNeeded ? form.kelas : "" });
   };
 
-  // Kartu menu — tinggi TETAP (bukan persegi penuh; rata-rata nama menu
-  // cuma 1-2 baris jadi persegi 1:1 kemarin kebanyakan ruang kosong).
-  // Semua kartu tetap seragam karena height fixed, bukan lagi ikut
-  // panjang nama seperti sebelumnya.
-  // Petak kecil 3 kolom (pilihan pemilik 3 Nov, opsi C): harga singkat "5K–10K" seperti di Preview PO.
+  // Petak 3 kolom, tinggi tetap, TANPA border; harga singkat "12K" / "5K–15K".
   const hargaK = (n: number) => (n % 1000 === 0 ? `${n / 1000}K` : rupiah(n));
   const hargaSingkat = (m: MenuItem) => {
     const ps = (m.variants.length > 0 ? m.variants.map((v) => v.price) : [m.price]).filter((x): x is number => typeof x === "number");
@@ -274,37 +253,38 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", minWidth: 0, width: "100%", boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.surfaceSoft : t.surface, border: `1.5px solid ${inCart ? t.primaryLine : t.border}`, borderRadius: 16, padding: "12px 12px", aspectRatio: "1 / 0.68", minHeight: 84, gap: 6, fontFamily: "inherit" }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", height: 74, boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.primaryLight : t.surface, border: "none", borderRadius: 14, padding: "8px 9px", fontFamily: "inherit", color: t.text }}>
         {inCart > 0 && (
-          <span style={{ position: "absolute", top: -9, right: -6, minWidth: 26, height: 26, padding: "0 7px", borderRadius: 999, background: t.primary, color: t.onPrimary, fontSize: 14, fontWeight: 800, display: "grid", placeItems: "center", boxShadow: "0 1px 3px rgba(47,42,36,.2)" }}>{inCart}</span>
+          <span style={{ position: "absolute", top: -6, right: -4, minWidth: 22, height: 22, padding: "0 6px", borderRadius: 999, background: t.text, color: t.surface, fontSize: 13, fontWeight: 700, display: "grid", placeItems: "center" }}>{inCart}</span>
         )}
-        <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>{toTitleCase(m.name)}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>{toTitleCase(m.name)}</div>
         <div className="flex items-center gap-1">
-          {m.variants.length > 0 && <Layers size={12} color={t.amberText} style={{ flex: "none" }} />}
-          <span style={{ fontSize: 14, fontWeight: 700, color: t.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{hargaSingkat(m)}</span>
+          {m.variants.length > 0 && <Layers size={12} color={t.text2} style={{ flex: "none" }} />}
+          <span style={{ fontSize: 13, fontWeight: 500, color: t.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{hargaSingkat(m)}</span>
         </div>
       </button>
     );
   };
 
-  // Kelompokkan hasil filter per kategori admin — untuk tampilan "Semua".
   const byCat: Record<string, MenuItem[]> = {};
   filtered.forEach((m) => { (byCat[m.category] = byCat[m.category] || []).push(m); });
   const sectionCats = cats.filter((c) => c !== "Semua" && byCat[c]);
+  const grid3: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 };
+  const kosong = cart.length === 0;
+  const tglPil = `${namaHari(txDate).slice(0, 3)}, ${parseInt(txDate.slice(8, 10), 10)} ${["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][parseInt(txDate.slice(5, 7), 10) - 1]}`;
+  void isToday;
 
   return (
     <div style={{ background: t.bg, color: t.text, height: "100%", position: "relative", display: "flex", flexDirection: "column" }}>
       <style>{`.pos-scroll::-webkit-scrollbar{display:none}`}</style>
       {tanyaTgl && (
-        /* Pop-up MELAYANG di tengah (opsi A pilihan pemilik 1 Nov): satu saran + satu ketukan, tanggal lain lewat ikon kalender. */
         <div style={{ position: "fixed", inset: 0, zIndex: 90, display: "grid", placeItems: "center", padding: 24 }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
-          <div role="dialog" aria-label="Tanggal penjualan" style={{ position: "relative", background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 22, width: "100%", maxWidth: 340, padding: "22px 20px 18px", boxShadow: "0 18px 50px rgba(47,42,36,.3)" }}>
-            <div style={{ fontSize: 14.5, color: t.text2, fontWeight: 600 }}>Hari ini {namaHari(todayIso)}</div>
+          <div role="dialog" aria-label="Tanggal penjualan" style={{ position: "relative", background: t.surface, borderRadius: 22, width: "100%", maxWidth: 340, padding: "22px 20px 18px", boxShadow: "0 18px 50px rgba(47,42,36,.3)" }}>
+            <div style={{ fontSize: 14.5, color: t.text2, fontWeight: 500 }}>Hari ini {namaHari(todayIso)}</div>
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.2, margin: "4px 0 18px" }}>Catat untuk<br />{labelHariTgl(hariKerjaSebelum(todayIso, 1)[0])}?</div>
-            {/* Dua tombol sama besar, kiri-kanan: Tanggal lain (kiri) dan Ya (kanan) — pemilik 1 Nov */}
             <div className="flex gap-2">
-              <div style={{ position: "relative", flex: 1, minWidth: 0, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: t.text, fontWeight: 700, fontSize: 15.5 }}>
+              <div style={{ position: "relative", flex: 1, minWidth: 0, height: 56, borderRadius: 14, background: t.divider, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: t.text, fontWeight: 700, fontSize: 15.5 }}>
                 <Calendar size={18} /> Tanggal lain
                 <input type="date" max={todayIso} aria-label="Pilih tanggal lain"
                   onChange={(e) => e.target.value && jawabTgl(e.target.value)}
@@ -321,199 +301,177 @@ export default function Penjualan({
       )}
       <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
-        {/* Header — selalu terlihat; hanya dua kolom di bawah yang scroll */}
+        {/* Judul + pil tanggal */}
         <div style={{ padding: "20px 20px 0", flex: "none" }}>
           <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
-            <div className="flex items-center gap-2">
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: t.text2, lineHeight: 1.2 }}>
-                  Masuk
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>{todayCount}× · {rupiah(todaySum)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Satu baris: tanggal transaksi (input OTS susulan) + cari.
-              Chip tanggal MENTOK KIRI (margin negatif menutup padding header)
-              supaya sejajar tepat dengan tepi kiri rail kategori di
-              bawahnya — bukan dengan judul/pencarian di atasnya.
-              Seluruh area tanggal diketuk via input date overlay inset:0 */}
-          <div className="flex items-stretch" style={{ marginTop: 10, height: 44, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, overflow: "hidden", boxSizing: "border-box" }}>
-            <div className="flex items-center" style={{ flex: "none", background: perhatianTgl ? t.primaryLight : "transparent", borderRight: `1.5px solid ${perhatianTgl ? t.primaryLine : t.divider}` }}>
-              <div className="flex items-center gap-1" style={{ position: "relative", height: "100%", padding: isBackdate ? "0 4px 0 12px" : "0 12px", cursor: "pointer" }}>
-                <Calendar size={16} color={t.amberText} />
-                <span style={{ fontSize: 14, fontWeight: 800, color: perhatianTgl ? t.amberText : t.text2, whiteSpace: "nowrap" }}>
-                  {namaHari(txDate).slice(0, 3)} {txDate.slice(8, 10)}/{txDate.slice(5, 7)}
-                </span>
+            <div className="flex items-center" style={{ height: 44, background: perhatianTgl ? t.primaryLight : t.surface, borderRadius: 999 }}>
+              <div className="flex items-center gap-2" style={{ position: "relative", height: "100%", padding: isBackdate ? "0 4px 0 14px" : "0 14px", cursor: "pointer" }}>
+                <Calendar size={16} color={t.text2} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: "nowrap" }}>{tglPil}</span>
                 <input type="date" value={txDate} max={todayIso}
                   onChange={(e) => e.target.value && setTxDate(e.target.value)}
-                  /* Pengaman: sebagian browser HP tidak membuka kalender dari input transparan — buka paksa lewat showPicker() */
                   onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* sudah terbuka / tidak didukung */ } }}
                   aria-label="Tanggal transaksi"
                   style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
               </div>
               {isBackdate && (
                 <button onClick={() => setTxDate(todayIso)} aria-label="Kembali ke hari ini"
-                  style={{ flex: "none", width: 36, height: "100%", border: "none", background: "transparent", color: t.amberText, display: "grid", placeItems: "center", cursor: "pointer" }}>
+                  style={{ flex: "none", width: 40, height: "100%", border: "none", background: "transparent", color: t.text2, display: "grid", placeItems: "center", cursor: "pointer" }}>
                   <X size={16} />
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, padding: "0 12px" }}>
-              <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-            </div>
           </div>
           {isBackdate && !pakaiSnapshot && (
-            <div style={{ marginTop: 6, fontSize: 12.5, color: t.amberText, fontWeight: 700 }}>Input susulan · memakai daftar saat ini</div>
+            <div style={{ marginTop: 4, fontSize: 13, color: t.amberText, fontWeight: 500 }}>Input susulan · memakai daftar saat ini</div>
           )}
-        </div>
 
-        {/* Dua kolom: kategori kiri (diam) + grid kanan (scroll independen) */}
-        <div style={{ flex: 1, minHeight: 0, display: "flex", marginTop: 12 }}>
-          <div className="pos-scroll" style={{ width: 90, flex: "none", overflowY: "auto", scrollbarWidth: "none", boxSizing: "border-box", padding: "0 2px 110px 20px" }}>
+          <div className="flex items-center gap-2" style={{ marginTop: 10, height: 44, background: t.surface, borderRadius: 12, padding: "0 12px", boxSizing: "border-box" }}>
+            <Search size={18} color={t.text2} style={{ flex: "none" }} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…" aria-label="Cari menu"
+              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+            {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+          </div>
+
+          {/* Chip kategori */}
+          <div className="pos-scroll flex" style={{ gap: 8, marginTop: 10, overflowX: "auto", scrollbarWidth: "none", margin: "10px -20px 0", padding: "0 20px" }}>
             {cats.map((c) => {
               const on = c === cat;
               return (
                 <button key={c} onClick={() => setCat(c)}
-                  style={{ display: "block", width: "100%", padding: "14px 2px 14px 8px", background: on ? t.primary : "transparent",
-                    border: "none", borderRadius: 12,
-                    color: on ? t.amberText : t.text2, fontWeight: on ? 800 : 600, fontSize: 12,
-                    textAlign: "left", lineHeight: 1.25, cursor: "pointer", fontFamily: "inherit",
-                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {railLabel(c)}
+                  style={{ flex: "none", height: 40, padding: "0 16px", borderRadius: 999, border: "none", background: on ? t.primary : t.divider, color: t.text, fontWeight: on ? 700 : 500, fontSize: 14, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  {c}
                 </button>
               );
             })}
           </div>
+        </div>
 
-          <div className="pos-scroll" style={{ flex: 1, minWidth: 0, overflowY: "auto", scrollbarWidth: "none", padding: "12px 16px 110px 12px" }}>
-            {filtered.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
-            ) : cat === "Semua" ? (
-              sectionCats.map((c) => (
-                <div key={c} style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-                    {byCat[c].map(menuCard)}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-                {filtered.map(menuCard)}
+        {/* Petak menu */}
+        <div className="pos-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", scrollbarWidth: "none", padding: `14px 20px ${panelH + NAV_HEIGHT + 16}px` }}>
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: t.text2 }}>Menu tidak ditemukan.</div>
+          ) : cat === "Semua" ? (
+            sectionCats.map((c) => (
+              <div key={c} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.text2, margin: "2px 2px 8px" }}>{c}</div>
+                <div style={grid3}>{byCat[c].map(menuCard)}</div>
               </div>
-            )}
+            ))
+          ) : (
+            <div style={grid3}>{filtered.map(menuCard)}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Panel struk — menempel di atas bottom nav, selalu terlihat */}
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT, zIndex: 20 }}>
+        <div ref={panelRef} style={{ maxWidth: 460, margin: "0 auto", background: t.surface, borderRadius: "24px 24px 0 0", boxShadow: "0 -4px 18px rgba(60,48,20,.10)", padding: "14px 20px 14px" }}>
+          {kosong ? (
+            <div className="flex items-center justify-between" style={{ minHeight: 40 }}>
+              <span style={{ fontSize: 15, color: t.text2 }}>Ketuk menu untuk mulai</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between" style={{ minHeight: 36 }}>
+                <span style={{ fontSize: 13, color: t.text2, fontWeight: 500 }}>{count} item</span>
+                <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center gap-1"
+                  style={{ minHeight: 36, padding: "0 4px", background: "transparent", border: "none", color: t.text2, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+                  <Trash2 size={15} /> Kosongkan
+                </button>
+              </div>
+              <div className="pos-scroll" style={{ maxHeight: 156, overflowY: "auto", scrollbarWidth: "none" }}>
+                {cart.map((l) => (
+                  <div key={l.key} className="flex items-center gap-2" style={{ minHeight: 52 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, overflowWrap: "anywhere" }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""} <span style={{ color: t.text2, fontWeight: 500 }}>×{l.qty}</span></div>
+                      <div style={{ fontSize: 13, color: t.text2, fontVariantNumeric: "tabular-nums" }}>{rupiah(l.price * l.qty)}</div>
+                    </div>
+                    <Stepper onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderTop: `1px solid ${t.divider}`, margin: "6px 0 8px" }} />
+            </>
+          )}
+          <div className="flex items-baseline justify-between" style={{ marginBottom: 10 }}>
+            <span style={{ fontSize: 14, color: t.text2, fontWeight: 500 }}>Total</span>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
+          </div>
+          <div className="flex gap-3">
+            <button disabled={kosong} onClick={() => { setCariNama(""); setBilling("pilih"); }} className="flex items-center justify-center gap-2"
+              style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.divider, color: t.text, fontWeight: 700, fontSize: 15, cursor: kosong ? "default" : "pointer", opacity: kosong ? 0.45 : 1, fontFamily: "inherit" }}>
+              <Receipt size={20} /> Tagihan
+            </button>
+            <button disabled={kosong} onClick={() => commit(true)} className="flex items-center justify-center gap-2"
+              style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: kosong ? "default" : "pointer", opacity: kosong ? 0.45 : 1, fontFamily: "inherit" }}>
+              <Wallet size={20} /> Tunai
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Sticky total bar */}
-      {count > 0 && view === "shop" && (
-        <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT, padding: "12px 20px 18px", background: "linear-gradient(transparent, " + t.bg + " 22%)" }}>
-          <div style={{ maxWidth: 460, margin: "0 auto" }} className="flex items-center gap-3">
-            <button onClick={() => setView("summary")} className="flex items-center justify-between" style={{ flex: 1, height: 58, borderRadius: 16, border: "none", cursor: "pointer", background: t.primary, color: t.onPrimary, padding: "0 18px", boxShadow: "0 6px 20px rgba(42,40,32,.4)" }}>
-              <span className="flex items-center gap-2" style={{ fontWeight: 700, fontSize: 15 }}><ShoppingCart size={20} /> {count} item</span>
-              <span className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 18 }}>{rupiah(total)} <ChevronRight size={20} /></span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Variant picker */}
+      {/* Pilih ukuran */}
       {variantFor && (
         <Sheet onClose={() => setVariantFor(null)} title={variantFor.name}>
           <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>Pilih ukuran / jenis:</div>
           {variantFor.variants.map((v) => (
-            <button key={v.id} onClick={() => { addLine(variantFor, v); setVariantFor(null); }} className="flex items-center justify-between" style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, padding: "0 16px", cursor: "pointer" }}>
-              <span style={{ fontSize: 16, fontWeight: 700 }}>{v.name}</span>
-              <span className="flex items-center gap-2" style={{ fontSize: 16, fontWeight: 700 }}>{rupiah(v.price)} <Plus size={18} color={t.amberText} /></span>
+            <button key={v.id} onClick={() => { addLine(variantFor, v); setVariantFor(null); }} className="flex items-center justify-between" style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 14, border: "none", background: t.divider, padding: "0 16px", cursor: "pointer", fontFamily: "inherit" }}>
+              <span style={{ fontSize: 16, fontWeight: 600 }}>{v.name}</span>
+              <span className="flex items-center gap-2" style={{ fontSize: 16, fontWeight: 600 }}>{rupiah(v.price)} <Plus size={18} color={t.text2} /></span>
             </button>
           ))}
         </Sheet>
       )}
 
-      {/* Ringkasan */}
-      {view === "summary" && (
-        <Sheet onClose={() => setView("shop")} title="Ringkasan Pesanan" sub={tglJamPendek(txDate)}>
-          {/* Pemilik 1 Nov: tanggal·jam pendek di bawah judul, harga per pcs saja, tong sampah sejajar Total, tombol Tagihan (kiri) | Tunai (kanan) */}
-          {cart.map((l) => (
-            <div key={l.key} className="flex items-center gap-3" style={{ padding: "11px 0" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 700 }}>{toTitleCase(l.name)}{l.variant ? ` · ${l.variant}` : ""}</div>
-                <div style={{ fontSize: 14, color: t.text2, marginTop: 2, fontWeight: 600 }}>{rupiah(l.price)}</div>
-              </div>
-              {/* Minus di jumlah 1 = hapus (dengan Urungkan) — tanpa tombol sampah terpisah */}
-              <Stepper lega onMinus={() => changeQty(l.key, -1)} onPlus={() => changeQty(l.key, 1)} val={l.qty} />
-            </div>
-          ))}
-
-          <div style={{ borderTop: `1px solid ${t.divider}`, margin: "6px 0 0" }} />
-          {/* Tong sampah sejajar Total (pemilik 1 Nov) */}
-          <div className="flex items-center justify-between" style={{ padding: "10px 0 16px" }}>
-            {cart.length > 0 ? (
-              <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center" style={{ width: 48, height: 48, marginLeft: -12, background: "transparent", border: "none", color: t.error, cursor: "pointer", padding: 0, justifyContent: "center" }}>
-                <Trash2 size={22} />
+      {/* Masuk Tagihan — pilih nama (satu ketukan = tercatat) */}
+      {billing === "pilih" && (
+        <Sheet onClose={() => setBilling(null)} title="Masuk Tagihan" sub={rupiah(total)}>
+          <div className="flex items-center gap-2" style={{ height: 48, background: t.divider, borderRadius: 12, padding: "0 12px" }}>
+            <Search size={18} color={t.text2} style={{ flex: "none" }} />
+            <input autoFocus value={cariNama} onChange={(e) => setCariNama(e.target.value)} placeholder="Cari nama…" aria-label="Cari nama"
+              style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+          </div>
+          <div style={{ marginTop: 6, maxHeight: "42vh", overflowY: "auto" }}>
+            {daftarNama.length === 0 && <div style={{ padding: "18px 0", textAlign: "center", color: t.text2, fontSize: 14 }}>Belum ada nama yang cocok.</div>}
+            {daftarNama.map((c) => (
+              <button key={`${c.nama.toLowerCase()}|${c.kelas.toLowerCase()}`} onClick={() => commit(false, { nama: c.nama, tingkat: c.tingkat, kelas: c.kelas, wa: c.wa })}
+                className="flex items-center gap-3"
+                style={{ width: "100%", minHeight: 60, padding: "6px 2px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 16, fontWeight: 700, overflowWrap: "anywhere" }}>{c.nama}</span>
+                  <span style={{ display: "block", fontSize: 13, color: t.text2, fontFamily: STRUK_MONO }}>{c.kelas || c.tingkat || "—"}</span>
+                </span>
+                {c.utang > 0 && (
+                  <span style={{ flex: "none", textAlign: "right", color: t.error, fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                    Utang<br /><span style={{ fontVariantNumeric: "tabular-nums" }}>{rupiah(c.utang)}</span>
+                  </span>
+                )}
               </button>
-            ) : <span />}
-            <span className="flex items-baseline gap-3">
-              <span style={{ fontSize: 16, fontWeight: 600, color: t.text2 }}>Total</span>
-              <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</span>
-            </span>
+            ))}
           </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setBilling(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-              <Receipt size={20} /> Tagihan
-            </button>
-            <button onClick={() => commit(true)} className="flex items-center justify-center gap-2" style={{ flex: 1, height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
-              <Wallet size={20} /> Tunai
-            </button>
-          </div>
+          <div style={{ fontSize: 12.5, color: t.text2, margin: "10px 0 12px" }}>Ketuk nama = langsung tercatat, bisa diurungkan 5 detik.</div>
+          <button onClick={() => { setForm({ nama: cariNama.trim(), tingkat: "", kelas: "", wa: "" }); setTried(false); setBilling("baru"); }} className="flex items-center justify-center gap-2"
+            style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.divider, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+            <UserPlus size={20} /> Anak baru
+          </button>
         </Sheet>
       )}
 
-      {/* Popup Tagihan */}
-      {billing && (
-        <Sheet onClose={() => setBilling(false)} title="Tagihan">
+      {/* Anak baru — form lama */}
+      {billing === "baru" && (
+        <Sheet onClose={() => setBilling(null)} title="Anak baru" sub={rupiah(total)}>
           <Field label="Nama Lengkap" req tried={tried} val={form.nama}>
-            <input value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
-            {/* Saran dari riwayat transaksi — satu ketuk mengisi nama, tingkat,
-                kelas, dan nomor WA sekaligus (permintaan Mama: tidak perlu
-                mengetik nomor WA satu per satu lagi) */}
-            {saranNama.length > 0 && (
-              <div style={{ marginTop: 6, background: t.surfaceSoft, border: `1px solid ${t.border}`, borderRadius: 12, overflow: "hidden" }}>
-                {saranNama.map((c) => (
-                  <button key={`${c.nama.toLowerCase()}|${c.kelas.toLowerCase()}`} onClick={() => pilihSaran(c)}
-                    className="flex items-center gap-2"
-                    style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, cursor: "pointer", textAlign: "left" }}>
-                    <span style={{ fontSize: 14.5, fontWeight: 700, color: t.text }}>{c.nama}</span>
-                    {c.kelas && (
-                      <span style={{ fontSize: 11.5, fontWeight: 800, color: t.text, background: "transparent", border: "1.5px solid #A59B80", padding: "0 8px", borderRadius: 999, flex: "none" }}>{c.kelas}</span>
-                    )}
-                    <span style={{ marginLeft: "auto", textAlign: "right", flex: "none" }}>
-                      <span style={{ display: "block", fontSize: 12, color: t.text2 }}>{c.wa || "tanpa WA"}</span>
-                      <span style={{ display: "block", fontSize: 10.5, color: t.textDis }}>terakhir {tglSingkat(c.terakhir)}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
           </Field>
-          {/* Tingkat + Kelas pakai chip standar (bukan ketik bebas) — supaya
-              pil kelas di Transaksi berwarna sesuai ketentuan per tingkat */}
           <Field label="Tingkat" req tried={tried} val={form.tingkat}>
             <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
               {TINGKAT_LIST.map((tg) => {
                 const on = tg === form.tingkat;
                 return (
                   <button key={tg} onClick={() => setForm({ ...form, tingkat: tg, kelas: "" })}
-                    style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
+                    style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: on ? 700 : 500, cursor: "pointer", border: "none", background: on ? t.primary : t.divider, color: t.text, fontFamily: "inherit" }}>
                     {tg}
                   </button>
                 );
@@ -530,8 +488,7 @@ export default function Penjualan({
                     const on = k.nama === form.kelas;
                     return (
                       <button key={k.id} onClick={() => setForm({ ...form, kelas: k.nama })}
-                        style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                          border: `1.5px solid ${on ? t.primaryLine : t.border}`, background: on ? t.primary : t.surface, color: on ? t.onPrimary : t.text2 }}>
+                        style={{ height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14, fontWeight: on ? 700 : 500, cursor: "pointer", border: "none", background: on ? t.primary : t.divider, color: t.text, fontFamily: "inherit" }}>
                         {k.nama}
                       </button>
                     );
@@ -543,34 +500,28 @@ export default function Penjualan({
           <Field label="WhatsApp">
             <input value={form.wa} onChange={(e) => setForm({ ...form, wa: e.target.value.replace(/\D/g, "") })} placeholder="08…" inputMode="numeric" style={inputStyle(false)} />
           </Field>
-          <button onClick={submitTagihan} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
+          <button onClick={submitBaru} className="flex items-center justify-center gap-2" style={{ width: "100%", height: 56, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8, fontFamily: "inherit" }}>
             <Check size={20} /> Simpan ke Tagihan · {rupiah(total)}
           </button>
         </Sheet>
       )}
 
-      {/* Undo keranjang (hapus item / kosongkan semua) */}
-      {cartUndo && (
-        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "12px 14px 12px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
-            <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
-              {cartUndo.type === "line" ? `${cartUndo.line.name} dihapus` : "Keranjang dikosongkan"}
+      {/* Toast gelap: Urungkan keranjang, atau hasil Tunai/Tagihan */}
+      {(cartUndo || snack) && (
+        <div style={{ position: "fixed", left: 20, right: 20, bottom: NAV_HEIGHT + panelH + 12, zIndex: 60, display: "flex", justifyContent: "center" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "10px 10px 10px 16px" }}>
+            {!cartUndo && snack && (
+              <span style={{ width: 24, height: 24, borderRadius: "50%", background: snack.ok ? t.success : t.surface, display: "grid", placeItems: "center", flex: "none", color: snack.ok ? "#fff" : t.text }}>
+                {snack.ok ? <Check size={15} /> : <Receipt size={14} />}
+              </span>
+            )}
+            <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, overflowWrap: "anywhere" }}>
+              {cartUndo ? (cartUndo.type === "line" ? `${cartUndo.line.name} dihapus` : "Keranjang dikosongkan") : snack?.msg}
             </span>
-            <button onClick={undoCart} className="flex items-center gap-1" style={{ background: "transparent", border: "none", color: t.onPrimary, textDecoration: "underline", fontWeight: 800, fontSize: 14.5, cursor: "pointer", padding: "8px 10px" }}>
+            <button onClick={cartUndo ? undoCart : snack?.undo} className="flex items-center gap-1"
+              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               <Undo2 size={16} /> Urungkan
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Toast */}
-      {toast && !cartUndo && (
-        <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.primary, color: t.onPrimary, borderRadius: 14, padding: "14px 18px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
-            <span style={{ width: 26, height: 26, borderRadius: "50%", background: toast.ok ? t.success : t.primary, display: "grid", placeItems: "center", flex: "none", color: toast.ok ? "#fff" : t.onPrimary }}>
-              {toast.ok ? <Check size={16} /> : <Receipt size={15} />}
-            </span>
-            <span style={{ fontSize: 14.5, fontWeight: 600 }}>{toast.msg}</span>
           </div>
         </div>
       )}
@@ -579,53 +530,40 @@ export default function Penjualan({
 }
 
 /* ---- shared bits ---- */
-function Sheet({ title, sub, children, onClose, leftIcon, onLeft }: {
-  title: string; sub?: string; children: React.ReactNode; onClose: () => void; leftIcon?: React.ReactNode; onLeft?: () => void;
-}) {
+function Sheet({ title, sub, children, onClose }: { title: string; sub?: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
       <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }} className="flex items-center gap-2">
-          {leftIcon && <button onClick={onLeft} style={{ border: "none", background: "transparent", cursor: "pointer", color: t.text, display: "grid", placeItems: "center" }}>{leftIcon}</button>}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div>
-            {sub && <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text2, marginTop: 2 }}>{sub}</div>}
-          </div>
-          <button onClick={onClose} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
+        <div style={{ position: "sticky", top: 0, background: t.surface, padding: "16px 20px 12px", zIndex: 1 }} className="flex items-center gap-2">
+          <div style={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 800 }}>{title}</div>
+          {sub && <div style={{ fontSize: 17, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{sub}</div>}
+          <button onClick={onClose} aria-label="Tutup" style={{ border: "none", background: t.divider, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
         </div>
-        <div style={{ padding: 20 }}>{children}</div>
+        <div style={{ padding: "4px 20px 20px" }}>{children}</div>
       </div>
     </div>
   );
 }
-const BLN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-/** "29 Okt 2026 · 01:54" — tanggal yang dicatat + jam sekarang, tanpa nama hari. */
-function tglJamPendek(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  const jam = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":");
-  return `${d} ${BLN_PENDEK[m - 1]} ${y} · ${jam}`;
-}
-function Stepper({ onMinus, onPlus, val, lega }: { onMinus: () => void; onPlus: () => void; val: number; lega?: boolean }) {
-  const u = lega ? 40 : 34;
-  const b: React.CSSProperties = { width: u, height: u, borderRadius: 999, border: "none", background: t.primaryLight, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" };
+function Stepper({ onMinus, onPlus, val }: { onMinus: () => void; onPlus: () => void; val: number }) {
+  const b = (bg: string): React.CSSProperties => ({ width: 40, height: 40, borderRadius: 999, border: "none", background: bg, color: t.text, cursor: "pointer", display: "grid", placeItems: "center" });
   return (
-    <div className="flex items-center gap-1" style={{ background: lega ? "transparent" : t.surfaceSoft, border: lega ? "none" : `1px solid ${t.border}`, borderRadius: 999, padding: lega ? 0 : 3, flex: "none" }}>
-      <button onClick={onMinus} style={b}><Minus size={16} /></button>
-      <span style={{ minWidth: lega ? 30 : 20, textAlign: "center", fontWeight: 800, fontSize: lega ? 18 : 15 }}>{val}</span>
-      <button onClick={onPlus} style={b}><Plus size={16} /></button>
+    <div className="flex items-center gap-1" style={{ flex: "none" }}>
+      <button onClick={onMinus} aria-label="Kurangi" style={b(t.divider)}><Minus size={16} /></button>
+      <span style={{ minWidth: 28, textAlign: "center", fontWeight: 700, fontSize: 16 }}>{val}</span>
+      <button onClick={onPlus} aria-label="Tambah" style={b(t.primary)}><Plus size={16} /></button>
     </div>
   );
 }
 const inputStyle = (err: boolean): React.CSSProperties => ({
-  width: "100%", height: 52, fontSize: 16, color: t.text, background: t.surface,
-  border: `1.5px solid ${err ? t.error : t.border}`, borderRadius: 12, padding: "0 14px", outline: "none", fontFamily: "inherit",
+  width: "100%", height: 52, fontSize: 16, color: t.text, background: t.divider,
+  border: err ? `1.5px solid ${t.error}` : "none", borderRadius: 12, padding: "0 14px", outline: "none", fontFamily: "inherit",
 });
 function Field({ label, children, req, tried, val }: { label: string; children: React.ReactNode; req?: boolean; tried?: boolean; val?: string }) {
   const err = req && tried && !String(val || "").trim();
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}{req && <span style={{ color: t.error }}> *</span>}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{label}{req && <span style={{ color: t.error }}> *</span>}</div>
       {children}
       {err && <div style={{ fontSize: 12.5, color: t.error, marginTop: 6 }}>Wajib diisi.</div>}
     </div>
