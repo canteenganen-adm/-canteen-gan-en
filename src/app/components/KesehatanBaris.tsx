@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronUp, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { t } from "../../lib/theme";
 import { hitungKesehatan, jumlahPerlu, type Masalah } from "../../lib/kesehatan";
 import type { MenuItem, Transaction } from "../../types";
 
-/* Baris "Kesehatan" di tab Kantin (kartu Kesehatan, permintaan pemilik 4 Nov): satu baris tipis — hijau "Semua baik" atau kuning "N perlu dicek";
-   ketuk = daftar masalah dengan langkah singkat. Hanya MEMBACA data yang sudah dimuat (tanpa permintaan baru, tanpa menulis). */
+/* Baris "Kesehatan" di tab Kantin: satu baris tipis — hijau "Semua baik" atau kuning "N perlu dicek"; ketuk = DAFTAR PERIKSA
+   (pemilik 4 Nov: "buat aja kaya checklist [v] gitu"; kartu bergaris dan tulisan panjang dianggap berantakan/mepet):
+   satu baris per temuan = lingkaran centang + judul + jumlah; ketuk lingkaran = tandai "sudah saya cek" (tetap tampil, tercentang);
+   ketuk baris = buka keterangan + rincian siapa/kapan/apa. Hanya MEMBACA data yang sudah dimuat (tanpa permintaan baru, tanpa menulis). */
 const KUNCI = "ganen_kesehatan_ok";
 const bacaOk = (): string[] => { try { return JSON.parse(localStorage.getItem(KUNCI) || "[]"); } catch { return []; } };
 const simpanOk = (a: string[]) => { try { localStorage.setItem(KUNCI, JSON.stringify(a.slice(-60))); } catch { /* tanpa penyimpanan: muncul lagi, tidak masalah */ } };
-/** Kunci berubah bila jumlahnya berubah, jadi masalah BARU yang sejenis muncul lagi. */
+/** Kunci berubah bila jumlahnya berubah, jadi masalah BARU yang sejenis muncul lagi sebagai belum dicek. */
 const kunciMasalah = (m: Masalah) => `${m.id}:${m.jumlah}`;
 
 export default function KesehatanBaris({ transactions, menus }: { transactions: Transaction[]; menus: MenuItem[] }) {
@@ -17,11 +19,10 @@ export default function KesehatanBaris({ transactions, menus }: { transactions: 
   const [rinci, setRinci] = useState<string | null>(null);
   const [ok, setOk] = useState<string[]>(bacaOk);
   const semua = useMemo(() => hitungKesehatan(transactions, menus), [transactions, menus]);
-  const masalah = semua.filter((m) => !ok.includes(kunciMasalah(m)));
-  const sudahDicek = semua.length - masalah.length;
-  const perlu = jumlahPerlu(masalah);
-  const tandaiCek = (m: Masalah) => setOk((prev) => { const n = [...prev, kunciMasalah(m)]; simpanOk(n); return n; });
-  const tampilkanLagi = () => { setOk([]); simpanOk([]); };
+  const belumDicek = semua.filter((m) => !ok.includes(kunciMasalah(m)));
+  const perlu = jumlahPerlu(belumDicek);
+  const sudahDicek = (m: Masalah) => ok.includes(kunciMasalah(m));
+  const ganti = (m: Masalah) => setOk((prev) => { const k = kunciMasalah(m); const n = prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]; simpanOk(n); return n; });
   const baik = perlu === 0;
 
   return (
@@ -33,8 +34,8 @@ export default function KesehatanBaris({ transactions, menus }: { transactions: 
           {baik ? <ShieldCheck size={20} /> : <TriangleAlert size={20} />}
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontSize: 14.5, fontWeight: 700 }}>Kesehatan</span>
-          <span style={{ display: "block", fontSize: 13, fontWeight: 600, marginTop: 1, color: baik ? t.successText : t.warnText }}>{baik ? "Semua baik" : `${perlu} perlu dicek`}</span>
+          <span style={{ display: "block", fontSize: 16, fontWeight: 600 }}>Kesehatan</span>
+          <span style={{ display: "block", fontSize: 13.5, fontWeight: 500, marginTop: 1, color: baik ? t.successText : t.warnText }}>{baik ? "Semua baik" : `${perlu} perlu dicek`}</span>
         </span>
         <ChevronRight size={18} color={t.text2} />
       </button>
@@ -43,49 +44,52 @@ export default function KesehatanBaris({ transactions, menus }: { transactions: 
         <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div onClick={() => setBuka(false)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
           <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ padding: "18px 20px 12px", position: "sticky", top: 0, background: t.surface, borderBottom: `1px solid ${t.divider}` }}>
-              <div style={{ fontSize: 19, fontWeight: 800 }}>Kesehatan</div>
-              <button onClick={() => setBuka(false)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 40, height: 40, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={18} /></button>
+            <div className="flex items-center justify-between" style={{ padding: "18px 20px 12px", position: "sticky", top: 0, background: t.surface, zIndex: 1 }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Kesehatan</div>
+                {semua.length > 0 && <div style={{ fontSize: 13.5, fontWeight: 500, color: t.text2, marginTop: 2 }}>{semua.length - belumDicek.length} dari {semua.length} sudah dicek</div>}
+              </div>
+              <button onClick={() => setBuka(false)} aria-label="Tutup" style={{ border: "none", background: t.surfaceSoft, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={20} /></button>
             </div>
-            <div style={{ padding: "14px 20px 28px" }}>
-              {masalah.length === 0 ? (
-                <div className="flex items-center gap-3" style={{ padding: "18px 14px", background: t.successBg, borderRadius: 16, color: t.successText, fontWeight: 800, fontSize: 16 }}>
-                  <ShieldCheck size={24} /> Semua baik. Tidak ada yang perlu dicek.
+            <div style={{ padding: "0 20px 28px" }}>
+              {semua.length === 0 ? (
+                <div className="flex items-center gap-3" style={{ padding: "18px 14px", background: t.successBg, borderRadius: 16, color: t.successText, fontWeight: 600, fontSize: 16 }}>
+                  <ShieldCheck size={24} /> Semua baik.
                 </div>
-              ) : masalah.map((m) => (
-                <div key={m.id} style={{ border: `1.5px solid ${t.border}`, borderRadius: 16, padding: "12px 14px", marginBottom: 10, background: m.perlu ? t.surface : t.surfaceSoft }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div style={{ fontSize: 15.5, fontWeight: 800 }}>{m.judul}</div>
-                    <span style={{ flex: "none", minWidth: 28, height: 26, padding: "0 8px", borderRadius: 999, background: m.perlu ? t.warnFill : t.divider, color: m.perlu ? t.warnText : t.text2, fontWeight: 800, fontSize: 13.5, display: "grid", placeItems: "center" }}>{m.jumlah}</span>
-                  </div>
-                  <div style={{ fontSize: 14, marginTop: 6, color: t.text2 }}>{m.langkah}</div>
-                  <button onClick={() => setRinci(rinci === m.id ? null : m.id)} aria-expanded={rinci === m.id}
-                    style={{ marginTop: 8, height: 44, padding: 0, border: "none", background: "transparent", color: t.amberText, fontWeight: 800, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
-                    {rinci === m.id ? "Sembunyikan rincian" : "Lihat siapa, kapan, apa"}
-                  </button>
-                  {rinci === m.id && (
-                    <div style={{ borderTop: `1px solid ${t.divider}`, marginTop: 2 }}>
-                      {m.rincian.map((r, i) => (
-                        <div key={i} style={{ padding: "10px 0", borderBottom: i === m.rincian.length - 1 ? "none" : `1px solid ${t.divider}` }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, overflowWrap: "anywhere" }}>{r.judul}</div>
-                          {r.garis.map((g, j) => <div key={j} style={{ fontSize: 13.5, color: t.text2, marginTop: 2, overflowWrap: "anywhere" }}>{g}</div>)}
-                        </div>
-                      ))}
-                      {m.jumlah > m.rincian.length && <div style={{ fontSize: 13, color: t.text2, padding: "8px 0" }}>…dan {m.jumlah - m.rincian.length} lainnya</div>}
+              ) : semua.map((m, idx) => {
+                const dicek = sudahDicek(m);
+                const terbuka = rinci === m.id;
+                return (
+                  <div key={m.id} style={{ borderTop: idx ? `1px solid ${t.divider}` : "none" }}>
+                    <div className="flex items-center" style={{ gap: 4, minHeight: 64 }}>
+                      <button onClick={() => ganti(m)} role="checkbox" aria-checked={dicek} aria-label={dicek ? `${m.judul}: sudah dicek` : `${m.judul}: tandai sudah dicek`}
+                        style={{ flex: "none", width: 48, height: 48, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+                        <span style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", border: `2px solid ${dicek ? t.success : t.borderStrong}`, background: dicek ? t.successBg : "transparent", color: t.successText }}>
+                          {dicek && <Check size={16} strokeWidth={3} />}
+                        </span>
+                      </button>
+                      <button onClick={() => setRinci(terbuka ? null : m.id)} aria-expanded={terbuka}
+                        className="flex items-center" style={{ flex: 1, minWidth: 0, gap: 10, minHeight: 64, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: dicek ? t.text2 : t.text, padding: 0 }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{m.judul}</span>
+                        <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: m.perlu && !dicek ? t.warnText : t.text2 }}>{m.jumlah}</span>
+                        {terbuka ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.text2} />}
+                      </button>
                     </div>
-                  )}
-                  <button onClick={() => tandaiCek(m)}
-                    style={{ marginTop: 10, height: 44, padding: "0 16px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                    Sudah saya cek
-                  </button>
-                </div>
-              ))}
-              {sudahDicek > 0 && (
-                <button onClick={tampilkanLagi} style={{ border: "none", background: "transparent", color: t.amberText, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", padding: "8px 0", textDecoration: "underline" }}>
-                  Tampilkan {sudahDicek} yang sudah dicek
-                </button>
-              )}
-              <div style={{ fontSize: 12.5, color: t.text2, marginTop: 8 }}>Diperiksa dari pesanan 14 hari terakhir dan semua menu. Hanya membaca, tidak mengubah apa pun.</div>
+                    {terbuka && (
+                      <div style={{ padding: "0 4px 14px 52px" }}>
+                        <div style={{ fontSize: 14, color: t.text2, lineHeight: 1.45 }}>{m.langkah}</div>
+                        {m.rincian.map((r, i) => (
+                          <div key={i} style={{ padding: "10px 0 0" }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, overflowWrap: "anywhere" }}>{r.judul}</div>
+                            {r.garis.map((g, j) => <div key={j} style={{ fontSize: 13.5, color: t.text2, marginTop: 2, overflowWrap: "anywhere" }}>{g}</div>)}
+                          </div>
+                        ))}
+                        {m.jumlah > m.rincian.length && <div style={{ fontSize: 13.5, color: t.text2, paddingTop: 10 }}>…dan {m.jumlah - m.rincian.length} lainnya</div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

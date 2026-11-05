@@ -51,6 +51,13 @@ export function hitungKesehatan(transactions: Transaction[], menus: MenuItem[], 
   tambah({ id: "total-nol", judul: "Pesanan bertotal Rp0", perlu: true, rincian: baru.filter((t) => !(t.total > 0)).map(rincianTx), langkah: "Hanya penanda. Belum ada yang diubah. Cek dulu di Transaksi." });
   tambah({ id: "item-murah", judul: "Pesanan dengan harga item di bawah Rp1.000", perlu: true, rincian: baru.filter((t) => t.total > 0 && t.items.some((i) => !(i.price >= 1000))).map(rincianTx), langkah: "Hanya penanda. Mungkin harga menu saat itu keliru. Cek harganya di Menu." });
 
+  // 1b. Menu dengan ukuran/varian TANPA NAMA (mis. satu baris harga kosong namanya, baris lain "M"): orang tua melihat pilihan membingungkan
+  tambah({
+    id: "menu-ukuran", judul: "Menu dengan ukuran tanpa nama", perlu: true, langkah: "Beri nama ukuran (mis. S, M, L) di Edit Menu, atau hapus ukuran yang tidak dipakai, lalu Simpan.",
+    rincian: menus.filter((m) => m.variants.length > 1 && m.variants.some((v) => !(v.name || "").trim()))
+      .map((m) => ({ judul: m.name, garis: [m.variants.map((v) => `${(v.name || "").trim() || "(tanpa nama)"} ${rupiah(v.price)}`).join(" · "), m.category] })),
+  });
+
   // 2. Menu berharga di bawah Rp1.000
   tambah({
     id: "menu-murah", judul: "Menu berharga di bawah Rp1.000", perlu: true, langkah: "Perbaiki harganya di Menu bila memang keliru, lalu Simpan.",

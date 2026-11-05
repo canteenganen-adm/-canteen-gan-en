@@ -429,10 +429,10 @@ export default function Pengaturan({
                     ) : (
                       <>
                         <Clock size={15} color={t.amberText} style={{ flex: "none" }} />
-                        <span style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0 }}>{p}</span>
+                        <span style={{ fontSize: 16, fontWeight: 600, flex: 1, minWidth: 0 }}>{p}</span>
                         <input type="time" value={sched.defaultTime || ""} aria-label={`Jam ${p}`}
                           onChange={(e) => setDefaultTime(p, e.target.value)}
-                          style={{ border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 15, fontWeight: 700, color: sched.defaultTime ? t.text : t.textDis, background: t.surfaceSoft, fontFamily: "inherit" }} />
+                          style={{ border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 16, fontWeight: 500, color: sched.defaultTime ? t.text : t.textDis, background: t.surfaceSoft, fontFamily: "inherit" }} />
                         <button onClick={() => toggleScheduleExpand(p)} aria-label="Atur per tingkat" aria-expanded={isExpanded}
                           style={{ width: 44, height: 44, flex: "none", border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}>
                           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -450,14 +450,14 @@ export default function Pengaturan({
                         return (
                           <div key={tingkat} className="flex items-center gap-3"
                             style={{ padding: "9px 14px", borderBottom: ti < TINGKAT_LIST.length - 1 ? `1px solid ${t.divider}` : undefined }}>
-                            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: t.text }}>{tingkat}</span>
+                            <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: t.text }}>{tingkat}</span>
                             <span style={{ fontSize: 11.5, color: t.textDis }}>
                               {!tingkatTime && !isGK && sched.defaultTime ? sched.defaultTime : ""}
                               {!tingkatTime && isGK ? "Tidak dicek" : ""}
                             </span>
                             <input type="time" value={tingkatTime}
                               onChange={(e) => setTingkatTime(p, tingkat, e.target.value)}
-                              style={{ border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 8px", fontSize: 13.5, fontWeight: 700, color: tingkatTime ? t.text : t.textDis, background: t.bg, fontFamily: "inherit" }} />
+                              style={{ border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 8px", fontSize: 15, fontWeight: 500, color: tingkatTime ? t.text : t.textDis, background: t.bg, fontFamily: "inherit" }} />
                           </div>
                         );
                       })}
@@ -826,22 +826,6 @@ export default function Pengaturan({
   const bulanIni = (() => { const n = new Date(Date.now() + 7 * 3_600_000); return `${BULAN_PANJANG[n.getUTCMonth()]} ${n.getUTCFullYear()}`; })();
   const hariIni = new Date(Date.now() + 7 * 3_600_000).getUTCDate();
   const bulanLaluPendek = BLN[(new Date(Date.now() + 7 * 3_600_000).getUTCMonth() + 11) % 12];
-  // Grafik mini 7 hari: pemasukan (Lunas) per Tanggal Layanan, dari transaksi yang SUDAH dimuat (tanpa permintaan baru)
-  const tujuhHari = (() => {
-    const kunciHari = (d: Date) => d.toISOString().slice(0, 10);
-    const sekarangWib = new Date(Date.now() + 7 * 3_600_000);
-    const hari = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(Date.UTC(sekarangWib.getUTCFullYear(), sekarangWib.getUTCMonth(), sekarangWib.getUTCDate() - (6 - i)));
-      return { kunci: kunciHari(d), total: 0, hariIni: i === 6 };
-    });
-    for (const tx of transactions) {
-      if (!tx.paid || tx.cancelledAt || tx.deletedAt) continue;
-      const k = tx.serviceDate ?? kunciHari(new Date(new Date(tx.createdAt).getTime() + 7 * 3_600_000));
-      const h = hari.find((x) => x.kunci === k);
-      if (h) h.total += tx.total;
-    }
-    return hari;
-  })();
   const persen = ringkas && ringkas.prev > 0 ? Math.round(((ringkas.masuk - ringkas.prev) / ringkas.prev) * 100) : null;
   const totalSumber = ringkas ? ringkas.po + ringkas.pj : 0;
   return (
@@ -866,9 +850,8 @@ export default function Pengaturan({
           <button onClick={onOpenLaporan} aria-label="Buka Laporan" className="flex"
             style={{ gap: 10, width: "100%", padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text, alignItems: "stretch" }}>
             <div style={{ flex: "0 0 56%", minWidth: 0, background: t.primaryLight, borderRadius: 18, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".08em", color: t.text2 }}>MASUK · {BLN[new Date(Date.now() + 7 * 3_600_000).getUTCMonth()].toUpperCase()}</div>
-              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.03em", margin: "2px 0 8px", lineHeight: 1.1, whiteSpace: "nowrap" }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
-              <MiniTujuhHari data={tujuhHari} />
+              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: ".08em", color: t.text2 }}>LUNAS · {BLN[new Date(Date.now() + 7 * 3_600_000).getUTCMonth()].toUpperCase()}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.03em", margin: "4px 0 0", lineHeight: 1.1, whiteSpace: "nowrap" }}>{ringkas ? rpRingkas(ringkas.masuk) : "…"}</div>
             </div>
             <div style={{ flex: 1, minWidth: 0, background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "14px 12px 14px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative" }}>
               <SumberRingkas Ic={Utensils} warna={t.primaryLight} ikon={t.amberText} label="Pre-order" nilai={ringkas ? rpRingkas(ringkas.po) : "…"} />
@@ -948,18 +931,6 @@ export default function Pengaturan({
 }
 
 /* Menu Kantin: ubin yang MENGISI kolom (tepi kiri-kanan sejajar kartu Laporan di atasnya), isi kuning pucat + sudut 20 sama dengan kartu besar; ikon di atas, nama di bawah, lencana angka opsional. */
-/** Grafik mini 7 hari di blok Masuk: hari ini gelap, hari lain madu pudar; hari tanpa pemasukan = batang tipis. */
-function MiniTujuhHari({ data }: { data: { total: number; hariIni: boolean }[] }) {
-  const maks = Math.max(1, ...data.map((d) => d.total));
-  return (
-    <div role="img" aria-label="Pemasukan 7 hari terakhir" style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 26 }}>
-      {data.map((d, i) => (
-        <i key={i} style={{ flex: 1, display: "block", height: `${Math.max(12, Math.round((d.total / maks) * 100))}%`, borderRadius: "3px 3px 1.5px 1.5px", background: d.hariIni ? t.text : t.chart[2], opacity: d.hariIni ? 1 : 0.55 }} />
-      ))}
-    </div>
-  );
-}
-
 /** Satu sumber di blok kanan: ikon dalam kotak lembut, label kecil di atas jumlah. */
 function SumberRingkas({ Ic, label, nilai, warna, ikon }: { Ic: React.ComponentType<{ size?: number }>; label: string; nilai: string; warna: string; ikon: string }) {
   return (
