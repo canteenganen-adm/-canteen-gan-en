@@ -578,10 +578,10 @@ export default function PreOrderParent({
       {popup && SheetUkuran()}
       {count > 0 && !popup && !showCart && (
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 20, padding: "0 16px calc(14px + env(safe-area-inset-bottom, 0px))", pointerEvents: "none" }}>
-          <div className="flex items-center justify-between" style={{ maxWidth: 428, margin: "0 auto", background: t.text, borderRadius: 999, padding: "8px 8px 8px 22px", pointerEvents: "auto", boxShadow: "0 8px 24px rgba(42,40,32,.3)" }}>
+          <div className="flex items-center justify-between" style={{ maxWidth: 428, margin: "0 auto", background: "rgba(221,212,192,.86)", WebkitBackdropFilter: "blur(14px)", backdropFilter: "blur(14px)", borderRadius: 999, padding: "8px 8px 8px 22px", pointerEvents: "auto", boxShadow: "0 6px 20px rgba(60,48,20,.14)" }}>
             <div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)" }}>{count} item</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{rupiah(total)}</div>
+              <div style={{ fontSize: 12.5, color: t.text2 }}>{count} item</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: t.text }}>{rupiah(total)}</div>
             </div>
             <button onClick={() => setShowCart(true)}
               style={{ height: 48, padding: "0 22px", borderRadius: 999, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
