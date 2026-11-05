@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, Check, AlertTriangle, Calendar, MessageCircle, Search, Copy } from "lucide-react";
+import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, AlertTriangle, Calendar, MessageCircle, Search, Copy } from "lucide-react";
 import { salinTeks, BATAS_LINK_WA } from "../../lib/salin";
 import IkonDitagih from "./IkonDitagih";
-import { t } from "../../lib/theme";
+import { t, STRUK_MONO } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { mondayOf, isAkhirPekan, namaHari, labelPekan, sudahDitagih } from "../../lib/pekan";
 import type { Transaction } from "../../types";
@@ -42,9 +42,13 @@ export default function TagihSatuSatu({
   const judul = pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
   const [i, setI] = useState(0);
   const [terkirim, setTerkirim] = useState(0);
+  /** Indeks entri yang sudah dikirim (segmen bar progres). */
+  const [kirimIdx, setKirimIdx] = useState<number[]>([]);
+  const [toastSalin, setToastSalin] = useState(false);
+  useEffect(() => { if (!toastSalin) return; const id = setTimeout(() => setToastSalin(false), 2600); return () => clearTimeout(id); }, [toastSalin]);
   const [lewat, setLewat] = useState(0);
   const [teks, setTeks] = useState<string | null>(null);
-  const [lihat, setLihat] = useState(false);
+  const [lihat, setLihat] = useState(true);
   const [tersalin, setTersalin] = useState(false);
   useEffect(() => { if (!tersalin) return; const id = setTimeout(() => setTersalin(false), 1800); return () => clearTimeout(id); }, [tersalin]);
   /** Daftar nama: pilih siapa yang ditagih lebih dulu (cari nama, ketuk untuk loncat ke anak itu). */
@@ -73,7 +77,7 @@ export default function TagihSatuSatu({
     if (!selesai && gs.length === 0) setI((n) => n + 1);
   }, [selesai, gs.length]);
 
-  useEffect(() => { setTeks(null); setLihat(false); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
+  useEffect(() => { setTeks(null); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
 
   /* TUNGGAKAN SEBELUMNYA (pemilik 4 Nov: "yang baru dan yang lama belum lunas, mau ditambahkan?"): transaksi anak yang sama, belum lunas, belum dibatalkan,
      dari minggu LAIN di luar yang sedang ditagih. Bawaan DISERTAKAN (tercentang; pemilik 4 Nov: yes); Mama mencabut centangnya bila tidak mau (per anak, hanya muncul bila ada). */
@@ -101,17 +105,20 @@ export default function TagihSatuSatu({
   const maju = () => setI((n) => n + 1);
 
   const panjang = pesan.length > BATAS_LINK_WA;
+  /** Kirim WA: pesan SELALU disalin diam-diam; pendek = wa.me dengan teks, panjang = chat kosong (tinggal tempel). */
   const kirim = async () => {
     if (!wa) return;
+    const ok = await salinTeks(pesan);
     if (panjang) {
-      // terlalu panjang untuk tautan wa.me: salin pesan LENGKAP, buka chat kosong, lalu tempel
-      if (!(await salinTeks(pesan))) return;
+      if (!ok) return;
       window.open(`https://wa.me/${wa}`, "_blank");
+      setToastSalin(true);
     } else {
       window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
     }
     onKirim(ids);
-    setTerkirim((n) => n + gs.length);
+    setTerkirim((n) => n + 1);
+    setKirimIdx((a) => [...a, i]);
     maju();
   };
 
@@ -123,66 +130,88 @@ export default function TagihSatuSatu({
     <div role="dialog" aria-label={`Tagih ${judul}`} style={{ position: "fixed", inset: 0, zIndex: 75, background: t.bg, color: t.text, display: "flex", flexDirection: "column" }}>
       <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
-        {/* Tutup (kiri) dan Cari (kanan) dipisah, hanya ikon (usul pemilik 1 Nov: "gausah banyak tulisan cukup icon") */}
-        <div className="flex items-center" style={{ padding: "20px 20px 8px", minHeight: 70, gap: 12 }}>
+        {/* Atas: X kiri, judul tengah, Cari kanan; lalu "n dari N terkirim" dan bar segmen per anak */}
+        <div className="flex items-center" style={{ padding: "16px 20px 4px", minHeight: 64, gap: 8 }}>
           <button onClick={onTutup} aria-label="Tutup" title="Tutup" className="flex items-center justify-center"
-            style={{ flex: "none", width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer" }}>
-            <X size={22} />
+            style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.divider, color: t.text, cursor: "pointer" }}>
+            <X size={20} />
           </button>
-          <div style={{ flex: 1, minWidth: 0, fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
+          <div style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: 18, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
           <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Cari anak" title="Cari anak" className="flex items-center justify-center"
-            style={{ flex: "none", width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer" }}>
-            <Search size={22} />
+            style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.divider, color: t.text, cursor: "pointer" }}>
+            <Search size={20} />
           </button>
         </div>
+        {total > 0 && (
+          <div style={{ padding: "0 20px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: t.text2, fontWeight: 500 }}>{terkirim} dari {total} terkirim</div>
+            <div className="flex" style={{ gap: 4, marginTop: 8 }}>
+              {entri.map((_, n) => (
+                <span key={n} style={{ flex: 1, height: 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : n === i && !selesai ? t.text : t.border }} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {!selesai && gs.length > 0 && (
           <>
-            <div style={{ padding: "0 20px" }}>
-              <div className="flex items-baseline justify-between">
-                <span style={{ fontSize: 17, fontWeight: 800 }}>{i + 1} dari {total}</span>
-                <span style={{ fontSize: 14, color: t.text2, fontWeight: 600 }}>{total - i - 1} lagi</span>
-              </div>
-              <div style={{ height: 8, borderRadius: 6, background: t.border, overflow: "hidden", marginTop: 8 }}>
-                <div style={{ height: "100%", width: `${Math.round((i / total) * 100)}%`, background: t.success, transition: "width .25s ease" }} />
-              </div>
-            </div>
-
-            <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 20px 16px" }}>
-              {gs.map((g, gi) => {
-                const akhirPekan = g.txs.filter((x) => isAkhirPekan(opDate(x)));
-                return (
-                  <div key={gi} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 18, padding: "18px 16px 18px", marginBottom: 12 }}>
-                    <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.15 }}>
-                      {g.customer.nama} <Pil k={g.customer.kelas || g.customer.tingkat || "-"} />
+            <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 20px 16px" }}>
+              {/* Karcis: kepala t.divider, perforasi putus-putus + coakan, rincian per tanggal gaya struk */}
+              <div style={{ background: t.surface, borderRadius: 20, overflow: "hidden", position: "relative" }}>
+                <div style={{ background: t.divider, padding: "16px 16px 14px" }}>
+                  {gs.map((g, gi) => (
+                    <div key={gi} style={{ marginTop: gi ? 8 : 0 }}>
+                      <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
+                      <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
                     </div>
-                    <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-.03em", marginTop: 8 }}>{rupiah(g.total)}</div>
-                    <div style={{ fontSize: 15, color: t.text2, fontWeight: 600, marginTop: 2 }}>
-                      {g.txs.map((x) => tglPendek(opDate(x))).join(", ")}
-                    </div>
-                    {akhirPekan.map((x) => (
-                      <div key={x.id} className="flex items-center gap-2"
-                        style={{ marginTop: 10, padding: "8px 10px", background: t.warnFill, border: `1.5px solid ${t.warnText}33`, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 700 }}>
-                        <AlertTriangle size={17} style={{ flex: "none" }} />
-                        <span style={{ flex: 1, minWidth: 0 }}>{tglPendek(opDate(x))} itu {namaHari(opDate(x))}. Benar?</span>
-                        <button onClick={() => onUbahTanggal(x)} className="flex items-center gap-1"
-                          style={{ flex: "none", height: 44, padding: "0 12px", borderRadius: 10, border: `1.5px solid ${t.warnText}55`, background: t.surface, color: t.warnText, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                          <Calendar size={15} /> Ubah tanggal
-                        </button>
-                      </div>
-                    ))}
+                  ))}
+                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", marginTop: 6 }}>{rupiah(gs.reduce((n, g) => n + g.total, 0))}</div>
+                  <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>
+                    Tagihan {label} · {new Set(gs.flatMap((g) => g.txs.map(opDate))).size} tanggal
                   </div>
-                );
-              })}
-              {gs.length > 1 && (
-                <div style={{ fontSize: 13.5, color: t.text2, margin: "0 4px 10px", fontWeight: 600 }}>
-                  Satu nomor WA, digabung jadi satu pesan.
                 </div>
+                <div aria-hidden="true" style={{ position: "relative", height: 0 }}>
+                  <div style={{ borderTop: `2px dashed ${t.border}`, margin: "0 14px" }} />
+                  <span style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+                  <span style={{ position: "absolute", right: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+                </div>
+                <div style={{ padding: "16px 16px 14px", fontFamily: STRUK_MONO, fontSize: 15 }}>
+                  {gs.map((g, gi) => {
+                    const perTgl = new Map<string, number>();
+                    g.txs.forEach((x) => perTgl.set(opDate(x), (perTgl.get(opDate(x)) ?? 0) + x.total));
+                    return (
+                      <div key={gi} style={{ marginTop: gi ? 10 : 0 }}>
+                        {gs.length > 1 && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.customer.nama}</div>}
+                        {[...perTgl].sort(([x], [y]) => x.localeCompare(y)).map(([d, n]) => (
+                          <div key={d} className="flex items-baseline" style={{ gap: 6, lineHeight: 1.8 }}>
+                            <span style={{ flex: "none" }}>{namaHari(d).slice(0, 3)} {tglPendek(d)}</span>
+                            <span aria-hidden="true" style={{ flex: 1, borderBottom: `1.5px dotted ${t.border}`, transform: "translateY(-3px)" }} />
+                            <span style={{ flex: "none" }}>{n.toLocaleString("id-ID")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+                {gs.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
+                  <div key={x.id} className="flex items-center gap-2"
+                    style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>
+                    <AlertTriangle size={17} style={{ flex: "none" }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>{tglPendek(opDate(x))} itu {namaHari(opDate(x))}. Benar?</span>
+                    <button onClick={() => onUbahTanggal(x)} className="flex items-center gap-1"
+                      style={{ flex: "none", height: 44, padding: "0 12px", borderRadius: 10, border: "none", background: t.surface, color: t.warnText, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                      <Calendar size={15} /> Ubah tanggal
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {gs.length > 1 && (
+                <div style={{ fontSize: 13.5, color: t.text2, margin: "8px 4px 0", fontWeight: 500 }}>Satu nomor WA, digabung jadi satu pesan.</div>
               )}
 
               {tunggakan.length > 0 && (
                 <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                  style={{ gap: 12, width: "100%", minHeight: 56, padding: "8px 14px", marginBottom: 8, borderRadius: 14, border: "none", background: sertakan ? t.successBg : t.surface, boxShadow: sertakan ? "none" : "0 1px 3px rgba(60,48,20,.08)", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                  style={{ gap: 12, width: "100%", minHeight: 56, padding: "8px 14px", marginTop: 12, borderRadius: 14, border: "none", background: sertakan ? t.successBg : t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
                   <span style={{ width: 28, height: 28, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
                     {sertakan && <Check size={16} strokeWidth={3} />}
                   </span>
@@ -193,39 +222,53 @@ export default function TagihSatuSatu({
                 </button>
               )}
 
-              <div className="flex items-center justify-between" style={{ marginBottom: lihat ? 12 : 0 }}>
-              <button onClick={() => setLihat((v) => !v)} aria-expanded={lihat} className="flex items-center gap-1"
-                style={{ background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 14.5, minHeight: 44, padding: "0 4px", cursor: "pointer", fontFamily: "inherit" }}>
-                {lihat ? <ChevronUp size={17} /> : <ChevronDown size={17} />} Lihat dan ubah pesan
-              </button>
-              <button onClick={async () => { if (await salinTeks(pesan)) setTersalin(true); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
-                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                {tersalin ? <Check size={20} /> : <Copy size={20} />}
-              </button>
+              {/* Pratinjau pesan: baris tombol + gelembung (bisa diubah; teks = yang dikirim) */}
+              <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
+                <button onClick={() => setLihat((v) => !v)} aria-expanded={lihat} className="flex items-center gap-1"
+                  style={{ background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 14.5, minHeight: 44, padding: "0 4px", cursor: "pointer", fontFamily: "inherit" }}>
+                  Pratinjau pesan {lihat ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                </button>
+                <button onClick={async () => { if (await salinTeks(pesan)) setTersalin(true); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"} className="flex items-center gap-1"
+                  style={{ minHeight: 44, padding: "0 8px", border: "none", background: "transparent", color: tersalin ? t.successText : t.text2, fontWeight: 600, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
+                  {tersalin ? <Check size={17} /> : <Copy size={17} />} {tersalin ? "Tersalin" : "Salin"}
+                </button>
               </div>
               {lihat && (
-                <textarea value={pesan} onChange={(e) => setTeks(e.target.value)} rows={10}
-                  style={{ width: "100%", fontSize: 16, color: t.text, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.55, boxSizing: "border-box" }} />
+                <div style={{ background: t.successBg, borderRadius: "14px 4px 14px 14px", padding: "10px 12px 8px" }}>
+                  <textarea value={pesan} onChange={(e) => setTeks(e.target.value)} rows={10} aria-label="Isi pesan"
+                    style={{ width: "100%", fontSize: 16, color: t.text, background: "transparent", border: "none", padding: 0, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.5, boxSizing: "border-box" }} />
+                  <div className="flex items-center justify-end" style={{ gap: 4, fontSize: 11.5, color: t.text2 }}>
+                    {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
+                    <span style={{ color: t.ditagih, display: "grid", placeItems: "center" }}><IkonDitagih size={16} strokeWidth={2.4} /></span>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div style={{ padding: "10px 20px calc(18px + env(safe-area-inset-bottom, 0px))", borderTop: `1px solid ${t.divider}`, background: t.bg }}>
-              {wa ? (
-                <button onClick={kirim} className="flex items-center justify-center gap-2"
-                  style={{ width: "100%", height: 60, borderRadius: 14, border: "none", background: "#25D366", color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer" }}>
-                  {panjang ? <Copy size={22} /> : <MessageCircle size={22} />} {panjang ? "Salin & buka chat" : "Kirim ke WhatsApp"}
+            {toastSalin && (
+              <div style={{ position: "absolute", left: 20, right: 20, bottom: 130, display: "flex", justifyContent: "center", zIndex: 6 }}>
+                <div style={{ background: t.text, color: t.surface, borderRadius: 14, padding: "12px 16px", fontSize: 14.5, fontWeight: 600 }}>Pesan tersalin — tempel di WhatsApp</div>
+              </div>
+            )}
+
+            {/* Bawah: [‹ Kembali] [Kirim WA] [Lewati ›] satu baris, jarak 12px */}
+            <div style={{ padding: "10px 20px calc(32px + env(safe-area-inset-bottom, 0px))", background: t.bg }}>
+              <div className="flex items-stretch" style={{ gap: 12 }}>
+                <button onClick={() => setI((n) => Math.max(0, n - 1))} disabled={i === 0} aria-label="Kembali"
+                  style={{ flex: "none", width: 72, height: 60, borderRadius: 14, border: "none", background: t.divider, color: t.text, cursor: i === 0 ? "default" : "pointer", opacity: i === 0 ? 0.45 : 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, fontFamily: "inherit", fontSize: 11.5, fontWeight: 600 }}>
+                  <ChevronLeft size={20} />Kembali
                 </button>
-              ) : (
-                <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: t.error, padding: "6px 0 2px" }}>Nomor WhatsApp belum ada.</div>
-              )}
-              <div className="flex gap-2" style={{ marginTop: 10 }}>
-                <button onClick={() => { setLewat((n) => n + gs.length); maju(); }}
-                  style={{ flex: 1, height: 48, borderRadius: 12, border: wa ? `1.5px solid ${t.border}` : "none", background: wa ? t.surface : t.primary, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  Lewati
-                </button>
-                <button onClick={() => setI((n) => Math.max(0, n - 1))}
-                  style={{ flex: 1, height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  Kembali
+                {wa ? (
+                  <button onClick={kirim} className="flex items-center justify-center gap-2"
+                    style={{ flex: 1, minWidth: 0, height: 60, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                    {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : "Kirim WA"}
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-center" style={{ flex: 1, minWidth: 0, height: 60, fontSize: 14, fontWeight: 700, color: t.error, textAlign: "center" }}>Nomor WA belum ada</div>
+                )}
+                <button onClick={() => { setLewat((n) => n + gs.length); maju(); }} aria-label="Lewati"
+                  style={{ flex: "none", width: 72, height: 60, borderRadius: 14, border: "none", background: t.divider, color: t.text, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, fontFamily: "inherit", fontSize: 11.5, fontWeight: 600 }}>
+                  <ChevronRight size={20} />Lewati
                 </button>
               </div>
             </div>
