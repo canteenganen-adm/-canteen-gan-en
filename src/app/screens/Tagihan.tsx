@@ -479,7 +479,7 @@ export default function Tagihan({
     // Pulihkan TIDAK menyentuh status bayar: transaksi kembali ke tab
     // sesuai statusnya semula — jangan menjanjikan "Belum Dibayar" untuk
     // transaksi yang sebenarnya Lunas.
-    setToast(`Dipulihkan — ${tx.customer.nama} kembali ke ${tx.paid ? "Lunas" : "Belum Dibayar"}`);
+    setToast(`Dipulihkan — ${tx.customer.nama} kembali ke ${tx.paid ? "Lunas" : "Utang"}`);
   };
   const doUndo = () => {
     if (!undo) return;
@@ -721,45 +721,21 @@ export default function Tagihan({
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
             adalah memproses daftar transaksi, bukan dashboard keuangan */}
         <div className="flex items-center justify-between" style={{ padding: "20px 20px 6px", minHeight: 44 + 26 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
-          <div className="flex items-center gap-2">
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10.5, color: t.text2, fontWeight: 600 }}>
-                {tab === "unpaid" ? "Total Belum Dibayar" : tab === "riwayat" ? (lunasTanpaFilter ? "Masuk bulan ini" : "Masuk (Lunas)") : "Dibatalkan"}
-              </div>
-              <div style={{ fontSize: 14.5, fontWeight: 800, color: tab === "unpaid" ? t.amberText : tab === "riwayat" ? t.successText : t.text2 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
+            {/* Total sesuai tab: Utang (merah-jingga) / Masuk (hijau) / Dibatalkan */}
+            <div style={{ fontSize: 14, fontWeight: 500, color: t.text2, marginTop: 1 }}>
+              {tab === "unpaid" ? "Utang" : tab === "riwayat" ? (lunasTanpaFilter ? "Masuk bulan ini" : "Masuk (Lunas)") : "Dibatalkan"}{" "}
+              <span style={{ fontWeight: 700, color: tab === "unpaid" ? t.warnText : tab === "riwayat" ? t.successText : t.text2 }}>
                 {rupiah(tab === "unpaid" ? grandTotal : tab === "riwayat" ? historyMasuk : batalTotal)}
-              </div>
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Sticky: hanya alat kerja — tab, cari, satu baris filter */}
-        <div style={{ padding: "4px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-          <PaperTabs
-            tabs={[
-              { id: "unpaid", label: "Belum Dibayar" },
-              { id: "riwayat", label: "Lunas" },
-              { id: "batal", label: "Dibatalkan" },
-            ]}
-            value={tab}
-            onChange={setTab}
-          />
-
-          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
-            {/* Cari — SAMA dengan Pre-order/Menu: tinggi 44, sudut 12, garis 1.5px, latar kartu */}
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
-              <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-            </div>
-  
-              <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
+          <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
               className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 44, padding: "0 14px", borderRadius: 12, fontSize: 14.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
-                border: `1px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primary : t.surface, color: filterActive ? t.onPrimary : t.text2 }}>
+              style={{ position: "relative", flex: "none", height: 44, padding: "0 14px", borderRadius: 999, fontSize: 14.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
+                border: "none", background: filterActive ? t.primary : t.surface, color: filterActive ? t.onPrimary : t.text2 }}>
               <SlidersHorizontal size={16} /> Filter
               {filterActive && (
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
@@ -813,7 +789,32 @@ export default function Tagihan({
                 </div>
               </>
             )}
+          </div>
+        </div>
+
+        {/* Sticky: hanya alat kerja — tab, cari, satu baris filter */}
+        <div style={{ padding: "4px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+          <PaperTabs
+            tabs={[
+              { id: "unpaid", label: "Utang" },
+              { id: "riwayat", label: "Lunas" },
+              { id: "batal", label: "Dibatalkan" },
+            ]}
+            value={tab}
+            onChange={setTab}
+            warna={t.surface}
+            sama
+          />
+
+          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
+            {/* Cari — SAMA dengan Pre-order/Menu: tinggi 44, sudut 12, garis 1.5px, latar kartu */}
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+              <Search size={18} color={t.text2} style={{ flex: "none" }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
+  
           </div>
         </div>
 
@@ -1105,7 +1106,7 @@ export default function Tagihan({
                   </div>
                 )}
                 <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
-                <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Belum Dibayar"}</span></div>
+                <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Utang"}</span></div>
               </div>
               {/* Aksi struk: ikon polos + tulisan kecil (tanpa garis/kotak). Satu-satunya tombol penuh = Tandai Lunas. */}
               {tab === "unpaid" && (
@@ -1123,7 +1124,7 @@ export default function Tagihan({
                     <AksiStruk Ic={RotateCcw} label="Pulihkan" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} />
                   ) : (
                     <>
-                      <AksiStruk Ic={Undo2} label="Belum Dibayar" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} />
+                      <AksiStruk Ic={Undo2} label="Utang" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} />
                       <AksiStruk Ic={Ban} label="Batalkan" warna={t.text2} onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} />
                     </>
                   )}
@@ -1275,7 +1276,7 @@ function SourceTag({ source, muted }: { source: Transaction["source"]; muted?: b
 /** Ikon status baris: Lunas = lingkaran hijau berbingkai + latar hijau tipis + centang; Dibatalkan = lingkaran abu dicoret. */
 function StatusDot({ cancelled, unpaid }: { cancelled?: boolean; unpaid?: boolean }) {
   if (unpaid) {
-    return <span aria-label="Belum Dibayar" title="Belum Dibayar" style={{ width: 26, height: 26, borderRadius: "50%", flex: "none", boxSizing: "border-box", border: "1.8px dashed #756B5D" }} />;
+    return <span aria-label="Utang" title="Utang" style={{ width: 26, height: 26, borderRadius: "50%", flex: "none", boxSizing: "border-box", border: "1.8px dashed #756B5D" }} />;
   }
   return cancelled ? (
     <span aria-label="Dibatalkan" title="Dibatalkan" style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none", background: "#F1EFE8", border: "1.8px solid #8A8579", color: "#8A8579" }}>
@@ -1294,7 +1295,7 @@ function Empty({ q, lain, bukaTab }: { q: string; lain?: { lunas: number; batal:
       <div style={{ width: 60, height: 60, borderRadius: 16, background: t.successBg, color: t.successText, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
         <Check size={28} />
       </div>
-      <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ada di Belum Dibayar" : "Semua tagihan lunas"}</div>
+      <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ada di Utang" : "Semua tagihan lunas"}</div>
       <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : "Tidak ada yang belum dibayar. Kerja bagus."}</div>
       {q && lain && (lain.lunas > 0 || lain.batal > 0) && bukaTab && (
         <div className="flex items-center justify-center gap-2" style={{ marginTop: 16, flexWrap: "wrap" }}>
