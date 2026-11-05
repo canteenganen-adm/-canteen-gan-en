@@ -193,7 +193,7 @@ export default function TagihSatuSatu({
                 </button>
               )}
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between" style={{ marginBottom: lihat ? 12 : 0 }}>
               <button onClick={() => setLihat((v) => !v)} aria-expanded={lihat} className="flex items-center gap-1"
                 style={{ background: "transparent", border: "none", color: t.text2, fontWeight: 700, fontSize: 14.5, minHeight: 44, padding: "0 4px", cursor: "pointer", fontFamily: "inherit" }}>
                 {lihat ? <ChevronUp size={17} /> : <ChevronDown size={17} />} Lihat dan ubah pesan

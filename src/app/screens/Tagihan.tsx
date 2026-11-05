@@ -1209,7 +1209,7 @@ export default function Tagihan({
               <div style={{ fontSize: 18, fontWeight: 800 }}>Pratinjau WhatsApp</div>
               <button onClick={() => setWaDraft(null)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
             </div>
-            <div className="flex items-center justify-between" style={{ marginBottom: 6, minHeight: 44 }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 12, minHeight: 44 }}>
               <span style={{ fontSize: 13.5, color: t.text2, fontWeight: 500 }}>Periksa & edit sebelum dikirim.</span>
               <button onClick={async () => { if (await salinTeks(waDraft.text)) setTersalin(true); else setToast("Gagal menyalin. Tekan lama pada teks lalu pilih Salin."); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
                 style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
