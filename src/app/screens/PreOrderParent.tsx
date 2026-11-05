@@ -470,7 +470,7 @@ export default function PreOrderParent({
           </div>
         </div>
         <div className="flex items-center" style={{ gap: 7, marginTop: 6, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden" }}>
-          {serviceISO && <JamHitung frac={sisaMs == null ? 1 : Math.max(0, Math.min(1, sisaMs / 86400000))} warn={warn} />}
+          {serviceISO && <JamHitung beku={closed} frac={sisaMs == null ? 1 : Math.max(0, Math.min(1, sisaMs / 86400000))} warn={warn} />}
           <span style={{ fontWeight: 700 }}>{serviceISO ? tglSingkat(serviceISO) : serviceDate}</span>
           {closed ? <span style={{ color: t.error, fontWeight: 700 }}>· ditutup</span> : (
             <>
@@ -719,13 +719,13 @@ function labelPanjangISO(iso: string) {
 }
 
 /** Ikon hitung mundur: lingkaran titik-titik (waktu terlewat) + busur tegas (sisa) + jarum kecil. */
-function JamHitung({ frac, warn }: { frac: number; warn: boolean }) {
-  const r = 8, c = 2 * Math.PI * r, warna = warn ? t.warnText : t.text;
+function JamHitung({ frac, warn, beku }: { frac: number; warn: boolean; beku?: boolean }) {
+  const r = 8, c = 2 * Math.PI * r, warna = beku ? t.textDis : warn ? t.warnText : t.text;
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden style={{ flex: "none" }}>
       <circle cx="10" cy="10" r={r} fill="none" stroke={t.textDis} strokeWidth="2" strokeDasharray="1.2 2.5" strokeLinecap="round" />
-      <circle cx="10" cy="10" r={r} fill="none" stroke={warna} strokeWidth="2.4" strokeLinecap="round"
-        strokeDasharray={`${Math.max(0.01, c * frac)} ${c}`} transform="rotate(-90 10 10)" />
+      {!beku && <circle cx="10" cy="10" r={r} fill="none" stroke={warna} strokeWidth="2.4" strokeLinecap="round"
+        strokeDasharray={`${Math.max(0.01, c * frac)} ${c}`} transform="rotate(-90 10 10)" />}
       <path d="M10 6.2V10l2.4 1.4" fill="none" stroke={warna} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
