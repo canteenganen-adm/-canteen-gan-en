@@ -531,7 +531,7 @@ export default function PreOrderParent({
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, color: t.text2 }}>Pesan untuk</div>
           <div style={{ fontSize: 16, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {anak ? `${toTitleCase(anak.nama)}${anak.kelas ? ` · ${anak.kelas}` : anak.tingkat ? ` · ${anak.tingkat}` : ""}` : "Isi data anak"}
+            {anak ? `${toTitleCase(anak.nama)}${anak.kelas ? ` · ${anak.kelas}` : anak.tingkat ? ` · ${anak.tingkat}` : ""}` : "Isi nama"}
           </div>
         </div>
         <PilGanti label={anak ? "Ganti" : "Isi"} onClick={() => setSheetAnak(!anak && !savedAnak.length ? "isi" : "pilih")} />
@@ -856,7 +856,7 @@ function SheetDataAnak({ mulai, anak, anakLengkap, savedAnak, kelasList, onPilih
   }
   return (
     <Sheet onClose={onClose}>
-      <div style={{ fontSize: 20, fontWeight: 800 }}>{savedAnak.length || anak ? "Tambah anak" : "Isi data anak"}</div>
+      <div style={{ fontSize: 20, fontWeight: 800 }}>{savedAnak.length || anak ? "Tambah anak" : "Isi nama"}</div>
       {lbl("Nama", tried && salah.nama)}
       <input value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} placeholder="Nama lengkap" style={isian(tried && salah.nama)} />
       {lbl("Tingkat", tried && salah.tingkat)}
