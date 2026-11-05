@@ -507,9 +507,9 @@ export default function Penjualan({
       {/* Toast gelap: Urungkan keranjang, atau hasil Tunai/Tagihan */}
       {(cartUndo || snack) && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: NAV_HEIGHT + panelH + 12, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "10px 10px 10px 16px" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
             {!cartUndo && snack && (
-              <span style={{ width: 24, height: 24, borderRadius: "50%", background: snack.ok ? t.success : t.surface, display: "grid", placeItems: "center", flex: "none", color: snack.ok ? "#fff" : t.text }}>
+              <span style={{ width: 24, height: 24, borderRadius: "50%", background: snack.ok ? t.success : t.divider, display: "grid", placeItems: "center", flex: "none", color: snack.ok ? "#fff" : t.text }}>
                 {snack.ok ? <Check size={15} /> : <Receipt size={14} />}
               </span>
             )}
@@ -517,7 +517,7 @@ export default function Penjualan({
               {cartUndo ? (cartUndo.type === "line" ? `${cartUndo.line.name} dihapus` : "Keranjang dikosongkan") : snack?.msg}
             </span>
             <button onClick={cartUndo ? undoCart : snack?.undo} className="flex items-center gap-1"
-              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.divider, color: t.text, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>

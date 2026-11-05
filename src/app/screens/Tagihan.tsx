@@ -858,10 +858,10 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: on && x.berjalan ? `2px solid ${t.primaryLine}` : "2px solid transparent", borderRadius: 12, background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on && !x.berjalan ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: on ? 700 : 500, color: on ? t.text : t.text2, marginTop: 1 }}>berjalan</span>}
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -1052,7 +1052,7 @@ export default function Tagihan({
       {/* Undo bar */}
       {undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 14px 34px rgba(47,42,36,.3)" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
             <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, overflowWrap: "anywhere" }}>
               {undo.type === "paidMany" ? `Lunas — ${undo.txs[0].customer.nama} · ${rupiah(undo.txs.reduce((a, x) => a + x.total, 0))}`
                 : undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
@@ -1060,7 +1060,7 @@ export default function Tagihan({
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
-              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.divider, color: t.text, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>
@@ -1068,7 +1068,7 @@ export default function Tagihan({
       )}
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div style={{ maxWidth: 420, width: "100%", background: t.text, color: t.surface, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 600 }}>{toast}</div>
+          <div style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>{toast}</div>
         </div>
       )}
 

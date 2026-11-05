@@ -183,9 +183,8 @@ export default function TagihSatuSatu({
                       <div key={gi} style={{ marginTop: gi ? 10 : 0 }}>
                         {gs.length > 1 && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.customer.nama}</div>}
                         {[...perTgl].sort(([x], [y]) => x.localeCompare(y)).map(([d, n]) => (
-                          <div key={d} className="flex items-baseline" style={{ gap: 6, lineHeight: 1.8 }}>
+                          <div key={d} className="flex items-baseline justify-between" style={{ gap: 6, lineHeight: 1.8 }}>
                             <span style={{ flex: "none" }}>{namaHari(d).slice(0, 3)} {tglPendek(d)}</span>
-                            <span aria-hidden="true" style={{ flex: 1, borderBottom: `1.5px dotted ${t.border}`, transform: "translateY(-3px)" }} />
                             <span style={{ flex: "none" }}>{n.toLocaleString("id-ID")}</span>
                           </div>
                         ))}
@@ -247,7 +246,7 @@ export default function TagihSatuSatu({
 
             {toastSalin && (
               <div style={{ position: "absolute", left: 20, right: 20, bottom: 130, display: "flex", justifyContent: "center", zIndex: 6 }}>
-                <div style={{ background: t.text, color: t.surface, borderRadius: 14, padding: "12px 16px", fontSize: 14.5, fontWeight: 600 }}>Pesan tersalin — tempel di WhatsApp</div>
+                <div style={{ background: t.surface, color: t.text, borderRadius: 14, padding: "12px 16px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>Pesan tersalin — tempel di WhatsApp</div>
               </div>
             )}
 
@@ -320,13 +319,13 @@ export default function TagihSatuSatu({
             <div style={{ background: t.successBg, borderRadius: 18, padding: "36px 16px", textAlign: "center" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: t.success, color: "#fff", display: "grid", placeItems: "center", margin: "0 auto 12px" }}><Check size={30} strokeWidth={3} /></div>
               <div style={{ fontSize: 26, fontWeight: 800, color: t.successText }}>Selesai</div>
-              <div style={{ fontSize: 16, color: t.text2, marginTop: 6, fontWeight: 600 }}>
+              <div style={{ fontSize: 16, color: t.text2, marginTop: 6, fontWeight: 500 }}>
                 {terkirim > 0 ? `${terkirim} anak sudah ditagih.` : "Belum ada yang ditagih."}
                 {lewat > 0 ? ` ${lewat} dilewati, masih Belum Ditagih.` : ""}
               </div>
             </div>
             <button onClick={onTutup}
-              style={{ marginTop: 16, width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 17, cursor: "pointer" }}>
+              style={{ marginTop: 16, width: "100%", height: 54, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 600, fontSize: 17, cursor: "pointer" }}>
               Kembali ke daftar
             </button>
           </div>
