@@ -62,3 +62,13 @@ export function hariKerjaSebelum(iso: string, n: number) {
 
 /** "19–23" — rentang Senin–Jumat tanpa nama bulan (bulan ditulis sekali di judul kelompok). Melintasi bulan: "28–2". */
 export const rentangPendek = (senin: string) => `${fromISO(senin).getDate()}–${fromISO(isoAdd(senin, 4)).getDate()}`;
+
+/** Tanda "sudah ditagih" HANYA berlaku selama MINGGU penagihan (Senin–Minggu, WIB; pemilik 4 Nov: "langsung masuk card lagi", "asal sudah lewat minggu per sesi").
+ * Mulai Senin berikutnya transaksi yang belum lunas dihitung BELUM ditagih lagi (muncul di kartu, antrean Tagih, titik merah) sampai dikirim ulang atau dilunaskan.
+ * Tanggal ditagih sebenarnya tetap tampil sebagai keterangan; fungsi ini hanya untuk logika antrean/penanda. */
+export const sudahDitagih = (billedAt?: string | null): boolean => {
+  if (!billedAt) return false;
+  const wib = new Date(new Date(billedAt).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+  const hariIni = new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10);
+  return mondayOf(wib) >= mondayOf(hariIni);
+};

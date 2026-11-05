@@ -4,7 +4,7 @@ import { salinTeks, BATAS_LINK_WA } from "../../lib/salin";
 import IkonDitagih from "./IkonDitagih";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
-import { mondayOf, isAkhirPekan, namaHari, labelPekan } from "../../lib/pekan";
+import { mondayOf, isAkhirPekan, namaHari, labelPekan, sudahDitagih } from "../../lib/pekan";
 import type { Transaction } from "../../types";
 
 /* ============================================================
@@ -25,14 +25,12 @@ const waIntl = (wa?: string) => {
 };
 
 export default function TagihSatuSatu({
-  pekan, antrean, ulang, byId, bangunPesan, onKirim, onUbahTanggal, onTutup,
+  pekan, antrean, byId, bangunPesan, onKirim, onUbahTanggal, onTutup,
 }: {
   /** Senin tiap minggu yang ditagih (YYYY-MM-DD); lebih dari satu = minggu digabung jadi satu pesan per anak. */
   pekan: string[];
   /** Antrean dibekukan saat mulai: satu entri = satu pesan = satu atau lebih anak (daftar id transaksi per anak). */
   antrean: string[][][];
-  /** TAGIH ULANG: anak yang SEMUA tagihannya sudah ditagih di minggu-minggu lalu dan belum bayar; isi = semua transaksi belum lunas (tanpa saring minggu). */
-  ulang?: boolean;
   byId: Map<string, Transaction>;
   bangunPesan: (gs: GrupTagih[], label: string, tunggakan?: Tunggakan[]) => string;
   onKirim: (ids: string[]) => void;
@@ -41,7 +39,7 @@ export default function TagihSatuSatu({
 }) {
   const labels = [...pekan].sort().map(labelPekan);
   const label = labels.length > 3 ? `${labels[0]} sampai ${labels[labels.length - 1]}` : labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
-  const judul = ulang ? "Tagih ulang" : pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
+  const judul = pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
   const [i, setI] = useState(0);
   const [terkirim, setTerkirim] = useState(0);
   const [lewat, setLewat] = useState(0);
@@ -58,7 +56,7 @@ export default function TagihSatuSatu({
      atau dipindah ke pekan lain (ganti tanggal) gugur dari layar ini. */
   const entri = useMemo(() => antrean.map((anak) => anak
     .map((ids) => ids.map((id) => byId.get(id))
-      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && (ulang || pekan.includes(mondayOf(opDate(x)))))
+      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && pekan.includes(mondayOf(opDate(x))))
       .sort((a, b) => opDate(a).localeCompare(opDate(b)) || a.createdAt.localeCompare(b.createdAt)))
     .filter((txs) => txs.length > 0)
     .map((txs) => {
@@ -83,7 +81,7 @@ export default function TagihSatuSatu({
   useEffect(() => { setSertakan(true); }, [i]);
   const norm = (n: string) => n.trim().replace(/\s+/g, " ").toLowerCase();
   const tunggakan: Tunggakan[] = useMemo(() => {
-    if (!gs.length || ulang) return [];
+    if (!gs.length) return [];
     const namaSet = new Set(gs.map((g) => norm(g.customer.nama)));
     const perMinggu = new Map<string, number>();
     for (const x of byId.values()) {
@@ -254,7 +252,7 @@ export default function TagihSatuSatu({
                   const q = cariNama.trim().toLowerCase();
                   return gsx.length > 0 && (!q || gsx.some((g) => `${g.customer.nama} ${g.customer.kelas || ""}`.toLowerCase().includes(q)));
                 }).map(({ gsx, idx }) => {
-                  const sudah = gsx.every((g) => g.txs.every((x) => x.billedAt));
+                  const sudah = gsx.every((g) => g.txs.every((x) => sudahDitagih(x.billedAt)));
                   return (
                     <button key={idx} onClick={() => { setI(idx); setDaftar(false); }} className="flex items-center justify-between"
                       style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
