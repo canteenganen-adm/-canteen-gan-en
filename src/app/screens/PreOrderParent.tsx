@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import BackToTop from "../components/BackToTop";
 import JamHitung from "../components/JamHitung";
 import {
-  Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, CircleHelp, Pencil,
+  Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, CircleHelp, ChevronLeft, Pencil,
 } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah, orderNo, toTitleCase, wibClock } from "../../lib/format";
@@ -293,62 +293,64 @@ export default function PreOrderParent({
   /* ---------- BERHASIL DIKIRIM ---------- */
   if (step === "done" && receipt) {
     const Coakan = ({ sisi }: { sisi: "kiri" | "kanan" }) => (
-      <span style={{ position: "absolute", top: -10, [sisi === "kiri" ? "left" : "right"]: -10, width: 20, height: 20, borderRadius: "50%", background: t.bg }} />
+      <span style={{ position: "absolute", top: 0, [sisi === "kiri" ? "left" : "right"]: -10, width: 20, height: 20, borderRadius: "50%", background: t.bg }} />
     );
     return (
-      <Screen unavailNotice={unavailNotice}>
-        <div style={{ padding: "28px 16px 8px" }}>
-          <div style={{ background: t.surface, borderRadius: 20, boxShadow: "0 1px 3px rgba(60,48,20,.08)" }}>
-            <div style={{ background: t.successBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: "18px 16px" }} className="flex items-center gap-3">
-              <span style={{ flex: "none", width: 36, height: 36, borderRadius: "50%", background: "#fff", display: "grid", placeItems: "center", color: t.successText }}><Check size={18} strokeWidth={3} /></span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: t.successText }}>Pesanan Berhasil Dikirim</div>
-                <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2, fontWeight: 500 }}>{receipt.no} · {receipt.submittedAt}</div>
-              </div>
+      <Screen unavailNotice={unavailNotice} footerSpace={0}>
+        <div style={{ minHeight: "100dvh", boxSizing: "border-box", padding: "40px 16px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <section style={{ background: t.surface, borderRadius: 20, position: "relative" }}>
+            <div style={{ background: t.successBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: "18px 20px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textAlign: "center" }}>
+              <span style={{ width: 36, height: 36, borderRadius: "50%", background: "#5BAF4E", display: "grid", placeItems: "center", color: t.surface }}><Check size={18} strokeWidth={3} /></span>
+              <h1 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: t.successText }}>Pesanan Berhasil Dikirim</h1>
+              <span style={{ fontSize: 12.5, color: t.text2 }}>{receipt.no} · {receipt.submittedAt}</span>
             </div>
-            <div style={{ position: "relative", borderTop: `1.5px dashed ${t.textDis}` }}>
+            <div style={{ position: "relative", height: 20 }}>
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 10, background: t.successBg }} />
               <Coakan sisi="kiri" /><Coakan sisi="kanan" />
+              <div style={{ position: "absolute", left: 18, right: 18, top: 9, borderTop: `2px dashed ${t.border}` }} />
             </div>
-            <div style={{ padding: "14px 18px 18px" }}>
-              <Row k="Nama" v={receipt.nama} />
-              <Row k="Tanggal Layanan" v={receipt.serviceDate} />
-              <Row k="Waktu Ambil" v={receipt.ambil} />
-              <div style={{ borderTop: `1.5px dashed ${t.divider}`, margin: "10px 0" }} />
+            <div style={{ padding: "14px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              {([["Nama", receipt.nama], ["Tanggal Layanan", receipt.serviceDate], ["Waktu Ambil", receipt.ambil]] as const).map(([k, v]) => (
+                <div key={k} className="flex justify-between" style={{ fontSize: 14, gap: 12 }}>
+                  <span style={{ color: t.text2 }}>{k}</span><span style={{ fontWeight: 700, textAlign: "right" }}>{v}</span>
+                </div>
+              ))}
+              <div style={{ height: 1, background: t.divider }} />
               {receipt.items.map((it, i) => (
-                <div key={i} style={{ padding: "4px 0" }}>
-                  <div className="flex items-start justify-between" style={{ gap: 12 }}>
-                    <span style={{ fontSize: 15, fontWeight: 500 }}>{toTitleCase(it.name)}{it.variant ? ` · ${it.variant}` : ""} ×{it.qty}</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, flex: "none" }}>{rupiah(it.price * it.qty)}</span>
+                <div key={i}>
+                  <div className="flex justify-between" style={{ fontSize: 14, gap: 12 }}>
+                    <span>{toTitleCase(it.name)} <span style={{ color: t.text2 }}>{it.variant ? `· ${it.variant} ` : ""}×{it.qty}</span></span>
+                    <span style={{ flex: "none" }}>{rupiah(it.price * it.qty)}</span>
                   </div>
                   {it.note && <div style={{ fontSize: 13, color: t.text2 }}>{it.note}</div>}
                 </div>
               ))}
-              <div style={{ borderTop: `1.5px dashed ${t.divider}`, margin: "10px 0" }} />
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>
+              <div style={{ height: 1, background: t.divider }} />
+              <div className="flex items-baseline justify-between">
+                <span style={{ fontSize: 14, color: t.text2 }}>Total</span>
                 <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(receipt.total)}</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div style={{ fontSize: 13, color: t.text2, lineHeight: 1.6, margin: "18px 4px 0" }}>
-            <p style={{ margin: "0 0 10px" }}>
+          <section style={{ padding: "4px 10px 0", display: "flex", flexDirection: "column", gap: 10, fontSize: 13, color: t.text2, lineHeight: 1.6 }}>
+            <p style={{ margin: 0 }}>
               Mohon menitipkan kotak bekal Ananda <span style={{ fontSize: 12, color: t.textDis }}>(beserta wadah tambahan untuk menu berkuah bila diperlukan)</span>{" "}
               <span style={{ color: t.text }}>di pos satpam sebelum jam masuk sekolah.</span>
             </p>
-            <p style={{ margin: "0 0 10px" }}>Untuk KB, TK, dan SD Kelas 1–2, pesanan akan <span style={{ color: t.text }}>diantarkan ke kelas.</span></p>
-            <p style={{ margin: "0 0 10px" }}>Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil <span style={{ color: t.text }}>di lemari pengambilan bekal di lobby.</span></p>
+            <p style={{ margin: 0 }}>Untuk KB, TK, dan SD Kelas 1–2, pesanan akan <span style={{ color: t.text }}>diantarkan ke kelas.</span></p>
+            <p style={{ margin: 0 }}>Untuk SD Kelas 3 ke atas hingga SMA, pesanan dapat diambil <span style={{ color: t.text }}>di lemari pengambilan bekal di lobby.</span></p>
             <p style={{ margin: 0 }}>Kantin tidak menyediakan wadah maupun alat makan.</p>
-          </div>
-          <div style={{ textAlign: "center", fontSize: 14, fontWeight: 600, color: t.text, margin: "22px 0 20px" }}>🪷 感恩 Gan En 🙏🏻✨</div>
+            <p style={{ margin: "12px 0 0", textAlign: "center", fontSize: 14, fontWeight: 600, color: t.text, lineHeight: 1.6 }}>🪷 感恩 Gan En 🙏🏻✨</p>
+          </section>
 
-          <div className="flex" style={{ gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: "auto", paddingTop: 12 }}>
             <button onClick={copyReceipt} className="flex items-center justify-center gap-2"
-              style={{ flex: 1, height: 52, borderRadius: 14, border: "none", background: t.divider, color: copied ? t.successText : t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
-              {copied ? <Check size={17} /> : <Copy size={17} />} {copied ? "Tersalin" : "Salin Bukti Pesanan"}
+              style={{ height: 52, borderRadius: 999, border: "none", background: t.divider, color: copied ? t.successText : t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Tersalin" : "Salin Bukti Pesanan"}
             </button>
             <button onClick={pesanLagi}
-              style={{ flex: 1, height: 52, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ height: 52, borderRadius: 999, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
               Pesan Lagi
             </button>
           </div>
@@ -359,14 +361,14 @@ export default function PreOrderParent({
 
   /* ---------- KONFIRMASI PESANAN ---------- */
   if (step === "checkout") {
-    const kartu: React.CSSProperties = { background: t.surface, borderRadius: 18, padding: "16px 18px", marginBottom: 12, boxShadow: "0 1px 3px rgba(60,48,20,.08)" };
-    const judulKartu: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: t.text2, marginBottom: 8 };
+    const kartu: React.CSSProperties = { background: t.surface, borderRadius: 20, padding: "16px 18px", marginBottom: 12 };
+    const judulKartu: React.CSSProperties = { fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 };
     return (
       <Screen unavailNotice={unavailNotice} footerSpace={110}>
         <Top title="Konfirmasi Pesanan" onBack={() => setStep("menu")} />
         <div style={{ padding: "6px 16px 20px" }}>
           <div style={kartu}>
-            <div style={judulKartu}>Pesan untuk</div>
+            <div style={{ fontSize: 12, color: t.text2, marginBottom: 2 }}>Pesan untuk</div>
             <div className="flex items-center justify-between" style={{ gap: 10 }}>
               <div style={{ minWidth: 0 }}>
                 {anak ? (
@@ -374,7 +376,7 @@ export default function PreOrderParent({
                     <div style={{ fontSize: 17, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {toTitleCase(anak.nama)}{anak.kelas ? ` · ${anak.kelas}` : anak.tingkat ? ` · ${anak.tingkat}` : ""}
                     </div>
-                    <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{samarWa(anak.wa)}</div>
+                    <div style={{ fontSize: 12.5, color: t.text2, marginTop: 2 }}>{samarWa(anak.wa)}</div>
                   </>
                 ) : (
                   <div style={{ fontSize: 17, fontWeight: 800 }}>Isi data anak</div>
@@ -382,8 +384,8 @@ export default function PreOrderParent({
               </div>
               <PilGanti label={anak ? "Ganti" : "Isi"} onClick={() => setSheetAnak(!anak && !savedAnak.length ? "isi" : "pilih")} />
             </div>
-            <div style={{ borderTop: `1px solid ${t.divider}`, margin: "12px 0" }} />
-            <div className="flex items-center justify-between" style={{ gap: 10, fontSize: 14.5 }}>
+            <div style={{ borderTop: `1px solid ${t.divider}`, margin: "14px 0" }} />
+            <div className="flex items-center justify-between" style={{ gap: 10, fontSize: 14 }}>
               <span style={{ color: t.text2 }}>Tanggal Layanan</span>
               <span style={{ fontWeight: 700, textAlign: "right" }}>{serviceDate}</span>
             </div>
@@ -396,7 +398,7 @@ export default function PreOrderParent({
                 const on = p === ambil;
                 return (
                   <button key={p} onClick={() => setAmbil(p)}
-                    style={{ minHeight: 44, padding: "0 16px", borderRadius: 999, border: "none", fontSize: 14.5, fontWeight: on ? 700 : 500, cursor: "pointer", fontFamily: "inherit", background: on ? t.primary : t.divider, color: t.onPrimary }}>
+                    style={{ minHeight: 44, padding: "0 16px", borderRadius: 14, border: "none", fontSize: 14, fontWeight: on ? 700 : 500, cursor: "pointer", fontFamily: "inherit", background: on ? t.primary : t.divider, color: t.onPrimary }}>
                     {p}
                   </button>
                 );
@@ -406,7 +408,7 @@ export default function PreOrderParent({
 
           <div style={kartu}>
             <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: t.text2 }}>Pesanan</span>
+              <span style={{ fontSize: 14, fontWeight: 800 }}>Pesanan</span>
               <button onClick={() => setShowCart(true)} aria-label="Ubah pesanan"
                 style={{ width: 44, height: 44, margin: "-10px -10px -10px 0", border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: t.warnText }}>
                 <Pencil size={18} />
@@ -415,15 +417,15 @@ export default function PreOrderParent({
             {lines.map((l) => (
               <div key={keyOf(l)} style={{ padding: "5px 0" }}>
                 <div className="flex items-start justify-between" style={{ gap: 12 }}>
-                  <span style={{ fontSize: 15, fontWeight: 500 }}>{toTitleCase(l.menu.name)}{l.variant ? ` · ${l.variant.name}` : ""} ×{l.qty}</span>
-                  <span style={{ fontSize: 15, fontWeight: 500, flex: "none" }}>{rupiah(hargaLine(l) * l.qty)}</span>
+                  <span style={{ fontSize: 14 }}>{toTitleCase(l.menu.name)} <span style={{ color: t.text2 }}>{l.variant ? `· ${l.variant.name} ` : ""}×{l.qty}</span></span>
+                  <span style={{ fontSize: 14, fontWeight: 700, flex: "none" }}>{rupiah(hargaLine(l) * l.qty)}</span>
                 </div>
                 {l.note && <div style={{ fontSize: 13, color: t.text2 }}>{l.note}</div>}
               </div>
             ))}
             <div style={{ borderTop: `1px solid ${t.divider}`, margin: "10px 0" }} />
             <div className="flex items-center justify-between">
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>
+              <span style={{ fontSize: 14, color: t.text2 }}>Total</span>
               <span style={{ fontSize: 20, fontWeight: 800 }}>{rupiah(total)}</span>
             </div>
           </div>
@@ -438,11 +440,11 @@ export default function PreOrderParent({
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 20, background: t.surface, boxShadow: "0 -1px 3px rgba(60,48,20,.08)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           <div className="flex items-center justify-between" style={{ maxWidth: 460, margin: "0 auto", padding: "12px 16px", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 13, color: t.text2 }}>{count} item</div>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{rupiah(total)}</div>
+              <div style={{ fontSize: 12, color: t.text2 }}>{count} item</div>
+              <div style={{ fontSize: 17, fontWeight: 800 }}>{rupiah(total)}</div>
             </div>
             <button onClick={submit} disabled={submitting}
-              style={{ height: 52, padding: "0 28px", borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.6 : 1, fontFamily: "inherit" }}>
+              style={{ flex: 1, maxWidth: 220, height: 52, padding: "0 28px", borderRadius: 999, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.6 : 1, fontFamily: "inherit" }}>
               {submitting ? "Mengirim…" : "Kirim Pesanan"}
             </button>
           </div>
@@ -759,8 +761,9 @@ function PilGanti({ label, onClick }: { label: string; onClick: () => void }) {
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(42,40,32,.45)" }} />
-      <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "88vh", overflowY: "auto", padding: "20px 20px calc(22px + env(safe-area-inset-bottom, 0px))" }}>
+      <style>{`@keyframes ganen-sheet-naik{from{transform:translateY(100%)}to{transform:none}}@keyframes ganen-sheet-gelap{from{opacity:0}to{opacity:1}}`}</style>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(42,40,32,.45)", animation: "ganen-sheet-gelap .25s ease-out" }} />
+      <div style={{ position: "relative", animation: "ganen-sheet-naik .3s cubic-bezier(.22,.8,.3,1)", background: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "88vh", overflowY: "auto", padding: "20px 20px calc(22px + env(safe-area-inset-bottom, 0px))" }}>
         {children}
       </div>
     </div>
@@ -775,11 +778,12 @@ function Row({ k, v }: { k: string; v: string }) {
 }
 function Top({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <div className="flex items-center gap-3" style={{ padding: "14px 16px 8px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-      <button onClick={onBack} aria-label="Kembali" style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: t.divider, cursor: "pointer", display: "grid", placeItems: "center", color: t.text }}>
-        <ArrowLeft size={20} />
+    <div style={{ padding: "20px 16px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5, display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center" }}>
+      <button onClick={onBack} aria-label="Kembali" style={{ width: 44, height: 44, marginLeft: -8, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: t.text }}>
+        <ChevronLeft size={24} />
       </button>
-      <div style={{ fontSize: 20, fontWeight: 800 }}>{title}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, textAlign: "center" }}>{title}</div>
+      <span />
     </div>
   );
 }
