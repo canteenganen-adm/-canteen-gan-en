@@ -432,8 +432,8 @@ export default function PreOrderAdmin({
             </div>
             {/* Baris 2: cincin timer (tanpa angka sisa) + jam tutup; ketuk = Jam Tutup Otomatis. Tanggal lain dilihat = tanpa cincin. */}
             <button onClick={() => setSheet("jamTutup")} className="flex items-center" aria-label={`Jam tutup ${hhmm(autoCloseTime)}, ketuk untuk mengubah`}
-              style={{ gap: 8, minHeight: 44, padding: "0 8px 0 56px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2 }}>
-              {lihatSesi && <JamHitung size={20} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}
+              style={{ gap: 14, minHeight: 44, padding: "0 8px 0 0", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2 }}>
+              <span style={{ flex: "none", width: 42, display: "grid", placeItems: "center" }}>{lihatSesi && <JamHitung size={22} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}</span>
               <span>tutup {hhmm(autoCloseTime)}</span> <ChevronRight size={16} />
             </button>
             {!lihatSesi && (
