@@ -863,10 +863,10 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: on && x.berjalan ? `2px solid ${t.primaryLine}` : "2px solid transparent", borderRadius: 12, background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 10px 6px", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
-                              <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${on && !x.berjalan ? t.primaryLine : "transparent"}` }}>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: t.text2, marginTop: 1 }}>berjalan</span>}
+                              <span style={{ display: "inline-block", padding: "4px 0 5px" }}>{rentangPendek(x.senin)}</span>
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: on ? t.onPrimary : t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -877,8 +877,8 @@ export default function Tagihan({
                     <div style={{ flex: "none" }}>
                       <div style={{ fontSize: 13, padding: "0 3px 2px", margin: "0 2px 6px", borderBottom: "1.5px solid transparent" }}>&nbsp;</div>
                       <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 6px 2px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
-                        <span style={{ display: "inline-block", padding: "4px 0 5px", borderBottom: `4px solid ${cakupan === "semua" ? t.primaryLine : "transparent"}` }}>Semua</span>
+                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 10px 2px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        <span style={{ display: "inline-block", padding: "4px 0 5px" }}>Semua</span>
                       </button>
                     </div>
                   )}
