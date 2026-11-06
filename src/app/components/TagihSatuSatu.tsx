@@ -313,18 +313,19 @@ export default function TagihSatuSatu({
   );
 }
 
-/** Jahitan karcis: bila ada tunggakan, JAHITAN ITU SENDIRI bisa digeret ke kanan (aktif) atau ke kiri (mati), atau diketuk = sertakan tagihan sebelumnya. Tanpa gagang. */
+/** Jahitan karcis: sama seperti karcis lain (putus-putus, warna garis biasa, coakan di tepi). Bila ada tunggakan, jahitan itu sendiri bisa digeret ke kanan (Sertakan aktif) atau ke kiri (mati), atau diketuk. Tanpa gagang, tanpa warna hijau. */
 function JahitanGeret({ bisa, aktif, onUbah }: { bisa: boolean; aktif: boolean; onUbah: (v: boolean) => void }) {
   const awal = useRef(0);
   const [tarik, setTarik] = useState(false);
+  const tebal = tarik ? 4 : 2;
   return (
-    <div style={{ position: "relative", height: 0 }}>
-      <div style={{ borderTop: `${tarik ? 4 : 2}px dashed ${aktif ? t.success : t.border}`, margin: "0 14px", transition: "border-color .15s" }} />
-      <span aria-hidden="true" style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
-      <span aria-hidden="true" style={{ position: "absolute", right: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+    <div style={{ position: "relative", height: 2, margin: "0" }}>
+      <div aria-hidden="true" style={{ position: "absolute", left: 14, right: 14, top: 0, height: tebal, backgroundImage: `repeating-linear-gradient(to right, ${t.border} 0, ${t.border} 7px, transparent 7px, transparent 12px)` }} />
+      <span aria-hidden="true" style={{ position: "absolute", left: -9, top: -8, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+      <span aria-hidden="true" style={{ position: "absolute", right: -9, top: -8, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
       {bisa && (
         <div role="switch" aria-checked={aktif} aria-label="Geret jahitan untuk menyertakan tagihan sebelumnya"
-          style={{ position: "absolute", left: 0, right: 0, top: -22, height: 44, touchAction: "none", cursor: "grab" }}
+          style={{ position: "absolute", left: 0, right: 0, top: -21, height: 44, touchAction: "none", cursor: "grab" }}
           onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); awal.current = e.clientX; setTarik(true); }}
           onPointerUp={(e) => { setTarik(false); const dx = e.clientX - awal.current; onUbah(Math.abs(dx) > 24 ? dx > 0 : !aktif); }}
           onPointerCancel={() => setTarik(false)} />
