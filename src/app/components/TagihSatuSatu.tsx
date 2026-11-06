@@ -246,7 +246,7 @@ export default function TagihSatuSatu({
 
             {toastSalin && (
               <div style={{ position: "absolute", left: 20, right: 20, bottom: 130, display: "flex", justifyContent: "center", zIndex: 6 }}>
-                <div style={{ background: t.surface, color: t.text, borderRadius: 14, padding: "12px 16px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>Pesan tersalin — tempel di WhatsApp</div>
+                <div style={{ background: t.toast, color: t.surface, borderRadius: 14, padding: "12px 16px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>Pesan tersalin — tempel di WhatsApp</div>
               </div>
             )}
 

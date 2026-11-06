@@ -799,7 +799,7 @@ function Screen({ children, onCloseHelp, showHelp, unavailNotice, footerSpace = 
       </div>
       {unavailNotice && unavailNotice.length > 0 && (
         <div style={{ position: "fixed", left: 16, right: 16, top: 74, zIndex: 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-start gap-2" style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "13px 16px", fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
+          <div className="flex items-start gap-2" style={{ maxWidth: 420, width: "100%", background: t.toast, color: t.surface, borderRadius: 14, padding: "13px 16px", fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
             <AlertCircle size={17} style={{ flex: "none", marginTop: 1 }} />
             <span>{unavailNotice.join(", ")} sudah tidak tersedia dan dihapus dari keranjang.</span>
           </div>

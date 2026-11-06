@@ -13,6 +13,7 @@ import TagihSatuSatu from "../components/TagihSatuSatu";
 import RailAbjad from "../components/RailAbjad";
 import IkonDitagih from "../components/IkonDitagih";
 import GeserBaris from "../components/GeserBaris";
+import GeserTx from "../components/GeserTx";
 import { useKunciGulir } from "../components/useKunciGulir";
 import { isiTemplateTransfer } from "../../lib/waTemplate";
 import type { Transaction, CanteenSettings } from "../../types";
@@ -499,6 +500,7 @@ export default function Tagihan({
      dicatat kapan) + tombol Ubah Tanggal Layanan. detailTx menyimpan SNAPSHOT
      objek transaksi, jadi reload realtime tidak menutup picker (fix iOS). */
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
+  const [petunjukGeserTutup, setPetunjukGeserTutup] = useState(() => { try { return localStorage.getItem("ganen_hint_geser_tx") === "1"; } catch { return false; } });
   const [confirmLunas, setConfirmLunas] = useState<{ customer: Transaction["customer"]; txs: Transaction[]; total: number; sebagian?: boolean; minggu?: number } | null>(null);
   /** Tanggal (transaksi) yang dicentang untuk Lunas sebagian — satu ketukan melunaskan semua yang dicentang. */
   const [pilihTx, setPilihTx] = useState<Set<string>>(new Set());
@@ -852,20 +854,20 @@ export default function Tagihan({
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
                 <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
-                <RailGeser pudar style={{ gap: 14, padding: "0 0 4px" }}>
+                <RailGeser pudar style={{ gap: 10, padding: "0 0 4px" }}>
                   {kelompokBulan.map((k, ki) => (
-                    <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 14 }}>
+                    <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 10 }}>
                     {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 14, background: t.divider }} />}
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 10px" }}>
                         {k.label}
                       </div>
-                      <div className="flex" style={{ gap: 10 }}>
+                      <div className="flex" style={{ gap: 2 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "10px 14px", border: "none", borderRadius: 16, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 0, padding: "8px 10px", border: "none", borderRadius: 14, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px" }}>{rentangPendek(x.senin)}</span>
                               {x.berjalan && <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 2 }}>berjalan</span>}
@@ -880,7 +882,7 @@ export default function Tagihan({
                     <div style={{ flex: "none" }}>
                       <div style={{ fontSize: 13, margin: "0 0 10px" }}>&nbsp;</div>
                       <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "10px 14px", border: "none", borderRadius: 16, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        style={{ flex: "none", position: "relative", minWidth: 0, padding: "8px 10px", border: "none", borderRadius: 14, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                         <span style={{ display: "inline-block", padding: "4px 0 5px" }}>Semua</span>
                       </button>
                     </div>
@@ -993,54 +995,62 @@ export default function Tagihan({
                 <div style={{ fontSize: 17, fontWeight: 700 }}>{q ? "Tidak ditemukan" : tab === "batal" ? "Tidak ada yang dibatalkan" : "Belum ada riwayat"}</div>
                 <div style={{ fontSize: 14, color: t.text2, marginTop: 6 }}>{q ? "Coba kata kunci lain." : tab === "batal" ? "Transaksi yang dibatalkan akan muncul di sini." : "Transaksi Lunas akan muncul di sini."}</div>
               </div>
-            ) : riwayatGroups.slice(0, q ? Math.max(batasRiwayat, 60) : batasRiwayat).map((g) => (
-              <div key={groupKey(g.customer)} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 16, marginBottom: 14, overflow: "hidden" }}>
-                {/* Header nama — ketuk = lipat/buka (^ v) */}
-                {(() => {
-                  const kunciKartu = groupKey(g.customer);
-                  const buka = bukaLunas[kunciKartu] ?? false;
-                  return (<>
-                <div role="button" aria-expanded={buka} onClick={() => setBukaLunas((p) => ({ ...p, [kunciKartu]: !buka }))} style={{ padding: "14px 16px 10px", cursor: "pointer" }}>
-                  <div className="flex items-center justify-between" style={{ gap: 10 }}>
-                    <div className="flex items-center gap-2" style={{ flexWrap: "wrap", flex: 1 }}>
-                      {/* Penjualan tanpa nama = jualan kantin langsung (tunai) */}
-                      <span style={{ fontSize: 17, fontWeight: 800 }}>{g.customer.nama?.trim() ? g.customer.nama : "Cash"}</span>
-                      {(g.customer.kelas || g.customer.tingkat) && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: t.text, background: "transparent", border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", flex: "none", lineHeight: 1.35 }}>
-                          {g.customer.kelas || g.customer.tingkat}
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: riwayatFilter === "batal" ? t.text2 : t.successText, flex: "none" }}>
-                      {rupiah(riwayatFilter === "batal" ? g.txs.reduce((s, tx) => s + tx.total, 0) : g.totalMasuk)}
-                    </span>
-                    {buka ? <ChevronUp size={18} color={t.text2} style={{ flex: "none" }} /> : <ChevronDown size={18} color={t.text2} style={{ flex: "none" }} />}
-                  </div>
-                  {g.customer.wa && <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>{g.customer.wa}</div>}
+            ) : (<>
+              {/* Petunjuk geser: sekali, bisa ditutup (geser itu tersembunyi, jadi Mama/Papa perlu diberi tahu) */}
+              {!petunjukGeserTutup && (
+                <div className="flex items-center justify-between" style={{ background: t.primaryLight, borderRadius: 14, padding: "10px 6px 10px 14px", marginBottom: 12, gap: 8 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: t.text }}>{riwayatFilter === "batal" ? "Geser baris ke kanan untuk memulihkan." : "Geser baris ke kiri untuk membatalkan, ke kanan untuk mengembalikan ke Utang."}</span>
+                  <button onClick={() => { setPetunjukGeserTutup(true); try { localStorage.setItem("ganen_hint_geser_tx", "1"); } catch { /* abaikan */ } }} aria-label="Tutup petunjuk"
+                    style={{ flex: "none", width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={18} /></button>
                 </div>
-                {/* Per transaksi: SATU baris ringkas. Ketuk = struk (isi pesanan + aksi). */}
-                {buka && (() => {
-                  const barisTx = (tx: Transaction) => {
-                    const cancelled = !!tx.cancelledAt;
-                    return (
-                      <button key={tx.id} onClick={() => setDetailTx(tx)} className="flex items-center"
-                        style={{ width: "100%", gap: 10, minHeight: 54, padding: "0 16px", border: "none", borderTop: `1px solid ${t.divider}`, background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
-                        <StatusDot cancelled={cancelled} />
-                        <SourceTag source={tx.source} muted={cancelled} />
-                        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: cancelled ? t.text2 : t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fmtTxOp(tx).split(" · ")[0]}</span>
-                        <span style={{ flex: "none", fontSize: 15, fontWeight: 700, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text, fontFamily: MONO }}>
-                          {rupiah(tx.total)}
-                        </span>
-                        <ChevronRight size={16} color={t.text2} style={{ flex: "none" }} />
-                      </button>
-                    );
-                  };
-                  return g.txs.map(barisTx);
-                })()}
-                  </>);
-                })()}
-              </div>
-            ))}
+              )}
+              {riwayatGroups.slice(0, q ? Math.max(batasRiwayat, 60) : batasRiwayat).map((g) => {
+                const kunciKartu = groupKey(g.customer);
+                const buka = bukaLunas[kunciKartu] ?? false;
+                const batalTab = riwayatFilter === "batal";
+                const BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                const tglSingkat = (tx: Transaction) => { const o = opDate(tx); return `${parseInt(o.slice(8, 10), 10)} ${BLN[parseInt(o.slice(5, 7), 10) - 1] || ""}`; };
+                return (
+                  <div key={kunciKartu} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 20, marginBottom: 12, overflow: "hidden" }}>
+                    <div role="button" aria-expanded={buka} onClick={() => setBukaLunas((p) => ({ ...p, [kunciKartu]: !buka }))}
+                      className="flex items-center justify-between" style={{ padding: "10px 16px", minHeight: 68, gap: 10, cursor: "pointer" }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25, color: t.text }}>{g.customer.nama?.trim() ? g.customer.nama : "Cash"}</div>
+                        <div style={{ marginTop: 2 }}>
+                          {(g.customer.kelas || g.customer.tingkat) && <span style={{ fontFamily: MONO, fontSize: 12.5, color: t.text2 }}>{g.customer.kelas || g.customer.tingkat}{" · "}</span>}
+                          <span style={{ fontSize: 12, color: t.textDis === "#B3AF9F" ? "#756B5D" : t.text2 }}>{g.txs.length} pesanan</span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: batalTab ? t.text2 : t.successText, flex: "none" }}>
+                        {rupiah(batalTab ? g.txs.reduce((s2, tx) => s2 + tx.total, 0) : g.totalMasuk)}
+                      </span>
+                      {buka ? <ChevronUp size={20} color={t.text2} style={{ flex: "none" }} /> : <ChevronDown size={20} color={t.text2} style={{ flex: "none" }} />}
+                    </div>
+                    {buka && g.txs.map((tx) => {
+                      const cancelled = !!tx.cancelledAt;
+                      return (
+                        <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
+                          <GeserTx
+                            kiri={cancelled ? undefined : { label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
+                            kanan={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
+                            <button onClick={() => setDetailTx(tx)} className="flex items-center"
+                              style={{ width: "100%", gap: 10, minHeight: 48, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
+                              <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${cancelled ? t.text2 : t.success}`, background: cancelled ? "transparent" : t.successBg, color: cancelled ? t.text2 : t.successText }}>
+                                {cancelled ? <Ban size={13} /> : <Check size={14} strokeWidth={3} />}
+                              </span>
+                              {tx.source === "preorder" ? <Utensils size={15} color={t.text2} style={{ flex: "none" }} /> : <ShoppingCart size={15} color={t.text2} style={{ flex: "none" }} />}
+                              <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: cancelled ? t.text2 : t.text }}>{tglSingkat(tx)}</span>
+                              <span style={{ flex: "none", fontFamily: MONO, fontSize: 13.5, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>{rupiah(tx.total)}</span>
+                              <ChevronRight size={18} color={t.text2} style={{ flex: "none" }} />
+                            </button>
+                          </GeserTx>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </>)}
             {riwayatGroups.length > (q ? Math.max(batasRiwayat, 60) : batasRiwayat) && (
               <button onClick={() => setBatasRiwayat((n) => n + 30)}
                 style={{ width: "100%", height: 52, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer", margin: "2px 0 12px" }}>
@@ -1060,7 +1070,7 @@ export default function Tagihan({
       {/* Undo bar */}
       {undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
+          <div className="flex items-center gap-3" style={{ maxWidth: 420, width: "100%", background: t.toast, color: t.surface, borderRadius: 14, padding: "10px 10px 10px 16px", boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>
             <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, overflowWrap: "anywhere" }}>
               {undo.type === "paidMany" ? `Lunas — ${undo.txs[0].customer.nama} · ${rupiah(undo.txs.reduce((a, x) => a + x.total, 0))}`
                 : undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
@@ -1068,7 +1078,7 @@ export default function Tagihan({
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
-              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: t.divider, color: t.text, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: "none", minHeight: 44, padding: "0 14px", borderRadius: 10, border: "none", background: "transparent", color: t.primary, fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               <Undo2 size={16} /> Urungkan
             </button>
           </div>
@@ -1076,7 +1086,7 @@ export default function Tagihan({
       )}
       {toast && !undo && (
         <div style={{ position: "fixed", left: 20, right: 20, bottom: 24 + NAV_HEIGHT, zIndex: tagih ? 90 : 60, display: "flex", justifyContent: "center" }}>
-          <div style={{ maxWidth: 420, width: "100%", background: t.surface, color: t.text, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>{toast}</div>
+          <div style={{ maxWidth: 420, width: "100%", background: t.toast, color: t.surface, borderRadius: 14, padding: "14px 18px", fontSize: 14.5, fontWeight: 500, boxShadow: "0 6px 22px rgba(60,48,20,.18)" }}>{toast}</div>
         </div>
       )}
 
@@ -1174,12 +1184,6 @@ export default function Tagihan({
                     <button onClick={() => { setDetailTx(null); cancel(x); }} style={{ ...tab44, color: t.error }}><Ban size={16} /> Batalkan</button>
                   </div>
                 </>
-              )}
-              {x.paid && !batal && (
-                <div className="flex" style={{ gap: 8 }}>
-                  <button onClick={() => { setDetailTx(null); unpay(x); }} style={tab44}><Undo2 size={16} /> Utang</button>
-                  <button onClick={() => { setDetailTx(null); cancel(x); }} style={{ ...tab44, color: t.error }}><Ban size={16} /> Batalkan</button>
-                </div>
               )}
               {batal && (
                 <div className="flex" style={{ gap: 8 }}>

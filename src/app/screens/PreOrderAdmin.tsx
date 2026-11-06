@@ -457,7 +457,7 @@ export default function PreOrderAdmin({
             <div style={{ height: 12 }} />
 
             {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
-            <div className="flex gap-1">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 }}>
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
               <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
@@ -467,14 +467,14 @@ export default function PreOrderAdmin({
             </div>
 
             {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
-            <div className="flex items-center" style={{ gap: 4, padding: "0 0 6px", marginTop: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, padding: "0 0 6px", marginTop: 14 }}>
               <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak" className="flex items-center justify-center"
-                style={{ flex: 1, gap: 8, height: 48, borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
-                <CookingPot size={20} /> Rekap Masak
+                style={{ gap: 6, height: 48, padding: "0 4px", borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
+                <CookingPot size={18} /> Rekap Masak
               </button>
               {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
                 <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center justify-center"
-                  style={{ flex: 1, gap: 6, minHeight: 48, padding: "0 6px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 500, color: t.text2 }}>
+                  style={{ gap: 6, minHeight: 48, padding: "0 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 500, color: t.text2 }}>
                   <Ic size={18} /> {label}
                 </button>
               ))}

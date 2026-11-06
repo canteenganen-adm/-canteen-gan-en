@@ -34,6 +34,8 @@ export const t = {
   errorBg: "#FBE7E3",
   border: "#E8E0D2",
   borderStrong: "#DDD4C0",
+  /** Toast / bilah Urungkan (pemilik 6 Nov: gelap, tulisan Urungkan kuning). */
+  toast: "#3D392F",
   // palet donat/grafik: kuning UTAMA (#FFE66D) + hijau UTAMA (#5BAF4E) + madu + hijau lime + khaki — SAMA dengan warna di seluruh aplikasi
   chart: ["#FFE66D", "#5BAF4E", "#F2B53C", "#BFE35A", "#D6D0B0"],
   // Donat "Menu terlaris" saja: ungu, biru, hijau, kuning, merah (permintaan pemilik, contoh gambar donat 5 warna) — urutan = peringkat 1..5
