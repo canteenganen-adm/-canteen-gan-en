@@ -60,14 +60,15 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
       else return;
     }
     bergeser.current = true;
-    setDx(Math.max(-lebar(), Math.min(0, m.awal + mx)));
+    setDx(Math.max(-lebar(), Math.min(onBatal ? 132 : 0, m.awal + mx)));
   };
   const lepas = () => {
     const m = s.current;
     s.current = null;
     if (!m || m.mode !== "h") return;
     setTarik(false);
-    if (-dx > lebar() * AMBANG_PENUH) { setDx(0); onLunas(); }
+    if (onBatal && dx >= 88) { setDx(0); onBatal(); }
+    else if (-dx > lebar() * AMBANG_PENUH) { setDx(0); onLunas(); }
     else if (-dx > 70) setDx(-LEBAR_AKSI);
     else setDx(0);
   };
@@ -78,6 +79,11 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
     <div ref={box} style={{ position: "relative", overflow: "hidden", touchAction: "pan-y" }}
       onPointerDown={turun} onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={lepas}
       onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
+      {onBatal && dx > 0 && (
+        <div aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: dx, background: t.errorBg, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, overflow: "hidden", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
+          {dx > 56 && <><Ban size={18} strokeWidth={2.4} />Batalkan</>}
+        </div>
+      )}
       <div aria-hidden={!terbuka} style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: lebarAksi, display: "flex", overflow: "hidden" }}>
         {/* Dua tombol pucat, satu baris tiap tombol (pilihan pemilik 1 Nov: A/C; "kepenuhan" dibersihkan). Lunas jadi hijau penuh hanya saat digeser sampai ambang. */}
         <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onTagih(); }} aria-label={sudahTagih ? `Sudah ditagih ${sudahTagih}, kirim ulang via WhatsApp` : "Tagih via WhatsApp"}
@@ -85,16 +91,10 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
           <MessageCircle size={18} color={sudahTagih ? t.ditagih : t.text2} strokeWidth={2.4} />
           {sudahTagih || "Tagih"}
         </button>
-        {penuh ? (
-          <div aria-hidden="true" style={{ background: t.success, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", position: "absolute", inset: 0 }}>
-            <Check size={18} strokeWidth={3} />Lunas
-          </div>
-        ) : (
-          <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onBatal?.(); }} aria-label="Batalkan"
-            style={{ flex: 1, minWidth: 0, border: "none", background: t.errorBg, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
-            <Ban size={18} strokeWidth={2.4} />Batalkan
-          </button>
-        )}
+        <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onLunas(); }} aria-label="Lunas"
+          style={{ flex: 1, minWidth: 0, border: "none", background: penuh ? t.success : t.successBg, color: penuh ? "#fff" : t.successText, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap", transition: "background .12s" }}>
+          <Check size={18} strokeWidth={3} />Lunas
+        </button>
       </div>
       <div onClickCapture={(e) => { if (bergeser.current) { e.stopPropagation(); e.preventDefault(); bergeser.current = false; } else if (terbuka) { e.stopPropagation(); e.preventDefault(); setDx(0); } }}
         style={{ position: "relative", background: t.bg, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>

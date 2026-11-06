@@ -703,8 +703,8 @@ export default function Tagihan({
           return (
             <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
             <GeserTx bg={tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : t.surface}
-              kiri={{ label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
-              kanan={{ label: "Lunas", ikon: <Check size={18} strokeWidth={3} />, bg: t.successBg, warna: t.successText, onAksi: () => markPaid(tx) }}>
+              kanan={{ label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
+              kiri={{ label: "Lunas", ikon: <Check size={18} strokeWidth={3} />, bg: t.successBg, warna: t.successText, onAksi: () => markPaid(tx) }}>
             <div className="flex items-center">
               <button onClick={() => togglePilihTx(tx.id)} role="checkbox" aria-checked={dipilih} aria-label={`Pilih ${tglTx}`}
                 style={{ flex: "none", width: 54, height: 56, padding: 0, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
@@ -1024,7 +1024,7 @@ export default function Tagihan({
               {/* Petunjuk geser: sekali, bisa ditutup (geser itu tersembunyi, jadi Mama/Papa perlu diberi tahu) */}
               {!petunjukGeserTutup && (
                 <div className="flex items-center justify-between" style={{ background: t.primaryLight, borderRadius: 14, padding: "10px 6px 10px 14px", marginBottom: 12, gap: 8 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 500, color: t.text }}>{riwayatFilter === "batal" ? "Geser ke kiri untuk memulihkan, ke kanan untuk membuang ke Tong Sampah." : "Geser baris ke kiri untuk membatalkan, ke kanan untuk mengembalikan ke Utang."}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: t.text }}>{riwayatFilter === "batal" ? "Geser ke kanan untuk memulihkan, ke kiri untuk membuang ke Tong Sampah." : "Geser baris ke kanan untuk membatalkan, ke kiri untuk mengembalikan ke Utang."}</span>
                   <button onClick={() => { setPetunjukGeserTutup(true); try { localStorage.setItem("ganen_hint_geser_tx", "1"); } catch { /* abaikan */ } }} aria-label="Tutup petunjuk"
                     style={{ flex: "none", width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={18} /></button>
                 </div>
@@ -1056,8 +1056,8 @@ export default function Tagihan({
                       return (
                         <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
                           <GeserTx
-                            kiri={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
-                            kanan={cancelled ? { label: "Tong Sampah", ikon: <Trash2 size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => buangKeTong(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
+                            kanan={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
+                            kiri={cancelled ? { label: "Tong Sampah", ikon: <Trash2 size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => buangKeTong(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
                             <button onClick={() => setDetailTx(tx)} className="flex items-center"
                               style={{ width: "100%", gap: 10, minHeight: 48, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
                               {cancelled
