@@ -6,7 +6,7 @@ import { t } from "../../lib/theme";
    Tanda ‹ › = bulatan kecil krem (pilihan pemilik 30 Okt) yang MENGAMBANG di tepi, di atas
    tulisan: tidak mengambil ruang barisnya dan hanya muncul di sisi yang masih menyimpan isi di luar layar.
    Area ketuk 40px x tinggi baris, bulatannya 32px. Ketuk = geser lebih jauh. */
-export default function RailGeser({ children, style, bawah = 0 }: { children: ReactNode; style?: CSSProperties; bawah?: number }) {
+export default function RailGeser({ children, style, bawah = 0, pudar = false }: { children: ReactNode; style?: CSSProperties; bawah?: number; pudar?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [kiri, setKiri] = useState(false);
   const [kanan, setKanan] = useState(false);
@@ -31,13 +31,13 @@ export default function RailGeser({ children, style, bawah = 0 }: { children: Re
   };
   return (
     <div style={{ position: "relative" }}>
-      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...style }}>{children}</div>
-      {kiri && (
+      <div ref={ref} onScroll={update} className="flex hscroll" style={{ overflowX: "auto", ...(pudar ? { WebkitMaskImage: `linear-gradient(to right, ${kiri ? "transparent 0, #000 36px" : "#000 0"}, ${kanan ? "#000 calc(100% - 48px), transparent 100%" : "#000 100%"})`, maskImage: `linear-gradient(to right, ${kiri ? "transparent 0, #000 36px" : "#000 0"}, ${kanan ? "#000 calc(100% - 48px), transparent 100%" : "#000 100%"})` } : null), ...style }}>{children}</div>
+      {!pudar && kiri && (
         <button onClick={() => ref.current?.scrollBy({ left: -160, behavior: "smooth" })} aria-label="Geser ke kiri" style={panah("left")}>
           <span style={bulat}><ChevronLeft size={20} /></span>
         </button>
       )}
-      {kanan && (
+      {!pudar && kanan && (
         <button onClick={() => ref.current?.scrollBy({ left: 160, behavior: "smooth" })} aria-label="Geser ke kanan" style={panah("right")}>
           <span style={bulat}><ChevronRight size={20} /></span>
         </button>

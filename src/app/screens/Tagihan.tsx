@@ -852,32 +852,35 @@ export default function Tagihan({
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
                 <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
-                <RailGeser style={{ gap: 12, padding: "0 0 4px" }}>
-                  {kelompokBulan.map((k) => (
-                    <div key={k.ym} id={`bulan-${k.ym}`} style={{ flex: "none", paddingRight: 8, borderRight: `1px solid ${t.divider}` }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 500, color: t.text2, padding: "0 3px 2px", margin: "0 2px 4px" }}>
+                <RailGeser pudar style={{ gap: 14, padding: "0 0 4px" }}>
+                  {kelompokBulan.map((k, ki) => (
+                    <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 14 }}>
+                    {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 14, background: t.divider }} />}
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 10px" }}>
                         {k.label}
                       </div>
-                      <div className="flex" style={{ gap: 2 }}>
+                      <div className="flex" style={{ gap: 10 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 10px 6px", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 58, padding: "10px 14px", border: "none", borderRadius: 16, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px" }}>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, fontWeight: 500, color: on ? t.onPrimary : t.text2, marginTop: 1 }}>berjalan</span>}
+                              {x.berjalan && <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 2 }}>berjalan</span>}
                             </button>
                           );
                         })}
                       </div>
                     </div>
+                    </div>
                   ))}
                   {semuaSenin.length > 1 && (
                     <div style={{ flex: "none" }}>
-                      <div style={{ fontSize: 13, padding: "0 3px 2px", margin: "0 2px 6px", borderBottom: "1.5px solid transparent" }}>&nbsp;</div>
+                      <div style={{ fontSize: 13, margin: "0 0 10px" }}>&nbsp;</div>
                       <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "6px 10px 2px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        style={{ flex: "none", position: "relative", minWidth: 58, padding: "10px 14px", border: "none", borderRadius: 16, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                         <span style={{ display: "inline-block", padding: "4px 0 5px" }}>Semua</span>
                       </button>
                     </div>
@@ -905,7 +908,7 @@ export default function Tagihan({
                                         {cakupan === "ini" && sebelum.length > 0 && (
                                           <>
                                             <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
-                                            <span aria-hidden="true" style={{ width: 1.5, alignSelf: "stretch", background: t.border }} />
+                                            <span aria-hidden="true" style={{ width: 1.5, height: 24, alignSelf: "center", background: t.border }} />
                                           </>
                                         )}
                                         <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
