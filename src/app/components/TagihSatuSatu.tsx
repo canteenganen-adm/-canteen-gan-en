@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, AlertTriangle, Calendar, MessageCircle, Search, Copy } from "lucide-react";
+import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, AlertTriangle, Calendar, MessageCircle, Search, Copy, GripVertical } from "lucide-react";
 import { salinTeks, BATAS_LINK_WA } from "../../lib/salin";
 import IkonDitagih from "./IkonDitagih";
 import { t, STRUK_MONO } from "../../lib/theme";
@@ -38,7 +38,7 @@ export default function TagihSatuSatu({
   onTutup: () => void;
 }) {
   const labels = [...pekan].sort().map(labelPekan);
-  const label = labels.length > 3 ? `${labels[0]} sampai ${labels[labels.length - 1]}` : labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
+  const label = labels.length > 3 ? `${labels[0]} ~ ${labels[labels.length - 1]}` : labels.length > 1 ? `${labels.slice(0, -1).join(", ")} dan ${labels[labels.length - 1]}` : labels[0];
   const judul = pekan.length > 1 ? `${pekan.length} minggu` : `Minggu ${label}`;
   const [i, setI] = useState(0);
   const [terkirim, setTerkirim] = useState(0);
@@ -169,29 +169,17 @@ export default function TagihSatuSatu({
                   <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>
                     Tagihan {label} · {new Set(gs.flatMap((g) => g.txs.map(opDate))).size} tanggal
                   </div>
+                  {tunggakan.length > 0 && (
+                    <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                      style={{ gap: 10, width: "100%", minHeight: 44, marginTop: 10, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                      <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
+                        {sertakan && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan minggu sebelumnya {rupiah(totalTunggakan)}</span>
+                    </button>
+                  )}
                 </div>
-                <div aria-hidden="true" style={{ position: "relative", height: 0 }}>
-                  <div style={{ borderTop: `2px dashed ${t.border}`, margin: "0 14px" }} />
-                  <span style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
-                  <span style={{ position: "absolute", right: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
-                </div>
-                <div style={{ padding: "16px 16px 14px", fontFamily: STRUK_MONO, fontSize: 15 }}>
-                  {gs.map((g, gi) => {
-                    const perTgl = new Map<string, number>();
-                    g.txs.forEach((x) => perTgl.set(opDate(x), (perTgl.get(opDate(x)) ?? 0) + x.total));
-                    return (
-                      <div key={gi} style={{ marginTop: gi ? 10 : 0 }}>
-                        {gs.length > 1 && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.customer.nama}</div>}
-                        {[...perTgl].sort(([x], [y]) => x.localeCompare(y)).map(([d, n]) => (
-                          <div key={d} className="flex items-baseline justify-between" style={{ gap: 6, lineHeight: 1.8 }}>
-                            <span style={{ flex: "none" }}>{namaHari(d).slice(0, 3)} {tglPendek(d)}</span>
-                            <span style={{ flex: "none" }}>{n.toLocaleString("id-ID")}</span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
+                <JahitanGeret bisa={tunggakan.length > 0} aktif={sertakan} onUbah={setSertakan} />
                 {gs.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
                     style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>
@@ -206,19 +194,6 @@ export default function TagihSatuSatu({
               </div>
               {gs.length > 1 && (
                 <div style={{ fontSize: 13.5, color: t.text2, margin: "8px 4px 0", fontWeight: 500 }}>Satu nomor WA, digabung jadi satu pesan.</div>
-              )}
-
-              {tunggakan.length > 0 && (
-                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                  style={{ gap: 12, width: "100%", minHeight: 56, padding: "8px 14px", marginTop: 12, borderRadius: 14, border: "none", background: sertakan ? t.successBg : t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-                  <span style={{ width: 28, height: 28, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
-                    {sertakan && <Check size={16} strokeWidth={3} />}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 600, lineHeight: 1.3 }}>
-                    Sertakan {tunggakan.length} minggu sebelumnya
-                    <span style={{ display: "block", fontSize: 13.5, fontWeight: 500, color: t.text2 }}>belum dibayar · {rupiah(totalTunggakan)}</span>
-                  </span>
-                </button>
               )}
 
               {/* Pratinjau pesan: baris tombol + gelembung (bisa diubah; teks = yang dikirim) */}
@@ -331,6 +306,34 @@ export default function TagihSatuSatu({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Jahitan karcis: bila ada tunggakan, ada gagang yang bisa DIGERET ke kanan (atau diketuk) = Sertakan tagihan minggu sebelumnya aktif. */
+function JahitanGeret({ bisa, aktif, onUbah }: { bisa: boolean; aktif: boolean; onUbah: (v: boolean) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<number | null>(null);
+  const awal = useRef(0);
+  const pos = drag ?? (aktif ? 1 : 0);
+  const hitung = (e: React.PointerEvent) => { const r = ref.current!.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left - 18) / Math.max(1, r.width - 36))); };
+  return (
+    <div style={{ position: "relative", height: 0 }}>
+      <div style={{ borderTop: `2px dashed ${aktif ? t.success : t.border}`, margin: "0 14px" }} />
+      <span aria-hidden="true" style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+      <span aria-hidden="true" style={{ position: "absolute", right: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
+      {bisa && (
+        <div ref={ref} role="switch" aria-checked={aktif} aria-label="Geret jahitan untuk menyertakan tagihan minggu sebelumnya"
+          style={{ position: "absolute", left: 14, right: 14, top: -22, height: 44, touchAction: "none", cursor: "grab" }}
+          onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); awal.current = e.clientX; setDrag(hitung(e)); }}
+          onPointerMove={(e) => { if (drag !== null) setDrag(hitung(e)); }}
+          onPointerUp={(e) => { const geser = Math.abs(e.clientX - awal.current) > 6; const p = drag ?? pos; setDrag(null); onUbah(geser ? p > 0.5 : !aktif); }}
+          onPointerCancel={() => setDrag(null)}>
+          <span style={{ position: "absolute", top: 10, left: `calc((100% - 36px) * ${pos})`, width: 36, height: 24, borderRadius: 999, display: "grid", placeItems: "center", background: aktif ? t.success : t.surface, color: aktif ? "#fff" : t.text2, boxShadow: "0 1px 4px rgba(60,48,20,.22)", transition: drag === null ? "left .18s ease-out" : "none" }}>
+            {aktif ? <Check size={15} strokeWidth={3} /> : <GripVertical size={16} />}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
