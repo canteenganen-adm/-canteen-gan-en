@@ -384,9 +384,9 @@ export default function Tagihan({
   const byId = useMemo(() => new Map(transactions.map((x) => [x.id, x])), [transactions]);
 
   /** Antrean satu pekan: anak yang masih ada tagihan belum dikirim; kakak-adik satu nomor WA digabung jadi satu pesan. */
-  const antreanMinggu = (daftar: string[]) => {
+  const antreanMinggu = (daftar: string[], ulang = false) => {
     const txs = pekanList.filter((x) => daftar.includes(x.senin)).flatMap((x) => x.txs);
-    const gs = sortGroups(buatGrup(txs).filter((g) => g.txs.some((tx) => !sudahDitagih(tx.billedAt))), sortMode);
+    const gs = sortGroups(buatGrup(txs).filter((g) => ulang || g.txs.some((tx) => !sudahDitagih(tx.billedAt))), sortMode);
     const antrean: string[][][] = [];
     const perWa = new Map<string, string[][]>();
     for (const g of gs) {
@@ -401,7 +401,9 @@ export default function Tagihan({
     return antrean;
   };
   const mulaiTagih = (daftar: string[]) => {
-    const antrean = antreanMinggu(daftar);
+    // Semua sudah ditagih? Tetap bisa: "Tagih ulang" memuat semua anak yang masih Utang di minggu itu.
+    let antrean = antreanMinggu(daftar);
+    if (!antrean.length) antrean = antreanMinggu(daftar, true);
     if (antrean.length) setTagih({ pekan: daftar, antrean });
   };
   /** Senin semua minggu yang masih punya anak belum ditagih. */
@@ -930,16 +932,16 @@ export default function Tagihan({
                                     <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, minWidth: 0, lineHeight: 1.3 }}>
                                       {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
                                     </span>
-                                    {belumN > 0 && (
+                                    {(
                                       <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden", flex: "none" }}>
-                                        {cakupan === "ini" && sebelum.length > 0 && (
+                                        {belumN > 0 && cakupan === "ini" && sebelum.length > 0 && (
                                           <>
                                             <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
                                             <span aria-hidden="true" style={{ width: 1.5, height: 24, alignSelf: "center", background: t.border }} />
                                           </>
                                         )}
                                         <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
-                                          <MessageCircle size={16} /> Tagih
+                                          <MessageCircle size={16} /> {belumN === 0 ? "Tagih ulang" : "Tagih"}
                                         </button>
                                       </span>
                                     )}
