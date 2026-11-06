@@ -420,20 +420,20 @@ export default function PreOrderAdmin({
           {/* SATU bingkai luar untuk seluruh blok (tanggal + angka + tombol); elemen di dalamnya TANPA border sendiri (permintaan pemilik). */}
           <div style={{ marginTop: 8, borderRadius: 18, background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", padding: "10px 8px 4px" }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
-            <div className="flex items-center" style={{ gap: 6 }}>
+            <div className="flex items-center" style={{ gap: 8 }}>
               <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                style={{ flex: "none", width: 28, height: 46, borderRadius: 14, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <Calendar size={24} color={t.text} />
               </button>
               <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label={`Ganti tanggal, ${serviceDateLabel(viewDate)}`}
-                style={{ minWidth: 0, flex: 1, minHeight: 44, textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: "0 0 0 8px", fontFamily: "inherit", fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, letterSpacing: "-.01em" }}>
+                style={{ minWidth: 0, flex: 1, minHeight: 44, textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit", fontSize: 20, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, letterSpacing: "-.01em" }}>
                 {serviceDateLabel(viewDate)}
               </button>
             </div>
             {/* Baris 2: cincin timer (tanpa angka sisa) + jam tutup; ketuk = Jam Tutup Otomatis. Tanggal lain dilihat = tanpa cincin. */}
             <button onClick={() => setSheet("jamTutup")} className="flex items-center" aria-label={`Jam tutup ${hhmm(autoCloseTime)}, ketuk untuk mengubah`}
-              style={{ gap: 14, minHeight: 44, padding: "0 8px 0 0", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2 }}>
-              <span style={{ flex: "none", width: 42, display: "grid", placeItems: "center" }}>{lihatSesi && <JamHitung size={22} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}</span>
+              style={{ gap: 8, minHeight: 44, padding: "0 8px 0 0", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2 }}>
+              <span style={{ flex: "none", width: 28, display: "grid", placeItems: "center" }}>{lihatSesi && <JamHitung size={22} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}</span>
               <span>tutup {hhmm(autoCloseTime)}</span> <ChevronRight size={16} />
             </button>
             {!lihatSesi && (
