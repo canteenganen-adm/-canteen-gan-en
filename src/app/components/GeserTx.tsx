@@ -9,7 +9,7 @@ const MAKS = 132;
 
 /** Baris transaksi yang bisa digeser (Lunas/Dibatalkan): kiri = aksi di sisi kanan baris, kanan = aksi di sisi kiri baris.
  *  Geser tidak mengubah apa pun sampai dilepas melewati ambang; ketuk biasa tetap membuka rincian. */
-export default function GeserTx({ children, kiri, kanan }: { children: ReactNode; kiri?: AksiGeser; kanan?: AksiGeser }) {
+export default function GeserTx({ children, kiri, kanan, bg }: { children: ReactNode; kiri?: AksiGeser; kanan?: AksiGeser; bg?: string }) {
   const [dx, setDx] = useState(0);
   const [tarik, setTarik] = useState(false);
   const s = useRef<{ x: number; y: number; mode: "" | "h" } | null>(null);
@@ -57,7 +57,7 @@ export default function GeserTx({ children, kiri, kanan }: { children: ReactNode
         </div>
       )}
       <div onClickCapture={(e) => { if (bergeser.current) { e.stopPropagation(); e.preventDefault(); bergeser.current = false; } }}
-        style={{ position: "relative", background: t.surface, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>
+        style={{ position: "relative", background: bg || t.surface, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>
         {children}
       </div>
     </div>

@@ -121,16 +121,11 @@ export default function Penjualan({
 
   /* Tinggi panel struk diukur supaya petak menu terakhir tidak tertutup. */
   const kosong = cart.length === 0;
-  const [panelH, setPanelH] = useState(150);
+  /* Bar ringkas (badge) di atas nav; rincian pesanan = lembar yang naik dari bawah saat "Lihat Pesanan" diketuk. */
+  const [lihatPesanan, setLihatPesanan] = useState(false);
+  const panelH = kosong ? 0 : 84;
   const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = panelRef.current;
-    if (kosong || !el) { setPanelH(0); return; }
-    const ro = new ResizeObserver(() => setPanelH(el.offsetHeight));
-    ro.observe(el);
-    setPanelH(el.offsetHeight);
-    return () => ro.disconnect();
-  }, [kosong]);
+  useEffect(() => { if (kosong) setLihatPesanan(false); }, [kosong]);
 
   const filtered = useMemo(
     () => sales.filter((m) => (cat === "Semua" || m.category === cat) && m.name.toLowerCase().includes(q.toLowerCase())),
@@ -379,9 +374,28 @@ export default function Penjualan({
       </div>
 
       {/* Panel struk — menempel di atas bottom nav, selalu terlihat */}
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT, zIndex: 20, display: kosong ? "none" : "block", animation: "ganen-naik .2s ease-out" }}>
-        <style>{`@keyframes ganen-naik{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}`}</style>
-        <div ref={panelRef} style={{ maxWidth: 460, margin: "0 auto", background: t.surface, borderRadius: "24px 24px 0 0", boxShadow: "0 -4px 18px rgba(60,48,20,.10)", padding: "14px 20px 14px" }}>
+      {/* Bar ringkas: jumlah item + total, ketuk = rincian naik dari bawah */}
+      {!kosong && !lihatPesanan && (
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT + 10, zIndex: 20, padding: "0 16px", pointerEvents: "none" }}>
+          <style>{`@keyframes ganen-naik{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes ganen-sheet-naik{from{transform:translateY(100%)}to{transform:none}}@keyframes ganen-sheet-gelap{from{opacity:0}to{opacity:1}}`}</style>
+          <div className="flex items-center justify-between" style={{ maxWidth: 428, margin: "0 auto", background: "rgba(221,212,192,.86)", WebkitBackdropFilter: "blur(14px)", backdropFilter: "blur(14px)", borderRadius: 999, padding: "8px 8px 8px 22px", pointerEvents: "auto", boxShadow: "0 6px 20px rgba(60,48,20,.14)", animation: "ganen-naik .2s ease-out" }}>
+            <div>
+              <div style={{ fontSize: 12.5, color: t.text2 }}>{count} item</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: t.text, fontVariantNumeric: "tabular-nums" }}>{rupiah(total)}</div>
+            </div>
+            <button onClick={() => setLihatPesanan(true)}
+              style={{ height: 48, padding: "0 22px", borderRadius: 999, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              Lihat Pesanan
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lembar pesanan: naik dari bawah */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 45, display: !kosong && lihatPesanan ? "flex" : "none", flexDirection: "column", justifyContent: "flex-end" }}>
+        <div onClick={() => setLihatPesanan(false)} style={{ position: "absolute", inset: 0, background: "rgba(42,40,32,.45)", animation: "ganen-sheet-gelap .25s ease-out" }} />
+        <div ref={panelRef} style={{ position: "relative", width: "100%", maxWidth: 460, margin: "0 auto", background: t.surface, borderRadius: "24px 24px 0 0", padding: "10px 20px calc(18px + env(safe-area-inset-bottom, 0px))", animation: "ganen-sheet-naik .3s cubic-bezier(.22,.8,.3,1)" }}>
+          <div aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 999, background: t.border, margin: "0 auto 6px" }} />
           {kosong ? (
             <div className="flex items-center justify-between" style={{ minHeight: 40 }}>
               <span style={{ fontSize: 15, color: t.text2 }}>Ketuk menu untuk mulai</span>

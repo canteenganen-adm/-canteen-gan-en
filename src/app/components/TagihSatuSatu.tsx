@@ -156,30 +156,33 @@ export default function TagihSatuSatu({
         {!selesai && gs.length > 0 && (
           <>
             <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 20px 16px" }}>
-              {/* Karcis: kepala t.divider, perforasi putus-putus + coakan, rincian per tanggal gaya struk */}
+              {/* Sertakan tagihan sebelumnya: DI ATAS karcis (sketsa pemilik 6 Nov) */}
+              {tunggakan.length > 0 && (
+                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                  style={{ gap: 10, width: "100%", minHeight: 44, marginBottom: 8, padding: "0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                  <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
+                    {sertakan && <Check size={14} strokeWidth={3} />}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
+                </button>
+              )}
+              {/* Karcis: jumlah TIAP ORANG sendiri-sendiri (tidak digabung), jahitan bisa digeret, rincian tanggal ditiadakan dulu */}
               <div style={{ background: t.surface, borderRadius: 20, overflow: "hidden", position: "relative" }}>
                 <div style={{ background: t.divider, padding: "16px 16px 14px" }}>
                   {gs.map((g, gi) => (
-                    <div key={gi} style={{ marginTop: gi ? 8 : 0 }}>
-                      <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
-                      <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
+                    <div key={gi} style={{ marginTop: gi ? 12 : 0 }}>
+                      <div>
+                        <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
+                        <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
+                      </div>
+                      <div style={{ fontSize: gs.length > 1 ? 24 : 30, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2 }}>{rupiah(g.total)}</div>
                     </div>
                   ))}
-                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.02em", marginTop: 6 }}>{rupiah(gs.reduce((n, g) => n + g.total, 0))}</div>
-                  <div style={{ fontSize: 13, color: t.text2, marginTop: 2 }}>
-                    Tagihan {label} · {new Set(gs.flatMap((g) => g.txs.map(opDate))).size} tanggal
-                  </div>
-                  {tunggakan.length > 0 && (
-                    <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                      style={{ gap: 10, width: "100%", minHeight: 44, marginTop: 10, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-                      <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
-                        {sertakan && <Check size={14} strokeWidth={3} />}
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan minggu sebelumnya {rupiah(totalTunggakan)}</span>
-                    </button>
-                  )}
                 </div>
                 <JahitanGeret bisa={tunggakan.length > 0} aktif={sertakan} onUbah={setSertakan} />
+                <div style={{ padding: "14px 16px", fontSize: 13, color: t.text2 }}>
+                  Tagihan {label} · {new Set(gs.flatMap((g) => g.txs.map(opDate))).size} tanggal
+                </div>
                 {gs.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
                     style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>

@@ -470,7 +470,7 @@ export default function PreOrderParent({
           <div style={{ marginTop: 4, fontSize: 15, fontWeight: 400, color: t.text2 }}>Masakan sehangat pelukan Ibu</div>
           <div style={{ marginTop: 26, width: 40, height: 2, background: closed ? t.borderStrong : t.primary }} />
           <div style={{ marginTop: 22, fontSize: 16, color: t.text }}>
-            {closed ? <>Pre-order <b style={{ fontWeight: 700 }}>sudah ditutup</b></> : <>Pre-order <b style={{ fontWeight: 700 }}>{tglTeks}</b></>}
+            {closed ? <>Mohon maaf, Pre-order <b style={{ fontWeight: 700 }}>sudah ditutup</b></> : <>Pre-order <b style={{ fontWeight: 700 }}>{tglTeks}</b></>}
           </div>
           <div style={{ marginTop: 4, fontSize: 14.5, color: t.text2 }}>
             {closed ? "Sampai jumpa lagi \u{1F64F}\u{1F3FB}" : `sedang dibuka sampai jam ${jamTutup || "08:00"}\u{1F60A}`}

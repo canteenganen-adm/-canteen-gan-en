@@ -695,8 +695,11 @@ export default function Tagihan({
           const dipilih = pilihTx.has(tx.id);
           const tglTx = fmtTxOp(tx).split(" · ")[0];
           return (
-            <div key={tx.id} className="flex items-center"
-              style={{ borderTop: `1px solid ${t.divider}`, background: tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : "transparent", transition: "background 0.4s ease" }}>
+            <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
+            <GeserTx bg={tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : t.surface}
+              kiri={{ label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
+              kanan={{ label: "Lunas", ikon: <Check size={18} strokeWidth={3} />, bg: t.successBg, warna: t.successText, onAksi: () => markPaid(tx) }}>
+            <div className="flex items-center">
               <button onClick={() => togglePilihTx(tx.id)} role="checkbox" aria-checked={dipilih} aria-label={`Pilih ${tglTx}`}
                 style={{ flex: "none", width: 54, height: 56, padding: 0, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <span style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: dipilih ? t.successBg : t.surface, border: `${dipilih ? 1.8 : 2}px solid ${dipilih ? t.success : t.borderStrong}`, color: t.successText }}>
@@ -715,7 +718,9 @@ export default function Tagihan({
                 <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
                 <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
               </button>
-</div>
+            </div>
+            </GeserTx>
+          </div>
           );
         })}
 
@@ -1141,7 +1146,7 @@ export default function Tagihan({
                   <div style={{ fontFamily: MONO, fontSize: 13.5, color: t.text2 }}>{baris}</div>
                 </div>
                 <div style={{ position: "relative", height: 10, background: t.divider }}>
-                  <div style={{ position: "absolute", left: 14, right: 14, top: 9, borderTop: `2px dashed ${t.borderStrong}` }} />
+                  <div style={{ position: "absolute", left: 14, right: 14, top: 9, borderTop: `1.5px dashed ${t.border}` }} />
                   <span style={{ position: "absolute", top: 0, left: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
                   <span style={{ position: "absolute", top: 0, right: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
                 </div>
@@ -1163,7 +1168,7 @@ export default function Tagihan({
                   <span style={{ fontSize: 14, color: t.text2 }}>Total</span>
                   <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.5px", color: batal ? t.text2 : t.text, textDecoration: batal ? "line-through" : "none" }}>{rupiah(x.total)}</span>
                 </div>
-                <div style={{ margin: "10px 20px 0", borderTop: `2px dashed ${t.borderStrong}` }} />
+                <div style={{ margin: "10px 20px 0", borderTop: `1.5px dashed ${t.border}` }} />
                 <div style={{ display: "grid", gridTemplateColumns: kolom.length === 3 ? "1.25fr 1fr 1fr" : "1fr 1fr", gap: 8, padding: "14px 20px" }}>
                   {kolom.map(([label, nilai, warna]) => (
                     <div key={label}>
