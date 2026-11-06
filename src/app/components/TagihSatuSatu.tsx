@@ -277,12 +277,12 @@ export default function TagihSatuSatu({
                   return (
                     <button key={idx} onClick={() => { setI(idx); setDaftar(false); }} className="flex items-center justify-between"
                       style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
-                      <span style={{ minWidth: 0, fontSize: 17, fontWeight: 800, lineHeight: 1.2 }}>
-                        {gsx.map((g) => g.customer.nama).join(" + ")}
-                        <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700, border: "1.5px solid #A59B80", borderRadius: 999, padding: "1px 9px", whiteSpace: "nowrap", verticalAlign: 2 }}>{gsx[0].customer.kelas || gsx[0].customer.tingkat || "-"}</span>
+                      <span style={{ minWidth: 0, lineHeight: 1.35 }}>
+                        <span style={{ display: "block", fontSize: 16.5, fontWeight: 600 }}>{gsx.map((g) => g.customer.nama).join(" + ")}</span>
+                        <span style={{ display: "block", fontSize: 13, color: t.text2, fontFamily: STRUK_MONO }}>{gsx[0].customer.kelas || gsx[0].customer.tingkat || "-"}</span>
                       </span>
                       <span className="flex items-center gap-2" style={{ flex: "none" }}>
-                        <span style={{ fontSize: 15, fontWeight: 700 }}>{rupiah(gsx.reduce((s, g) => s + g.total, 0))}</span>
+                        <span style={{ fontSize: 16, fontWeight: 600 }}>{rupiah(gsx.reduce((s, g) => s + g.total, 0))}</span>
                         {sudah && <span aria-label="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={18} strokeWidth={2.4} /></span>}
                       </span>
                     </button>
