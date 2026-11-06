@@ -1135,7 +1135,7 @@ export default function Tagihan({
         const kolom: [string, string, string?][] = batal
           ? [["Masuk Pesanan", fmt(x.createdAt)], ["Dibatalkan", fmt(x.cancelledAt), t.text2]]
           : x.paid
-            ? [["Masuk Pesanan", fmt(x.createdAt)], ["Ditagih", fmt(x.billedAt)], ["Lunas", fmt(x.paidAt), t.successText]]
+            ? [["Masuk Pesanan", fmt(x.createdAt)], ["Ditagih", fmt(x.billedAt)], ["Lunas", fmt(x.paidAt || (x.source !== "preorder" ? x.createdAt : null)), t.successText]]
             : [["Masuk Pesanan", fmt(x.createdAt)], ["Ditagih", fmt(x.billedAt)]];
         const tab44: React.CSSProperties = { flex: 1, minHeight: 44, borderRadius: 14, border: "none", background: t.divider, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", position: "relative" };
         return (
