@@ -1083,89 +1083,114 @@ export default function Tagihan({
       {/* Popup struk RINCIAN TRANSAKSI — ketuk tanggal di kartu. Menampilkan
           untuk hari apa & dicatat kapan; Ubah Tanggal Layanan pakai input
           overlay besar (pola wajib CLAUDE.md, andal di iOS). */}
-      {detailTx && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "grid", placeItems: "center", padding: 20 }}>
-          <div onClick={() => setDetailTx(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.4)" }} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 330, filter: "drop-shadow(0 12px 30px rgba(47,42,36,.32))" }}>
-            <div style={{ background: t.surface, clipPath: ZIGZAG, padding: "20px 18px 18px", fontFamily: MONO, fontWeight: 600 }}>
-              <div style={{ textAlign: "center", fontSize: 14.5, fontWeight: 800 }}>{detailTx.customer.nama.toUpperCase()}</div>
-              <div style={{ textAlign: "center", fontSize: 12, color: t.text2, marginTop: 2 }}>
-                {detailTx.customer.kelas || detailTx.customer.tingkat || ""}
-              </div>
-              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-              {detailTx.items.map((it, i) => (
-                <div key={i} className="flex justify-between" style={{ fontSize: 13, lineHeight: 1.7, gap: 8 }}>
-                  <span>{toTitleCase(it.name)}{it.variant ? ` (${it.variant})` : ""} ×{it.qty}</span>
-                  <span style={{ flex: "none" }}>{rupiah(it.price * it.qty)}</span>
+      {detailTx && (() => {
+        const x = detailTx;
+        const batal = !!x.cancelledAt;
+        const status = batal ? "Dibatalkan" : x.paid ? "Lunas" : "Belum dibayar";
+        const warnaStatus = batal ? t.text2 : x.paid ? t.successText : t.error;
+        const HARI3 = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"], BLN3 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        const dd = new Date(opDate(x) + "T00:00:00");
+        const tglPendek = isNaN(dd.getTime()) ? "" : `${HARI3[dd.getDay()]}, ${dd.getDate()} ${BLN3[dd.getMonth()]}`;
+        const ambil = x.waktuAmbil ? x.waktuAmbil.replace(/^istirahat\s*/i, "Ist. ").replace(/^pulang.*/i, "Pulang") : "";
+        const baris = [x.customer.kelas || x.customer.tingkat || "", tglPendek, ambil].filter(Boolean).join(" · ");
+        const fmt = (iso?: string | null) => { if (!iso) return "—"; const d = new Date(iso); return `${d.getDate()}/${d.getMonth() + 1} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+        const tutup = () => setDetailTx(null);
+        const pre = x.source === "preorder";
+        const kolom: [string, string, string?][] = batal
+          ? [["Masuk Pesanan", fmt(x.createdAt)], ["Dibatalkan", fmt(x.cancelledAt), t.text2]]
+          : x.paid
+            ? [["Masuk Pesanan", fmt(x.createdAt)], ["Ditagih", fmt(x.billedAt)], ["Lunas", fmt(x.paidAt), t.successText]]
+            : [["Masuk Pesanan", fmt(x.createdAt)], ["Ditagih", fmt(x.billedAt)]];
+        const tab44: React.CSSProperties = { flex: 1, minHeight: 44, borderRadius: 14, border: "none", background: t.divider, color: t.text, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap", position: "relative" };
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <style>{`@keyframes ganen-detail-naik{from{transform:translateY(100%)}to{transform:none}}`}</style>
+            <div onClick={tutup} style={{ position: "absolute", inset: 0, background: "rgba(42,40,32,.45)" }} />
+            <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", padding: "10px 20px calc(28px + env(safe-area-inset-bottom, 0px))", display: "flex", flexDirection: "column", gap: 12, animation: "ganen-detail-naik .3s cubic-bezier(.22,.8,.3,1)" }}>
+              <div aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 999, background: t.border, margin: "0 auto" }} />
+              <button onClick={tutup} aria-label="Tutup rincian" style={{ position: "absolute", top: 10, right: 16, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={22} /></button>
+
+              <div style={{ background: t.bg, borderRadius: 20, overflow: "hidden", marginTop: 18 }}>
+                <div style={{ background: t.divider, padding: "20px 20px 14px", textAlign: "center", display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: warnaStatus }}>{status}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: t.text }}>{x.customer.nama}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 13.5, color: t.text2 }}>{baris}</div>
                 </div>
-              ))}
-              <div className="flex justify-between" style={{ fontSize: 13.5, fontWeight: 800, marginTop: 6 }}>
-                <span>TOTAL</span><span>{rupiah(detailTx.total)}</span>
-              </div>
-              <div style={{ borderTop: `1.5px dashed ${t.border}`, margin: "10px 0" }} />
-              <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-                {/* Ketuk baris "Untuk" = ubah Tanggal Layanan (input tanggal menutupi SELURUH baris — pola wajib CLAUDE.md, andal di iOS) */}
-                <div className="flex justify-between items-center" style={{ position: "relative" }}>
-                  <span style={{ color: t.text2 }}>Untuk</span>
-                  <span className="flex items-center" style={{ gap: 6, fontWeight: 700 }}>{serviceDateLabel(opDate(detailTx))}<Pencil size={13} color={t.text2} /></span>
-                  <input type="date" defaultValue={opDate(detailTx)} max={todayISO()}
-                    onChange={(e) => {
-                      if (!e.target.value || e.target.value === opDate(detailTx)) return;
-                      onChangeDate(detailTx.id, e.target.value);
-                      setDetailTx(null);
-                      setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
-                    }}
-                    onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
-                    aria-label="Ubah Tanggal Layanan"
-                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+                <div style={{ position: "relative", height: 10, background: t.divider }}>
+                  <div style={{ position: "absolute", left: 14, right: 14, top: 9, borderTop: `2px dashed ${t.borderStrong}` }} />
+                  <span style={{ position: "absolute", top: 0, left: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
+                  <span style={{ position: "absolute", top: 0, right: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
                 </div>
-                <div className="flex justify-between"><span style={{ color: t.text2 }}>Dicatat</span><span>{detailTx.createdAt.slice(8, 10)}/{detailTx.createdAt.slice(5, 7)} · {new Date(detailTx.createdAt).getHours().toString().padStart(2, "0")}.{new Date(detailTx.createdAt).getMinutes().toString().padStart(2, "0")}</span></div>
-                {/* Pelacakan: kapan ditagih lewat WA (hanya bila ada) — satu baris di struk, bukan di daftar */}
-                {detailTx.billedAt && (
-                  <div className="flex justify-between"><span style={{ color: t.text2 }}>Ditagih</span>
-                    <span>{`${detailTx.billedAt.slice(8, 10)}/${detailTx.billedAt.slice(5, 7)} · ${new Date(detailTx.billedAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.billedAt).getMinutes().toString().padStart(2, "0")}`}</span>
-                  </div>
-                )}
-                {/* Hanya tampil bila jamnya tercatat (transaksi lama tidak punya — tidak perlu tulisan "tidak tercatat") */}
-                {detailTx.paid && !detailTx.cancelledAt && detailTx.paidAt && (
-                  <div className="flex justify-between"><span style={{ color: t.text2 }}>Dilunaskan</span>
-                    <span>{`${detailTx.paidAt.slice(8, 10)}/${detailTx.paidAt.slice(5, 7)} · ${new Date(detailTx.paidAt).getHours().toString().padStart(2, "0")}.${new Date(detailTx.paidAt).getMinutes().toString().padStart(2, "0")}`}</span>
-                  </div>
-                )}
-                <div className="flex justify-between"><span style={{ color: t.text2 }}>Sumber</span><span>{detailTx.source === "preorder" ? "Pre-order" : "Penjualan"}</span></div>
-                <div className="flex justify-between"><span style={{ color: t.text2 }}>Status</span><span style={{ fontWeight: 700, color: detailTx.cancelledAt ? t.error : detailTx.paid ? t.successText : t.amberText }}>{detailTx.cancelledAt ? "Dibatalkan" : detailTx.paid ? "Lunas" : "Utang"}</span></div>
+                <div style={{ fontFamily: MONO, display: "flex", alignItems: "center", gap: 6, padding: "20px 20px 0", fontSize: 13.5, color: t.text2 }}>
+                  {pre ? <Utensils size={15} /> : <ShoppingCart size={15} />}{x.orderNo || (pre ? "Pre-order" : "Penjualan")}
+                </div>
+                <div style={{ fontFamily: MONO, padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 8, fontSize: 14.5 }}>
+                  {x.items.map((it, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between" style={{ gap: 12 }}>
+                        <span>{toTitleCase(it.name)}{it.variant ? ` · ${it.variant}` : ""} ×{it.qty}</span>
+                        <span style={{ flex: "none" }}>{(it.price * it.qty).toLocaleString("id-ID")}</span>
+                      </div>
+                      {it.note && <div style={{ fontSize: 12.5, color: t.text2 }}>{it.note}</div>}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-baseline justify-between" style={{ padding: "10px 20px 0" }}>
+                  <span style={{ fontSize: 14, color: t.text2 }}>Total</span>
+                  <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.5px", color: batal ? t.text2 : t.text, textDecoration: batal ? "line-through" : "none" }}>{rupiah(x.total)}</span>
+                </div>
+                <div style={{ margin: "10px 20px 0", borderTop: `2px dashed ${t.borderStrong}` }} />
+                <div style={{ display: "grid", gridTemplateColumns: kolom.length === 3 ? "1.25fr 1fr 1fr" : "1fr 1fr", gap: 8, padding: "14px 20px" }}>
+                  {kolom.map(([label, nilai, warna]) => (
+                    <div key={label}>
+                      <div style={{ fontSize: 12.5, color: t.text2 }}>{label}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: warna ? 600 : 500, color: warna || t.text, marginTop: 2 }}>{nilai}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              {/* Aksi struk: ikon polos + tulisan kecil (tanpa garis/kotak). Satu-satunya tombol penuh = Tandai Lunas. */}
-              {tab === "unpaid" && (
-                <div className="flex items-center gap-2" style={{ marginTop: 14, fontFamily: "'Inter', sans-serif" }}>
-                  <button onClick={() => { const x = detailTx; setDetailTx(null); markPaid(x); }} className="flex items-center justify-center gap-1.5"
-                    style={{ flex: 2.2, height: 52, borderRadius: 12, border: "none", background: t.success, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-                    <Check size={18} /> Tandai Lunas
+
+              {!x.paid && !batal && (
+                <>
+                  <button onClick={() => { setDetailTx(null); markPaid(x); }} className="flex items-center justify-center"
+                    style={{ height: 56, borderRadius: 18, border: "none", background: t.primary, color: t.onPrimary, fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", gap: 8 }}>
+                    <Check size={20} strokeWidth={2.2} /> Tandai Lunas
                   </button>
-                  <AksiStruk Ic={Ban} label="Batalkan" warna={t.error} onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} />
+                  <div className="flex" style={{ gap: 8 }}>
+                    <button onClick={() => { setDetailTx(null); shareWA({ customer: x.customer, txs: [x], total: x.total }, [], undefined); }} style={tab44}><MessageCircle size={16} /> Tagih</button>
+                    <div style={tab44}>
+                      <span className="flex items-center" style={{ gap: 6 }}><Pencil size={16} /> Ubah</span>
+                      <input type="date" defaultValue={opDate(x)} max={todayISO()}
+                        onChange={(e) => {
+                          if (!e.target.value || e.target.value === opDate(x)) return;
+                          onChangeDate(x.id, e.target.value);
+                          setDetailTx(null);
+                          setToast(`Tanggal Layanan diubah ke ${e.target.value.slice(8, 10)}/${e.target.value.slice(5, 7)}`);
+                        }}
+                        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch { /* picker native */ } }}
+                        aria-label="Ubah Tanggal Layanan"
+                        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
+                    </div>
+                    <button onClick={() => { setDetailTx(null); cancel(x); }} style={{ ...tab44, color: t.error }}><Ban size={16} /> Batalkan</button>
+                  </div>
+                </>
+              )}
+              {x.paid && !batal && (
+                <div className="flex" style={{ gap: 8 }}>
+                  <button onClick={() => { setDetailTx(null); unpay(x); }} style={tab44}><Undo2 size={16} /> Utang</button>
+                  <button onClick={() => { setDetailTx(null); cancel(x); }} style={{ ...tab44, color: t.error }}><Ban size={16} /> Batalkan</button>
                 </div>
               )}
-              {tab !== "unpaid" && (
-                <div className="flex" style={{ marginTop: 10, fontFamily: "'Inter', sans-serif" }}>
-                  {detailTx.cancelledAt ? (
-                    <AksiStruk Ic={RotateCcw} label="Pulihkan" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); pulihkan(x); }} />
-                  ) : (
-                    <>
-                      <AksiStruk Ic={Undo2} label="Utang" warna={t.text} onClick={() => { const x = detailTx; setDetailTx(null); unpay(x); }} />
-                      <AksiStruk Ic={Ban} label="Batalkan" warna={t.text2} onClick={() => { const x = detailTx; setDetailTx(null); cancel(x); }} />
-                    </>
-                  )}
-                  <AksiStruk Ic={Trash2} label="Hapus" warna={t.error} onClick={() => { const x = detailTx; setDetailTx(null); setTrashConfirmTx(x); }} />
+              {batal && (
+                <div className="flex" style={{ gap: 8 }}>
+                  <button onClick={() => { setDetailTx(null); pulihkan(x); }} style={tab44}><RotateCcw size={16} /> Pulihkan</button>
+                  <button onClick={() => { setDetailTx(null); setTrashConfirmTx(x); }} style={{ ...tab44, color: t.error }}><Trash2 size={16} /> Buang ke Tong Sampah</button>
                 </div>
               )}
             </div>
-            <button onClick={() => setDetailTx(null)} aria-label="Tutup rincian"
-              style={{ position: "absolute", top: -12, right: -8, width: 42, height: 42, borderRadius: "50%", border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(47,42,36,.2)" }}>
-              <X size={19} />
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Lembar LUNASKAN N MINGGU (tagihan gabungan): satu baris per minggu, awalnya tercentang semua; lepas centang = tidak dilunaskan */}
       {confirmLunas && (() => {
