@@ -398,7 +398,12 @@ export default function Tagihan({
     const chip = document.getElementById(`chip-${pekanBuka}`);
     const strip = chip?.closest(".hscroll") as HTMLElement | null;
     if (!chip || !strip) return;
-    const gulir = () => chip.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+    const gulir = () => {
+      const a = strip.getBoundingClientRect(), b = chip.getBoundingClientRect();
+      if (a.width === 0) return;
+      strip.scrollLeft += b.left - a.left - (a.width - b.width) / 2;
+    };
+    const ulang = [120, 500, 1200].map((ms) => window.setTimeout(gulir, ms));
     let tampil = strip.clientWidth > 0;
     if (tampil) gulir();
     const ro = new ResizeObserver(() => {
@@ -407,7 +412,7 @@ export default function Tagihan({
       tampil = kini;
     });
     ro.observe(strip);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); ulang.forEach((id) => window.clearTimeout(id)); };
   }, [pekanBuka]);
   /** Minggu terpilih awal = MINGGU INI (yang memuat hari ini), seperti kalender yang membuka di hari ini. */
   useEffect(() => {
@@ -889,14 +894,14 @@ export default function Tagihan({
                                 const sebelum = urutPekan.filter((x) => x.senin < p.senin && x.txs.length > 0).map((x) => x.senin);
                                 const total = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.anak, 0) : p.anak;
                                 const belumN = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.belum, 0) : p.belum;
-                                const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 };
+                                const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flex: "none" };
                                 return (
                                   <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 8 }}>
-                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500 }}>
+                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, minWidth: 0, lineHeight: 1.3 }}>
                                       {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
                                     </span>
                                     {belumN > 0 && (
-                                      <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden" }}>
+                                      <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden", flex: "none" }}>
                                         {cakupan === "ini" && sebelum.length > 0 && (
                                           <>
                                             <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
