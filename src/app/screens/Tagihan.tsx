@@ -384,9 +384,11 @@ export default function Tagihan({
   const byId = useMemo(() => new Map(transactions.map((x) => [x.id, x])), [transactions]);
 
   /** Antrean satu pekan: anak yang masih ada tagihan belum dikirim; kakak-adik satu nomor WA digabung jadi satu pesan. */
-  const antreanMinggu = (daftar: string[], ulang = false) => {
+  const antreanMinggu = (daftar: string[]) => {
     const txs = pekanList.filter((x) => daftar.includes(x.senin)).flatMap((x) => x.txs);
-    const gs = sortGroups(buatGrup(txs).filter((g) => ulang || g.txs.some((tx) => !sudahDitagih(tx.billedAt))), sortMode);
+    /* SELALU bisa tagih ulang (pemilik 6 Nov): semua anak yang masih Utang ikut antrean, tanpa menunggu minggu depan; yang belum ditagih di depan. */
+    const urut = sortGroups(buatGrup(txs), sortMode);
+    const gs = [...urut.filter((g) => g.txs.some((tx) => !sudahDitagih(tx.billedAt))), ...urut.filter((g) => !g.txs.some((tx) => !sudahDitagih(tx.billedAt)))];
     const antrean: string[][][] = [];
     const perWa = new Map<string, string[][]>();
     for (const g of gs) {
@@ -401,9 +403,7 @@ export default function Tagihan({
     return antrean;
   };
   const mulaiTagih = (daftar: string[]) => {
-    // Semua sudah ditagih? Tetap bisa: "Tagih ulang" memuat semua anak yang masih Utang di minggu itu.
-    let antrean = antreanMinggu(daftar);
-    if (!antrean.length) antrean = antreanMinggu(daftar, true);
+    const antrean = antreanMinggu(daftar);
     if (antrean.length) setTagih({ pekan: daftar, antrean });
   };
   /** Senin semua minggu yang masih punya anak belum ditagih. */
@@ -929,19 +929,21 @@ export default function Tagihan({
                                 const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flex: "none" };
                                 return (
                                   <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 8 }}>
-                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, minWidth: 0, lineHeight: 1.3 }}>
+                                    <div style={{ minWidth: 0 }}>
+                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, lineHeight: 1.3 }}>
                                       {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
                                     </span>
+                                    </div>
                                     {(
                                       <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden", flex: "none" }}>
-                                        {belumN > 0 && cakupan === "ini" && sebelum.length > 0 && (
+                                        {cakupan === "ini" && sebelum.length > 0 && (
                                           <>
                                             <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
                                             <span aria-hidden="true" style={{ width: 1.5, height: 24, alignSelf: "center", background: t.border }} />
                                           </>
                                         )}
-                                        <button onClick={() => mulaiTagih(cakupan === "semua" ? semuaSenin : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
-                                          <MessageCircle size={16} /> {belumN === 0 ? "Tagih ulang" : "Tagih"}
+                                        <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
+                                          <MessageCircle size={16} /> Tagih
                                         </button>
                                       </span>
                                     )}

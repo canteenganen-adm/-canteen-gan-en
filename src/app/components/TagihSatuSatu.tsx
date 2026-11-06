@@ -313,29 +313,21 @@ export default function TagihSatuSatu({
   );
 }
 
-/** Jahitan karcis: bila ada tunggakan, ada gagang yang bisa DIGERET ke kanan (atau diketuk) = Sertakan tagihan minggu sebelumnya aktif. */
+/** Jahitan karcis: bila ada tunggakan, JAHITAN ITU SENDIRI bisa digeret ke kanan (aktif) atau ke kiri (mati), atau diketuk = sertakan tagihan sebelumnya. Tanpa gagang. */
 function JahitanGeret({ bisa, aktif, onUbah }: { bisa: boolean; aktif: boolean; onUbah: (v: boolean) => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [drag, setDrag] = useState<number | null>(null);
   const awal = useRef(0);
-  const pos = drag ?? (aktif ? 1 : 0);
-  const hitung = (e: React.PointerEvent) => { const r = ref.current!.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left - 18) / Math.max(1, r.width - 36))); };
+  const [tarik, setTarik] = useState(false);
   return (
     <div style={{ position: "relative", height: 0 }}>
-      <div style={{ borderTop: `2px dashed ${aktif ? t.success : t.border}`, margin: "0 14px" }} />
+      <div style={{ borderTop: `${tarik ? 4 : 2}px dashed ${aktif ? t.success : t.border}`, margin: "0 14px", transition: "border-color .15s" }} />
       <span aria-hidden="true" style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
       <span aria-hidden="true" style={{ position: "absolute", right: -9, top: -9, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
       {bisa && (
-        <div ref={ref} role="switch" aria-checked={aktif} aria-label="Geret jahitan untuk menyertakan tagihan minggu sebelumnya"
-          style={{ position: "absolute", left: 14, right: 14, top: -22, height: 44, touchAction: "none", cursor: "grab" }}
-          onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); awal.current = e.clientX; setDrag(hitung(e)); }}
-          onPointerMove={(e) => { if (drag !== null) setDrag(hitung(e)); }}
-          onPointerUp={(e) => { const geser = Math.abs(e.clientX - awal.current) > 6; const p = drag ?? pos; setDrag(null); onUbah(geser ? p > 0.5 : !aktif); }}
-          onPointerCancel={() => setDrag(null)}>
-          <span style={{ position: "absolute", top: 10, left: `calc((100% - 36px) * ${pos})`, width: 36, height: 24, borderRadius: 999, display: "grid", placeItems: "center", background: aktif ? t.success : t.surface, color: aktif ? "#fff" : t.text2, boxShadow: "0 1px 4px rgba(60,48,20,.22)", transition: drag === null ? "left .18s ease-out" : "none" }}>
-            {aktif ? <Check size={15} strokeWidth={3} /> : <GripVertical size={16} />}
-          </span>
-        </div>
+        <div role="switch" aria-checked={aktif} aria-label="Geret jahitan untuk menyertakan tagihan sebelumnya"
+          style={{ position: "absolute", left: 0, right: 0, top: -22, height: 44, touchAction: "none", cursor: "grab" }}
+          onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); awal.current = e.clientX; setTarik(true); }}
+          onPointerUp={(e) => { setTarik(false); const dx = e.clientX - awal.current; onUbah(Math.abs(dx) > 24 ? dx > 0 : !aktif); }}
+          onPointerCancel={() => setTarik(false)} />
       )}
     </div>
   );
