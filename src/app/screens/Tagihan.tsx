@@ -133,7 +133,8 @@ type UndoAction =
   | { type: "paid"; tx: Transaction }
   | { type: "paidMany"; txs: Transaction[] }
   | { type: "unpaid"; tx: Transaction }
-  | { type: "cancel"; tx: Transaction };
+  | { type: "cancel"; tx: Transaction }
+  | { type: "cancelMany"; txs: Transaction[] };
 
 export default function Tagihan({
   transactions,
@@ -493,6 +494,10 @@ export default function Tagihan({
    * pernah disentuh) — celah yang ditemukan Papa. */
   const unpay = (tx: Transaction) => { onUnmarkPaid(tx.id); setUndo({ type: "unpaid", tx }); };
   const cancel = (tx: Transaction) => { onCancel(tx.id); setUndo({ type: "cancel", tx }); };
+  /** Batalkan semua transaksi satu anak (geser baris Utang); satu Urungkan memulihkan semuanya. */
+  const cancelMany = (txs: Transaction[]) => { if (!txs.length) return; txs.forEach((tx) => onCancel(tx.id)); setUndo({ type: "cancelMany", txs }); };
+  /** Dibatalkan -> Tong Sampah (geser kanan): lunak, bisa dipulihkan 30 hari. */
+  const buangKeTong = (tx: Transaction) => { onMoveToTrash(tx.id); setToast(`${tx.customer.nama} dibuang ke Tong Sampah — bisa dipulihkan 30 hari`); };
   const pulihkan = (tx: Transaction) => {
     onRestore(tx);
     if (undo?.type === "cancel" && undo.tx.id === tx.id) setUndo(null);
@@ -506,6 +511,7 @@ export default function Tagihan({
     if (undo.type === "paid") onUnmarkPaid(undo.tx.id);
     else if (undo.type === "paidMany") undo.txs.forEach((x) => onUnmarkPaid(x.id));
     else if (undo.type === "unpaid") onMarkPaid(undo.tx.id);
+    else if (undo.type === "cancelMany") undo.txs.forEach((x) => onRestore(x));
     else onRestore(undo.tx);
     setUndo(null);
   };
@@ -682,7 +688,7 @@ export default function Tagihan({
         </button>
         );
         return expanded ? kepala : (
-          <GeserBaris sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
+          <GeserBaris sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
         );
         })()}
 
@@ -873,12 +879,12 @@ export default function Tagihan({
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
                 <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
-                <RailGeser pudar style={{ gap: 10, padding: "0 0 4px" }}>
+                <RailGeser pudar style={{ gap: 6, padding: "0 0 2px" }}>
                   {kelompokBulan.map((k, ki) => (
-                    <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 10 }}>
+                    <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 6 }}>
                     {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 14, background: t.divider }} />}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 10px" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 4px" }}>
                         {k.label}
                       </div>
                       <div className="flex" style={{ gap: 2 }}>
@@ -886,7 +892,7 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 0, padding: "8px 10px", border: "none", borderRadius: 14, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 0, padding: "6px 7px", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span style={{ display: "inline-block", padding: "4px 0 5px" }}>{rentangPendek(x.senin)}</span>
                               {x.berjalan && <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 2 }}>berjalan</span>}
@@ -899,9 +905,9 @@ export default function Tagihan({
                   ))}
                   {semuaSenin.length > 1 && (
                     <div style={{ flex: "none" }}>
-                      <div style={{ fontSize: 13, margin: "0 0 10px" }}>&nbsp;</div>
+                      <div style={{ fontSize: 12, margin: "0 0 4px" }}>&nbsp;</div>
                       <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 0, padding: "8px 10px", border: "none", borderRadius: 14, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        style={{ flex: "none", position: "relative", minWidth: 0, padding: "6px 7px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                         <span style={{ display: "inline-block", padding: "4px 0 5px" }}>Semua</span>
                       </button>
                     </div>
@@ -1018,7 +1024,7 @@ export default function Tagihan({
               {/* Petunjuk geser: sekali, bisa ditutup (geser itu tersembunyi, jadi Mama/Papa perlu diberi tahu) */}
               {!petunjukGeserTutup && (
                 <div className="flex items-center justify-between" style={{ background: t.primaryLight, borderRadius: 14, padding: "10px 6px 10px 14px", marginBottom: 12, gap: 8 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 500, color: t.text }}>{riwayatFilter === "batal" ? "Geser baris ke kanan untuk memulihkan." : "Geser baris ke kiri untuk membatalkan, ke kanan untuk mengembalikan ke Utang."}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: t.text }}>{riwayatFilter === "batal" ? "Geser ke kiri untuk memulihkan, ke kanan untuk membuang ke Tong Sampah." : "Geser baris ke kiri untuk membatalkan, ke kanan untuk mengembalikan ke Utang."}</span>
                   <button onClick={() => { setPetunjukGeserTutup(true); try { localStorage.setItem("ganen_hint_geser_tx", "1"); } catch { /* abaikan */ } }} aria-label="Tutup petunjuk"
                     style={{ flex: "none", width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={18} /></button>
                 </div>
@@ -1050,8 +1056,8 @@ export default function Tagihan({
                       return (
                         <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
                           <GeserTx
-                            kiri={cancelled ? undefined : { label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
-                            kanan={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
+                            kiri={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
+                            kanan={cancelled ? { label: "Tong Sampah", ikon: <Trash2 size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => buangKeTong(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
                             <button onClick={() => setDetailTx(tx)} className="flex items-center"
                               style={{ width: "100%", gap: 10, minHeight: 48, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
                               {cancelled
@@ -1094,6 +1100,7 @@ export default function Tagihan({
               {undo.type === "paidMany" ? `Lunas — ${undo.txs[0].customer.nama} · ${rupiah(undo.txs.reduce((a, x) => a + x.total, 0))}`
                 : undo.type === "paid" ? `Ditandai Lunas — ${undo.tx.customer.nama}`
                 : undo.type === "unpaid" ? `Dikembalikan ke Belum Dibayar — ${undo.tx.customer.nama}`
+                : undo.type === "cancelMany" ? `Dibatalkan — ${undo.txs[0].customer.nama} · ${undo.txs.length} transaksi`
                 : `Transaksi dibatalkan — ${undo.tx.customer.nama}`}
             </span>
             <button onClick={doUndo} className="flex items-center gap-1"
@@ -1172,7 +1179,7 @@ export default function Tagihan({
                 <div style={{ display: "grid", gridTemplateColumns: kolom.length === 3 ? "1.25fr 1fr 1fr" : "1fr 1fr", gap: 8, padding: "14px 20px" }}>
                   {kolom.map(([label, nilai, warna]) => (
                     <div key={label}>
-                      <div style={{ fontSize: 12.5, color: t.text2 }}>{label}</div>
+                      <div style={{ fontSize: 13.5, color: t.text2 }}>{label}</div>
                       <div style={{ fontSize: 13.5, fontWeight: warna ? 600 : 500, color: warna || t.text, marginTop: 2 }}>{nilai}</div>
                     </div>
                   ))}

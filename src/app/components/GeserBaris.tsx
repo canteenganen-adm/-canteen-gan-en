@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, MessageCircle } from "lucide-react";
+import { Check, MessageCircle, Ban } from "lucide-react";
 import { t } from "../../lib/theme";
 
 /** Lebar dua tombol (Tagih + Lunas) yang terbuka setelah baris digeser sebagian. */
@@ -11,7 +11,7 @@ let sudahIntip = false;
 
 /** Baris yang bisa digeser ke kiri: geser sebagian = dua tombol (Tagih, Lunas); geser penuh = Lunas langsung (Urungkan muncul).
  *  Mengikuti kebiasaan iPhone (usul pemilik 1 Nov: Mama capek membuka kartu satu per satu untuk melunaskan). */
-export default function GeserBaris({ children, onTagih, onLunas, sudahTagih }: { children: ReactNode; onTagih: () => void; onLunas: () => void; sudahTagih?: string }) {
+export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahTagih }: { children: ReactNode; onTagih: () => void; onLunas: () => void; onBatal?: () => void; sudahTagih?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [dx, setDx] = useState(0);
   const [tarik, setTarik] = useState(false);
@@ -85,10 +85,16 @@ export default function GeserBaris({ children, onTagih, onLunas, sudahTagih }: {
           <MessageCircle size={18} color={sudahTagih ? t.ditagih : t.text2} strokeWidth={2.4} />
           {sudahTagih || "Tagih"}
         </button>
-        <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onLunas(); }} aria-label="Lunas"
-          style={{ flex: 1, minWidth: 0, border: "none", background: penuh ? t.success : t.successBg, color: penuh ? "#fff" : t.successText, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap", transition: "background .12s" }}>
-          <Check size={18} strokeWidth={3} />Lunas
-        </button>
+        {penuh ? (
+          <div aria-hidden="true" style={{ background: t.success, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", position: "absolute", inset: 0 }}>
+            <Check size={18} strokeWidth={3} />Lunas
+          </div>
+        ) : (
+          <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onBatal?.(); }} aria-label="Batalkan"
+            style={{ flex: 1, minWidth: 0, border: "none", background: t.errorBg, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
+            <Ban size={18} strokeWidth={2.4} />Batalkan
+          </button>
+        )}
       </div>
       <div onClickCapture={(e) => { if (bergeser.current) { e.stopPropagation(); e.preventDefault(); bergeser.current = false; } else if (terbuka) { e.stopPropagation(); e.preventDefault(); setDx(0); } }}
         style={{ position: "relative", background: t.bg, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>
