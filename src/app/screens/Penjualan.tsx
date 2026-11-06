@@ -267,7 +267,7 @@ export default function Penjualan({
     return (
       <button key={m.id} onClick={() => tapMenu(m)}
         className="flex flex-col justify-between"
-        style={{ position: "relative", minWidth: 0, width: "100%", height: 74, boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.primaryLight : t.surface, border: "none", borderRadius: 14, padding: "8px 9px", fontFamily: "inherit", color: t.text }}>
+        style={{ position: "relative", minWidth: 0, width: "100%", minHeight: 62, gap: 4, boxSizing: "border-box", textAlign: "left", cursor: "pointer", background: inCart ? t.primaryLight : t.surface, border: "none", borderRadius: 14, padding: "10px 12px", fontFamily: "inherit", color: t.text }}>
         {inCart > 0 && (
           <span style={{ position: "absolute", top: -6, right: -4, minWidth: 22, height: 22, padding: "0 6px", borderRadius: 999, background: t.text, color: t.surface, fontSize: 13, fontWeight: 700, display: "grid", placeItems: "center" }}>{inCart}</span>
         )}
@@ -318,7 +318,7 @@ export default function Penjualan({
         <div style={{ padding: "20px 20px 10px", flex: "none" }}>
           <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Penjualan</div>
-            <div className="flex items-center" style={{ height: 44, background: perhatianTgl ? t.primaryLight : t.surface, borderRadius: 999 }}>
+            <div className="flex items-center" style={{ height: 44, background: perhatianTgl ? t.primaryLight : t.divider, borderRadius: 999 }}>
               <div className="flex items-center gap-2" style={{ position: "relative", height: "100%", padding: isBackdate ? "0 4px 0 14px" : "0 14px", cursor: "pointer" }}>
                 <Calendar size={16} color={t.text2} />
                 <span style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: "nowrap" }}>{tglPil}</span>
@@ -391,7 +391,7 @@ export default function Penjualan({
               <div className="flex items-center justify-between" style={{ minHeight: 36 }}>
                 <span style={{ fontSize: 13, color: t.text2, fontWeight: 500 }}>{count} item</span>
                 <button onClick={clearCart} aria-label="Kosongkan semua" className="flex items-center gap-1"
-                  style={{ minHeight: 36, padding: "0 4px", background: "transparent", border: "none", color: t.text2, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+                  style={{ minHeight: 36, padding: "0 4px", background: "transparent", border: "none", color: t.error, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                   <Trash2 size={15} /> Kosongkan
                 </button>
               </div>
@@ -445,7 +445,7 @@ export default function Penjualan({
           <Field label="Nama Lengkap" req tried={tried} val={form.nama}>
             <input autoFocus value={form.nama} onChange={(e) => namaBerubah(e.target.value)} placeholder="Nama lengkap" style={inputStyle(tried && !form.nama.trim())} />
             {saranNama.length > 0 && (
-              <div style={{ marginTop: 6, background: t.divider, borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ marginTop: 6, background: t.primaryLight, borderRadius: 12, overflow: "hidden" }}>
                 {saranNama.map((c) => (
                   <button key={`${c.nama.toLowerCase()}|${c.kelas.toLowerCase()}`} onClick={() => pilihSaran(c)} className="flex items-center gap-3"
                     style={{ width: "100%", minHeight: 56, padding: "6px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${t.bg}`, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>

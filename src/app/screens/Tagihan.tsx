@@ -67,13 +67,27 @@ const groupKey = (c: Transaction["customer"]) => `${normNama(c.nama)}|${normKela
  * Menutup dua sumber dobel sekaligus: ortu salah ketik nomor (kurang 0,
  * angka kebalik) DAN ortu salah ketik kelas (6A vs "6 B") — selama salah
  * satunya masih cocok, kartu tetap SATU. Kartu memakai data ketikan terbaru. */
+const padat = (s: string) => s.replace(/s+/g, "");
+/** Selisih satu huruf (ganti/tambah/kurang/tukar dua huruf bersebelahan): "luisas" vs "lusias". */
+function mirip1(a: string, b: string) {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  if (a.length === b.length) {
+    if (a.slice(i + 1) === b.slice(i + 1)) return true;
+    return a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
+  }
+  return (a.length > b.length ? a.slice(i + 1) === b.slice(i) : b.slice(i + 1) === a.slice(i));
+}
 function unionGroups(txs: Transaction[]) {
   type G = { customer: Transaction["customer"]; txs: Transaction[]; newestAt: string; _nama: string; _kelas: Set<string>; _wa: Set<string> };
   const list: G[] = [];
   for (const tx of txs) {
     const c = tx.customer;
     const nn = normNama(c.nama); const kn = normKelas(c); const wn = normWa(c.wa);
-    let g = list.find((x) => x._nama === nn && (x._kelas.has(kn) || (!!wn && x._wa.has(wn))));
+    let g = list.find((x) => (padat(x._nama) === padat(nn) && (x._kelas.has(kn) || (!!wn && x._wa.has(wn))))
+      || (!!wn && !!kn && x._kelas.has(kn) && x._wa.has(wn) && mirip1(padat(x._nama), padat(nn))));
     if (!g) { g = { customer: c, txs: [], newestAt: tx.createdAt, _nama: nn, _kelas: new Set(), _wa: new Set() }; list.push(g); }
     g.txs.push(tx);
     g._kelas.add(kn); if (wn) g._wa.add(wn);
@@ -1035,9 +1049,9 @@ export default function Tagihan({
                             kanan={cancelled ? { label: "Pulihkan", ikon: <RotateCcw size={18} />, bg: t.successBg, warna: t.successText, onAksi: () => pulihkan(tx) } : { label: "Belum lunas", ikon: <Undo2 size={18} />, bg: t.primaryLight, warna: t.text, onAksi: () => unpay(tx) }}>
                             <button onClick={() => setDetailTx(tx)} className="flex items-center"
                               style={{ width: "100%", gap: 10, minHeight: 48, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: t.text }}>
-                              <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${cancelled ? t.text2 : t.success}`, background: cancelled ? "transparent" : t.successBg, color: cancelled ? t.text2 : t.successText }}>
-                                {cancelled ? <Ban size={13} /> : <Check size={14} strokeWidth={3} />}
-                              </span>
+                              {cancelled
+                                ? <Ban size={24} strokeWidth={2} color={t.text2} style={{ flex: "none" }} />
+                                : <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${t.success}`, background: t.successBg, color: t.successText }}><Check size={14} strokeWidth={3} /></span>}
                               {tx.source === "preorder" ? <Utensils size={15} color={t.text2} style={{ flex: "none" }} /> : <ShoppingCart size={15} color={t.text2} style={{ flex: "none" }} />}
                               <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 500, color: cancelled ? t.text2 : t.text }}>{tglSingkat(tx)}</span>
                               <span style={{ flex: "none", fontFamily: MONO, fontSize: 13.5, textDecoration: cancelled ? "line-through" : "none", color: cancelled ? t.text2 : t.text }}>{rupiah(tx.total)}</span>
