@@ -91,7 +91,8 @@ export default function TagihSatuSatu({
     for (const x of byId.values()) {
       if (x.paid || x.cancelledAt || x.deletedAt || !namaSet.has(norm(x.customer.nama))) continue;
       const senin = mondayOf(opDate(x));
-      if (pekan.includes(senin)) continue;
+      /* 'Sebelumnya' = HANYA minggu yang lebih lama dari yang ditagih sekarang; minggu yang lebih baru (mis. November saat menagih sampai Okt) ditahan. */
+      if (pekan.includes(senin) || senin > [...pekan].sort()[0]) continue;
       perMinggu.set(senin, (perMinggu.get(senin) ?? 0) + x.total);
     }
     return [...perMinggu].sort(([a], [b]) => a.localeCompare(b)).map(([senin, tot]) => ({ label: labelPekan(senin), total: tot }));
