@@ -871,7 +871,7 @@ export default function Tagihan({
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "8px 12px 4px", marginBottom: 8 }}>
-                <div className="flex items-end" style={{ gap: 8 }}>
+                <div className="flex items-end" style={{ gap: 4 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                 <RailGeser pudar style={{ gap: 6, padding: "0" }}>
                   {kelompokBulan.map((k, ki) => (
@@ -881,12 +881,12 @@ export default function Tagihan({
                       <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 4px" }}>
                         {k.label}
                       </div>
-                      <div className="flex" style={{ gap: 4 }}>
+                      <div className="flex" style={{ gap: 0 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 44, padding: "0 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 44, padding: "0 7px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 4, right: 3, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span>{rentangPendek(x.senin)}</span>
                               {x.berjalan && <span style={{ display: "block", fontSize: 10.5, lineHeight: 1, fontWeight: 600, color: t.text2, marginTop: 1 }}>berjalan</span>}
@@ -901,10 +901,10 @@ export default function Tagihan({
                 </div>
                 {pekanDibuka && (
                   <>
-                    <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 34, marginBottom: 5, background: t.border }} />
+                    <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 30, marginBottom: 7, background: t.border }} />
                     <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [pekanDibuka.senin])}
                       aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(pekanDibuka.senin)}`}
-                      style={{ flex: "none", position: "relative", height: 48, padding: "0 18px", margin: "0 6px 0 12px", background: "#D9FDD3", border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                      style={{ flex: "none", position: "relative", height: 44, padding: "0 13px", margin: "0 2px 0 10px", background: "#D9FDD3", border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
                       <span aria-hidden="true" style={{ position: "absolute", left: -6, bottom: 0, width: 14, height: 16, background: "#D9FDD3", borderBottomRightRadius: 14 }} />
                       <span aria-hidden="true" style={{ position: "absolute", left: -10, bottom: 0, width: 10, height: 18, background: t.surface, borderBottomRightRadius: 10 }} />
                       Tagih
