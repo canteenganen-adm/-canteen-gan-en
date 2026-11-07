@@ -828,7 +828,7 @@ export default function Tagihan({
           />
         </div>
         <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
-        <div style={{ padding: "16px 20px 0" }}>
+        <div style={{ padding: "10px 20px 0" }}>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
@@ -841,7 +841,7 @@ export default function Tagihan({
 
         {/* ---- Tab: Belum Dibayar ---- */}
         {tab === "unpaid" && (
-          <div style={{ padding: "14px 20px 4px" }}>
+          <div style={{ padding: "8px 20px 4px" }}>
             {modeDaftar ? (
               <>
                 {/* Filter yang tersembunyi di popover dibuat kelihatan — dulu bikin "pesanan tidak ketemu" */}
@@ -931,7 +931,7 @@ export default function Tagihan({
 
         {/* ---- Tab: Lunas & Dibatalkan (render sama, isi beda) ---- */}
         {tab !== "unpaid" && (
-          <div style={{ padding: "16px 20px 4px" }}>
+          <div style={{ padding: "10px 20px 4px" }}>
             {/* Riwayat lama ditarik saat tab dibuka (sekali per sesi): tampil semua, tanpa batas 30 hari. */}
             {riwayatLamaStatus === "memuat" && (
               <div style={{ fontSize: 13.5, color: t.text2, margin: "2px 2px 12px" }}>Memuat riwayat lama…</div>

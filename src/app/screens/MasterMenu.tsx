@@ -375,7 +375,7 @@ export default function MasterMenu({
         {/* Yang MENEMPEL di atas hanya judul + tab (±110px). Cari, tanggal, Menu Tetap,
             dan chip kategori ikut tergulir — sebelumnya semuanya menempel (±45% layar HP) dan
             menimpa daftar menu. */}
-        <div style={{ padding: "20px 20px 0", background: t.bg }}>
+        <div style={{ padding: "10px 20px 0", background: t.bg }}>
           {/* Judul "Menu" SEJAJAR dengan tanggal (satu baris) bila deretan hari tampil */}
           {!menuHarianReady && (
             <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
@@ -414,7 +414,7 @@ export default function MasterMenu({
         </div>
         {/* Lembar: tab aktif SEWARNA dengan lembar di bawahnya (sama dengan tab Transaksi) */}
         <div style={{ margin: "0 16px", background: t.surface, borderRadius: view === "menu" ? "0 22px 22px 22px" : "22px 0 22px 22px", minHeight: "62vh", paddingBottom: 24 }}>
-        <div style={{ padding: "16px 12px 4px" }}>
+        <div style={{ padding: "10px 12px 4px" }}>
           {view === "menu" && (
             <>
               {/* Cari + tombol plus (membuka menu melayang: Tambah menu / Menu Tetap) */}
@@ -475,7 +475,7 @@ export default function MasterMenu({
         </div>
 
         {/* List */}
-        <div style={{ padding: "10px 12px 4px" }}>
+        <div style={{ padding: "6px 12px 4px" }}>
           {/* Banner item belum dikategorikan — hilang otomatis saat 0 */}
           {view === "menu" && uncategorized.length > 0 && (
             <button onClick={() => setShowUncategorized((v) => !v)}
