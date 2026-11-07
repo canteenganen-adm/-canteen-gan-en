@@ -109,6 +109,23 @@ export default function TagihSatuSatu({
   const totalTunggakan = tunggakan.reduce((n, x) => n + x.total, 0);
   useEffect(() => { setTeks(null); }, [sertakan]);
 
+  /* Pengaman "Mama langsung kirim-kirim" (pemilik 7 Nov): dua peringatan lembut di karcis, tidak memblokir.
+     (1) pesanan kembar (tanggal, isi, total sama) dalam tagihan ini; (2) semua sudah ditagih minggu ini. */
+  const kembarTx = useMemo(() => {
+    const hasil: { tgl: string; jam: string[] }[] = [];
+    for (const g of gsAktif) {
+      const peta = new Map<string, Transaction[]>();
+      for (const x of g.txs) {
+        const k = [opDate(x), x.total, x.items.map((i) => `${i.name}|${i.variant ?? ""}|${i.qty}`).sort().join(";")].join("#");
+        (peta.get(k) ?? peta.set(k, []).get(k)!).push(x);
+      }
+      for (const arr of peta.values()) if (arr.length > 1) hasil.push({ tgl: tglPendek(opDate(arr[0])), jam: arr.map((x) => new Date(x.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")) });
+    }
+    return hasil;
+  }, [gsAktif]);
+  const sudahSemua = gsAktif.length > 0 && gsAktif.every((g) => g.txs.every((x) => sudahDitagih(x.billedAt)));
+  const tglTagihTerakhir = sudahSemua ? gsAktif.flatMap((g) => g.txs.map((x) => x.billedAt || "")).sort().pop()! : "";
+
   const wa = gs.length ? waIntl((gsAktif[0] ?? gs[0]).customer.wa) : "";
   const pesan = teks ?? (gsAktif.length ? bangunPesan(gsAktif, label, sertakan && tunggakan.length ? tunggakan : undefined) : "");
   const ids = gsAktif.flatMap((g) => g.txs.map((x) => x.id));
@@ -235,6 +252,18 @@ export default function TagihSatuSatu({
                     </button>
                   </div>
                 ))}
+                {kembarTx.map((k, n) => (
+                  <div key={n} className="flex items-center gap-2" style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>
+                    <AlertTriangle size={17} style={{ flex: "none" }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>{k.tgl}: ada {k.jam.length} pesanan sama ({k.jam.join(", ")}). Benar?</span>
+                  </div>
+                ))}
+                {sudahSemua && (
+                  <div className="flex items-center gap-2" style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.ditagihBg, borderRadius: 12, color: t.text, fontSize: 14.5, fontWeight: 600 }}>
+                    <span style={{ flex: "none", color: "#4A8FC4", display: "grid", placeItems: "center" }}><IkonDitagih size={17} strokeWidth={2.4} /></span>
+                    <span style={{ flex: 1, minWidth: 0 }}>Sudah ditagih {tglTagihTerakhir.slice(8, 10)}/{tglTagihTerakhir.slice(5, 7)}. Kirim ulang?</span>
+                  </div>
+                )}
               </div>
               <button onClick={() => { setCariNama(""); setModeTambah(true); setDaftar(true); }}
                 style={{ minHeight: 44, margin: "2px 0 0", padding: "0 6px", border: "none", background: "transparent", color: t.text2, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
@@ -280,7 +309,7 @@ export default function TagihSatuSatu({
                 {wa ? (
                   <button onClick={kirim} disabled={!gsAktif.length} className="flex items-center justify-center gap-2"
                     style={{ flex: 1, minWidth: 0, height: 60, borderRadius: 14, border: "none", opacity: gsAktif.length ? 1 : 0.45, background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
-                    {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : i === total - 1 ? "Kirim & Selesai" : "Kirim WA"}
+                    {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : sudahSemua ? "Kirim ulang WA" : i === total - 1 ? "Kirim & Selesai" : "Kirim WA"}
                   </button>
                 ) : (
                   <div className="flex items-center justify-center" style={{ flex: 1, minWidth: 0, height: 60, fontSize: 14, fontWeight: 700, color: t.error, textAlign: "center" }}>Nomor WA belum ada</div>

@@ -31,6 +31,7 @@ Urutan baca: bagian ini dulu. Bila bertabrakan dengan uraian lain di berkas ini,
 - **"Berjalan" = sampai MINGGU (pemilik 7 Nov)**: pekan itu Senin–Minggu; Sabtu dan Minggu masih pekan berjalan (aturan lama "berjalan = sebelum Sabtu" dibatalkan; `pekanBerjalan` di `src/lib/pekan.ts`).
 - **Chip "Semua" kembali (pemilik 7 Nov)**: di ujung deret minggu, setelah minggu berjalan; belum dipilih = hanya garis tipis tanpa latar, dipilih = latar krem vintage `#F0E5C9` (sama dengan minggu terpilih). Menggantikan penghapusan baris "Semua minggu".
 - **Atur Menu Tetap (pemilik 7 Nov)**: daftar di lembar HANYA menampilkan menu yang sudah ditandai; menu lain baru muncul setelah dicari (ketik di kolom cari, ketuk untuk menandai). Melepas tanda membuat menu hilang dari daftar awal.
+- **Pengaman sebelum kirim di Tagih satu per satu (pemilik 7 Nov: Mama sering langsung kirim-kirim; keluhan tagihan dobel)**: dua peringatan lembut DI DALAM karcis (tidak memblokir): (1) "{tgl}: ada N pesanan sama (jam, jam). Benar?" bila anak yang dicentang punya pesanan kembar (tanggal, isi, total sama); (2) "Sudah ditagih dd/mm. Kirim ulang?" bila semuanya sudah ditagih minggu ini, dan tombol kirim berubah "Kirim ulang WA". Penjualan: satu pencatatan per 2 detik (anti ketuk ganda). Kesehatan menandai tagihan Penjualan kembar walau berjauhan.
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
