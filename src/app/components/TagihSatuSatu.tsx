@@ -149,15 +149,17 @@ export default function TagihSatuSatu({
             style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.divider, color: t.text, cursor: "pointer" }}>
             <X size={20} />
           </button>
-          <div style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: 18, fontWeight: 800, letterSpacing: "-.02em" }}>{judul}</div>
+          <div style={{ flex: 1, minWidth: 0, height: 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", textAlign: "center", padding: "2px 0" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.1 }}>{judul}</div>
+            {total > 0 && <div style={{ fontSize: 13, color: t.text2, fontWeight: 500, lineHeight: 1 }}>{terkirim} dari {total} terkirim</div>}
+          </div>
           <button onClick={() => { setCariNama(""); setDaftar(true); }} aria-label="Cari anak" title="Cari anak" className="flex items-center justify-center"
             style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.divider, color: t.text, cursor: "pointer" }}>
             <Search size={20} />
           </button>
         </div>
         {total > 0 && (
-          <div style={{ padding: "0 20px 0", textAlign: "center", marginTop: -2 }}>
-            <div style={{ fontSize: 14, color: t.text2, fontWeight: 500 }}>{terkirim} dari {total} terkirim</div>
+          <div style={{ padding: "0 20px 0" }}>
             <BarGeret total={entri.length} i={i} selesai={selesai} kirimIdx={kirimIdx} onPilih={setI} />
           </div>
         )}
@@ -192,21 +194,36 @@ export default function TagihSatuSatu({
                   })}
                 </div>
                 <Jahitan />
-                <div className="flex items-baseline justify-between" style={{ padding: "14px 16px", gap: 10 }}>
-                  <span style={{ fontSize: 13, color: t.text2 }}>
-                    Tagihan {label} · {(() => { const d = [...new Set(gsAktif.flatMap((g) => g.txs.map(opDate)))].sort(); return d.slice(0, 6).map(tglPendek).join(", ") + (d.length > 6 ? ` +${d.length - 6}` : ""); })()}
-                  </span>
-                  <span style={{ fontSize: 16, fontWeight: 800, flex: "none" }}>{rupiah(gsAktif.reduce((n, g) => n + g.total, 0) + (sertakan && tunggakan.length ? totalTunggakan : 0))}</span>
-                </div>
-                {tunggakan.length > 0 && (
-                  <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                    style={{ gap: 12, width: "100%", minHeight: 52, margin: "-4px 0 8px", padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-                    <span style={{ width: 28, height: 28, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: sertakan ? "#2F2A24" : t.divider, color: "#FAF6EE" }}>
-                      {sertakan && <Check size={17} strokeWidth={3} />}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
-                  </button>
-                )}
+                {(() => {
+                  const dasar = gsAktif.reduce((n, g) => n + g.total, 0);
+                  const tgl = (() => { const dd = [...new Set(gsAktif.flatMap((g) => g.txs.map(opDate)))].sort(); return dd.slice(0, 6).map(tglPendek).join(", ") + (dd.length > 6 ? ` +${dd.length - 6}` : ""); })();
+                  const adaTung = tunggakan.length > 0;
+                  return (
+                    <>
+                      <div className="flex items-baseline justify-between" style={{ padding: adaTung ? "14px 16px 6px" : "14px 16px", gap: 10 }}>
+                        <span style={{ fontSize: 13.5, color: t.text2 }}>Tagihan {label} · {tgl}</span>
+                        <span style={{ fontSize: adaTung ? 14.5 : 16, fontWeight: adaTung ? 600 : 800, flex: "none", color: adaTung ? t.text2 : t.text }}>{rupiah(dasar)}</span>
+                      </div>
+                      {adaTung && (
+                        <>
+                          <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                            style={{ gap: 12, width: "100%", minHeight: 44, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text2 }}>
+                            <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", background: sertakan ? "#2F2A24" : t.divider, color: "#FAF6EE" }}>
+                              {sertakan && <Check size={16} strokeWidth={3} />}
+                            </span>
+                            <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya</span>
+                            <span style={{ flex: "none", fontSize: 14.5, fontWeight: 600 }}>{rupiah(totalTunggakan)}</span>
+                          </button>
+                          <div aria-hidden="true" style={{ borderTop: `2px dashed ${t.border}`, margin: "6px 16px 0" }} />
+                          <div className="flex items-baseline justify-between" style={{ padding: "12px 16px 16px" }}>
+                            <span style={{ fontSize: 14.5, fontWeight: 600, color: t.text2 }}>Total</span>
+                            <span style={{ fontSize: 19, fontWeight: 800 }}>{rupiah(dasar + (sertakan ? totalTunggakan : 0))}</span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
                 {gsAktif.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
                     style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>

@@ -716,7 +716,6 @@ export default function Tagihan({
                   )}
                 </span>
                 <span style={{ flex: "none", fontSize: 15, fontWeight: 700, fontFamily: MONO }}>{rupiah(tx.total)}</span>
-                <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
               </button>
             </div>
           </div>
@@ -912,14 +911,6 @@ export default function Tagihan({
                 )}
                 </div>
                 <div style={{ height: 1, background: t.divider, margin: "10px 0 0" }} />
-                {semuaSenin.length > 1 && (
-                  <button onClick={() => setCakupan(cakupan === "semua" ? "ini" : "semua")} aria-pressed={cakupan === "semua"} className="flex items-center justify-between"
-                    style={{ width: "100%", minHeight: 44, padding: "0 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "#756B5D", fontSize: 14, fontWeight: 700 }}>
-                    <span style={{ fontWeight: cakupan === "semua" ? 800 : 700, color: cakupan === "semua" ? t.text : "#756B5D" }}>
-                      Semua minggu
-                    </span>
-                  </button>
-                )}
                 </div>
                 {pekanDibuka && ((p) => (
                         <div key={p.senin} style={{ padding: "2px 0 10px" }}>
@@ -1086,10 +1077,10 @@ export default function Tagihan({
               <button onClick={tutup} aria-label="Tutup rincian" style={{ position: "absolute", top: 10, right: 16, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={22} /></button>
 
               <div style={{ background: t.bg, borderRadius: 20, overflow: "hidden", marginTop: 18 }}>
-                <div style={{ background: t.divider, padding: "20px 20px 14px", textAlign: "center", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: warnaStatus }}>{status}</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: t.text }}>{x.customer.nama}</div>
-                  <div style={{ fontFamily: MONO, fontSize: 13.5, color: t.text2 }}>{baris}</div>
+                <div style={{ background: t.divider, padding: "14px 20px 10px", textAlign: "center", display: "flex", flexDirection: "column", gap: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: warnaStatus, lineHeight: 1.2 }}>{status}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: t.text, lineHeight: 1.1 }}>{x.customer.nama}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 13.5, color: t.text2, lineHeight: 1.3 }}>{baris}</div>
                 </div>
                 <div style={{ position: "relative", height: 10, background: t.divider }}>
                   <div style={{ position: "absolute", left: 14, right: 14, top: 9, borderTop: `1.5px dashed ${t.border}` }} />
