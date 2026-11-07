@@ -907,7 +907,7 @@ export default function Tagihan({
                       style={{ flex: "none", position: "relative", height: 48, padding: "0 18px", margin: "0 6px 0 12px", background: "#D9FDD3", border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
                       <span aria-hidden="true" style={{ position: "absolute", left: -6, bottom: 0, width: 14, height: 16, background: "#D9FDD3", borderBottomRightRadius: 14 }} />
                       <span aria-hidden="true" style={{ position: "absolute", left: -10, bottom: 0, width: 10, height: 18, background: t.surface, borderBottomRightRadius: 10 }} />
-                      <MessageCircle size={18} /> Tagih
+                      Tagih
                     </button>
                   </>
                 )}
