@@ -3,7 +3,7 @@ import { t } from "../../lib/theme";
 /* Tab "kertas" ala Chrome — dipakai di tab Menu (Tampilan Ortu · Menu)
    dan Transaksi (Belum Dibayar · Lunas). Kertas aktif: sudut atas
    membulat, SEWARNA dengan latar di bawahnya (menyatu, bukan lebih terang) dan memutus garis di bawahnya. BUKAN pil segmen. */
-export default function PaperTabs<T extends string>({ tabs, value, onChange, warna, sama }: {
+export default function PaperTabs<T extends string>({ tabs, value, onChange, warna, sama, lembar }: {
   tabs: { id: T; label: React.ReactNode }[];
   value: T;
   onChange: (v: T) => void;
@@ -11,7 +11,26 @@ export default function PaperTabs<T extends string>({ tabs, value, onChange, war
   warna?: string;
   /** Lebar tab SAMA + garis 1.5px (gaya Transaksi, Buku Perintah bagian 4). */
   sama?: boolean;
+  /** Gaya lembar (7 Nov): tab aktif menyatu dengan lembar putih di bawahnya, tanpa garis tepi dan tanpa garis dasar. */
+  lembar?: boolean;
 }) {
+  if (lembar) {
+    return (
+      <div className="flex" style={{ alignItems: "flex-end" }}>
+        {tabs.map(({ id, label }) => {
+          const on = id === value;
+          return (
+            <button key={id} onClick={() => onChange(id)} aria-pressed={on}
+              className="flex items-center justify-center"
+              style={{ flex: 1, minHeight: 50, whiteSpace: "nowrap", fontSize: 15, fontWeight: on ? 700 : 600, cursor: "pointer", border: "none", fontFamily: "inherit",
+                borderTopLeftRadius: 18, borderTopRightRadius: 18, background: on ? (warna ?? t.surface) : "transparent", color: on ? t.text : "#756B5D" }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
   const g = sama ? "1.5px" : "1px";
   return (
     <div>

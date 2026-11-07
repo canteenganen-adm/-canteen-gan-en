@@ -179,6 +179,7 @@ export default function Tagihan({
   /** Urutkan, Belum Ditagih, dan Tanggal digabung SATU sheet "Filter" —
    * baris chip tetap satu baris (tidak melebar jadi dua baris). */
   const [filterSheet, setFilterSheet] = useState(false);
+  const [cariBuka, setCariBuka] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   useKunciGulir(filterSheet, filterRef);
   const filterActive = sortMode !== "az" || dateFilter !== "semua" || onlyUnbilled || sourceFilter !== "semua";
@@ -667,25 +668,24 @@ export default function Tagihan({
         {/* Header grup — klik untuk expand/collapse; saat tertutup bisa DIGESER ke kiri: Tagih + Lunas (geser penuh = Lunas) */}
         {(() => {
         const kepala = (
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 60, padding: expanded ? "10px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 66, padding: expanded ? "10px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
-              <div style={{ fontSize: 16.5, fontWeight: 600 }}>{g.customer.nama}</div>
-              <div style={{ fontSize: 13, color: t.text2, fontFamily: MONO }}>{g.customer.kelas || g.customer.tingkat}{expanded && g.customer.wa ? ` · ${g.customer.wa}` : ""}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.customer.nama}</div>
+              <div className="flex items-center" style={{ fontSize: 13.5, color: "#756B5D", fontFamily: MONO, gap: 6 }}>
+                <span>{g.customer.kelas || g.customer.tingkat}{expanded && g.customer.wa ? ` · ${g.customer.wa}` : ""}</span>
+                {g.txs.every((tx) => tx.billedAt) && <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: "#4A8FC4" }}><IkonDitagih size={16} strokeWidth={2.4} /></span>}
+              </div>
               {expanded && <div style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</div>}
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
-              {g.txs.every((tx) => tx.billedAt) && (
-                <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: t.ditagih }}><IkonDitagih size={18} strokeWidth={2.4} /></span>
-              )}
-              <span style={{ fontSize: 16.5, fontWeight: 700 }}>{rupiah(g.total)}</span>
-              {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.textDis} />}
+              <span style={{ fontSize: 17, fontWeight: 700 }}>{rupiah(g.total)}</span>
             </div>
           </div>
         </button>
         );
         return expanded ? kepala : (
-          <GeserBaris sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
+          <GeserBaris bg={t.surface} sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
         );
         })()}
 
@@ -741,6 +741,7 @@ export default function Tagihan({
     );
   };
 
+  const ixTab = tab === "unpaid" ? 0 : tab === "riwayat" ? 1 : 2;
   return (
     <div style={{ background: t.bg, color: t.text, minHeight: "100%" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 0 90px" }}>
@@ -758,14 +759,17 @@ export default function Tagihan({
               </span>
             </div>
           </div>
+          <div className="flex items-center" style={{ gap: 10, flex: "none" }}>
+          <button onClick={() => { if (cariBuka || q) { setQ(""); setCariBuka(false); } else setCariBuka(true); }} aria-label="Cari nama"
+            style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: cariBuka || q ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+            <Search size={19} />
+          </button>
           <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
-              className="flex items-center gap-1"
-              style={{ position: "relative", flex: "none", height: 44, padding: "0 14px", borderRadius: 999, fontSize: 14.5, fontWeight: filterActive ? 700 : 600, cursor: "pointer",
-                border: "none", background: filterActive ? t.primary : t.surface, color: filterActive ? t.onPrimary : t.text2 }}>
-              <SlidersHorizontal size={16} /> Filter
+              style={{ position: "relative", width: 44, height: 44, borderRadius: "50%", border: "none", background: filterActive ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              <SlidersHorizontal size={19} />
               {filterActive && (
-                <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.primary, border: `1.5px solid ${t.bg}` }} />
+                <span style={{ position: "absolute", top: 0, right: 0, width: 9, height: 9, borderRadius: "50%", background: t.error, border: `1.5px solid ${t.bg}` }} />
               )}
             </button>
             {filterSheet && (
@@ -817,10 +821,11 @@ export default function Tagihan({
               </>
             )}
           </div>
+          </div>
         </div>
 
-        {/* Sticky: hanya alat kerja — tab, cari, satu baris filter */}
-        <div style={{ padding: "4px 20px 10px", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+        {/* Tab menyatu dengan LEMBAR putih (pemilik 7 Nov): tab aktif = warna lembar, tanpa garis */}
+        <div style={{ padding: "4px 16px 0", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <PaperTabs
             tabs={[
               { id: "unpaid", label: "Utang" },
@@ -830,24 +835,24 @@ export default function Tagihan({
             value={tab}
             onChange={setTab}
             warna={t.surface}
-            sama
+            lembar
           />
-
-          <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
-            {/* Cari — SAMA dengan Pre-order/Menu: tinggi 44, sudut 12, garis 1.5px, latar kartu */}
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, borderRadius: 12, padding: "0 12px", height: 44, boxSizing: "border-box" }}>
+        </div>
+        <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
+        {(cariBuka || q) && (
+          <div className="flex items-center gap-2" style={{ margin: "0 16px", padding: "14px 0 0" }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
               {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
             </div>
-  
           </div>
-        </div>
+        )}
 
         {/* ---- Tab: Belum Dibayar ---- */}
         {tab === "unpaid" && (
-          <div style={{ padding: "4px 20px" }}>
+          <div style={{ padding: "12px 20px 4px" }}>
             {modeDaftar ? (
               <>
                 {/* Filter yang tersembunyi di popover dibuat kelihatan — dulu bikin "pesanan tidak ketemu" */}
@@ -874,25 +879,26 @@ export default function Tagihan({
             ) : (
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
-                {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
-                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "6px 12px 6px", marginBottom: 6 }}>
+                <div>
+                <div className="flex items-end" style={{ gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                 <RailGeser pudar style={{ gap: 6, padding: "0" }}>
                   {kelompokBulan.map((k, ki) => (
                     <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 6 }}>
-                    {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 14, background: t.divider }} />}
+                    {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 9, background: t.divider }} />}
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 2px" }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 4px" }}>
                         {k.label}
                       </div>
-                      <div className="flex" style={{ gap: 2 }}>
+                      <div className="flex" style={{ gap: 4 }}>
                         {k.pekan.map((x) => {
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 38, padding: "0 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
-                              {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
+                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 44, padding: "0 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 4, right: 3, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, lineHeight: 1, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 1 }}>berjalan</span>}
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, lineHeight: 1, fontWeight: 600, color: t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -900,98 +906,43 @@ export default function Tagihan({
                     </div>
                     </div>
                   ))}
-                  {semuaSenin.length > 1 && (
-                    <div style={{ flex: "none" }}>
-                      <div style={{ fontSize: 12, margin: "0 0 2px" }}>&nbsp;</div>
-                      <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 38, padding: "0 14px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : t.divider, color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
-                        <span>Semua</span>
-                      </button>
-                    </div>
-                  )}
                 </RailGeser>
-                {pekanDibuka && ((p) => (
+                </div>
+                {pekanDibuka && (
                   <>
-                    {semuaSenin.length > 0 && <div style={{ height: 1, background: t.divider, margin: "6px 0 0" }} />}
-                          {semuaSenin.length > 0 && (
-                            <>
-                              {/* Cakupan: chip "Semua" di ujung barisan tanggal (saklar dua sisi dan pil ditolak: "kebanyakan blok-blok") */}
-                              {/* Ringkasan: "4/7 belum ditagih" + satu pil bergaris [+ Gabung | Tagih] (Buku Perintah 4.3) */}
-                              {(() => {
-                                const sebelum = urutPekan.filter((x) => x.senin < p.senin && x.txs.length > 0).map((x) => x.senin);
-                                const total = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.anak, 0) : p.anak;
-                                const belumN = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.belum, 0) : p.belum;
-                                const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flex: "none" };
-                                return (
-                                  <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 12, paddingBottom: 4 }}>
-                                    <div style={{ minWidth: 0 }}>
-                                    <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, lineHeight: 1.3 }}>
-                                      {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
-                                    </span>
-                                    </div>
-                                    {(
-                                      <span className="flex items-center" style={{ border: `1.5px solid ${t.border}`, borderRadius: 999, overflow: "hidden", flex: "none" }}>
-                                        {cakupan === "ini" && sebelum.length > 0 && (
-                                          <>
-                                            <button onClick={() => mulaiTagih([...sebelum, p.senin])} style={pilS} aria-label="Gabung dengan minggu sebelumnya, lalu tagih">+ Gabung</button>
-                                            <span aria-hidden="true" style={{ width: 1.5, height: 24, alignSelf: "center", background: t.border }} />
-                                          </>
-                                        )}
-                                        <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [p.senin])} style={pilS} aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(p.senin)}`}>
-                                          <MessageCircle size={16} /> Tagih
-                                        </button>
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                            </>
-                          )}
+                    <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 34, marginBottom: 5, background: t.border }} />
+                    <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [pekanDibuka.senin])}
+                      aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(pekanDibuka.senin)}`}
+                      style={{ flex: "none", position: "relative", height: 48, padding: "0 16px", margin: "0 8px 0 4px", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", borderRadius: 10, transform: "rotate(-2deg)", color: "#7A6648", fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                      <span aria-hidden="true" style={{ position: "absolute", left: -8, top: "50%", marginTop: -8, width: 16, height: 16, borderRadius: "50%", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", clipPath: "inset(0 0 0 50%)" }} />
+                      <span aria-hidden="true" style={{ position: "absolute", right: -8, top: "50%", marginTop: -8, width: 16, height: 16, borderRadius: "50%", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", clipPath: "inset(0 50% 0 0)" }} />
+                      <MessageCircle size={18} /> Tagih
+                    </button>
                   </>
-                ))(pekanDibuka)}
+                )}
+                </div>
+                <div style={{ height: 1, background: t.divider, margin: "10px 0 0" }} />
+                {semuaSenin.length > 1 && (
+                  <button onClick={() => setCakupan(cakupan === "semua" ? "ini" : "semua")} aria-pressed={cakupan === "semua"} className="flex items-center justify-between"
+                    style={{ width: "100%", minHeight: 44, padding: "0 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "#756B5D", fontSize: 14, fontWeight: 700 }}>
+                    <span className="flex items-center" style={{ gap: 8 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", background: cakupan === "semua" ? "#2F2A24" : "transparent", border: `2px solid ${cakupan === "semua" ? "#2F2A24" : "#B9AE92"}`, boxSizing: "border-box" }} />
+                      Semua minggu
+                    </span>
+                    <span>{rupiah(grandTotal)}</span>
+                  </button>
+                )}
                 </div>
                 {pekanDibuka && ((p) => (
                         <div key={p.senin} style={{ padding: "2px 0 10px" }}>
                           <style>{`@keyframes ganen-geser-kiri{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:none}}@keyframes ganen-geser-kanan{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:none}}`}</style>
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
-                            : (() => {
-                                /* Daftar A–Z: huruf besar sebagai pemisah + indeks huruf di tepi kanan (pilihan pemilik 31 Okt). */
-                                const bundel = bundelWa(groupsPekan);
-                                const abjad = sortMode === "az" || sortMode === "za";
-                                const hurufDari = (b: Grup[]) => { const h = (b[0].customer.nama.trim()[0] || "#").toUpperCase(); return /[A-Z]/.test(h) ? h : "#"; };
-                                const ada = abjad ? [...new Set(bundel.map(hurufDari))] : [];
-                                let prev = "";
-                                return (
-                                  <>
-                                    {/* Hanya daftar yang meluncur; indeks A–Z (position: fixed) di luar pembungkus bertransformasi */}
-                                    <div style={{ animation: arahGeser ? `ganen-geser-${arahGeser} .24s cubic-bezier(.22,.8,.3,1)` : undefined }}>
-                                    {bundel.map((b) => {
-                                      const h = abjad ? hurufDari(b) : "";
-                                      const kepala = abjad && h !== prev;
-                                      if (abjad) prev = h;
-                                      const isi = (
-                                        <div key={`${p.senin}|${normWa(b[0].customer.wa)}`} style={{ paddingLeft: 12, marginBottom: 6, borderLeft: `4px solid ${t.garisKelompok}`, borderRadius: 1 }}>
-                                          {b.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, cakupan === "semua" ? undefined : labelPekan(p.senin)))}
-                                        </div>
-                                      );
-                                      return (
-                                        <div key={`${p.senin}|b|${groupKey(b[0].customer)}`} style={{ paddingRight: ada.length > 7 ? 22 : 0 }}>
-                                          {kepala && (
-                                            <div id={`abj-${p.senin}-${h}`} style={{ margin: "24px 0 6px 2px", scrollMarginTop: 176, fontSize: 16, fontWeight: 800, color: t.text2, letterSpacing: ".04em" }}>{h}</div>
-                                          )}
-                                          {isi}
-                                        </div>
-                                      );
-                                    })}
-                                    </div>
-                                    {abjad && ada.length > 7 && (
-                                      <RailAbjad huruf={ada} bawah={NAV_HEIGHT + 16}
-                                        onPilih={(h) => document.getElementById(`abj-${p.senin}-${h}`)?.scrollIntoView({ block: "start" })} />
-                                    )}
-                                  </>
-                                );
-                              })()}
+                            : (
+                                <div style={{ animation: arahGeser ? `ganen-geser-${arahGeser} .24s cubic-bezier(.22,.8,.3,1)` : undefined, paddingRight: 36 }}>
+                                  {groupsPekan.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, cakupan === "semua" ? undefined : labelPekan(p.senin)))}
+                                </div>
+                              )}
                         </div>
                 ))(pekanDibuka)}
               </div>
@@ -1083,6 +1034,7 @@ export default function Tagihan({
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Tagih satu per satu (layar penuh); popup rincian/ubah tanggal (z 85) tetap di atasnya */}

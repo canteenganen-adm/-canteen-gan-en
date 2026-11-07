@@ -11,7 +11,7 @@ let sudahIntip = false;
 
 /** Baris yang bisa digeser ke kiri: geser sebagian = dua tombol (Tagih, Lunas); geser penuh = Lunas langsung (Urungkan muncul).
  *  Mengikuti kebiasaan iPhone (usul pemilik 1 Nov: Mama capek membuka kartu satu per satu untuk melunaskan). */
-export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahTagih }: { children: ReactNode; onTagih: () => void; onLunas: () => void; onBatal?: () => void; sudahTagih?: string }) {
+export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahTagih, bg }: { children: ReactNode; onTagih: () => void; onLunas: () => void; onBatal?: () => void; sudahTagih?: string; bg?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [dx, setDx] = useState(0);
   const [tarik, setTarik] = useState(false);
@@ -103,7 +103,7 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
         </button>
       </div>
       <div onClickCapture={(e) => { if (bergeser.current) { e.stopPropagation(); e.preventDefault(); bergeser.current = false; } else if (terbuka) { e.stopPropagation(); e.preventDefault(); setDx(0); } }}
-        style={{ position: "relative", background: t.bg, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>
+        style={{ position: "relative", background: bg || t.bg, transform: `translateX(${dx}px)`, transition: tarik ? "none" : "transform .24s cubic-bezier(.22,.8,.3,1)" }}>
         {children}
       </div>
     </div>

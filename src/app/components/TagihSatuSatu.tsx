@@ -58,35 +58,44 @@ export default function TagihSatuSatu({
 
   /* Isi tiap entri dibaca ULANG dari data terbaru: yang sudah lunas, dibatalkan,
      atau dipindah ke pekan lain (ganti tanggal) gugur dari layar ini. */
-  const entri = useMemo(() => antrean.map((anak) => anak
+  const [terkirimIds, setTerkirimIds] = useState<Set<string>>(new Set());
+  const [susulan, setSusulan] = useState<GrupTagih[][]>([]);
+  const entri0 = useMemo(() => antrean.map((anak) => anak
     .map((ids) => ids.map((id) => byId.get(id))
-      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && pekan.includes(mondayOf(opDate(x))))
+      .filter((x): x is Transaction => !!x && !x.paid && !x.cancelledAt && !terkirimIds.has(x.id) && pekan.includes(mondayOf(opDate(x))))
       .sort((a, b) => opDate(a).localeCompare(opDate(b)) || a.createdAt.localeCompare(b.createdAt)))
     .filter((txs) => txs.length > 0)
     .map((txs) => {
       const baru = txs.reduce((m, x) => (x.createdAt >= m.createdAt ? x : m), txs[0]);
       return { customer: baru.customer, txs, total: txs.reduce((s, x) => s + x.total, 0) } as GrupTagih;
-    })), [antrean, byId, pekan]);
+    })), [antrean, byId, pekan, terkirimIds]);
+  const entri = useMemo(() => [...entri0, ...susulan], [entri0, susulan]);
 
   const total = entri.length;
   const selesai = i >= total;
-  const gs = selesai ? [] : entri[i];
+  const gs0 = useMemo(() => (selesai ? [] : entri[i]), [selesai, entri, i]);
+  /** Saudara yang ditambahkan manual ("Tambah saudara") pada layar ini; anak yang tidak dicentang tidak ikut pesan. */
+  const [extras, setExtras] = useState<GrupTagih[]>([]);
+  const [tidak, setTidak] = useState<Set<number>>(new Set());
+  const gs = useMemo(() => [...gs0, ...extras], [gs0, extras]);
+  const gsAktif = useMemo(() => gs.filter((_, n) => !tidak.has(n)), [gs, tidak]);
+  const [modeTambah, setModeTambah] = useState(false);
 
-  /* Entri yang isinya habis (sudah lunas/pindah pekan) dilompati otomatis */
+  /* Entri yang isinya habis (sudah lunas/pindah pekan/terkirim) dilompati otomatis */
   useEffect(() => {
-    if (!selesai && gs.length === 0) setI((n) => n + 1);
-  }, [selesai, gs.length]);
+    if (!selesai && gs0.length === 0) setI((n) => n + 1);
+  }, [selesai, gs0.length]);
 
-  useEffect(() => { setTeks(null); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
+  useEffect(() => { setTeks(null); setExtras([]); setTidak(new Set()); gulirRef.current?.scrollTo({ top: 0 }); }, [i]);
 
   /* TUNGGAKAN SEBELUMNYA (pemilik 4 Nov: "yang baru dan yang lama belum lunas, mau ditambahkan?"): transaksi anak yang sama, belum lunas, belum dibatalkan,
      dari minggu LAIN di luar yang sedang ditagih. Bawaan DISERTAKAN (tercentang; pemilik 4 Nov: yes); Mama mencabut centangnya bila tidak mau (per anak, hanya muncul bila ada). */
-  const [sertakan, setSertakan] = useState(true);
-  useEffect(() => { setSertakan(true); }, [i]);
+  const [sertakan, setSertakan] = useState(false);
+  useEffect(() => { setSertakan(false); }, [i]);
   const norm = (n: string) => n.trim().replace(/\s+/g, " ").toLowerCase();
   const tunggakan: Tunggakan[] = useMemo(() => {
-    if (!gs.length) return [];
-    const namaSet = new Set(gs.map((g) => norm(g.customer.nama)));
+    if (!gsAktif.length) return [];
+    const namaSet = new Set(gsAktif.map((g) => norm(g.customer.nama)));
     const perMinggu = new Map<string, number>();
     for (const x of byId.values()) {
       if (x.paid || x.cancelledAt || x.deletedAt || !namaSet.has(norm(x.customer.nama))) continue;
@@ -96,19 +105,19 @@ export default function TagihSatuSatu({
       perMinggu.set(senin, (perMinggu.get(senin) ?? 0) + x.total);
     }
     return [...perMinggu].sort(([a], [b]) => a.localeCompare(b)).map(([senin, tot]) => ({ label: labelPekan(senin), total: tot }));
-  }, [gs, byId, pekan]);
+  }, [gsAktif, byId, pekan]);
   const totalTunggakan = tunggakan.reduce((n, x) => n + x.total, 0);
   useEffect(() => { setTeks(null); }, [sertakan]);
 
-  const wa = gs.length ? waIntl(gs[0].customer.wa) : "";
-  const pesan = teks ?? (gs.length ? bangunPesan(gs, label, sertakan && tunggakan.length ? tunggakan : undefined) : "");
-  const ids = gs.flatMap((g) => g.txs.map((x) => x.id));
+  const wa = gs.length ? waIntl((gsAktif[0] ?? gs[0]).customer.wa) : "";
+  const pesan = teks ?? (gsAktif.length ? bangunPesan(gsAktif, label, sertakan && tunggakan.length ? tunggakan : undefined) : "");
+  const ids = gsAktif.flatMap((g) => g.txs.map((x) => x.id));
   const maju = () => setI((n) => n + 1);
 
   const panjang = pesan.length > BATAS_LINK_WA;
   /** Kirim WA: pesan SELALU disalin diam-diam; pendek = wa.me dengan teks, panjang = chat kosong (tinggal tempel). */
   const kirim = async () => {
-    if (!wa) return;
+    if (!wa || !gsAktif.length) return;
     const ok = await salinTeks(pesan);
     if (panjang) {
       if (!ok) return;
@@ -118,6 +127,9 @@ export default function TagihSatuSatu({
       window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
     }
     onKirim(ids);
+    setTerkirimIds((a) => new Set([...a, ...ids]));
+    const tinggal = gs.filter((_, n) => tidak.has(n));
+    if (tinggal.length) setSusulan((a) => [...a, ...tinggal.map((g) => [g])]);
     setTerkirim((n) => n + 1);
     setKirimIdx((a) => [...a, i]);
     maju();
@@ -153,34 +165,40 @@ export default function TagihSatuSatu({
         {!selesai && gs.length > 0 && (
           <>
             <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 20px 16px" }}>
-              {/* Sertakan tagihan sebelumnya: DI ATAS karcis (sketsa pemilik 6 Nov) */}
-              {tunggakan.length > 0 && (
-                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                  style={{ gap: 10, width: "100%", minHeight: 44, marginBottom: 8, padding: "0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-                  <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${sertakan ? t.success : t.borderStrong}`, background: sertakan ? t.successBg : "transparent", color: t.successText }}>
-                    {sertakan && <Check size={14} strokeWidth={3} />}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
-                </button>
-              )}
-              {/* Karcis: jumlah TIAP ORANG sendiri-sendiri (tidak digabung), jahitan bisa digeret, rincian tanggal ditiadakan dulu */}
+              {/* Karcis: satu blok per anak dengan kotak centang (kotak hitam-hangat); yang tidak dicentang redup dan tidak ikut pesan */}
               <div style={{ background: t.surface, borderRadius: 20, overflow: "hidden", position: "relative" }}>
                 <div style={{ background: t.divider, padding: "16px 16px 14px" }}>
-                  {gs.map((g, gi) => (
-                    <div key={gi} style={{ marginTop: gi ? 12 : 0 }}>
-                      <div>
-                        <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
-                        <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
+                  {gs.map((g, gi) => {
+                    const on = !tidak.has(gi);
+                    return (
+                      <div key={gi} className="flex items-center" style={{ marginTop: gi ? 14 : 0, gap: 8, opacity: on ? 1 : 0.5 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div>
+                            <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
+                            <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
+                          </div>
+                          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2 }}>{rupiah(g.total)}</div>
+                        </div>
+                        {gs.length > 1 && (
+                          <button onClick={() => setTidak((a) => { const n = new Set(a); if (n.has(gi)) n.delete(gi); else n.add(gi); return n; })} role="checkbox" aria-checked={on} aria-label={`Tagih ${g.customer.nama}`}
+                            style={{ flex: "none", width: 48, height: 48, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                            <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: on ? "#2F2A24" : t.surface, border: on ? "none" : `1.5px solid ${t.border}`, color: "#FAF6EE" }}>
+                              {on && <Check size={18} strokeWidth={3} />}
+                            </span>
+                          </button>
+                        )}
                       </div>
-                      <div style={{ fontSize: gs.length > 1 ? 24 : 30, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2 }}>{rupiah(g.total)}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <Jahitan />
-                <div style={{ padding: "14px 16px", fontSize: 13, color: t.text2 }}>
-                  Tagihan {label} · {(() => { const d = [...new Set(gs.flatMap((g) => g.txs.map(opDate)))].sort(); return d.slice(0, 6).map(tglPendek).join(", ") + (d.length > 6 ? ` +${d.length - 6}` : ""); })()}
+                <div className="flex items-baseline justify-between" style={{ padding: "14px 16px", gap: 10 }}>
+                  <span style={{ fontSize: 13, color: t.text2 }}>
+                    Tagihan {label} · {(() => { const d = [...new Set(gsAktif.flatMap((g) => g.txs.map(opDate)))].sort(); return d.slice(0, 6).map(tglPendek).join(", ") + (d.length > 6 ? ` +${d.length - 6}` : ""); })()}
+                  </span>
+                  <span style={{ fontSize: 16, fontWeight: 800, flex: "none" }}>{rupiah(gsAktif.reduce((n, g) => n + g.total, 0))}</span>
                 </div>
-                {gs.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
+                {gsAktif.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
                     style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>
                     <AlertTriangle size={17} style={{ flex: "none" }} />
@@ -192,6 +210,19 @@ export default function TagihSatuSatu({
                   </div>
                 ))}
               </div>
+              <button onClick={() => { setCariNama(""); setModeTambah(true); setDaftar(true); }}
+                style={{ minHeight: 44, margin: "2px 0 0", padding: "0 6px", border: "none", background: "transparent", color: t.text2, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                + Tambah saudara
+              </button>
+              {tunggakan.length > 0 && (
+                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                  style={{ gap: 12, width: "100%", minHeight: 60, margin: "6px 0 10px", padding: "0 16px", border: "none", borderRadius: 18, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: sertakan ? "#2F2A24" : t.divider, color: "#FAF6EE" }}>
+                    {sertakan && <Check size={18} strokeWidth={3} />}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
+                </button>
+              )}
 
               {/* Pratinjau pesan: baris tombol + gelembung (bisa diubah; teks = yang dikirim) */}
               <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
@@ -230,8 +261,8 @@ export default function TagihSatuSatu({
                   <ChevronLeft size={20} />Kembali
                 </button>
                 {wa ? (
-                  <button onClick={kirim} className="flex items-center justify-center gap-2"
-                    style={{ flex: 1, minWidth: 0, height: 60, borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                  <button onClick={kirim} disabled={!gsAktif.length} className="flex items-center justify-center gap-2"
+                    style={{ flex: 1, minWidth: 0, height: 60, borderRadius: 14, border: "none", opacity: gsAktif.length ? 1 : 0.45, background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
                     {panjang ? <Copy size={20} /> : <MessageCircle size={20} />} {panjang ? "Salin & buka chat" : i === total - 1 ? "Kirim & Selesai" : "Kirim WA"}
                   </button>
                 ) : (
@@ -250,8 +281,8 @@ export default function TagihSatuSatu({
           <div style={{ position: "absolute", inset: 0, zIndex: 5, background: t.bg, display: "flex", flexDirection: "column" }}>
             <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
               <div className="flex items-center justify-between" style={{ padding: "20px 20px 8px", minHeight: 70 }}>
-                <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>Siapa dulu?</div>
-                <button onClick={() => setDaftar(false)} aria-label="Tutup daftar" className="flex items-center gap-1"
+                <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.02em" }}>{modeTambah ? "Tambah saudara" : "Siapa dulu?"}</div>
+                <button onClick={() => { setDaftar(false); setModeTambah(false); }} aria-label="Tutup daftar" className="flex items-center gap-1"
                   style={{ height: 44, padding: "0 14px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
                   <X size={17} /> Tutup
                 </button>
@@ -264,11 +295,11 @@ export default function TagihSatuSatu({
               <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 20px 24px" }}>
                 {entri.map((gsx, idx) => ({ gsx, idx })).filter(({ gsx }) => {
                   const q = cariNama.trim().toLowerCase();
-                  return gsx.length > 0 && (!q || gsx.some((g) => `${g.customer.nama} ${g.customer.kelas || ""}`.toLowerCase().includes(q)));
+                  return gsx.length > 0 && !(modeTambah && gsx === gs0) && (!q || gsx.some((g) => `${g.customer.nama} ${g.customer.kelas || ""}`.toLowerCase().includes(q)));
                 }).map(({ gsx, idx }) => {
                   const sudah = gsx.every((g) => g.txs.every((x) => sudahDitagih(x.billedAt)));
                   return (
-                    <button key={idx} onClick={() => { setI(idx); setDaftar(false); }} className="flex items-center justify-between"
+                    <button key={idx} onClick={() => { if (modeTambah) { setExtras((a) => [...a, ...gsx]); setModeTambah(false); } else setI(idx); setDaftar(false); }} className="flex items-center justify-between"
                       style={{ width: "100%", minHeight: 58, padding: "6px 2px", gap: 10, background: "transparent", border: "none", borderBottom: `1px solid ${t.divider}`, textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: t.text }}>
                       <span style={{ minWidth: 0, lineHeight: 1.35 }}>
                         <span style={{ display: "block", fontSize: 16.5, fontWeight: 600 }}>{gsx.map((g) => g.customer.nama).join(" + ")}</span>

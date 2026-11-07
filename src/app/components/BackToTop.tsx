@@ -76,9 +76,9 @@ export default function BackToTop({ root, bottom = "calc(20px + env(safe-area-in
   }, [root]);
 
   if (!tampil.atas && !tampil.bawah) return null;
-  const ubin: React.CSSProperties = { width: 48, height: 48, borderRadius: 14, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(42,40,32,.14)", padding: 0 };
+  const ubin: React.CSSProperties = { width: 46, height: 46, borderRadius: "50%", border: "none", background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 1px 4px rgba(42,40,32,.12)", padding: 0 };
   return (
-    <div style={{ position: "fixed", right: 16, bottom, zIndex, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ position: "fixed", right: 12, bottom, zIndex, display: "flex", flexDirection: "column", gap: 10 }}>
       {tampil.atas && (
         <button onClick={() => last.current?.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Kembali ke atas" style={ubin}>
           <ArrowUp size={22} strokeWidth={2.4} />
