@@ -668,7 +668,7 @@ export default function Tagihan({
         {/* Header grup — klik untuk expand/collapse; saat tertutup bisa DIGESER ke kiri: Tagih + Lunas (geser penuh = Lunas) */}
         {(() => {
         const kepala = (
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 66, padding: expanded ? "10px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 66, padding: expanded ? "14px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
               <div style={{ fontSize: 16, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.customer.nama}</div>
@@ -699,10 +699,8 @@ export default function Tagihan({
           const tglTx = fmtTxOp(tx).split(" · ")[0];
           return (
             <div key={tx.id} style={{ borderTop: `1px solid ${t.divider}` }}>
-            <GeserTx bg={tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : t.surface}
-              kanan={{ label: "Batalkan", ikon: <Ban size={18} />, bg: t.errorBg, warna: t.error, onAksi: () => cancel(tx) }}
-              kiri={{ label: "Lunas", ikon: <Check size={18} strokeWidth={3} />, bg: t.successBg, warna: t.successText, onAksi: () => markPaid(tx) }}>
-            <div className="flex items-center">
+            {/* Tanpa geser (pemilik 7 Nov): hanya centang Lunas atau ketuk baris untuk membuka struk rincian */}
+            <div className="flex items-center" style={{ background: tx.id === highlightedTxId ? "#FFF4BF" : dipilih ? t.successBg : t.surface }}>
               <button onClick={() => togglePilihTx(tx.id)} role="checkbox" aria-checked={dipilih} aria-label={`Pilih ${tglTx}`}
                 style={{ flex: "none", width: 54, height: 56, padding: 0, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
                 <span style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: dipilih ? t.successBg : t.surface, border: `${dipilih ? 1.8 : 2}px solid ${dipilih ? t.success : t.borderStrong}`, color: t.successText }}>
@@ -722,7 +720,6 @@ export default function Tagihan({
                 <span style={{ flex: "none", fontSize: 14, fontWeight: 600, color: t.text2 }}>Rincian ›</span>
               </button>
             </div>
-            </GeserTx>
           </div>
           );
         })}
@@ -748,7 +745,7 @@ export default function Tagihan({
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
             adalah memproses daftar transaksi, bukan dashboard keuangan */}
-        <div className="flex items-center justify-between" style={{ padding: "20px 20px 6px", minHeight: 44 + 26 }}>
+        <div className="flex items-center justify-between" style={{ padding: "20px 20px 14px", minHeight: 44 + 26 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
             {/* Total sesuai tab: Utang (merah-jingga) / Masuk (hijau) / Dibatalkan */}
@@ -944,7 +941,7 @@ export default function Tagihan({
 
         {/* ---- Tab: Lunas & Dibatalkan (render sama, isi beda) ---- */}
         {tab !== "unpaid" && (
-          <div style={{ padding: "4px 20px" }}>
+          <div style={{ padding: "16px 20px 4px" }}>
             {/* Riwayat lama ditarik saat tab dibuka (sekali per sesi): tampil semua, tanpa batas 30 hari. */}
             {riwayatLamaStatus === "memuat" && (
               <div style={{ fontSize: 13.5, color: t.text2, margin: "2px 2px 12px" }}>Memuat riwayat lama…</div>
@@ -978,9 +975,9 @@ export default function Tagihan({
                 const BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
                 const tglSingkat = (tx: Transaction) => { const o = opDate(tx); return `${parseInt(o.slice(8, 10), 10)} ${BLN[parseInt(o.slice(5, 7), 10) - 1] || ""}`; };
                 return (
-                  <div key={kunciKartu} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 20, marginBottom: 12, overflow: "hidden" }}>
+                  <div key={kunciKartu} style={{ background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 20, marginBottom: 14, overflow: "hidden" }}>
                     <div role="button" aria-expanded={buka} onClick={() => setBukaLunas((p) => ({ ...p, [kunciKartu]: !buka }))}
-                      className="flex items-center justify-between" style={{ padding: "10px 16px", minHeight: 68, gap: 10, cursor: "pointer" }}>
+                      className="flex items-center justify-between" style={{ padding: "14px 16px", minHeight: 76, gap: 10, cursor: "pointer" }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25, color: t.text }}>{g.customer.nama?.trim() ? g.customer.nama : "Cash"}</div>
                         <div style={{ marginTop: 2 }}>
