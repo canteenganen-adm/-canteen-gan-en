@@ -916,8 +916,7 @@ export default function Tagihan({
                 {semuaSenin.length > 1 && (
                   <button onClick={() => setCakupan(cakupan === "semua" ? "ini" : "semua")} aria-pressed={cakupan === "semua"} className="flex items-center justify-between"
                     style={{ width: "100%", minHeight: 44, padding: "0 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "#756B5D", fontSize: 14, fontWeight: 700 }}>
-                    <span className="flex items-center" style={{ gap: 8 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: "50%", background: cakupan === "semua" ? "#2F2A24" : "transparent", border: `2px solid ${cakupan === "semua" ? "#2F2A24" : "#B9AE92"}`, boxSizing: "border-box" }} />
+                    <span style={{ fontWeight: cakupan === "semua" ? 800 : 700, color: cakupan === "semua" ? t.text : "#756B5D" }}>
                       Semua minggu
                     </span>
                     <span>{rupiah(grandTotal)}</span>
@@ -930,7 +929,7 @@ export default function Tagihan({
                           {groupsPekan.length === 0
                             ? <div style={{ textAlign: "center", padding: "24px 20px", fontSize: 15, color: t.text2, fontWeight: 600 }}>Belum ada tagihan.</div>
                             : (
-                                <div style={{ animation: arahGeser ? `ganen-geser-${arahGeser} .24s cubic-bezier(.22,.8,.3,1)` : undefined, paddingRight: 36 }}>
+                                <div style={{ animation: arahGeser ? `ganen-geser-${arahGeser} .24s cubic-bezier(.22,.8,.3,1)` : undefined }}>
                                   {groupsPekan.map((g) => kartuBelum(g, `${p.senin}|`, groupsPekan, cakupan === "semua" ? undefined : labelPekan(p.senin)))}
                                 </div>
                               )}
