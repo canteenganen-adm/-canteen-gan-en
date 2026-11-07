@@ -302,9 +302,10 @@ export default function MasterMenu({
     return { found, missing };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menus]);
+  /* Daftar awal HANYA menu yang sudah ditandai; menu lain baru muncul setelah dicari (pemilik 7 Nov). */
   const tetapList = useMemo(
-    () => menus.filter((m) => m.name.toLowerCase().includes(tetapQ.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, "id")),
-    [menus, tetapQ]
+    () => menus.filter((m) => (tetapQ.trim() ? m.name.toLowerCase().includes(tetapQ.trim().toLowerCase()) : tetapSet.has(m.id))).sort((a, b) => a.name.localeCompare(b.name, "id")),
+    [menus, tetapQ, tetapSet]
   );
 
   /* ============ Stok per menu (untuk tanggal yang sedang diatur) ============
@@ -727,7 +728,7 @@ export default function MasterMenu({
             <div className="flex items-center justify-between" style={{ padding: "16px 20px 12px", borderBottom: `1px solid ${t.divider}` }}>
               <div>
                 <div style={{ fontSize: 20, fontWeight: 800 }}>Menu Tetap</div>
-                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{tetapMenus.length} menu ditandai. Ketuk menu di bawah untuk menandai atau melepas.</div>
+                <div style={{ fontSize: 13.5, color: t.text2, marginTop: 2 }}>{tetapMenus.length} menu ditandai. Cari nama untuk menambah menu lain.</div>
               </div>
               <button onClick={() => setTetapSheet(false)} aria-label="Tutup"
                 style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center", flex: "none" }}><X size={19} /></button>
@@ -770,7 +771,7 @@ export default function MasterMenu({
                   </button>
                 );
               })}
-              {tetapList.length === 0 && <div style={{ textAlign: "center", color: t.text2, padding: "28px 0", fontSize: 15 }}>Tidak ada menu yang cocok.</div>}
+              {tetapList.length === 0 && <div style={{ textAlign: "center", color: t.text2, padding: "28px 0", fontSize: 15 }}>{tetapQ.trim() ? "Tidak ada menu yang cocok." : "Belum ada menu tetap. Ketik nama menu di kolom cari lalu ketuk untuk menandai."}</div>}
             </div>
           </div>
         </div>
