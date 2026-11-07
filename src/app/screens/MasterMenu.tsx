@@ -524,7 +524,7 @@ export default function MasterMenu({
                 <>
                   {/* STRUK THERMAL — proofread menu ala cetakan kasir. Data &
                       urutan SAMA dengan halaman ortu; tanpa tombol/keranjang.
-                      Salah satu tempat bergaya struk (DM Mono, sama dengan Transaksi dan Pre-order)
+                      Salah satu tempat bergaya struk (Red Hat Mono, sama dengan Transaksi dan Pre-order)
                       (pengecualian gaya yang disengaja, pilihan pemilik). */}
                   {(() => {
                     const tampil = previewMenus.filter((m) => m.channels.preorder);

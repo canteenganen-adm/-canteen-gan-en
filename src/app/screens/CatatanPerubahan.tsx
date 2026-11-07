@@ -13,7 +13,7 @@ import { fetchCatatan, type Catatan, type FilterCatatan, type HasilCatatan } fro
    Sumber: tabel `catatan` (supabase/migration_15_catatan.sql + 16).
    ============================================================ */
 
-const MONO = "'DM Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
+const MONO = "'Red Hat Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', 'Roboto Mono', 'Courier New', monospace";
 const p2 = (n: number) => String(n).padStart(2, "0");
 
 const LABEL: Record<string, string> = {
