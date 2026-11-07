@@ -685,7 +685,7 @@ export default function Tagihan({
         </button>
         );
         return expanded ? kepala : (
-          <GeserBaris sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
+          <GeserBaris bg={t.surface} sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
         );
         })()}
 
