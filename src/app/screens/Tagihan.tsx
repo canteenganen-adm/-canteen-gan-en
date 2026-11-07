@@ -875,13 +875,13 @@ export default function Tagihan({
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
                 {/* Satu kotak: barisan minggu (bulan = judul kelompok; terpilih = garis kuning di bawah) + tombol Tagih + Gabung. Daftar nama di bawah kotak. */}
-                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "10px 12px 8px", marginBottom: 6 }}>
-                <RailGeser pudar style={{ gap: 6, padding: "0 0 2px" }}>
+                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "6px 12px 6px", marginBottom: 6 }}>
+                <RailGeser pudar style={{ gap: 6, padding: "0" }}>
                   {kelompokBulan.map((k, ki) => (
                     <div key={k.ym} id={`bulan-${k.ym}`} className="flex" style={{ flex: "none", gap: 6 }}>
                     {ki > 0 && <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 26, alignSelf: "flex-end", marginBottom: 14, background: t.divider }} />}
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 4px" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: t.text2, margin: "0 0 2px" }}>
                         {k.label}
                       </div>
                       <div className="flex" style={{ gap: 2 }}>
@@ -889,10 +889,10 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 0, padding: "6px 7px", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 38, padding: "0 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? t.primary : "transparent", color: on ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 16, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
-                              <span style={{ display: "inline-block", padding: "4px 0 5px" }}>{rentangPendek(x.senin)}</span>
-                              {x.berjalan && <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 2 }}>berjalan</span>}
+                              <span>{rentangPendek(x.senin)}</span>
+                              {x.berjalan && <span style={{ display: "block", fontSize: 10.5, lineHeight: 1, fontWeight: 600, color: on ? t.onPrimary : t.text2, marginTop: 1 }}>berjalan</span>}
                             </button>
                           );
                         })}
@@ -902,10 +902,10 @@ export default function Tagihan({
                   ))}
                   {semuaSenin.length > 1 && (
                     <div style={{ flex: "none" }}>
-                      <div style={{ fontSize: 12, margin: "0 0 4px" }}>&nbsp;</div>
+                      <div style={{ fontSize: 12, margin: "0 0 2px" }}>&nbsp;</div>
                       <button onClick={() => setCakupan("semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", position: "relative", minWidth: 0, padding: "6px 7px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : "transparent", color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 800 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
-                        <span style={{ display: "inline-block", padding: "4px 0 5px" }}>Semua</span>
+                        style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 38, padding: "0 14px", border: "none", borderRadius: 12, background: cakupan === "semua" ? t.primary : t.divider, color: cakupan === "semua" ? t.onPrimary : t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        <span>Semua</span>
                       </button>
                     </div>
                   )}
