@@ -912,7 +912,7 @@ export default function Tagihan({
                 </RailGeser>
                 {pekanDibuka && ((p) => (
                   <>
-                    {semuaSenin.length > 0 && <div style={{ height: 1, background: t.divider, margin: "2px 0 0" }} />}
+                    {semuaSenin.length > 0 && <div style={{ height: 1, background: t.divider, margin: "6px 0 0" }} />}
                           {semuaSenin.length > 0 && (
                             <>
                               {/* Cakupan: chip "Semua" di ujung barisan tanggal (saklar dua sisi dan pil ditolak: "kebanyakan blok-blok") */}
@@ -923,7 +923,7 @@ export default function Tagihan({
                                 const belumN = cakupan === "semua" ? pekanList.reduce((n, x) => n + x.belum, 0) : p.belum;
                                 const pilS: React.CSSProperties = { minHeight: 44, padding: "0 14px", border: "none", background: "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flex: "none" };
                                 return (
-                                  <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 8 }}>
+                                  <div className="flex items-center justify-between" style={{ gap: 8, paddingTop: 12, paddingBottom: 4 }}>
                                     <div style={{ minWidth: 0 }}>
                                     <span style={{ fontSize: 14, color: belumN === 0 ? t.successText : t.text2, fontWeight: 500, lineHeight: 1.3 }}>
                                       {belumN === 0 ? "Semua sudah ditagih" : <><b style={{ color: t.error, fontWeight: 700 }}>{belumN}</b>/{total} belum ditagih</>}
