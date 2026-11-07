@@ -904,9 +904,8 @@ export default function Tagihan({
                     <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 34, marginBottom: 5, background: t.border }} />
                     <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [pekanDibuka.senin])}
                       aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(pekanDibuka.senin)}`}
-                      style={{ flex: "none", position: "relative", height: 48, padding: "0 16px", margin: "0 8px 0 4px", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", borderRadius: 10, transform: "rotate(-2deg)", color: "#7A6648", fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
-                      <span aria-hidden="true" style={{ position: "absolute", left: -8, top: "50%", marginTop: -8, width: 16, height: 16, borderRadius: "50%", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", clipPath: "inset(0 0 0 50%)" }} />
-                      <span aria-hidden="true" style={{ position: "absolute", right: -8, top: "50%", marginTop: -8, width: 16, height: 16, borderRadius: "50%", background: t.surface, border: "1.5px solid rgba(122,102,72,.35)", clipPath: "inset(0 50% 0 0)" }} />
+                      style={{ flex: "none", position: "relative", height: 48, padding: "0 18px", margin: "0 6px 0 12px", background: "#E7F8E3", border: "2px solid #25D366", borderRadius: "4px 16px 16px 16px", color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                      <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 9, width: 12, height: 12, background: "#E7F8E3", borderLeft: "2px solid #25D366", borderTop: "2px solid #25D366", transform: "rotate(-45deg) skew(12deg, 12deg)", borderTopLeftRadius: 3 }} />
                       <MessageCircle size={18} /> Tagih
                     </button>
                   </>
