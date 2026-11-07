@@ -80,17 +80,15 @@ export function hitungKesehatan(transactions: Transaction[], menus: MenuItem[], 
     /* Tagihan Penjualan atas nama anak, isi dan tanggal layanan sama: ditandai walau berjauhan (laporan Mama 7 Nov: tagihan kantin tercatat dobel di tanggal yang sama). */
     const tagihanSama = urut[0].source === "penjualan" && !!urut[0].customer.nama?.trim();
     if (!dekat && !tagihanSama) continue;
-    const selisih = Math.round((new Date(urut[urut.length - 1].createdAt).getTime() - new Date(urut[0].createdAt).getTime()) / 60_000);
     kembar.push({
-      judul: `${siapa(urut[0])} · ${urut.length} pesanan`,
+      judul: `${siapa(urut[0])} · ${urut.length}×`,
       garis: [
-        `Masuk: ${urut.map((x) => wib(x.createdAt)).join(" dan ")} (selisih ${selisih} menit)`,
-        `${sumber(urut[0])}${urut[0].serviceDate ? ` · tanggal layanan ${urut[0].serviceDate}` : ""} · tiap pesanan ${rupiah(urut[0].total)}`,
-        `Isi: ${isi(urut[0])}`,
+        `${isi(urut[0])} · ${rupiah(urut[0].total)}`,
+        urut.map((x) => wib(x.createdAt)).join(" · "),
       ],
     });
   }
-  tambah({ id: "kembar", judul: "Kemungkinan pesanan ganda", perlu: true, rincian: kembar, langkah: "Hanya penanda. Belum ada yang diubah. Bisa saja anak itu memang memesan dua kali. Cek dulu di Transaksi." });
+  tambah({ id: "kembar", judul: "Kemungkinan pesanan ganda", perlu: true, rincian: kembar, langkah: "Bisa jadi memang beli dua kali. Cek dulu di Transaksi." });
 
   // 4. Belum Dibayar lebih dari 3 minggu (info)
   const perNama = new Map<string, { n: number; total: number; tertua: string }>();
