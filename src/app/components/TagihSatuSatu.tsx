@@ -330,13 +330,13 @@ function BarGeret({ total, i, selesai, kirimIdx, onPilih }: { total: number; i: 
   };
   return (
     <div ref={ref} role="slider" aria-label="Geret untuk pindah anak" aria-valuemin={1} aria-valuemax={total} aria-valuenow={Math.min(i + 1, total)}
-      style={{ marginTop: 2, height: 40, display: "flex", alignItems: "center", gap: total > 60 ? 1 : 4, touchAction: "none", cursor: "grab", userSelect: "none" }}
+      style={{ marginTop: 2, height: 40, display: "flex", alignItems: "center", gap: 4, touchAction: "none", cursor: "grab", userSelect: "none" }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setTarik(true); pilih(e.clientX); }}
       onPointerMove={(e) => { if (tarik) pilih(e.clientX); }}
       onPointerUp={() => setTarik(false)} onPointerCancel={() => setTarik(false)}>
       {Array.from({ length: total }, (_, n) => {
         const kini = n === i && !selesai;
-        return <span key={n} style={{ flex: 1, height: kini ? (tarik ? 22 : 16) : 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : kini ? t.text : t.border, transition: "height .12s" }} />;
+        return <span key={n} style={{ flex: 1, height: tarik ? 10 : 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : kini ? t.text : t.border, transition: "height .12s" }} />;
       })}
     </div>
   );
