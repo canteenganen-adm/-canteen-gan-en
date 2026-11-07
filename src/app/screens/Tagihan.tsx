@@ -896,10 +896,10 @@ export default function Tagihan({
                     </div>
                   ))}
                   {semuaSenin.length > 1 && (
-                    <div style={{ flex: "none", paddingLeft: 6 }}>
+                    <div style={{ flex: "none" }}>
                       <div style={{ fontSize: 11.5, margin: "0 0 4px" }}>&nbsp;</div>
                       <button onClick={() => setCakupan(cakupan === "semua" ? "ini" : "semua")} aria-pressed={cakupan === "semua"} aria-label="Semua minggu yang belum ditagih"
-                        style={{ flex: "none", minHeight: 44, minWidth: 62, padding: "0 12px", borderRadius: 12, border: `1.5px solid ${cakupan === "semua" ? "#F0E5C9" : t.border}`, background: cakupan === "semua" ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 700 : 600, whiteSpace: "nowrap", cursor: "pointer" }}>
+                        style={{ flex: "none", minHeight: 44, minWidth: 62, padding: "0 7px", borderRadius: 12, border: `1.5px solid ${cakupan === "semua" ? "#F0E5C9" : t.border}`, background: cakupan === "semua" ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: cakupan === "semua" ? 700 : 600, whiteSpace: "nowrap", cursor: "pointer" }}>
                         Semua
                       </button>
                     </div>
