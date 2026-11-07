@@ -186,24 +186,26 @@ export default function TagihSatuSatu({
             <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "4px 20px 16px" }}>
               {/* Karcis: satu blok per anak dengan kotak centang (kotak hitam-hangat); yang tidak dicentang redup dan tidak ikut pesan */}
               <div style={{ background: t.surface, borderRadius: 20, overflow: "hidden", position: "relative" }}>
-                <div style={{ background: t.divider, padding: "4px 16px" }}>
+                <div style={{ background: t.divider, padding: "16px 16px 14px" }}>
                   {gs.map((g, gi) => {
                     const on = !tidak.has(gi);
                     return (
-                      <div key={gi} className="flex items-center" style={{ gap: 12, minHeight: 64, borderTop: gi ? `1.5px solid ${t.border}` : "none", opacity: on ? 1 : 0.5 }}>
+                      <div key={gi} className="flex items-center" style={{ marginTop: gi ? 14 : 0, gap: 8, opacity: on ? 1 : 0.5 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div>
+                            <span style={{ fontSize: 18, fontWeight: 700 }}>{g.customer.nama}</span>{" "}
+                            <span style={{ fontSize: 14, color: t.text2, fontFamily: STRUK_MONO }}>{g.customer.kelas || g.customer.tingkat || "-"}</span>
+                          </div>
+                          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", marginTop: 2 }}>{rupiah(g.total)}</div>
+                        </div>
                         {gs.length > 1 && (
-                          <button onClick={() => setTidak((x) => { const n = new Set(x); if (n.has(gi)) n.delete(gi); else n.add(gi); return n; })} role="checkbox" aria-checked={on} aria-label={`Tagih ${g.customer.nama}`}
-                            style={{ flex: "none", width: 44, height: 48, marginLeft: -8, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                            <span style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", background: on ? "#2F2A24" : t.surface, border: on ? "none" : `1.5px solid ${t.border}`, color: "#FAF6EE" }}>
-                              {on && <Check size={17} strokeWidth={3} />}
+                          <button onClick={() => setTidak((a) => { const n = new Set(a); if (n.has(gi)) n.delete(gi); else n.add(gi); return n; })} role="checkbox" aria-checked={on} aria-label={`Tagih ${g.customer.nama}`}
+                            style={{ flex: "none", width: 48, height: 48, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                            <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: on ? "#2F2A24" : t.surface, border: on ? "none" : `1.5px solid ${t.border}`, color: "#FAF6EE" }}>
+                              {on && <Check size={18} strokeWidth={3} />}
                             </span>
                           </button>
                         )}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 16.5, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.customer.nama}</div>
-                          <div style={{ fontSize: 13, color: t.text2, fontFamily: STRUK_MONO, marginTop: 1 }}>{g.customer.kelas || g.customer.tingkat || "-"}</div>
-                        </div>
-                        <div style={{ flex: "none", fontSize: 17, fontWeight: 800, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{rupiah(g.total)}</div>
                       </div>
                     );
                   })}
