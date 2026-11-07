@@ -29,6 +29,7 @@ Urutan baca: bagian ini dulu. Bila bertabrakan dengan uraian lain di berkas ini,
 - **Baris transaksi di kartu anak (tab Utang) TANPA geser (pemilik 7 Nov)**: hanya dua aksi = centang bulat (pilih untuk Lunaskan N tanggal) dan ketuk baris = struk rincian. Geser tetap ada di baris NAMA anak (tertutup) dan di tab Lunas/Dibatalkan. Jarak di bawah kepala halaman, kepala kartu anak, dan kartu Lunas/Dibatalkan dilonggarkan.
 - **Tagih satu per satu + Utang, putaran 7 Nov malam**: judul "Minggu …" dan "n dari N terkirim" ditumpuk SETINGGI tombol X/Cari (44px) dan sejajar tepinya; "Sertakan tagihan sebelumnya" = opsi B pilihan pemilik (di dalam karcis, angka sekolom: baris Tagihan, baris Sertakan, garis putus-putus, **Total** tebal, hanya muncul bila ada tunggakan); baris "Semua minggu" dan tulisan "Rincian ›" DIHAPUS (jadi mode lihat Semua minggu tidak ada lagi di layar; pencarian tetap lintas minggu); kop rincian transaksi dirapatkan (jarak antarbaris status/nama/kelas nol). Filter = tombol bulat kanan atas, cari = kolom sendiri di lembar.
 - **"Berjalan" = sampai MINGGU (pemilik 7 Nov)**: pekan itu Senin–Minggu; Sabtu dan Minggu masih pekan berjalan (aturan lama "berjalan = sebelum Sabtu" dibatalkan; `pekanBerjalan` di `src/lib/pekan.ts`).
+- **Chip "Semua" kembali (pemilik 7 Nov)**: di ujung deret minggu, setelah minggu berjalan; belum dipilih = hanya garis tipis tanpa latar, dipilih = latar krem vintage `#F0E5C9` (sama dengan minggu terpilih). Menggantikan penghapusan baris "Semua minggu".
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
