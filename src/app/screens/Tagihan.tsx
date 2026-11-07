@@ -761,8 +761,8 @@ export default function Tagihan({
           </div>
         </div>
 
-        {/* Tab + cari: SAMA dengan tab Menu (pemilik 7 Nov: "aku suka menu sekarang") */}
-        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 20px 10px" }}>
+        {/* Tab menyatu dengan LEMBAR (pemilik 7 Nov: warna latar tab aktif tadi sudah bagus) */}
+        <div style={{ padding: "12px 16px 0", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
           <PaperTabs
             tabs={[
               { id: "unpaid", label: "Utang" },
@@ -771,11 +771,14 @@ export default function Tagihan({
             ]}
             value={tab}
             onChange={setTab}
+            warna={t.surface}
+            lembar
           />
         </div>
-        <div style={{ padding: "0 20px 4px" }}>
-          <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+        <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
+        <div style={{ padding: "16px 20px 0" }}>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
               <Search size={18} color={t.text2} style={{ flex: "none" }} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
                 style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
@@ -783,7 +786,7 @@ export default function Tagihan({
             </div>
           <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
-              style={{ position: "relative", width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              style={{ position: "relative", width: 44, height: 44, borderRadius: 12, border: "none", background: filterActive ? t.primary : t.bg, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
               <SlidersHorizontal size={19} />
               {filterActive && (
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.error, border: `1.5px solid ${t.bg}` }} />
@@ -870,7 +873,7 @@ export default function Tagihan({
             ) : (
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
-                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "8px 12px 4px", marginBottom: 8 }}>
+                <div style={{ padding: "6px 0 4px", marginBottom: 8 }}>
                 <div className="flex items-end" style={{ gap: 4 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                 <RailGeser pudar style={{ gap: 6, padding: "0" }}>
@@ -919,7 +922,6 @@ export default function Tagihan({
                     <span style={{ fontWeight: cakupan === "semua" ? 800 : 700, color: cakupan === "semua" ? t.text : "#756B5D" }}>
                       Semua minggu
                     </span>
-                    <span>{rupiah(grandTotal)}</span>
                   </button>
                 )}
                 </div>
@@ -1024,6 +1026,7 @@ export default function Tagihan({
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Tagih satu per satu (layar penuh); popup rincian/ubah tanggal (z 85) tetap di atasnya */}
