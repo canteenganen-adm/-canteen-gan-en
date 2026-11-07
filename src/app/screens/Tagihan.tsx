@@ -667,11 +667,12 @@ export default function Tagihan({
         {/* Header grup — klik untuk expand/collapse; saat tertutup bisa DIGESER ke kiri: Tagih + Lunas (geser penuh = Lunas) */}
         {(() => {
         const kepala = (
-        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 60, padding: expanded ? "14px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+        <button onClick={() => toggleGroup(key)} style={{ width: "100%", minHeight: 60, padding: expanded ? "10px 16px" : "10px 2px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
           <div className="flex items-center justify-between" style={{ gap: 10 }}>
             <div style={{ minWidth: 0, flex: 1, lineHeight: 1.35 }}>
               <div style={{ fontSize: 16.5, fontWeight: 600 }}>{g.customer.nama}</div>
-              <div style={{ fontSize: 13, color: t.text2, fontFamily: MONO }}>{g.customer.kelas || g.customer.tingkat}</div>
+              <div style={{ fontSize: 13, color: t.text2, fontFamily: MONO }}>{g.customer.kelas || g.customer.tingkat}{expanded && g.customer.wa ? ` · ${g.customer.wa}` : ""}</div>
+              {expanded && <div style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</div>}
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               {g.txs.every((tx) => tx.billedAt) && (
@@ -681,12 +682,6 @@ export default function Tagihan({
               {expanded ? <ChevronUp size={18} color={t.text2} /> : <ChevronDown size={18} color={t.textDis} />}
             </div>
           </div>
-          {expanded && (
-            <div className="flex items-center gap-3" style={{ marginTop: 4 }}>
-              {g.customer.wa && <span style={{ fontSize: 13, color: t.text2 }}>{g.customer.wa}</span>}
-              <span style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</span>
-            </div>
-          )}
         </button>
         );
         return expanded ? kepala : (
@@ -1161,10 +1156,10 @@ export default function Tagihan({
                   <span style={{ position: "absolute", top: 0, left: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
                   <span style={{ position: "absolute", top: 0, right: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
                 </div>
-                <div style={{ fontFamily: MONO, display: "flex", alignItems: "center", gap: 6, padding: "20px 20px 0", fontSize: 13.5, color: t.text2 }}>
+                <div style={{ fontFamily: MONO, display: "flex", alignItems: "center", gap: 6, padding: "20px 20px 0", fontSize: 15, color: t.text2 }}>
                   {pre ? <Utensils size={15} /> : <ShoppingCart size={15} />}{x.orderNo || (pre ? "Pre-order" : "Penjualan")}
                 </div>
-                <div style={{ fontFamily: MONO, padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 8, fontSize: 14.5 }}>
+                <div style={{ fontFamily: MONO, padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 12, fontSize: 15 }}>
                   {x.items.map((it, i) => (
                     <div key={i}>
                       <div className="flex justify-between" style={{ gap: 12 }}>
@@ -1293,58 +1288,75 @@ export default function Tagihan({
         </div>
       )}
 
-      {/* WA Pratinjau sheet */}
-      {waDraft && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={() => setWaDraft(null)} style={{ position: "absolute", inset: 0, background: "rgba(47,42,36,.35)" }} />
-          <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "80vh", overflowY: "auto", padding: 20, boxShadow: "0 -10px 40px rgba(47,42,36,.18)" }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>Pratinjau WhatsApp</div>
-              <button onClick={() => setWaDraft(null)} aria-label="Tutup" style={{ border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", color: t.text, width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center" }}><X size={17} /></button>
-            </div>
-            <div className="flex items-center justify-between" style={{ marginBottom: 12, minHeight: 44 }}>
-              <span style={{ fontSize: 13.5, color: t.text2, fontWeight: 500 }}>Periksa & edit sebelum dikirim.</span>
-              <button onClick={async () => { if (await salinTeks(waDraft.text)) setTersalin(true); else setToast("Gagal menyalin. Tekan lama pada teks lalu pilih Salin."); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
-                style={{ width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${tersalin ? t.success : t.border}`, background: tersalin ? t.successBg : t.surface, color: tersalin ? t.successText : t.text2, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-                {tersalin ? <Check size={20} /> : <Copy size={20} />}
-              </button>
-            </div>
-            {waDraft.siblings.length > 0 && (
-              /* Kakak-adik satu nomor WA → tawarkan SATU pesan gabungan
-                 supaya ortu tidak menerima tagihan dua kali */
-              <button onClick={toggleMergeWa} className="flex items-center gap-3"
-                style={{ width: "100%", marginBottom: 10, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                  border: `1.5px solid ${t.primaryLine}`, background: t.primaryLight }}>
-                <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center",
-                  background: waDraft.merged ? t.primary : t.surface, border: `2px solid ${t.primaryLine}`, color: t.onPrimary }}>
-                  {waDraft.merged && <Check size={16} />}
-                </span>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: t.amberText, lineHeight: 1.45 }}>
-                  {waDraft.merged
-                    ? `Tagihan digabung (${1 + waDraft.siblings.length} anak, satu pesan)`
-                    : `Nomor ini juga punya tagihan lain: ${waDraft.siblings.map((s) => `${toTitleCase(s.customer.nama)} (${s.customer.kelas || s.customer.tingkat})`).join(", ")} — ketuk untuk gabungkan`}
-                </span>
-              </button>
-            )}
-            <textarea
-              value={waDraft.text}
-              onChange={(e) => setWaDraft({ ...waDraft, text: e.target.value })}
-              rows={10}
-              style={{ width: "100%", fontSize: 14, color: t.text, background: t.surfaceSoft, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: 12, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6 }}
-            />
-            <div className="flex gap-2" style={{ marginTop: 14 }}>
-              <button onClick={() => setWaDraft(null)}
-                style={{ flex: 1, height: 52, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text2, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                Batal
-              </button>
-              <button onClick={sendWA} className="flex items-center justify-center gap-2"
-                style={{ flex: 2, height: 52, borderRadius: 12, border: "none", background: "#25D366", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-                {waDraft.text.length > BATAS_LINK_WA ? <Copy size={18} /> : <Share2 size={18} />} {waDraft.text.length > BATAS_LINK_WA ? "Salin & buka chat" : "Kirim ke WhatsApp"}
-              </button>
+      {/* WA Pratinjau: lembar bawah bergaya karcis (sama dengan rincian transaksi) */}
+      {waDraft && (() => {
+        const c = waDraft.base.customer;
+        const gabung = waDraft.merged ? waDraft.siblings.reduce((n, x) => n + x.total, waDraft.base.total) : waDraft.base.total;
+        const panjangWA = waDraft.text.length > BATAS_LINK_WA;
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <style>{`@keyframes ganen-wa-naik{from{transform:translateY(100%)}to{transform:none}}`}</style>
+            <div onClick={() => setWaDraft(null)} style={{ position: "absolute", inset: 0, background: "rgba(42,40,32,.45)" }} />
+            <div style={{ position: "relative", background: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxWidth: 460, width: "100%", margin: "0 auto", maxHeight: "92vh", overflowY: "auto", padding: "10px 20px calc(28px + env(safe-area-inset-bottom, 0px))", display: "flex", flexDirection: "column", gap: 12, animation: "ganen-wa-naik .3s cubic-bezier(.22,.8,.3,1)" }}>
+              <div aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 999, background: t.border, margin: "0 auto" }} />
+              <button onClick={() => setWaDraft(null)} aria-label="Tutup" style={{ position: "absolute", top: 10, right: 16, width: 44, height: 44, border: "none", background: "transparent", color: t.text2, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={22} /></button>
+
+              <div style={{ background: t.bg, borderRadius: 20, overflow: "hidden", marginTop: 18 }}>
+                <div style={{ background: t.divider, padding: "20px 20px 14px", textAlign: "center", display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text2 }}>Tagih via WhatsApp</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.5px", color: t.text, lineHeight: 1.2 }}>{waDraft.merged ? [c.nama, ...waDraft.siblings.map((x) => x.customer.nama)].join(" + ") : c.nama}</div>
+                  {!waDraft.merged && <div style={{ fontFamily: MONO, fontSize: 13.5, color: t.text2 }}>{c.kelas || c.tingkat || ""}</div>}
+                  <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.5px", color: t.text, marginTop: 4 }}>{rupiah(gabung)}</div>
+                </div>
+                <div style={{ position: "relative", height: 10, background: t.divider }}>
+                  <div style={{ position: "absolute", left: 14, right: 14, top: 9, borderTop: `2px dashed ${t.border}` }} />
+                  <span style={{ position: "absolute", top: 0, left: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
+                  <span style={{ position: "absolute", top: 0, right: -10, width: 20, height: 20, borderRadius: "50%", background: t.surface }} />
+                </div>
+                <div className="flex items-center justify-between" style={{ padding: "12px 12px 4px 20px", minHeight: 52 }}>
+                  <span style={{ fontSize: 13.5, color: t.text2, fontWeight: 500 }}>Periksa dan ubah pesan sebelum dikirim.</span>
+                  <button onClick={async () => { if (await salinTeks(waDraft.text)) setTersalin(true); else setToast("Gagal menyalin. Tekan lama pada teks lalu pilih Salin."); }} aria-label={tersalin ? "Tersalin" : "Salin pesan"}
+                    className="flex items-center gap-1" style={{ minHeight: 44, padding: "0 8px", border: "none", background: "transparent", color: tersalin ? t.successText : t.text2, fontWeight: 600, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit" }}>
+                    {tersalin ? <Check size={17} /> : <Copy size={17} />} {tersalin ? "Tersalin" : "Salin"}
+                  </button>
+                </div>
+                <div style={{ padding: "0 14px 14px" }}>
+                  {waDraft.siblings.length > 0 && (
+                    <button onClick={toggleMergeWa} className="flex items-center" role="checkbox" aria-checked={!!waDraft.merged}
+                      style={{ gap: 10, width: "100%", minHeight: 44, marginBottom: 6, padding: "0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                      <span style={{ width: 24, height: 24, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", border: `2px solid ${waDraft.merged ? t.success : t.borderStrong}`, background: waDraft.merged ? t.successBg : "transparent", color: t.successText }}>
+                        {waDraft.merged && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>
+                        {waDraft.merged ? `Digabung dengan ${waDraft.siblings.map((x) => toTitleCase(x.customer.nama)).join(", ")}` : `Gabung dengan ${waDraft.siblings.map((x) => toTitleCase(x.customer.nama)).join(", ")} (satu nomor WA)`}
+                      </span>
+                    </button>
+                  )}
+                  <div style={{ background: t.successBg, borderRadius: "14px 4px 14px 14px", padding: "10px 12px 8px" }}>
+                    <textarea value={waDraft.text} onChange={(e) => setWaDraft({ ...waDraft, text: e.target.value })} rows={10} aria-label="Isi pesan"
+                      style={{ width: "100%", fontSize: 16, color: t.text, background: "transparent", border: "none", padding: 0, outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.5, boxSizing: "border-box" }} />
+                    <div className="flex items-center justify-end" style={{ gap: 4, fontSize: 11.5, color: t.text2 }}>
+                      {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":")}
+                      <span style={{ color: t.ditagih, display: "grid", placeItems: "center" }}><IkonDitagih size={16} strokeWidth={2.4} /></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-stretch" style={{ gap: 12 }}>
+                <button onClick={() => setWaDraft(null)}
+                  style={{ flex: "none", width: 96, height: 56, borderRadius: 18, border: "none", background: t.divider, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+                  Batal
+                </button>
+                <button onClick={sendWA} className="flex items-center justify-center gap-2"
+                  style={{ flex: 1, minWidth: 0, height: 56, borderRadius: 18, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>
+                  {panjangWA ? <Copy size={20} /> : <MessageCircle size={20} />} {panjangWA ? "Salin & buka chat" : "Kirim WA"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

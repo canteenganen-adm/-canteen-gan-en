@@ -146,11 +146,7 @@ export default function TagihSatuSatu({
         {total > 0 && (
           <div style={{ padding: "0 20px 8px", textAlign: "center" }}>
             <div style={{ fontSize: 14, color: t.text2, fontWeight: 500 }}>{terkirim} dari {total} terkirim</div>
-            <div className="flex" style={{ gap: 4, marginTop: 8 }}>
-              {entri.map((_, n) => (
-                <span key={n} style={{ flex: 1, height: 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : n === i && !selesai ? t.text : t.border }} />
-              ))}
-            </div>
+            <BarGeret total={entri.length} i={i} selesai={selesai} kirimIdx={kirimIdx} onPilih={setI} />
           </div>
         )}
 
@@ -180,9 +176,9 @@ export default function TagihSatuSatu({
                     </div>
                   ))}
                 </div>
-                <JahitanGeret bisa={tunggakan.length > 0} aktif={sertakan} onUbah={setSertakan} />
+                <Jahitan />
                 <div style={{ padding: "14px 16px", fontSize: 13, color: t.text2 }}>
-                  Tagihan {label} · {new Set(gs.flatMap((g) => g.txs.map(opDate))).size} tanggal
+                  Tagihan {label} · {(() => { const d = [...new Set(gs.flatMap((g) => g.txs.map(opDate)))].sort(); return d.slice(0, 6).map(tglPendek).join(", ") + (d.length > 6 ? ` +${d.length - 6}` : ""); })()}
                 </div>
                 {gs.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
@@ -196,9 +192,6 @@ export default function TagihSatuSatu({
                   </div>
                 ))}
               </div>
-              {gs.length > 1 && (
-                <div style={{ fontSize: 13.5, color: t.text2, margin: "8px 4px 0", fontWeight: 500 }}>Satu nomor WA, digabung jadi satu pesan.</div>
-              )}
 
               {/* Pratinjau pesan: baris tombol + gelembung (bisa diubah; teks = yang dikirim) */}
               <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
@@ -314,23 +307,37 @@ export default function TagihSatuSatu({
   );
 }
 
-/** Jahitan karcis: sama seperti karcis lain (putus-putus, warna garis biasa, coakan di tepi). Bila ada tunggakan, jahitan itu sendiri bisa digeret ke kanan (Sertakan aktif) atau ke kiri (mati), atau diketuk. Tanpa gagang, tanpa warna hijau. */
-function JahitanGeret({ bisa, aktif, onUbah }: { bisa: boolean; aktif: boolean; onUbah: (v: boolean) => void }) {
-  const awal = useRef(0);
-  const [tarik, setTarik] = useState(false);
-  const tebal = tarik ? 4 : 2;
+/** Jahitan karcis: hiasan saja (putus-putus, warna garis biasa, coakan di tepi). */
+function Jahitan() {
   return (
     <div style={{ position: "relative", height: 2, margin: "0" }}>
-      <div aria-hidden="true" style={{ position: "absolute", left: 14, right: 14, top: 0, height: tebal, backgroundImage: `repeating-linear-gradient(to right, ${t.border} 0, ${t.border} 7px, transparent 7px, transparent 12px)` }} />
+      <div aria-hidden="true" style={{ position: "absolute", left: 14, right: 14, top: 0, height: 2, backgroundImage: `repeating-linear-gradient(to right, ${t.border} 0, ${t.border} 7px, transparent 7px, transparent 12px)` }} />
       <span aria-hidden="true" style={{ position: "absolute", left: -9, top: -8, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
       <span aria-hidden="true" style={{ position: "absolute", right: -9, top: -8, width: 18, height: 18, borderRadius: "50%", background: t.bg }} />
-      {bisa && (
-        <div role="switch" aria-checked={aktif} aria-label="Geret jahitan untuk menyertakan tagihan sebelumnya"
-          style={{ position: "absolute", left: 0, right: 0, top: -21, height: 44, touchAction: "none", cursor: "grab" }}
-          onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); awal.current = e.clientX; setTarik(true); }}
-          onPointerUp={(e) => { setTarik(false); const dx = e.clientX - awal.current; onUbah(Math.abs(dx) > 24 ? dx > 0 : !aktif); }}
-          onPointerCancel={() => setTarik(false)} />
-      )}
+    </div>
+  );
+}
+
+/** Bar antrean di atas: satu garis kecil per anak. Bisa DIGERET kiri-kanan (atau diketuk) untuk loncat ke anak mana saja, sesuka Mama. */
+function BarGeret({ total, i, selesai, kirimIdx, onPilih }: { total: number; i: number; selesai: boolean; kirimIdx: number[]; onPilih: (n: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tarik, setTarik] = useState(false);
+  const pilih = (x: number) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r || !total) return;
+    const n = Math.max(0, Math.min(total - 1, Math.floor(((x - r.left) / r.width) * total)));
+    if (n !== i) onPilih(n);
+  };
+  return (
+    <div ref={ref} role="slider" aria-label="Geret untuk pindah anak" aria-valuemin={1} aria-valuemax={total} aria-valuenow={Math.min(i + 1, total)}
+      style={{ marginTop: 2, height: 40, display: "flex", alignItems: "center", gap: total > 60 ? 1 : 4, touchAction: "none", cursor: "grab", userSelect: "none" }}
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setTarik(true); pilih(e.clientX); }}
+      onPointerMove={(e) => { if (tarik) pilih(e.clientX); }}
+      onPointerUp={() => setTarik(false)} onPointerCancel={() => setTarik(false)}>
+      {Array.from({ length: total }, (_, n) => {
+        const kini = n === i && !selesai;
+        return <span key={n} style={{ flex: 1, height: kini ? (tarik ? 22 : 16) : 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : kini ? t.text : t.border, transition: "height .12s" }} />;
+      })}
     </div>
   );
 }

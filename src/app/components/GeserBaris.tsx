@@ -6,7 +6,7 @@ import { t } from "../../lib/theme";
 const LEBAR_AKSI = 168;
 const LEBAR_TAGIH = 84;
 /** Geser lebih dari ini (bagian lebar baris) = langsung Lunas, seperti geser penuh di Mail/WhatsApp. Sengaja jauh supaya tidak kebetulan. */
-const AMBANG_PENUH = 0.62;
+const AMBANG_PENUH = 0.68;
 let sudahIntip = false;
 
 /** Baris yang bisa digeser ke kiri: geser sebagian = dua tombol (Tagih, Lunas); geser penuh = Lunas langsung (Urungkan muncul).
@@ -15,7 +15,7 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
   const box = useRef<HTMLDivElement>(null);
   const [dx, setDx] = useState(0);
   const [tarik, setTarik] = useState(false);
-  const s = useRef<{ x: number; y: number; awal: number; mode: "" | "h" } | null>(null);
+  const s = useRef<{ x0?: number; x: number; y: number; awal: number; mode: "" | "h" } | null>(null);
   const bergeser = useRef(false);
   const terbuka = dx !== 0;
 
@@ -53,23 +53,29 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
     const my = e.clientY - m.y;
     if (m.mode === "") {
       if (Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my) * 1.5) {
-        m.mode = "h";
+        m.mode = "h"; m.x0 = mx;
         setTarik(true);
         try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* abaikan */ }
       } else if (Math.abs(my) > 8) { s.current = null; return; }
       else return;
     }
     bergeser.current = true;
-    setDx(Math.max(-lebar(), Math.min(onBatal ? 132 : 0, m.awal + mx)));
+    const g = mx - (m.x0 ?? 0);
+    /* mulai dari 0 saat terbaca geseran (tidak melompat); buka-sebagian terasa ringan 1:1, lalu agak berat sebelum ambang Lunas */
+    const t0 = m.awal + g;
+    let v = t0;
+    
+    if (t0 > 0) v = t0 * 0.8;
+    setDx(Math.max(-lebar(), Math.min(onBatal ? 132 : 0, v)));
   };
   const lepas = () => {
     const m = s.current;
     s.current = null;
     if (!m || m.mode !== "h") return;
     setTarik(false);
-    if (onBatal && dx >= 88) { setDx(0); onBatal(); }
+    if (onBatal && dx >= 100) { setDx(0); onBatal(); }
     else if (-dx > lebar() * AMBANG_PENUH) { setDx(0); onLunas(); }
-    else if (-dx > 70) setDx(-LEBAR_AKSI);
+    else if (-dx > 56) setDx(-LEBAR_AKSI);
     else setDx(0);
   };
 
@@ -87,7 +93,7 @@ export default function GeserBaris({ children, onTagih, onLunas, onBatal, sudahT
       <div aria-hidden={!terbuka} style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: lebarAksi, display: "flex", overflow: "hidden" }}>
         {/* Dua tombol pucat, satu baris tiap tombol (pilihan pemilik 1 Nov: A/C; "kepenuhan" dibersihkan). Lunas jadi hijau penuh hanya saat digeser sampai ambang. */}
         <button tabIndex={terbuka ? 0 : -1} onClick={() => { setDx(0); onTagih(); }} aria-label={sudahTagih ? `Sudah ditagih ${sudahTagih}, kirim ulang via WhatsApp` : "Tagih via WhatsApp"}
-          style={{ flex: "none", width: LEBAR_TAGIH, border: "none", background: sudahTagih ? t.ditagihBg : t.divider, color: t.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
+          style={{ flex: "none", width: penuh ? 0 : LEBAR_TAGIH, transition: "width .15s", overflow: "hidden", border: "none", background: sudahTagih ? t.ditagihBg : t.divider, color: t.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
           <MessageCircle size={18} color={sudahTagih ? t.ditagih : t.text2} strokeWidth={2.4} />
           {sudahTagih || "Tagih"}
         </button>
