@@ -676,7 +676,6 @@ export default function Tagihan({
                 <span>{g.customer.kelas || g.customer.tingkat}{expanded && g.customer.wa ? ` · ${g.customer.wa}` : ""}</span>
                 {g.txs.every((tx) => tx.billedAt) && <span aria-label="Sudah ditagih" title="Sudah ditagih" style={{ display: "grid", placeItems: "center", color: "#4A8FC4" }}><IkonDitagih size={16} strokeWidth={2.4} /></span>}
               </div>
-              {expanded && <div style={{ fontSize: 13, color: t.text2 }}>{g.txs.length} transaksi</div>}
             </div>
             <div className="flex items-center gap-2" style={{ flex: "none" }}>
               <span style={{ fontSize: 17, fontWeight: 700 }}>{rupiah(g.total)}</span>
@@ -756,34 +755,9 @@ export default function Tagihan({
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Tab menyatu dengan LEMBAR (pemilik 7 Nov: warna latar tab aktif tadi sudah bagus) */}
-        <div style={{ padding: "12px 16px 0", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-          <PaperTabs
-            tabs={[
-              { id: "unpaid", label: "Utang" },
-              { id: "riwayat", label: "Lunas" },
-              { id: "batal", label: "Dibatalkan" },
-            ]}
-            value={tab}
-            onChange={setTab}
-            warna={t.surface}
-            lembar
-          />
-        </div>
-        <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
-        <div style={{ padding: "16px 20px 0" }}>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
-              <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-            </div>
           <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
-              style={{ position: "relative", width: 44, height: 44, borderRadius: 12, border: "none", background: filterActive ? t.primary : t.bg, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              style={{ position: "relative", width: 44, height: 44, borderRadius: "50%", border: "none", background: filterActive ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
               <SlidersHorizontal size={19} />
               {filterActive && (
                 <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.error, border: `1.5px solid ${t.bg}` }} />
@@ -838,6 +812,31 @@ export default function Tagihan({
               </>
             )}
           </div>
+        </div>
+
+        {/* Tab menyatu dengan LEMBAR (pemilik 7 Nov: warna latar tab aktif tadi sudah bagus) */}
+        <div style={{ padding: "12px 16px 0", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
+          <PaperTabs
+            tabs={[
+              { id: "unpaid", label: "Utang" },
+              { id: "riwayat", label: "Lunas" },
+              { id: "batal", label: "Dibatalkan" },
+            ]}
+            value={tab}
+            onChange={setTab}
+            warna={t.surface}
+            lembar
+          />
+        </div>
+        <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
+        <div style={{ padding: "16px 20px 0" }}>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
+              <Search size={18} color={t.text2} style={{ flex: "none" }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+            </div>
           </div>
         </div>
 

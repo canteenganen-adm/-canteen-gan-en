@@ -144,7 +144,7 @@ export default function TagihSatuSatu({
       <div style={{ maxWidth: 460, width: "100%", margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
 
         {/* Atas: X kiri, judul tengah, Cari kanan; lalu "n dari N terkirim" dan bar segmen per anak */}
-        <div className="flex items-center" style={{ padding: "16px 20px 4px", minHeight: 64, gap: 8 }}>
+        <div className="flex items-center" style={{ padding: "10px 20px 0", minHeight: 56, gap: 8 }}>
           <button onClick={onTutup} aria-label="Tutup" title="Tutup" className="flex items-center justify-center"
             style={{ flex: "none", width: 44, height: 44, borderRadius: 12, border: "none", background: t.divider, color: t.text, cursor: "pointer" }}>
             <X size={20} />
@@ -156,7 +156,7 @@ export default function TagihSatuSatu({
           </button>
         </div>
         {total > 0 && (
-          <div style={{ padding: "0 20px 8px", textAlign: "center" }}>
+          <div style={{ padding: "0 20px 0", textAlign: "center", marginTop: -2 }}>
             <div style={{ fontSize: 14, color: t.text2, fontWeight: 500 }}>{terkirim} dari {total} terkirim</div>
             <BarGeret total={entri.length} i={i} selesai={selesai} kirimIdx={kirimIdx} onPilih={setI} />
           </div>
@@ -164,7 +164,7 @@ export default function TagihSatuSatu({
 
         {!selesai && gs.length > 0 && (
           <>
-            <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 20px 16px" }}>
+            <div ref={gulirRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "4px 20px 16px" }}>
               {/* Karcis: satu blok per anak dengan kotak centang (kotak hitam-hangat); yang tidak dicentang redup dan tidak ikut pesan */}
               <div style={{ background: t.surface, borderRadius: 20, overflow: "hidden", position: "relative" }}>
                 <div style={{ background: t.divider, padding: "16px 16px 14px" }}>
@@ -361,7 +361,7 @@ function BarGeret({ total, i, selesai, kirimIdx, onPilih }: { total: number; i: 
   };
   return (
     <div ref={ref} role="slider" aria-label="Geret untuk pindah anak" aria-valuemin={1} aria-valuemax={total} aria-valuenow={Math.min(i + 1, total)}
-      style={{ marginTop: 2, height: 40, display: "flex", alignItems: "center", gap: 4, touchAction: "none", cursor: "grab", userSelect: "none" }}
+      style={{ marginTop: 0, height: 28, display: "flex", alignItems: "center", gap: 4, touchAction: "none", cursor: "grab", userSelect: "none" }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setTarik(true); pilih(e.clientX); }}
       onPointerMove={(e) => { if (tarik) pilih(e.clientX); }}
       onPointerUp={() => setTarik(false)} onPointerCancel={() => setTarik(false)}>
