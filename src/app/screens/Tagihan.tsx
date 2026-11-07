@@ -904,8 +904,9 @@ export default function Tagihan({
                     <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 34, marginBottom: 5, background: t.border }} />
                     <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [pekanDibuka.senin])}
                       aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(pekanDibuka.senin)}`}
-                      style={{ flex: "none", position: "relative", height: 48, padding: "0 18px", margin: "0 6px 0 12px", background: "#E7F8E3", border: "2px solid #25D366", borderRadius: "4px 16px 16px 16px", color: t.text, fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
-                      <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 9, width: 12, height: 12, background: "#E7F8E3", borderLeft: "2px solid #25D366", borderTop: "2px solid #25D366", transform: "rotate(-45deg) skew(12deg, 12deg)", borderTopLeftRadius: 3 }} />
+                      style={{ flex: "none", position: "relative", height: 48, padding: "0 18px", margin: "0 6px 0 12px", background: "#D9FDD3", border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                      <span aria-hidden="true" style={{ position: "absolute", left: -6, bottom: 0, width: 14, height: 16, background: "#D9FDD3", borderBottomRightRadius: 14 }} />
+                      <span aria-hidden="true" style={{ position: "absolute", left: -10, bottom: 0, width: 10, height: 18, background: t.surface, borderBottomRightRadius: 10 }} />
                       <MessageCircle size={18} /> Tagih
                     </button>
                   </>
