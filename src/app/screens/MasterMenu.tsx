@@ -633,8 +633,8 @@ export default function MasterMenu({
             <div style={{ position: "fixed", left: 0, right: 0, bottom: NAV_HEIGHT + 10, zIndex: 40, padding: "0 16px", pointerEvents: "none" }}>
               <div className="flex items-center justify-between" style={{ maxWidth: 428, margin: "0 auto", background: "rgba(221,212,192,.86)", WebkitBackdropFilter: "blur(14px)", backdropFilter: "blur(14px)", borderRadius: 999, padding: "8px 8px 8px 22px", gap: 10, pointerEvents: "auto", boxShadow: "0 6px 20px rgba(60,48,20,.14)" }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)} · {aktifCount} item</div>
-                  <div style={{ fontSize: 12.5, color: t.text2 }}>{dailyDirty ? "Perubahan belum disimpan" : "Belum pernah disimpan"}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{serviceDateLabel(tanggal)}</div>
+                  <div style={{ fontSize: 13, color: t.text2 }}>{aktifCount} item belum disimpan</div>
                 </div>
                 <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
                   {dailyDirty && (
