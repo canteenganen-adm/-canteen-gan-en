@@ -743,7 +743,7 @@ export default function Tagihan({
 
         {/* Judul & total — ringan, IKUT SCROLL (bukan sticky): fokus halaman
             adalah memproses daftar transaksi, bukan dashboard keuangan */}
-        <div className="flex items-center justify-between" style={{ padding: "20px 20px 14px", minHeight: 44 + 26 }}>
+        <div className="flex items-center justify-between" style={{ padding: "20px 20px 0", minHeight: 52 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.02em" }}>Transaksi</div>
             {/* Total sesuai tab: Utang (merah-jingga) / Masuk (hijau) / Dibatalkan */}

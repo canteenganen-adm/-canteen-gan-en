@@ -201,7 +201,7 @@ export default function TagihSatuSatu({
                   return (
                     <>
                       <div className="flex items-baseline justify-between" style={{ padding: adaTung ? "14px 16px 6px" : "14px 16px", gap: 10 }}>
-                        <span style={{ fontSize: 13.5, color: t.text2 }}>Tagihan {label} · {tgl}</span>
+                        <span style={{ fontSize: 13.5, color: t.text2 }}>{tgl}</span>
                         <span style={{ fontSize: adaTung ? 14.5 : 16, fontWeight: adaTung ? 600 : 800, flex: "none", color: adaTung ? t.text2 : t.text }}>{rupiah(dasar)}</span>
                       </div>
                       {adaTung && (

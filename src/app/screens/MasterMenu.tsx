@@ -403,7 +403,7 @@ export default function MasterMenu({
               ada di chip di bawah judul (di atas kertas ini). */}
         </div>
         {/* Hanya TAB yang menempel di atas (judul + deretan hari ikut tergulir supaya tidak memakan separuh layar HP) */}
-        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 16px 0" }}>
+        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 16px 0", marginTop: -6 }}>
           <PaperTabs
             tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
             value={view}
