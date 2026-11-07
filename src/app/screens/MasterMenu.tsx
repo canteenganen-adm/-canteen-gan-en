@@ -767,7 +767,7 @@ export default function MasterMenu({
                     <span style={{ width: 26, height: 26, borderRadius: 8, flex: "none", display: "grid", placeItems: "center", border: `2px solid ${on ? t.success : t.text2}`, background: on ? t.success : "transparent", color: "#fff" }}>
                       {on && <Check size={16} strokeWidth={3} />}
                     </span>
-                    <span style={{ flex: 1, fontSize: 16, fontWeight: on ? 800 : 600 }}>{toTitleCase(m.name)}</span>
+                    <span style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>{toTitleCase(m.name)}</span>
                   </button>
                 );
               })}
