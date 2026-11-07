@@ -685,7 +685,7 @@ export default function Tagihan({
         </button>
         );
         return expanded ? kepala : (
-          <GeserBaris bg={t.surface} sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
+          <GeserBaris sudahTagih={capTagih ? `${capTagih.slice(8, 10)}/${capTagih.slice(5, 7)}` : undefined} onTagih={() => shareWA(g, pool, label)} onBatal={() => cancelMany(g.txs)} onLunas={() => (lintas ? setConfirmLunas({ customer: g.customer, txs: paket, total: paket.reduce((n, x) => n + x.total, 0), sebagian: true, minggu: jmlMinggu }) : markPaidMany(g.txs))}>{kepala}</GeserBaris>
         );
         })()}
 
@@ -759,17 +759,34 @@ export default function Tagihan({
               </span>
             </div>
           </div>
-          <div className="flex items-center" style={{ gap: 10, flex: "none" }}>
-          <button onClick={() => { if (cariBuka || q) { setQ(""); setCariBuka(false); } else setCariBuka(true); }} aria-label="Cari nama"
-            style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: cariBuka || q ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
-            <Search size={19} />
-          </button>
+        </div>
+
+        {/* Tab + cari: SAMA dengan tab Menu (pemilik 7 Nov: "aku suka menu sekarang") */}
+        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 20px 10px" }}>
+          <PaperTabs
+            tabs={[
+              { id: "unpaid", label: "Utang" },
+              { id: "riwayat", label: "Lunas" },
+              { id: "batal", label: "Dibatalkan" },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+        </div>
+        <div style={{ padding: "0 20px 4px" }}>
+          <div className="flex items-center gap-2" style={{ marginTop: 4 }}>
+            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+              <Search size={18} color={t.text2} style={{ flex: "none" }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
+                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
+              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
+            </div>
           <div ref={filterRef} style={{ position: "relative", flex: "none" }}>
             <button onClick={() => setFilterSheet((v) => !v)} aria-expanded={filterSheet} aria-label="Filter dan urutan"
-              style={{ position: "relative", width: 44, height: 44, borderRadius: "50%", border: "none", background: filterActive ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+              style={{ position: "relative", width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${filterActive ? t.primaryLine : t.border}`, background: filterActive ? t.primary : t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
               <SlidersHorizontal size={19} />
               {filterActive && (
-                <span style={{ position: "absolute", top: 0, right: 0, width: 9, height: 9, borderRadius: "50%", background: t.error, border: `1.5px solid ${t.bg}` }} />
+                <span style={{ position: "absolute", top: -3, right: -3, width: 9, height: 9, borderRadius: "50%", background: t.error, border: `1.5px solid ${t.bg}` }} />
               )}
             </button>
             {filterSheet && (
@@ -824,35 +841,9 @@ export default function Tagihan({
           </div>
         </div>
 
-        {/* Tab menyatu dengan LEMBAR putih (pemilik 7 Nov): tab aktif = warna lembar, tanpa garis */}
-        <div style={{ padding: "4px 16px 0", position: "sticky", top: 0, background: t.bg, zIndex: 5 }}>
-          <PaperTabs
-            tabs={[
-              { id: "unpaid", label: "Utang" },
-              { id: "riwayat", label: "Lunas" },
-              { id: "batal", label: "Dibatalkan" },
-            ]}
-            value={tab}
-            onChange={setTab}
-            warna={t.surface}
-            lembar
-          />
-        </div>
-        <div style={{ margin: "0 16px", background: t.surface, borderRadius: `${ixTab === 0 ? 0 : 22}px ${ixTab === 2 ? 0 : 22}px 22px 22px`, minHeight: "62vh", paddingBottom: 24 }}>
-        {(cariBuka || q) && (
-          <div className="flex items-center gap-2" style={{ margin: "0 16px", padding: "14px 0 0" }}>
-            <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
-              <Search size={18} color={t.text2} style={{ flex: "none" }} />
-              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama…"
-                style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
-              {q && <X size={18} color={t.text2} style={{ cursor: "pointer", flex: "none" }} onClick={() => setQ("")} />}
-            </div>
-          </div>
-        )}
-
         {/* ---- Tab: Belum Dibayar ---- */}
         {tab === "unpaid" && (
-          <div style={{ padding: "12px 20px 4px" }}>
+          <div style={{ padding: "14px 20px 4px" }}>
             {modeDaftar ? (
               <>
                 {/* Filter yang tersembunyi di popover dibuat kelihatan — dulu bikin "pesanan tidak ketemu" */}
@@ -879,7 +870,7 @@ export default function Tagihan({
             ) : (
               <div onTouchStart={(e) => { sentuh.current = (e.target as HTMLElement).closest(".hscroll") ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => { const m = sentuh.current; sentuh.current = null; if (m) geserPekan(e.changedTouches[0].clientX - m.x, e.changedTouches[0].clientY - m.y); }}>
-                <div>
+                <div style={{ background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", borderRadius: 18, padding: "8px 12px 4px", marginBottom: 8 }}>
                 <div className="flex items-end" style={{ gap: 8 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                 <RailGeser pudar style={{ gap: 6, padding: "0" }}>
@@ -1034,7 +1025,6 @@ export default function Tagihan({
             )}
           </div>
         )}
-        </div>
       </div>
 
       {/* Tagih satu per satu (layar penuh); popup rincian/ubah tanggal (z 85) tetap di atasnya */}
