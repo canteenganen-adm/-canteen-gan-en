@@ -77,7 +77,9 @@ export function hitungKesehatan(transactions: Transaction[], menus: MenuItem[], 
     if (g.length < 2) continue;
     const urut = [...g].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     const dekat = urut.some((x, i) => i > 0 && new Date(x.createdAt).getTime() - new Date(urut[i - 1].createdAt).getTime() <= 10 * 60_000);
-    if (!dekat) continue;
+    /* Tagihan Penjualan atas nama anak, isi dan tanggal layanan sama: ditandai walau berjauhan (laporan Mama 7 Nov: tagihan kantin tercatat dobel di tanggal yang sama). */
+    const tagihanSama = urut[0].source === "penjualan" && !!urut[0].customer.nama?.trim();
+    if (!dekat && !tagihanSama) continue;
     const selisih = Math.round((new Date(urut[urut.length - 1].createdAt).getTime() - new Date(urut[0].createdAt).getTime()) / 60_000);
     kembar.push({
       judul: `${siapa(urut[0])} · ${urut.length} pesanan`,

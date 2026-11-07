@@ -215,8 +215,13 @@ export default function Penjualan({
       : { ...f, nama });
   };
 
+  /** Pengaman ketuk dua kali / sinyal lambat: satu pencatatan per 2 detik (dua ketukan cepat dulu bisa jadi dua transaksi sama). */
+  const catatTerakhir = useRef(0);
   const commit = (paid: boolean, customer?: Cust) => {
     if (cart.length === 0) return;
+    const sekarang = Date.now();
+    if (sekarang - catatTerakhir.current < 2000) return;
+    catatTerakhir.current = sekarang;
     const savedCart = cart;
     const tx: Transaction = {
       id: uid(),
@@ -237,6 +242,7 @@ export default function Penjualan({
     /* Urungkan = tunggu simpan selesai, lalu tandai Dibatalkan (soft-delete) dan kembalikan keranjang. */
     const undo = () => {
       inserted.then(() => onCancelTransaction(tx.id));
+      catatTerakhir.current = 0;
       setCart(savedCart);
       setSnack(null);
     };
