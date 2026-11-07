@@ -365,7 +365,14 @@ function BarGeret({ total, i, selesai, kirimIdx, onPilih }: { total: number; i: 
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setTarik(true); pilih(e.clientX); }}
       onPointerMove={(e) => { if (tarik) pilih(e.clientX); }}
       onPointerUp={() => setTarik(false)} onPointerCancel={() => setTarik(false)}>
-      {Array.from({ length: total }, (_, n) => {
+      {total > 40 ? (
+        /* Banyak anak: satu garis putus-putus utuh (segmen kecil menghilang), penanda gelap = anak yang sedang tampil, goresan tipis = sudah terkirim */
+        <div style={{ position: "relative", flex: 1, height: 22 }}>
+          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 8, height: 6, backgroundImage: `repeating-linear-gradient(to right, ${t.border} 0, ${t.border} 8px, transparent 8px, transparent 13px)` }} />
+          {kirimIdx.map((n) => <span key={n} aria-hidden="true" style={{ position: "absolute", top: 8, height: 6, left: `${(n / total) * 100}%`, width: `max(3px, ${100 / total}%)`, background: t.garisKelompok }} />)}
+          {!selesai && <span aria-hidden="true" style={{ position: "absolute", top: tarik ? 6 : 7, height: tarik ? 10 : 8, width: tarik ? 28 : 22, borderRadius: 4, background: t.text, left: `${((i + 0.5) / total) * 100}%`, transform: "translateX(-50%)", transition: "width .12s, height .12s" }} />}
+        </div>
+      ) : Array.from({ length: total }, (_, n) => {
         const kini = n === i && !selesai;
         return <span key={n} style={{ flex: 1, height: tarik ? 10 : 6, borderRadius: 3, background: kirimIdx.includes(n) ? t.garisKelompok : kini ? t.text : t.border, transition: "height .12s" }} />;
       })}

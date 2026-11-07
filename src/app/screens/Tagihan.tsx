@@ -886,7 +886,7 @@ export default function Tagihan({
                           const on = x.senin === pekanBuka && cakupan === "ini";
                           return (
                             <button key={x.senin} id={`chip-${x.senin}`} onClick={() => pilihPekan(x.senin)} aria-pressed={on} aria-label={`Minggu ${labelPekan(x.senin)}`}
-                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 44, padding: "0 7px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
+                              style={{ flex: "none", position: "relative", minWidth: 0, minHeight: 44, minWidth: 62, padding: "0 7px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "none", borderRadius: 12, background: on ? "#F0E5C9" : "transparent", color: t.text, fontFamily: "inherit", fontSize: 15, fontWeight: on ? 700 : 600, lineHeight: 1.1, whiteSpace: "nowrap", cursor: "pointer" }}>
                               {x.belum > 0 && <span aria-label="Masih ada yang belum ditagih" style={{ position: "absolute", top: 4, right: 3, width: 8, height: 8, borderRadius: "50%", background: t.error }} />}
                               <span>{rentangPendek(x.senin)}</span>
                               {x.berjalan && <span style={{ display: "block", fontSize: 10.5, lineHeight: 1, fontWeight: 600, color: t.text2, marginTop: 1 }}>berjalan</span>}
@@ -904,9 +904,9 @@ export default function Tagihan({
                     <div aria-hidden="true" style={{ flex: "none", width: 1.5, height: 30, marginBottom: 7, background: t.border }} />
                     <button onClick={() => mulaiTagih(cakupan === "semua" ? pekanList.filter((x) => x.txs.length > 0).map((x) => x.senin).sort() : [pekanDibuka.senin])}
                       aria-label={cakupan === "semua" ? "Tagih semua yang belum ditagih" : `Tagih minggu ${labelPekan(pekanDibuka.senin)}`}
-                      style={{ flex: "none", position: "relative", height: 44, padding: "0 13px", margin: "0 2px 0 10px", background: t.successBg, border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
-                      <span aria-hidden="true" style={{ position: "absolute", left: -6, bottom: 0, width: 14, height: 16, background: t.successBg, borderBottomRightRadius: 14 }} />
-                      <span aria-hidden="true" style={{ position: "absolute", left: -10, bottom: 0, width: 10, height: 18, background: t.surface, borderBottomRightRadius: 10 }} />
+                      style={{ flex: "none", position: "relative", height: 44, padding: "0 13px", margin: "0 12px 0 2px", background: t.successBg, border: "none", borderRadius: 16, color: "#111B21", fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                      <span aria-hidden="true" style={{ position: "absolute", right: -6, bottom: 0, width: 14, height: 16, background: t.successBg, borderBottomLeftRadius: 14 }} />
+                      <span aria-hidden="true" style={{ position: "absolute", right: -10, bottom: 0, width: 10, height: 18, background: t.surface, borderBottomLeftRadius: 10 }} />
                       Tagih
                     </button>
                   </>
