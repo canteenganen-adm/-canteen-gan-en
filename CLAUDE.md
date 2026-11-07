@@ -32,6 +32,7 @@ Urutan baca: bagian ini dulu. Bila bertabrakan dengan uraian lain di berkas ini,
 - **Chip "Semua" kembali (pemilik 7 Nov)**: di ujung deret minggu, setelah minggu berjalan; belum dipilih = hanya garis tipis tanpa latar, dipilih = latar krem vintage `#F0E5C9` (sama dengan minggu terpilih). Menggantikan penghapusan baris "Semua minggu".
 - **Atur Menu Tetap (pemilik 7 Nov)**: daftar di lembar HANYA menampilkan menu yang sudah ditandai; menu lain baru muncul setelah dicari (ketik di kolom cari, ketuk untuk menandai). Melepas tanda membuat menu hilang dari daftar awal.
 - **Pengaman sebelum kirim di Tagih satu per satu (pemilik 7 Nov: Mama sering langsung kirim-kirim; keluhan tagihan dobel)**: dua peringatan lembut DI DALAM karcis (tidak memblokir): (1) "{tgl}: ada N pesanan sama (jam, jam). Benar?" bila anak yang dicentang punya pesanan kembar (tanggal, isi, total sama); (2) "Sudah ditagih dd/mm. Kirim ulang?" bila semuanya sudah ditagih minggu ini, dan tombol kirim berubah "Kirim ulang WA". Penjualan: satu pencatatan per 2 detik (anti ketuk ganda). Kesehatan menandai tagihan Penjualan kembar walau berjauhan.
+- **Karcis Tagih opsi A (pemilik 7 Nov, tetap berbentuk karcis)**: kepala kelabu berisi baris per anak setinggi sama (64px): kotak centang kiri, nama 16.5/700 + kelas mono di bawahnya, NOMINAL 17/800 di kolom kanan; garis tipis antar anak; semua nominal (anak, subtotal, tunggakan, Total) satu tepi kanan; hanya Total yang besar.
 
 ## DESIGN TOKENS (wajib untuk semua UI)
 
