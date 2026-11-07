@@ -42,9 +42,9 @@ export function labelBulan(ym: string) {
   return `${BLN_PANJANG[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 }
 
-/** Pekan belum selesai: sebelum Sabtu pekan itu. Pekan yang masih berjalan
+/** Pekan belum selesai: sampai MINGGU pekan itu (pekan = Senin–Minggu; Sabtu dan Minggu masih pekan berjalan, pemilik 7 Nov). Pekan yang masih berjalan
  * (atau belum mulai) belum ditagih supaya sekali jalan, tidak dua kali. */
-export const pekanBerjalan = (senin: string, hariIni: string) => hariIni < isoAdd(senin, 5);
+export const pekanBerjalan = (senin: string, hariIni: string) => hariIni < isoAdd(senin, 7);
 
 /** "Jumat, 30 Okt" — untuk tombol pilihan tanggal. */
 export const labelHariTgl = (iso: string) => `${namaHari(iso)}, ${Number(iso.slice(8, 10))} ${BLN[Number(iso.slice(5, 7)) - 1]}`;
