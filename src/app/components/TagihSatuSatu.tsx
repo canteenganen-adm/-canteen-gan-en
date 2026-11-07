@@ -196,8 +196,17 @@ export default function TagihSatuSatu({
                   <span style={{ fontSize: 13, color: t.text2 }}>
                     Tagihan {label} · {(() => { const d = [...new Set(gsAktif.flatMap((g) => g.txs.map(opDate)))].sort(); return d.slice(0, 6).map(tglPendek).join(", ") + (d.length > 6 ? ` +${d.length - 6}` : ""); })()}
                   </span>
-                  <span style={{ fontSize: 16, fontWeight: 800, flex: "none" }}>{rupiah(gsAktif.reduce((n, g) => n + g.total, 0))}</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, flex: "none" }}>{rupiah(gsAktif.reduce((n, g) => n + g.total, 0) + (sertakan && tunggakan.length ? totalTunggakan : 0))}</span>
                 </div>
+                {tunggakan.length > 0 && (
+                  <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
+                    style={{ gap: 12, width: "100%", minHeight: 52, margin: "-4px 0 8px", padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
+                    <span style={{ width: 28, height: 28, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: sertakan ? "#2F2A24" : t.divider, color: "#FAF6EE" }}>
+                      {sertakan && <Check size={17} strokeWidth={3} />}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
+                  </button>
+                )}
                 {gsAktif.flatMap((g) => g.txs.filter((x) => isAkhirPekan(opDate(x)))).map((x) => (
                   <div key={x.id} className="flex items-center gap-2"
                     style={{ margin: "0 12px 12px", padding: "8px 10px", background: t.warnFill, borderRadius: 12, color: t.warnText, fontSize: 14.5, fontWeight: 600 }}>
@@ -214,15 +223,6 @@ export default function TagihSatuSatu({
                 style={{ minHeight: 44, margin: "2px 0 0", padding: "0 6px", border: "none", background: "transparent", color: t.text2, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
                 + Tambah saudara
               </button>
-              {tunggakan.length > 0 && (
-                <button onClick={() => setSertakan((v) => !v)} role="checkbox" aria-checked={sertakan} className="flex items-center"
-                  style={{ gap: 12, width: "100%", minHeight: 60, margin: "6px 0 10px", padding: "0 16px", border: "none", borderRadius: 18, background: t.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: t.text }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: sertakan ? "#2F2A24" : t.divider, color: "#FAF6EE" }}>
-                    {sertakan && <Check size={18} strokeWidth={3} />}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>Sertakan tagihan sebelumnya {rupiah(totalTunggakan)}</span>
-                </button>
-              )}
 
               {/* Pratinjau pesan: baris tombol + gelembung (bisa diubah; teks = yang dikirim) */}
               <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
