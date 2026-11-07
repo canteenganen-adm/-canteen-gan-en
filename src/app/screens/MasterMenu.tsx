@@ -403,20 +403,24 @@ export default function MasterMenu({
               ada di chip di bawah judul (di atas kertas ini). */}
         </div>
         {/* Hanya TAB yang menempel di atas (judul + deretan hari ikut tergulir supaya tidak memakan separuh layar HP) */}
-        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 20px 10px" }}>
+        <div style={{ position: "sticky", top: 0, background: t.bg, zIndex: 5, padding: "12px 16px 0" }}>
           <PaperTabs
             tabs={[{ id: "menu", label: "Buku Menu" }, { id: "po", label: "Preview PO" }]}
             value={view}
             onChange={onViewChange}
+            warna={t.surface}
+            lembar
           />
         </div>
-        <div style={{ padding: "0 20px 4px" }}>
+        {/* Lembar: tab aktif SEWARNA dengan lembar di bawahnya (sama dengan tab Transaksi) */}
+        <div style={{ margin: "0 16px", background: t.surface, borderRadius: view === "menu" ? "0 22px 22px 22px" : "22px 0 22px 22px", minHeight: "62vh", paddingBottom: 24 }}>
+        <div style={{ padding: "16px 12px 4px" }}>
           {view === "menu" && (
             <>
               {/* Cari + tombol plus (membuka menu melayang: Tambah menu / Menu Tetap) */}
               <div ref={aksiRef} style={{ position: "relative", marginTop: 14 }}>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", height: 44 }}>
+                  <div className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, background: t.bg, borderRadius: 12, padding: "0 12px", height: 44 }}>
                     <Search size={18} color={t.text2} style={{ flex: "none" }} />
                     <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari menu…"
                       style={{ border: "none", outline: "none", background: "transparent", fontSize: 16, width: "100%", minWidth: 0, color: t.text, fontFamily: "inherit" }} />
@@ -471,7 +475,7 @@ export default function MasterMenu({
         </div>
 
         {/* List */}
-        <div style={{ padding: "10px 20px 4px" }}>
+        <div style={{ padding: "10px 12px 4px" }}>
           {/* Banner item belum dikategorikan — hilang otomatis saat 0 */}
           {view === "menu" && uncategorized.length > 0 && (
             <button onClick={() => setShowUncategorized((v) => !v)}
@@ -550,7 +554,7 @@ export default function MasterMenu({
                     };
                     const zigzag = "polygon(0 6px, 4% 0, 8% 6px, 12% 0, 16% 6px, 20% 0, 24% 6px, 28% 0, 32% 6px, 36% 0, 40% 6px, 44% 0, 48% 6px, 52% 0, 56% 6px, 60% 0, 64% 6px, 68% 0, 72% 6px, 76% 0, 80% 6px, 84% 0, 88% 6px, 92% 0, 96% 6px, 100% 0, 100% calc(100% - 6px), 96% 100%, 92% calc(100% - 6px), 88% 100%, 84% calc(100% - 6px), 80% 100%, 76% calc(100% - 6px), 72% 100%, 68% calc(100% - 6px), 64% 100%, 60% calc(100% - 6px), 56% 100%, 52% calc(100% - 6px), 48% 100%, 44% calc(100% - 6px), 40% 100%, 36% calc(100% - 6px), 32% 100%, 28% calc(100% - 6px), 24% 100%, 20% calc(100% - 6px), 16% 100%, 12% calc(100% - 6px), 8% 100%, 4% calc(100% - 6px), 0 100%)";
                     return (
-                      <div style={{ background: t.surface, margin: "0 6px", padding: "20px 18px 22px",
+                      <div style={{ background: t.bg, margin: "0 6px", padding: "20px 18px 22px",
                         fontFamily: STRUK_MONO, fontSize: 13, fontWeight: 500, lineHeight: 1.7, color: t.text,
                         boxShadow: "0 3px 14px rgba(47,42,36,.12)", clipPath: zigzag }}>
                         {/* Kop: ikon garpu-sendok dalam bulatan krem (KETUK = segarkan pratinjau; pilihan pemilik 2 Nov, opsi D) + tanggal.
@@ -646,6 +650,7 @@ export default function MasterMenu({
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
 
