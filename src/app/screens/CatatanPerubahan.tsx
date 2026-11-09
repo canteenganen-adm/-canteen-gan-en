@@ -103,6 +103,10 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
   const [lamaHabis, setLamaHabis] = useState(false);
   const [lamaKursor, setLamaKursor] = useState<string | undefined>(undefined);
   const [lamaMuat, setLamaMuat] = useState(false);
+  useEffect(() => {
+    if (filter === "pesanan" && status === "ok" && habis && lama.length === 0 && !lamaHabis && !lamaMuat) void muatLama();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, status, habis, lama.length, lamaHabis]);
   const muatLama = async () => {
     setLamaMuat(true);
     const r = await fetchPesananLama({ q, sebelumWaktu: lamaKursor });
@@ -262,14 +266,11 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
               Tampilkan lagi
             </button>
           )}
-          {status === "ok" && filter === "pesanan" && habis && !lamaHabis && (
+          {status === "ok" && filter === "pesanan" && habis && !lamaHabis && lama.length > 0 && (
             <button onClick={() => void muatLama()} disabled={lamaMuat}
-              style={{ width: "100%", minHeight: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", marginTop: 12, padding: "8px 12px", opacity: lamaMuat ? 0.6 : 1 }}>
-              {lamaMuat ? "Memuat…" : lama.length ? "Tampilkan pesanan lama lagi" : "Tampilkan pesanan sebelum catatan aktif"}
+              style={{ width: "100%", height: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", marginTop: 12, opacity: lamaMuat ? 0.6 : 1 }}>
+              {lamaMuat ? "Memuat…" : "Lagi"}
             </button>
-          )}
-          {status === "ok" && filter === "pesanan" && lama.length > 0 && (
-            <div style={{ fontSize: 13, color: t.text2, margin: "10px 2px 0", lineHeight: 1.45 }}>Pesanan lama diambil dari data transaksi: jamnya benar, tetapi siapa yang memasukkan tidak tercatat.</div>
           )}
           </>)}
         </div>
