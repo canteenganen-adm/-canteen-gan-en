@@ -423,21 +423,17 @@ export default function PreOrderAdmin({
           {/* SATU bingkai luar untuk seluruh blok (tanggal + angka + tombol); elemen di dalamnya TANPA border sendiri (permintaan pemilik). */}
           <div style={{ marginTop: 8, borderRadius: 18, background: t.surface, boxShadow: "0 1px 3px rgba(60,48,20,.08)", padding: "10px 8px 4px" }}>
             {/* Sketsa pemilik: [ikon kalender: ketuk = ganti tanggal] | tanggal (+ panah hari) / "tutup jam" paling kecil | (pil buka-tutup) */}
-            {/* Sketsa pemilik 6 Nov: SATU ikon kalender besar di kiri (membentang dua baris) | kanan: tanggal besar, tepat di bawahnya jam tutup. */}
-            <div className="flex items-center" style={{ gap: 12 }}>
+            <div className="flex items-center" style={{ gap: 6 }}>
               <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label="Ganti tanggal"
-                style={{ flex: "none", width: 44, height: 56, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
-                <Calendar size={34} strokeWidth={1.8} color={t.text} />
+                style={{ flex: "none", width: 42, height: 46, borderRadius: 14, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Calendar size={24} color={t.text} />
               </button>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <button onClick={() => { setKalOffset(0); setSheet("gantiTanggal"); }} aria-label={`Ganti tanggal, ${serviceDateLabel(viewDate)}`}
-                  style={{ display: "block", maxWidth: "100%", minHeight: 30, textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit", fontSize: 21, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: lihatSesi ? t.text : t.amberText, letterSpacing: "-.015em", lineHeight: 1.2 }}>
-                  {serviceDateLabel(viewDate)}
-                </button>
+              <div style={{ minWidth: 0, flex: 1, paddingLeft: 8 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", color: lihatSesi ? t.text : t.amberText, lineHeight: 1.2, letterSpacing: "-.01em" }}>{serviceDateLabel(viewDate)}</div>
                 <button onClick={() => setSheet("jamTutup")} className="flex items-center" aria-label={`Jam tutup ${hhmm(autoCloseTime)}, ketuk untuk mengubah`}
-                  style={{ gap: 6, minHeight: 28, padding: 0, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 500, color: t.text2, whiteSpace: "nowrap" }}>
-                  {lihatSesi && <JamHitung size={20} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}
-                  <span>tutup {hhmm(autoCloseTime)}</span><ChevronRight size={16} />
+                  style={{ gap: 4, background: "transparent", border: "none", color: t.text2, fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 0, minHeight: 22, fontFamily: "inherit" }}>
+                  {lihatSesi && <JamHitung size={14} beku={!open || isAutoClosed} warn={false} frac={fracSisa} />}
+                  <span>Tutup jam <b style={{ color: t.text, fontWeight: 700 }}>&nbsp;{hhmm(autoCloseTime)}</b></span> <ChevronRight size={13} />
                 </button>
               </div>
             </div>
@@ -459,10 +455,10 @@ export default function PreOrderAdmin({
               </div>
             )}
 
-            <div style={{ height: 12 }} />
+            <div style={{ height: 10 }} />
 
             {/* Angka: yang aktif berlatar kuning pucat, yang lain polos (tanpa bingkai). Ketuk = saring daftar. */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 }}>
+            <div className="flex gap-1">
               <StatBox n={orders.length} label="Pesanan" color={t.text} active={packedFilter === "semua"}
                 onClick={() => setPackedFilter("semua")} />
               <StatBox n={packed} label="Sudah" color={t.successText} active={packedFilter === "sudah"}
@@ -471,15 +467,11 @@ export default function PreOrderAdmin({
                 onClick={() => setPackedFilter(packedFilter === "belum" ? "semua" : "belum")} />
             </div>
 
-            {/* Tombol: satu baris ringan (teks abu tua beriring ikon) */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, padding: "0 0 6px", marginTop: 14 }}>
-              <button onClick={() => setSheet("rekap")} aria-label="Rekap Masak" className="flex items-center justify-center"
-                style={{ gap: 6, height: 48, padding: "0 4px", borderRadius: 14, border: "none", background: t.primaryLight, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 700, color: t.text, whiteSpace: "nowrap" }}>
-                <CookingPot size={18} /> Rekap Masak
-              </button>
-              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
-                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center justify-center"
-                  style={{ gap: 6, minHeight: 48, padding: "0 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 500, color: t.text2 }}>
+            {/* Tombol: satu baris ringan (teks abu tua beriring ikon), seperti versi 4 Nov */}
+            <div className="flex justify-around">
+              {([["Bagikan", Share2, "bagikan", "Bagikan Link"], ["Rekap", CookingPot, "rekap", "Rekap Masak"], ["Cetak", Printer, "cetak", "Cetak"]] as const).map(([label, Ic, sh, aria]) => (
+                <button key={sh} onClick={() => setSheet(sh)} aria-label={aria} className="flex items-center"
+                  style={{ gap: 6, minHeight: 44, padding: "0 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600, color: t.text2 }}>
                   <Ic size={18} /> {label}
                 </button>
               ))}
