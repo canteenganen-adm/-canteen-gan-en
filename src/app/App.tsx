@@ -22,7 +22,10 @@ import MasterMenu, { type MenuView } from "./screens/MasterMenu";
 import Penjualan from "./screens/Penjualan";
 import Tagihan from "./screens/Tagihan";
 import PreOrderAdmin from "./screens/PreOrderAdmin";
-import PreOrderParent, { type PreOrderReceipt } from "./screens/PreOrderParent";
+import PreOrderParentLama, { type PreOrderReceipt } from "./screens/PreOrderParent";
+import PreOrderParentBaru from "./screens/PreOrderParentBaru";
+/** Halaman pesan orang tua: bawaan = desain LAMA (permintaan Mama 9 Nov) + laman masuk panda; desain baru dikembangkan lewat VITE_PO_BARU=1 (tidak dibuka untuk umum). */
+const PreOrderParent = import.meta.env.VITE_PO_BARU === "1" ? PreOrderParentBaru : PreOrderParentLama;
 import Pengaturan from "./screens/Pengaturan";
 import Laporan from "./screens/Laporan";
 import BackToTop from "./components/BackToTop";
