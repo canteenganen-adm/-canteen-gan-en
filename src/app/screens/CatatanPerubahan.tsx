@@ -3,7 +3,8 @@ import { ArrowLeft, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { t } from "../../lib/theme";
 import { rupiah } from "../../lib/format";
 import { bacaNamaCatatan } from "../../lib/siapa";
-import { fetchCatatan, type Catatan, type FilterCatatan, type HasilCatatan } from "../../lib/catatan";
+import { PEMBARUAN } from "../../lib/pembaruan";
+import { fetchCatatan, fetchPesananLama, type Catatan, type FilterCatatan, type HasilCatatan } from "../../lib/catatan";
 
 /* ============================================================
    CATATAN PERUBAHAN — dibuka dari Kantin → Catatan.
@@ -64,7 +65,7 @@ function ringkas(c: Catatan): [string, string, Nada] {
 }
 
 const CHIP: { id: FilterCatatan; label: string }[] = [
-  { id: "semua", label: "Semua" }, { id: "pesanan", label: "Pesanan" }, { id: "ubah", label: "Ubah" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" }, { id: "masuk", label: "Masuk" },
+  { id: "semua", label: "Semua" }, { id: "pesanan", label: "Pesanan" }, { id: "ubah", label: "Ubah" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" }, { id: "masuk", label: "Masuk" }, { id: "pembaruan", label: "Pembaruan" },
 ];
 
 const hariWib = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
@@ -97,6 +98,18 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
   // Hari bisa dilipat (pemilik 4 Nov: "per hari udah selesai kita tutup"): bawaan hanya HARI INI terbuka; saat mencari semua terbuka.
   const [hariBuka, setHariBuka] = useState<Record<string, boolean>>({});
   const seq = useRef(0);
+  /* Pesanan SEBELUM catatan aktif (dari tabel transaksi), hanya di tab Pesanan setelah catatan habis */
+  const [lama, setLama] = useState<Catatan[]>([]);
+  const [lamaHabis, setLamaHabis] = useState(false);
+  const [lamaKursor, setLamaKursor] = useState<string | undefined>(undefined);
+  const [lamaMuat, setLamaMuat] = useState(false);
+  const muatLama = async () => {
+    setLamaMuat(true);
+    const r = await fetchPesananLama({ q, sebelumWaktu: lamaKursor });
+    setLamaMuat(false);
+    if (r.status === "ok") { setLama((p) => [...p, ...r.baris]); setLamaHabis(r.habis); setLamaKursor(r.kursor); }
+    else { setPesan(r.pesan); setStatus("galat"); }
+  };
 
   const muat = useCallback(async (tambah: boolean) => {
     const my = ++seq.current;
@@ -112,6 +125,8 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
 
   // Muat ulang saat filter/cari berubah (cari ditunda sebentar supaya tidak satu permintaan per huruf)
   useEffect(() => {
+    setLama([]); setLamaHabis(false); setLamaKursor(undefined);
+    if (filter === "pembaruan") return;
     const id = setTimeout(() => { void muat(false); }, q ? 300 : 0);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,7 +146,6 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
         </div>
 
         <div style={{ padding: "0 20px" }}>
-          <YangBaru />
           <div className="flex items-center gap-2" style={{ height: 44, background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 12, padding: "0 12px", boxSizing: "border-box" }}>
             <Search size={18} color={t.text2} style={{ flex: "none" }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama atau menu…"
@@ -147,6 +161,23 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
             ))}
           </div>
 
+          {filter === "pembaruan" ? (
+            <div>
+              {PEMBARUAN.map((g) => {
+                const d = new Date(g.tgl + "T00:00:00Z");
+                return (
+                  <div key={g.tgl} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, margin: "10px 0 6px" }}>{NAMA_HARI[d.getUTCDay()]} {d.getUTCDate()} {BLN_PENDEK[d.getUTCMonth()]}</div>
+                    <div style={{ background: t.surface, borderRadius: 16, boxShadow: "0 1px 3px rgba(60,48,20,.08)", padding: "8px 16px" }}>
+                      {g.butir.map((b, i) => (
+                        <div key={i} style={{ padding: "10px 0", borderTop: i ? `1px solid ${t.divider}` : "none", fontSize: 15, lineHeight: 1.5, color: t.text }}>{b}</div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (<>
           {status === "memuat" && <div style={{ textAlign: "center", color: t.text2, padding: "40px 0" }}>Memuat…</div>}
           {status === "belumAktif" && (
             <div style={{ background: t.warnFill, borderRadius: 14, padding: "14px 16px", fontWeight: 600, lineHeight: 1.45 }}>
@@ -154,12 +185,12 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
             </div>
           )}
           {status === "galat" && <div style={{ background: t.errorBg, color: t.error, borderRadius: 14, padding: "14px 16px", fontWeight: 600 }}>{pesan}</div>}
-          {status === "ok" && baris.length === 0 && <div style={{ textAlign: "center", color: t.text2, padding: "40px 0" }}>Belum ada catatan.</div>}
+          {status === "ok" && baris.length === 0 && !(filter === "pesanan" && habis) && <div style={{ textAlign: "center", color: t.text2, padding: "40px 0" }}>Belum ada catatan.</div>}
 
-          {status === "ok" && baris.length > 0 && (() => {
+          {status === "ok" && (baris.length > 0 || lama.length > 0) && (() => {
             // Kelompok per hari (WIB), terbaru dulu — garis waktu: jam di kiri, titik berwarna di garis tipis, isi di kanan
             const kel: { hari: string; isi: Catatan[] }[] = [];
-            for (const c of baris) {
+            for (const c of (filter === "pesanan" ? [...baris, ...lama] : baris)) {
               const h = hariWib(c.waktu);
               const g = kel[kel.length - 1];
               if (g && g.hari === h) g.isi.push(c); else kel.push({ hari: h, isi: [c] });
@@ -180,7 +211,7 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
                   {g.isi.map((c) => {
                     const [jenis, ket, nada] = ringkas(c);
                     const terbuka = buka === c.id;
-                    const nama = bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
+                    const nama = c.lama ? "siapa tidak tercatat" : bacaNamaCatatan(c.siapa) || (c.aksi === "tambah" && c.tabel === "transaksi" ? "Pemesan" : "Tidak diketahui");
                     // Penjualan tanpa nama pembeli: ket dari server berawal "· Rp…" → beri judul "Cash"
                     const ketDasar = (c.ket || c.tabel).trim();
                     const bagian = (ketDasar.startsWith("·") ? `Cash ${ketDasar}` : ketDasar).replace(/Rp(\d+)/g, (_m, n: string) => rupiah(Number(n))).split(" · ");
@@ -231,35 +262,18 @@ export default function CatatanPerubahan({ onBack }: { onBack: () => void }) {
               Tampilkan lagi
             </button>
           )}
+          {status === "ok" && filter === "pesanan" && habis && !lamaHabis && (
+            <button onClick={() => void muatLama()} disabled={lamaMuat}
+              style={{ width: "100%", minHeight: 48, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, color: t.text, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", marginTop: 12, padding: "8px 12px", opacity: lamaMuat ? 0.6 : 1 }}>
+              {lamaMuat ? "Memuat…" : lama.length ? "Tampilkan pesanan lama lagi" : "Tampilkan pesanan sebelum catatan aktif"}
+            </button>
+          )}
+          {status === "ok" && filter === "pesanan" && lama.length > 0 && (
+            <div style={{ fontSize: 13, color: t.text2, margin: "10px 2px 0", lineHeight: 1.45 }}>Pesanan lama diambil dari data transaksi: jamnya benar, tetapi siapa yang memasukkan tidak tercatat.</div>
+          )}
+          </>)}
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Ringkasan pembaruan tampilan untuk Mama/Papa (teks statis, bukan log database). Tertutup bawaan. */
-function YangBaru() {
-  const [buka, setBuka] = useState(false);
-  const butir = [
-    "Halaman pesan orang tua tampil baru: langsung menu, ada hitung mundur jam tutup.",
-    "Pre-order: ada cincin jam tutup, tombol Rekap Masak lebih jelas, kolom kelas dan cari menempel di atas saat digulir.",
-    "Penjualan: menu dan struk selalu terlihat. Tunai langsung Lunas, bisa Urungkan 5 detik.",
-    "Penjualan: Tagihan tinggal ketuk nama. Ada tulisan Utang bila anak masih punya tagihan.",
-    "Transaksi: tab sekarang Utang, Lunas, Dibatalkan. Total Utang ada di bawah judul.",
-    "Tagih satu per satu: tampil seperti karcis. Pesan otomatis tersalin saat Kirim WA.",
-  ];
-  return (
-    <div style={{ background: t.surface, borderRadius: 16, boxShadow: "0 1px 3px rgba(60,48,20,.08)", marginBottom: 12 }}>
-      <button onClick={() => setBuka((v) => !v)} aria-expanded={buka} className="flex items-center justify-between"
-        style={{ width: "100%", minHeight: 52, padding: "0 16px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15.5, fontWeight: 700, color: t.text }}>
-        Yang baru di aplikasi (5 Nov)
-        <span style={{ fontSize: 13, color: t.text2, fontWeight: 500 }}>{buka ? "Tutup" : "Lihat"}</span>
-      </button>
-      {buka && (
-        <ul style={{ margin: 0, padding: "0 16px 14px 34px", fontSize: 15, lineHeight: 1.55, color: t.text }}>
-          {butir.map((b) => <li key={b} style={{ marginBottom: 4 }}>{b}</li>)}
-        </ul>
-      )}
     </div>
   );
 }
