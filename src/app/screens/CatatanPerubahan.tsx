@@ -64,7 +64,7 @@ function ringkas(c: Catatan): [string, string, Nada] {
 }
 
 const CHIP: { id: FilterCatatan; label: string }[] = [
-  { id: "semua", label: "Semua" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" }, { id: "masuk", label: "Masuk" },
+  { id: "semua", label: "Semua" }, { id: "pesanan", label: "Pesanan" }, { id: "ubah", label: "Ubah" }, { id: "hapus", label: "Hapus" }, { id: "lunas", label: "Lunas" }, { id: "menu", label: "Menu" }, { id: "pengaturan", label: "Pengaturan" }, { id: "masuk", label: "Masuk" },
 ];
 
 const hariWib = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);

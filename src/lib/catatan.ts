@@ -15,7 +15,7 @@ export interface Catatan {
   sesudah: Record<string, unknown> | null;
 }
 
-export type FilterCatatan = "semua" | "hapus" | "lunas" | "menu" | "pengaturan" | "masuk";
+export type FilterCatatan = "semua" | "pesanan" | "ubah" | "hapus" | "lunas" | "menu" | "pengaturan" | "masuk";
 export const UKURAN_HALAMAN = 60;
 
 export type HasilCatatan =
@@ -27,6 +27,10 @@ export async function fetchCatatan(opts: { filter: FilterCatatan; q: string; seb
   let qb = supabase.from("catatan").select("*").order("id", { ascending: false }).limit(UKURAN_HALAMAN);
   if (opts.sebelumId) qb = qb.lt("id", opts.sebelumId);
   if (opts.filter === "hapus") qb = qb.eq("aksi", "hapus");
+  /* Pesanan = setiap pesanan/penjualan yang MASUK (Pre-order dan Penjualan): siapa, jam, dari HP mana — bukti saat ada tagihan ganda. */
+  else if (opts.filter === "pesanan") qb = qb.eq("tabel", "transaksi").eq("aksi", "tambah");
+  /* Ubah = perubahan pada pesanan yang sudah ada (tanggal, isi, pembeli, batal, tagih, lunas, dst). */
+  else if (opts.filter === "ubah") qb = qb.eq("tabel", "transaksi").eq("aksi", "ubah");
   else if (opts.filter === "lunas") qb = qb.eq("tabel", "transaksi").eq("aksi", "ubah").eq("sesudah->>paid", "true");
   else if (opts.filter === "menu") qb = qb.in("tabel", ["menu", "menu_harian", "menu_stok"]);
   else if (opts.filter === "masuk") qb = qb.eq("tabel", "login");
