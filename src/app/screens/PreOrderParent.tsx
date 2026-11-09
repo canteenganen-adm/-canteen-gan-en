@@ -111,18 +111,44 @@ export default function PreOrderParent({
   const [showCart, setShowCart] = useState(false);
   const [noteLine, setNoteLine] = useState<string | null>(null);
   const [katAktif, setKatAktif] = useState<string | null>(null);
+  /** Ketukan kategori memegang sorotan sebentar (halaman bisa mentok sebelum kategori itu sampai di atas). */
+  const kunciKat = useRef<{ k: string; sampai: number } | null>(null);
+  const railRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const onScroll = () => {
+    let rafId = 0;
+    const hitung = () => {
+      rafId = 0;
+      const kunci = kunciKat.current;
+      if (kunci && Date.now() < kunci.sampai) return;
       const els = Array.from(document.querySelectorAll<HTMLElement>('[id^="kat-"]'));
-      let cur: string | null = null;
-      for (const el of els) { if (el.getBoundingClientRect().top <= 140) cur = el.id.slice(4); }
-      setKatAktif(cur ?? (els[0] ? els[0].id.slice(4) : null));
+      if (!els.length) return;
+      const sisaBawah = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      let cur = els[0].id.slice(4);
+      if (sisaBawah <= 6 && window.scrollY > 0) cur = els[els.length - 1].id.slice(4);
+      else {
+        /* aktif = kategori terakhir yang judulnya sudah naik melewati ±sepertiga layar (bukan menunggu mentok di atas) */
+        const batas = window.innerHeight * 0.33;
+        for (const el of els) { if (el.getBoundingClientRect().top <= batas) cur = el.id.slice(4); }
+      }
+      setKatAktif((p) => (p === cur ? p : cur));
     };
+    const onScroll = () => { if (!rafId) rafId = requestAnimationFrame(hitung); };
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, { passive: true, capture: true });
-    onScroll();
-    return () => { window.removeEventListener("scroll", onScroll); document.removeEventListener("scroll", onScroll, true); };
+    window.addEventListener("resize", onScroll);
+    hitung();
+    return () => { window.removeEventListener("scroll", onScroll); document.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", onScroll); if (rafId) cancelAnimationFrame(rafId); };
   }, [step]);
+  /* Rel kategori ikut bergerak: tombol aktif digulir ke tampilan di dalam rel itu sendiri */
+  useEffect(() => {
+    const rel = railRef.current;
+    if (!rel || !katAktif) return;
+    const btn = rel.querySelector<HTMLElement>(`[data-kat="${CSS.escape(katAktif)}"]`);
+    if (!btn) return;
+    const atas = btn.offsetTop, bawah = atas + btn.offsetHeight;
+    if (atas < rel.scrollTop + 8) rel.scrollTo({ top: Math.max(0, atas - 8), behavior: "smooth" });
+    else if (bawah > rel.scrollTop + rel.clientHeight - 8) rel.scrollTo({ top: bawah - rel.clientHeight + 8, behavior: "smooth" });
+  }, [katAktif]);
   const [sessionClosed, setSessionClosed] = useState(false);
   const [menuQ, setMenuQ] = useState("");
   const [copied, setCopied] = useState(false);
@@ -497,7 +523,11 @@ export default function PreOrderParent({
     const mnt = Math.floor(sisaMs / 60000);
     return mnt < 60 ? `${mnt}m lagi` : `${Math.floor(mnt / 60)}j ${mnt % 60}m lagi`;
   })();
-  const gulirKe = (k: string) => document.getElementById("kat-" + k)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const gulirKe = (k: string) => {
+    kunciKat.current = { k, sampai: Date.now() + 1100 };
+    setKatAktif(k);
+    document.getElementById("kat-" + k)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const qtyKat = (k: string) => pre.filter((m) => katOf(m) === k).reduce((s, m) => s + qtyOf(m.id), 0);
   const bulatBtn = (extra?: React.CSSProperties): React.CSSProperties => ({ width: 44, height: 44, borderRadius: "50%", border: "none", background: t.divider, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", ...extra });
 
@@ -543,12 +573,12 @@ export default function PreOrderParent({
       </label>
 
       <div className="flex" style={{ alignItems: "flex-start", background: t.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
-        <div className="railscroll" style={{ position: "sticky", top: 0, flex: "none", width: 104, background: t.divider, borderTopLeftRadius: 20, maxHeight: "100vh", overflowY: "auto", scrollbarWidth: "none", paddingBottom: 24 }}>
+        <div ref={railRef} className="railscroll" style={{ position: "sticky", top: 0, flex: "none", width: 104, background: t.divider, borderTopLeftRadius: 20, maxHeight: "100vh", overflowY: "auto", scrollbarWidth: "none", paddingBottom: 24 }}>
           {railCats.map((k) => {
             const n = qtyKat(k);
             const on = (katAktif ?? railCats[0]) === k;
             return (
-              <button key={k} onClick={() => gulirKe(k)}
+              <button key={k} data-kat={k} onClick={() => gulirKe(k)}
                 style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left", border: "none", background: on ? t.surface : "transparent", borderTopLeftRadius: on ? 20 : 0, cursor: "pointer", fontFamily: "inherit", padding: "0 14px", minHeight: 56, color: on ? t.text : t.text2, fontSize: 13, fontWeight: on ? 800 : 500, lineHeight: 1.25 }}>
                 <span>{k}</span>
                 {n > 0 && <span style={{ flex: "none", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9, background: t.primary, color: t.onPrimary, fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>{n}</span>}
@@ -563,7 +593,7 @@ export default function PreOrderParent({
           )}
           {railCats.map((k, ki) => (
             <div key={k} id={"kat-" + k} style={{ scrollMarginTop: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: t.text2, margin: ki ? "14px 0 6px" : "0 0 6px" }}>{k}</div>
+              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.2px", color: t.text, margin: ki ? "26px 0 6px" : "2px 0 6px" }}>{k}</div>
               {byCatMap[k].map((m) => {
                 const inCart = qtyOf(m.id);
                 const sisa = stokMap?.[m.id]?.sisa;
@@ -578,16 +608,16 @@ export default function PreOrderParent({
                 return (
                   <div key={m.id} className="flex items-center justify-between" style={{ gap: 10, padding: "12px 0" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: habis ? t.textDis : t.text }}>{toTitleCase(m.name)}</div>
+                      <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3, color: habis ? t.textDis : t.text }}>{toTitleCase(m.name)}</div>
                       {(ket || (sisa !== undefined && !habis)) && (
-                        <div style={{ fontSize: 13, color: t.text2, marginTop: 3 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: t.text2, marginTop: 2 }}>
                           {ket}{ket && sisa !== undefined ? " · " : ""}
                           {sisa !== undefined ? <span style={{ color: sisa <= 5 ? t.warnText : t.text2, fontWeight: sisa <= 5 ? 700 : 500 }}>Sisa {sisa}</span> : null}
                         </div>
                       )}
                       {habis
                         ? <div style={{ fontSize: 13, fontWeight: 700, color: t.error, marginTop: 3 }}>Habis</div>
-                        : <div style={{ fontSize: 15, fontWeight: 500, marginTop: 2, color: t.text }}>{hrg}</div>}
+                        : <div style={{ fontSize: 13.5, fontWeight: 500, marginTop: 2, color: t.text2 }}>{hrg}</div>}
                     </div>
                     {habis ? null : inCart > 0 && !adaVarian ? (
                       <div className="flex items-center" style={{ gap: 4, flex: "none" }}>
