@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import BackToTop from "../components/BackToTop";
 import JamHitung from "../components/JamHitung";
 import {
   Plus, Minus, ArrowLeft, Check, Trash2, Copy, AlertCircle, X, Search, HelpCircle, CircleHelp, ChevronLeft, Pencil,
@@ -593,8 +592,8 @@ export default function PreOrderParent({
           )}
           {railCats.map((k, ki) => (
             <div key={k} id={"kat-" + k} style={{ scrollMarginTop: 8 }}>
-              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-.2px", color: t.text, margin: ki ? "26px 0 6px" : "2px 0 6px" }}>{k}</div>
-              {byCatMap[k].map((m) => {
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.text2, margin: ki ? "14px 0 6px" : "0 0 6px" }}>{k}</div>
+              {byCatMap[k].map((m, mi) => {
                 const inCart = qtyOf(m.id);
                 const sisa = stokMap?.[m.id]?.sisa;
                 const habis = sisa !== undefined && sisa <= 0;
@@ -606,7 +605,7 @@ export default function PreOrderParent({
                   : rupiah(m.price);
                 const ket = adaVarian ? m.variants.map((v) => v.name).join(" · ") : "";
                 return (
-                  <div key={m.id} className="flex items-center justify-between" style={{ gap: 10, padding: "12px 0" }}>
+                  <div key={m.id} className="flex items-center justify-between" style={{ gap: 10, padding: "12px 0", borderTop: mi ? `1px solid ${t.divider}` : "none" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3, color: habis ? t.textDis : t.text }}>{toTitleCase(m.name)}</div>
                       {(ket || (sisa !== undefined && !habis)) && (
@@ -836,7 +835,6 @@ function Screen({ children, onCloseHelp, showHelp, unavailNotice, footerSpace = 
         </div>
       )}
       {showHelp && onCloseHelp && <HelpModal onClose={onCloseHelp} />}
-      <BackToTop bottom={110} />
     </>
   );
 }
