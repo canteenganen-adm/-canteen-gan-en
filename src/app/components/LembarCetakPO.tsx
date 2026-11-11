@@ -26,6 +26,8 @@ export type GrupCetak = {
   jumlahPesanan: number;
   /** Kode PO tiap pesanan (PO-XXXXXX). */
   kode?: string[];
+  /** Tiap pesanan anak ini dengan jam masuknya: dipakai untuk cetak SUSULAN (hanya yang masuk setelah cetak terakhir). */
+  pesanan?: { masuk: string; items: Transaction["items"]; kode?: string }[];
 };
 
 const URUT_GRUP = ["KB", "TK", "SD 1–2", "SD 3–6", "SMP", "SMA", "Guru/Karyawan", "Lainnya"];
@@ -51,7 +53,23 @@ const K_UKURAN = "ganen_cetak_ukuran", K_URUT = "ganen_cetak_urut";
 const baca = (k: string, d: string) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
 const simpan = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* abaikan */ } };
 
-export default function LembarCetakPO({ tanggal, grup, onClose }: { tanggal: string; grup: GrupCetak[]; onClose: () => void }) {
+export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose }: { tanggal: string; /** Tanggal ISO: kunci penanda "cetak terakhir" per hari. */ kunci: string; grup: GrupCetak[]; onClose: () => void }) {
+  /* SUSULAN (pemilik 11 Nov: pesanan masih masuk setelah jam 7, pagi sudah repot): setelah cetak pertama, HP mengingat jamnya;
+     cetak berikutnya bisa "Baru saja" = hanya pesanan yang masuk SETELAH cetak terakhir, jadi kertas kedua pendek. */
+  const K_TERAKHIR = "ganen_cetak_terakhir_" + kunci;
+  const [terakhir, setTerakhir] = useState<string>(() => baca(K_TERAKHIR, ""));
+  const grupBaru: GrupCetak[] = terakhir
+    ? grupSemua.map((g) => { const p = (g.pesanan ?? []).filter((x) => x.masuk > terakhir); return { ...g, items: p.flatMap((x) => x.items), jumlahPesanan: p.length, kode: p.map((x) => x.kode || ""), allPacked: false }; }).filter((g) => g.items.length > 0)
+    : [];
+  const [hanyaBaru, setHanyaBaru] = useState(() => !!baca(K_TERAKHIR, ""));
+  const susulan = hanyaBaru && !!terakhir;
+  const grup = susulan ? grupBaru : grupSemua;
+  const jamTerakhir = terakhir ? new Date(terakhir).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).replace(".", ":") : "";
+  const cetak = () => {
+    window.print();
+    const kini = new Date().toISOString();
+    simpan(K_TERAKHIR, kini); setTerakhir(kini); setHanyaBaru(true);
+  };
   const [ukuran, setUkuran] = useState<"struk" | "a4">(() => (baca(K_UKURAN, "struk") === "a4" ? "a4" : "struk"));
   const [urut, setUrut] = useState<"nama" | "kelas">(() => (baca(K_URUT, "nama") === "kelas" ? "kelas" : "nama"));
   const struk = ukuran === "struk";
@@ -98,7 +116,7 @@ export default function LembarCetakPO({ tanggal, grup, onClose }: { tanggal: str
       <div className="tanpa-cetak" style={{ position: "sticky", top: 0, zIndex: 2, background: "#EDE7DA", padding: "12px 16px 10px" }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={onClose} aria-label="Tutup" style={{ width: 48, height: 48, borderRadius: 14, border: "none", background: t.surface, color: t.text, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}><X size={22} /></button>
-          <button onClick={() => window.print()} style={{ height: 48, padding: "0 22px", borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit", flex: "none" }}>
+          <button onClick={cetak} disabled={grup.length === 0} style={{ height: 48, padding: "0 22px", borderRadius: 14, border: "none", background: t.primary, color: t.onPrimary, fontWeight: 800, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit", flex: "none" }}>
             <Printer size={20} /> Cetak
           </button>
         </div>
@@ -106,6 +124,11 @@ export default function LembarCetakPO({ tanggal, grup, onClose }: { tanggal: str
           <button style={pil(struk)} aria-pressed={struk} onClick={() => { setUkuran("struk"); simpan(K_UKURAN, "struk"); }}>Struk 58 mm</button>
           <button style={pil(!struk)} aria-pressed={!struk} onClick={() => { setUkuran("a4"); simpan(K_UKURAN, "a4"); }}>A4</button>
           <span style={{ width: 8 }} />
+          {terakhir && (<>
+            <button style={pil(susulan)} aria-pressed={susulan} onClick={() => setHanyaBaru(true)}>Baru saja ({grupBaru.length})</button>
+            <button style={pil(!susulan)} aria-pressed={!susulan} onClick={() => setHanyaBaru(false)}>Semua</button>
+            <span style={{ width: 8 }} />
+          </>)}
           <button style={pil(urut === "nama")} aria-pressed={urut === "nama"} onClick={() => { setUrut("nama"); simpan(K_URUT, "nama"); }}>Nama A–Z</button>
           <button style={pil(urut === "kelas")} aria-pressed={urut === "kelas"} onClick={() => { setUrut("kelas"); simpan(K_URUT, "kelas"); }}>Per kelas</button>
         </div>
@@ -114,12 +137,12 @@ export default function LembarCetakPO({ tanggal, grup, onClose }: { tanggal: str
       <div className="kertas" style={{ background: "#fff", maxWidth: struk ? 250 : 794, margin: "6px auto 40px", padding: struk ? "14px 12px 22px" : "22px 22px 28px", boxShadow: "0 2px 14px rgba(60,48,20,.18)", color: "#000", fontFamily: struk ? STRUK_MONO : "inherit" }}>
         {/* Kop: kecil, tanggal cukup sekali */}
         <div style={{ fontSize: f.kop, borderBottom: "1.5px solid #000", paddingBottom: 4, lineHeight: 1.35 }}>
-          <b>PO {tanggal}</b>{struk ? <br /> : " · "}{grup.length} anak · {totalPorsi} porsi · cetak {cetakJam}
+          <b>{susulan ? `SUSULAN sejak ${jamTerakhir}` : "PO"} {tanggal}</b>{struk ? <br /> : " · "}{grup.length} anak · {totalPorsi} porsi · cetak {cetakJam}
         </div>
 
         {/* Rekap masak */}
-        <div style={{ fontSize: f.judul, fontWeight: 800, margin: "10px 0 3px" }}>REKAP MASAK</div>
-        {rekapList.length === 0 && <div style={{ fontSize: f.isi }}>Belum ada pesanan.</div>}
+        <div style={{ fontSize: f.judul, fontWeight: 800, margin: "10px 0 3px" }}>{susulan ? "TAMBAHAN MASAK" : "REKAP MASAK"}</div>
+        {rekapList.length === 0 && <div style={{ fontSize: f.isi }}>{susulan ? `Tidak ada pesanan baru sejak ${jamTerakhir}.` : "Belum ada pesanan."}</div>}
         <div style={{ columnCount: struk ? 1 : 2, columnGap: 24 }}>
           {rekapList.map(([nama, qty]) => (
             <div key={nama} className="jangan-pecah" style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "2px 0", borderBottom: "0.5px solid #aaa", fontSize: f.isi }}>

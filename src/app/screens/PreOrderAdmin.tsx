@@ -705,8 +705,9 @@ export default function PreOrderAdmin({
         </Sheet>
       )}
       {sheet === "cetak" && (
-        <LembarCetakPO tanggal={serviceDateLabel(viewDate)} onClose={() => setSheet(null)}
-          grup={mergeOrders(orders).map((g) => ({ nama: g.nama, tingkat: g.tingkat, kelas: g.kelas, ambil: g.ambil, allPacked: g.allPacked, items: g.flatItems, jumlahPesanan: g.perOrder.length, kode: g.ids.map((id) => transactions.find((x) => x.id === id)?.orderNo || "") }))} />
+        <LembarCetakPO tanggal={serviceDateLabel(viewDate)} kunci={viewDate} onClose={() => setSheet(null)}
+          grup={mergeOrders(orders).map((g) => ({ nama: g.nama, tingkat: g.tingkat, kelas: g.kelas, ambil: g.ambil, allPacked: g.allPacked, items: g.flatItems, jumlahPesanan: g.perOrder.length, kode: g.ids.map((id) => transactions.find((x) => x.id === id)?.orderNo || ""),
+            pesanan: g.ids.map((id, i) => { const tx = transactions.find((x) => x.id === id); return { masuk: tx?.createdAt || "", items: g.perOrder[i] ?? [], kode: tx?.orderNo || "" }; }) }))} />
       )}
 
       {/* Popup struk RINCIAN PER-MENU (dari Rekap Masak) — siapa saja yang
