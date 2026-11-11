@@ -96,7 +96,6 @@ export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose
 
   /* ukuran huruf: struk 58 mm sempit (±48 mm area cetak), A4 lega */
   const f = struk ? { kop: 11, judul: 12.5, nama: 14, isi: 12, kecil: 10.5, kotak: 13 } : { kop: 12.5, judul: 14, nama: 14.5, isi: 13, kecil: 11.5, kotak: 14 };
-  const pil = (aktif: boolean): React.CSSProperties => ({ minHeight: 40, padding: "0 14px", borderRadius: 999, border: "none", background: aktif ? t.text : t.surface, color: aktif ? t.surface : t.text, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" });
 
   const isi = (
     <div id="lembar-cetak-akar" style={{ position: "fixed", inset: 0, zIndex: 200, background: "#EDE7DA", overflowY: "auto", fontFamily: "inherit", color: "#000" }}>
@@ -120,17 +119,11 @@ export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose
             <Printer size={20} /> Cetak
           </button>
         </div>
-        <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
-          <button style={pil(struk)} aria-pressed={struk} onClick={() => { setUkuran("struk"); simpan(K_UKURAN, "struk"); }}>Struk 58 mm</button>
-          <button style={pil(!struk)} aria-pressed={!struk} onClick={() => { setUkuran("a4"); simpan(K_UKURAN, "a4"); }}>A4</button>
-          <span style={{ width: 8 }} />
-          {terakhir && (<>
-            <button style={pil(susulan)} aria-pressed={susulan} onClick={() => setHanyaBaru(true)}>Baru saja ({grupBaru.length})</button>
-            <button style={pil(!susulan)} aria-pressed={!susulan} onClick={() => setHanyaBaru(false)}>Semua</button>
-            <span style={{ width: 8 }} />
-          </>)}
-          <button style={pil(urut === "nama")} aria-pressed={urut === "nama"} onClick={() => { setUrut("nama"); simpan(K_URUT, "nama"); }}>Nama A–Z</button>
-          <button style={pil(urut === "kelas")} aria-pressed={urut === "kelas"} onClick={() => { setUrut("kelas"); simpan(K_URUT, "kelas"); }}>Per kelas</button>
+        {/* Tiga pilihan, masing-masing SATU baris berlabel dengan dua sisi (pemilik 11 Nov: pil berderet membingungkan) */}
+        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+          <Saklar label="Kertas" nilai={ukuran} pilihan={[["struk", "Struk 58 mm"], ["a4", "A4"]]} onPilih={(v) => { setUkuran(v as "struk" | "a4"); simpan(K_UKURAN, v); }} />
+          <Saklar label="Urut" nilai={urut} pilihan={[["nama", "Nama A–Z"], ["kelas", "Per kelas"]]} onPilih={(v) => { setUrut(v as "nama" | "kelas"); simpan(K_URUT, v); }} />
+          {terakhir && <Saklar label="Isi" nilai={susulan ? "baru" : "semua"} pilihan={[["baru", `Baru (${grupBaru.length})`], ["semua", "Semua"]]} onPilih={(v) => setHanyaBaru(v === "baru")} />}
         </div>
       </div>
 
@@ -181,4 +174,24 @@ export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose
     </div>
   );
   return createPortal(isi, document.body);
+}
+
+/** Saklar dua sisi berlabel: satu baris = satu pilihan; sisi terpilih terang, sisi lain redup. */
+function Saklar({ label, nilai, pilihan, onPilih }: { label: string; nilai: string; pilihan: [string, string][]; onPilih: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ width: 52, flex: "none", fontSize: 13.5, fontWeight: 600, color: t.text2 }}>{label}</span>
+      <div role="radiogroup" aria-label={label} style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4, background: "#DDD4C0", borderRadius: 14, padding: 4 }}>
+        {pilihan.map(([v, teks]) => {
+          const on = v === nilai;
+          return (
+            <button key={v} role="radio" aria-checked={on} onClick={() => onPilih(v)}
+              style={{ minHeight: 44, padding: "0 8px", borderRadius: 11, border: "none", background: on ? t.surface : "transparent", color: on ? t.text : t.text2, fontWeight: on ? 800 : 600, fontSize: 14.5, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxShadow: on ? "0 1px 3px rgba(60,48,20,.18)" : "none", transition: "background .15s" }}>
+              {teks}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
