@@ -5,6 +5,7 @@ export type Pembaruan = { tgl: string; butir: string[] };
 export const PEMBARUAN: Pembaruan[] = [
   { tgl: "2026-11-11", butir: [
     "Pre-order: tombol Cetak sekarang membuat lembar A4 (rekap masak + daftar pesanan per Waktu Ambil dengan kotak centang) yang bisa dicetak ke printer mana pun atau disimpan sebagai PDF.",
+    "Cetak: bisa pilih kertas Struk 58 mm atau A4, dan urutan Nama A–Z atau Per kelas. Tiap anak ada kotak centang, kelas, jam ambil, dan kode PO.",
   ] },
   { tgl: "2026-11-09", butir: [
     "Catatan: tab baru Pesanan (semua pesanan/penjualan yang masuk) dan Ubah (perubahan pada pesanan), serta tab Pembaruan ini.",

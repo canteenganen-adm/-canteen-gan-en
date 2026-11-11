@@ -706,7 +706,7 @@ export default function PreOrderAdmin({
       )}
       {sheet === "cetak" && (
         <LembarCetakPO tanggal={serviceDateLabel(viewDate)} onClose={() => setSheet(null)}
-          grup={mergeOrders(orders).map((g) => ({ nama: g.nama, tingkat: g.tingkat, kelas: g.kelas, ambil: g.ambil, allPacked: g.allPacked, items: g.flatItems, jumlahPesanan: g.perOrder.length }))} />
+          grup={mergeOrders(orders).map((g) => ({ nama: g.nama, tingkat: g.tingkat, kelas: g.kelas, ambil: g.ambil, allPacked: g.allPacked, items: g.flatItems, jumlahPesanan: g.perOrder.length, kode: g.ids.map((id) => transactions.find((x) => x.id === id)?.orderNo || "") }))} />
       )}
 
       {/* Popup struk RINCIAN PER-MENU (dari Rekap Masak) — siapa saja yang
