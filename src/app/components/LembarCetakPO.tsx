@@ -61,14 +61,15 @@ export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose
   const grupBaru: GrupCetak[] = terakhir
     ? grupSemua.map((g) => { const p = (g.pesanan ?? []).filter((x) => x.masuk > terakhir); return { ...g, items: p.flatMap((x) => x.items), jumlahPesanan: p.length, kode: p.map((x) => x.kode || ""), allPacked: false }; }).filter((g) => g.items.length > 0)
     : [];
-  const [hanyaBaru, setHanyaBaru] = useState(() => !!baca(K_TERAKHIR, ""));
+  /* Saklar "Isi" (Baru | Semua) DICABUT 11 Nov (pemilik: "isi gausah"): selalu mencetak SEMUA. Logika susulan dibiarkan, nonaktif. */
+  const [hanyaBaru, setHanyaBaru] = useState(false);
   const susulan = hanyaBaru && !!terakhir;
   const grup = susulan ? grupBaru : grupSemua;
   const jamTerakhir = terakhir ? new Date(terakhir).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).replace(".", ":") : "";
   const cetak = () => {
     window.print();
     const kini = new Date().toISOString();
-    simpan(K_TERAKHIR, kini); setTerakhir(kini); setHanyaBaru(true);
+    simpan(K_TERAKHIR, kini); setTerakhir(kini); setHanyaBaru(false);
   };
   const [ukuran, setUkuran] = useState<"struk" | "a4">(() => (baca(K_UKURAN, "struk") === "a4" ? "a4" : "struk"));
   const [urut, setUrut] = useState<"nama" | "kelas">(() => (baca(K_URUT, "nama") === "kelas" ? "kelas" : "nama"));
@@ -123,7 +124,6 @@ export default function LembarCetakPO({ tanggal, kunci, grup: grupSemua, onClose
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           <Saklar label="Kertas" nilai={ukuran} pilihan={[["struk", "Struk 58 mm"], ["a4", "A4"]]} onPilih={(v) => { setUkuran(v as "struk" | "a4"); simpan(K_UKURAN, v); }} />
           <Saklar label="Urut" nilai={urut} pilihan={[["nama", "Nama A–Z"], ["kelas", "Per kelas"]]} onPilih={(v) => { setUrut(v as "nama" | "kelas"); simpan(K_URUT, v); }} />
-          {terakhir && <Saklar label="Isi" nilai={susulan ? "baru" : "semua"} pilihan={[["baru", `Baru (${grupBaru.length})`], ["semua", "Semua"]]} onPilih={(v) => setHanyaBaru(v === "baru")} />}
         </div>
       </div>
 
