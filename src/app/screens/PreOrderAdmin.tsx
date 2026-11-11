@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import RailGeser from "../components/RailGeser";
 import JamHitung from "../components/JamHitung";
+import LembarCetakPO from "../components/LembarCetakPO";
 import { t, STRUK_MONO, STRUK_ZIGZAG } from "../../lib/theme";
 import { rupiah, itemsText, serviceDateLabel, nextSchoolDayISO, hhmm, autoClosedNow, wibTimeHHMM, wibTodayISO, reopenActiveNow, wibClock, toTitleCase } from "../../lib/format";
 import { tingkatColor } from "../../lib/constants";
@@ -704,14 +705,8 @@ export default function PreOrderAdmin({
         </Sheet>
       )}
       {sheet === "cetak" && (
-        <Sheet title="Cetak" onClose={() => setSheet(null)}>
-          {([["Rekap per Kelas", Box], ["Rekap per Menu", CookingPot], ["Label Pesanan", Box]] as const).map(([label, Ic]) => (
-            <button key={label} className="flex items-center gap-3" style={{ width: "100%", height: 56, marginBottom: 10, borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.surface, cursor: "pointer", padding: "0 16px", color: t.text }}>
-              <Ic size={20} color={t.amberText} /><span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 700 }}>{label}</span>
-            </button>
-          ))}
-          <div style={{ fontSize: 12, color: t.text2, textAlign: "center", marginTop: 6 }}>Cetak thermal — segera hadir.</div>
-        </Sheet>
+        <LembarCetakPO tanggal={serviceDateLabel(viewDate)} onClose={() => setSheet(null)}
+          grup={mergeOrders(orders).map((g) => ({ nama: g.nama, tingkat: g.tingkat, kelas: g.kelas, ambil: g.ambil, allPacked: g.allPacked, items: g.flatItems, jumlahPesanan: g.perOrder.length }))} />
       )}
 
       {/* Popup struk RINCIAN PER-MENU (dari Rekap Masak) — siapa saja yang
