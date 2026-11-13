@@ -163,3 +163,5 @@ Kualifikasi sistem sukses (ukuran, status, dan langkah ada di gambar "Kualifikas
 22. Rutin Senin 5 menit: Excel bulan lalu, titik merah Belum Dibayar, baris HAPUS di Catatan, Usage Supabase.
 23. Alamat kasir `/dapur-gan-en` RAHASIA (belum ada login); hanya `/pesan` yang disebar. HP kasir hilang atau alamat bocor = ganti rahasia JWT (aturan 11). **(Bila login wajib sudah aktif, alamat ini tidak lagi satu-satunya penjaga; lihat aturan 12.)**
 24. Tiap bulan: ekspor CSV `menu`, `transaksi`, `app_state`, `kelas`; tiap 6 bulan uji pulih ke proyek latihan.
+
+- **Laman masuk tutup (pemilik 13 Nov)**: dua baris = "Mohon maaf, Pre-order sudah ditutup" + 🙏🏻, lalu "Sampai jumpa lagi di sesi layanan berikutnya" + 👋🏻 (menggantikan "Sampai jumpa lagi 🙏🏻").
